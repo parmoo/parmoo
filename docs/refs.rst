@@ -6,7 +6,7 @@ Additional Resources
 
 For questions, please contact
 
-parmoo@msc.anl.gov
+parmoo@mcs.anl.gov
 
 Reference Format
 ----------------
