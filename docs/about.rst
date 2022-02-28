@@ -12,7 +12,7 @@ criteria.
 
 The goal of a MOOP is to find numerous solutions that describe the
 tradeoffs between these (potentially conflicting) *objectives*.
-The solution to a MOOP is a set of achievable objective scores
+The solution to a MOOP is a set of achievable objective values
 (and corresponding design points), describing the inherent tradeoffs
 in the problem.
 This tradeoff curve is called the *Pareto front*.
@@ -27,8 +27,21 @@ hard rules that every solution must adhere to.
 |
 
 In a multiobjective *simulation-based* optimization problem, the objectives
-are derived from the outputs of one or more potentially computationally expensive 
+are derived from the outputs of one or more expensive 
 simulations.
+
+Here, we use the term *simulation* in its broadest sense.
+In our terminology, a simulation could refer to any data-generating
+process of sufficient complexity,
+including
+ * numerical simulations run on a computer or
+ * real-world experiments performed in a laboratory environment.
+A simulation's expense can be judged by any of several factors, including
+ * the amount of time that is required to complete the simulation;
+ * the simulation's occupation of valuable scientific resources,
+   such as computing nodes or laboratory equipment; and
+ * consumption of raw resources such as energy or laboratory materials.
+
 ParMOO is designed to solve multiobjective simulation-based
 optimization problems by exploiting the simulation-based structure in
 such problems.
@@ -160,10 +173,10 @@ Glossary
       one design variable might be the angle of attack.
     * ParMOO currently supports continuous and categorical design variables.
  * **Design space:**
-   The *design space* is the space of all possible design variable
-   combinations.
+   The *design space* is the underlying vector space where you could
+   represent all possible design variable combinations.
     * **Ex.-** if you have :math:`n` continuous design variables, then
-      your design space might be all of :math:`\mathbb{R}^n`.
+      your design space would be all of :math:`\mathbb{R}^n`.
  * **Constraint:**
    A *constraint* is a requirement that every solution point must satisfy.
     * **Ex.-** if your simulation code fails whenever :math:`x_1 > x_2`,
@@ -188,13 +201,20 @@ Glossary
    constraints are considered to be soft.
  * **Feasible design space:**
    The *feasible design space* is the subset of the design
-   space where all constraints are satisfied.
+   space where all constraints (both hard and soft) are satisfied.
    In other words, this is the set of all "legal" designs.
+    * **Ex.-** if you have `n` continuous design variables, constrained
+      to the unit cube, then your entire design space is still :math:`R^n`,
+      but your *feasible* design space is the cube :math:`[0, 1]^n`.
  * **Simulation:**
-   A *simulation* is a computationally expensive process that is required
-   to compute your objectives, constraints, or both.
+   A *simulation* can refer to any complex process for generating
+   scientific or engineering data.
+   This includes both numerical simulations and laboratory experiments.
+   The data that is gathered from your simulation might used to compute
+   your objectives, constraints, or both.
     * **Ex.-** if you are designing a material, your simulation may be 
-      a molecular dynamics code.
+      a molecular dynamics code **or** a process for synthesizing new
+      materials in the laboratory.
     * Each simulation may have a single output or many outputs, which will
       be passed on as inputs to your objectives and/or constraints.
  * **Objective:**
@@ -207,8 +227,9 @@ Glossary
       :math:`f_{max}`, you may supply the negated value of that
       objective :math:`-f_{max}` to ParMOO.
  * **Feasible objective space:**
-   The *feasible objective space* is the space of all objective scores
-   that can be obtained, by evaluating every objective at a configuration
+   The *feasible objective space* is the image of the design space
+   -- i.e., the set of all objective values
+   that can be obtained, by evaluating every objective at configurations
    from the feasible design space.
     * In practice, you will not know your feasible objective space *a priori*.
  * **Nondominated:**

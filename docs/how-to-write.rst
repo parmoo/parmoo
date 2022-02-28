@@ -100,16 +100,16 @@ Working with Unnamed Outputs
 If even a single design variable is left with a blank ``name`` key,
 then all outputs are placed in a Python
 dictionary, with the following keys:
- * ``x_vals: (np.ndarray)`` of length :math:`N \times n` --
+ * ``x_vals: (np.ndarray)`` of length :math:`d \times n` --
    number of data points by number of design variables;
- * ``s_vals: (np.ndarray)`` of length :math:`N \times m` --
+ * ``s_vals: (np.ndarray)`` of length :math:`d \times m` --
    number of data points by number of outputs for a particular simulation;
- * ``f_vals: (np.ndarray)`` of length :math:`N \times o` --
+ * ``f_vals: (np.ndarray)`` of length :math:`d \times o` --
    number of data points by number of objectives;
- * ``c_vals: (np.ndarray)`` of length :math:`N \times c` --
+ * ``c_vals: (np.ndarray)`` of length :math:`d \times c` --
    number of data points by number of constraints, if any.
 
-Note that the value of :math:`N` (number of data points0 may vary by
+Note that the value of :math:`d` (number of data points0 may vary by
 database).
 Each column in each of ``x_vals``, ``s_vals``, ``f_vals``, and ``c_vals``
 will correspond to a specific design variable, simulation output,
@@ -123,7 +123,7 @@ over structured arrays may be preferable.
     :language: python
 
 The result is below.
-Note that in this example, there are :math:`N=20` points in both the
+Note that in this example, there are :math:`d=20` points in both the
 objective and simulation databases.
 
 .. literalinclude:: ../examples/unnamed_var_ex.out
