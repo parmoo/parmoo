@@ -1,0 +1,60 @@
+name: ParMOO CI
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  run-full-tests:
+
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.6", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: "${{matrix.python-version}}"
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest pytest-cov
+        if (Test-Path -Path %cd%\REQUIREMENTS) {
+          pip install -r REQUIREMENTS
+        }
+
+    - name: Install dependencies (Mac/Linux)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest pytest-cov
+        if [ -f REQUIREMENTS ]; then pip install -r REQUIREMENTS; fi
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Test with pytest (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        set PYTHONPATH=%PYTHONPATH%;'%cd%'
+        cd tests
+        bash run-tests.sh
+
+    - name: Test with pytest (Mac/Linux)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      run: |
+        export PYTHONPATH=$PYTHONPATH:`pwd`
+        cd tests
+        ./run-tests.sh
