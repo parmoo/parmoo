@@ -8,7 +8,7 @@ This section contains the complete list of ParMOO modules.
    :caption: Modules:
 
    structs
-   aux
+   util
    objectives
    acquisitions
    optimizers

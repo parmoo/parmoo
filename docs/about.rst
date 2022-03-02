@@ -36,6 +36,7 @@ process of sufficient complexity,
 including
  * numerical simulations run on a computer or
  * real-world experiments performed in a laboratory environment.
+
 A simulation's expense can be judged by any of several factors, including
  * the amount of time that is required to complete the simulation;
  * the simulation's occupation of valuable scientific resources,

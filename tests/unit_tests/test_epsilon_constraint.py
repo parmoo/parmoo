@@ -8,7 +8,7 @@ def test_RandomConstraint():
     """
 
     from parmoo.acquisitions import RandomConstraint
-    from parmoo.aux import updatePF
+    from parmoo.util import updatePF
     import numpy as np
     import pytest
 

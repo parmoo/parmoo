@@ -51,7 +51,7 @@ class RandomSearch(SurrogateOptimizer):
 
         """
 
-        from parmoo.aux import xerror
+        from parmoo.util import xerror
 
         # Check inputs
         xerror(o, lb, ub, hyperparams)
@@ -173,7 +173,7 @@ class RandomSearch(SurrogateOptimizer):
 
         """
 
-        from parmoo.aux import updatePF
+        from parmoo.util import updatePF
 
         # Check that x is legal
         if isinstance(x, np.ndarray):

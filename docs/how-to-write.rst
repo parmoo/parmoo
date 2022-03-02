@@ -576,7 +576,7 @@ or
 
 Additional ParMOO solver execution paradigms (including those where ParMOO
 will handle parallel execution on the user's behalf) are included under
-:doc:`Additional ParMOO Plugins and Features <extras>.`.
+:doc:`Additional ParMOO Plugins and Features <extras>`.
 
 Viewing Your Results
 --------------------

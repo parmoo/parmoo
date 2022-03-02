@@ -52,7 +52,7 @@ class GaussRBF(SurrogateFunction):
 
         """
 
-        from parmoo.aux import xerror
+        from parmoo.util import xerror
 
         # Check inputs
         xerror(m, lb, ub, hyperparams)
@@ -376,7 +376,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         """
 
-        from parmoo.aux import xerror
+        from parmoo.util import xerror
 
         # Check inputs
         xerror(m, lb, ub, hyperparams)

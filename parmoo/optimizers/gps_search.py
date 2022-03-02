@@ -53,7 +53,7 @@ class LocalGPS(SurrogateOptimizer):
 
         """
 
-        from parmoo.aux import xerror
+        from parmoo.util import xerror
 
         # Check inputs
         xerror(o, lb, ub, hyperparams)
@@ -283,7 +283,7 @@ class GlobalGPS(SurrogateOptimizer):
 
         """
 
-        from parmoo.aux import xerror
+        from parmoo.util import xerror
 
         # Check inputs
         xerror(o, lb, ub, hyperparams)

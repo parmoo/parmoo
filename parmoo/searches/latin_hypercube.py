@@ -47,7 +47,7 @@ class LatinHypercube(GlobalSearch):
 
         """
 
-        from parmoo.aux import xerror
+        from parmoo.util import xerror
 
         # Check inputs
         xerror(m, lb, ub, hyperparams)
@@ -86,7 +86,7 @@ class LatinHypercube(GlobalSearch):
 
         """
 
-        from parmoo.aux import xerror
+        from parmoo.util import xerror
 
         # Check inputs
         xerror(1, lb, ub, {})

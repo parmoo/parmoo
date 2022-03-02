@@ -48,7 +48,7 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        from parmoo.aux import xerror
+        from parmoo.util import xerror
 
         # Check inputs
         xerror(o, lb, ub, hyperparams)
@@ -86,7 +86,7 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        from parmoo.aux import updatePF
+        from parmoo.util import updatePF
 
         # Check whether any data was given
         no_data = False

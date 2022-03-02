@@ -631,7 +631,7 @@ class MOOP:
 
         """
 
-        from parmoo.aux import check_sims
+        from parmoo.util import check_sims
 
         # Iterate through args to add each sim
         check_sims(self.n_cont + self.n_cat, *args)
@@ -1584,7 +1584,7 @@ class MOOP:
 
         """
 
-        from parmoo.aux import updatePF
+        from parmoo.util import updatePF
 
         # Return the solutions using function call
         pf = updatePF(self.data, {})
