@@ -4,13 +4,23 @@
 #export LIBEPATH=/home/tyler/Git/libensemble
 #export LIBEPATH=/Users/tyler/Git/libensemble
 
-# Check style
-flake8 unit_tests/*.py
-flake8 ../parmoo/*.py
+# Check style with flake8
+flake8 unit_tests/*.py --per-file-ignores="__init__.py:F401"
+flake8 ../parmoo/*.py --per-file-ignores="__init__.py:F401"
 
 # Run unit tests
-cd .. && export PYTHONPATH=$PYTHONPATH:`pwd` && cd tests
 pytest -v --cov=../parmoo --cov-report= unit_tests # -W error::UserWarning
+
+code=$? # capture pytest exit code
+if [ "$code" -eq "0" ]; then
+  echo
+  tput bold;tput setaf 2; echo "Unit tests passed. Continuing...";tput sgr 0
+  echo
+else
+  echo
+  tput bold;tput setaf 1;echo -e "Aborting run-tests.sh: Unit tests failed: $code";tput sgr 0
+  exit $code #return pytest exit code
+fi;
 
 # Run libE unit tests
 #export PYTHONPATH=$PYTHONPATH:$LIBEPATH
