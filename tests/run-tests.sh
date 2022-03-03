@@ -10,7 +10,7 @@ flake8 ../parmoo/*.py
 
 # Run unit tests
 cd .. && export PYTHONPATH=$PYTHONPATH:`pwd` && cd tests
-pytest -v --cov=../parmoo --cov-report= unit_tests -W error::UserWarning
+pytest -v --cov=../parmoo --cov-report= unit_tests # -W error::UserWarning
 
 # Run libE unit tests
 #export PYTHONPATH=$PYTHONPATH:$LIBEPATH

@@ -230,3 +230,6 @@ def test_updatePF():
                      'f_vals': data['f_vals'][5:, :],
                      'c_vals': data['c_vals'][5:, :]}, soln)
     assert(soln['f_vals'].shape == (4, 3))
+
+def test_bad():
+    assert(False)
