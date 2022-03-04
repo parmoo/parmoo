@@ -54,6 +54,7 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         set PYTHONPATH=%PYTHONPATH%;'%cd%'
+        PYTHONPATH
         cd tests
         bash run-tests.sh -ts
 
