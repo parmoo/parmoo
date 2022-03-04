@@ -55,6 +55,7 @@ jobs:
       run: |
         cd tests
         echo "cd .. && export PYTHONPATH=`pwd` && cd tests" > win-te.sh
+        type win-te.sh
         type run-tests.sh >> win-te.sh
         bash win-te.sh -ts
 
