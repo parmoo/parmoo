@@ -30,11 +30,11 @@ if [ $RUN_PARMOO_TEST == true ]; then
   code=$? # capture pytest exit code
   if [ "$code" -eq "0" ]; then
     echo
-    tput bold;tput setaf 2; echo "Unit tests passed. Continuing...";tput sgr 0
+    echo "Unit tests passed. Continuing..."
     echo
   else
     echo
-    tput bold;tput setaf 1;echo -e "Aborting run-tests.sh: Unit tests failed: $code";tput sgr 0
+    echo -e "Aborting run-tests.sh: Unit tests failed: $code"
     exit $code #return pytest exit code
   fi;
 
