@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Add parmoo to PYTHONPATH
+cd .. && export PYTHONPATH=$PYTHONPATH:`pwd` && cd tests
+
 # Get operation mode
 export CHECK_PARMOO_SYNTAX=false
 export RUN_PARMOO_TEST=false
