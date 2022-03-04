@@ -53,9 +53,10 @@ jobs:
     - name: Test with pytest (Windows)
       if: runner.os == 'Windows'
       run: |
-        echo "cd .. && export PYTHONPATH=`pwd` && cd tests" > tests/.bashrc
         cd tests
-        bash run-tests.sh -ts
+        echo "cd .. && export PYTHONPATH=`pwd` && cd tests" > win-te.sh
+        type run-tests.sh >> win-te.sh
+        bash win-te.sh -ts
 
     - name: Test with pytest (Mac/Linux)
       if: runner.os == 'Linux' || runner.os == 'macOS'
