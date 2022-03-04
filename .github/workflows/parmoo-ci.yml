@@ -54,6 +54,7 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         cd tests
+        setx PYTHONPATH ..
         bash run-tests.sh
 
     - name: Test with pytest (Mac/Linux)
