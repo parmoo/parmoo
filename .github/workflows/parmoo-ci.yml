@@ -53,7 +53,7 @@ jobs:
     - name: Test with pytest (Windows)
       if: runner.os == 'Windows'
       run: |
-        setx PYTHONPATH "%cd%"
+        echo "export PYTHONPATH=$PYTHONPATH:`pwd`" > tests/.bashrc
         cd tests
         bash run-tests.sh -ts
 
