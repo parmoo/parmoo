@@ -38,23 +38,28 @@ jobs:
         pip install flake8 pytest pytest-cov
         if [ -f REQUIREMENTS ]; then pip install -r REQUIREMENTS; fi
 
-    - name: Lint with flake8
+    - name: Lint with flake8 (Windows)
+      if: runner.os == 'Windows'
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. Stick to 80 char terminal
-        flake8 . --count --exit-zero --max-complexity=10 --statistics
+        cd tests
+        bash run-tests.sh -c
+
+    - name: Lint with flake8 (Mac/Linux)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      run: |
+        cd tests
+        ./run-tests.sh -c
 
     - name: Test with pytest (Windows)
       if: runner.os == 'Windows'
       run: |
         set PYTHONPATH=%PYTHONPATH%;'%cd%'
         cd tests
-        bash run-tests.sh
+        bash run-tests.sh -ts
 
     - name: Test with pytest (Mac/Linux)
       if: runner.os == 'Linux' || runner.os == 'macOS'
       run: |
         export PYTHONPATH=$PYTHONPATH:`pwd`
         cd tests
-        ./run-tests.sh
+        ./run-tests.sh -ts

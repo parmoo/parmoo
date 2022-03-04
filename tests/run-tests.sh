@@ -1,30 +1,46 @@
 #!/bin/bash
 
-# Set the libEnsemble path
-#export LIBEPATH=/home/tyler/Git/libensemble
-#export LIBEPATH=/Users/tyler/Git/libensemble
-
-# Check style with flake8
-flake8 unit_tests/*.py --per-file-ignores="__init__.py:F401"
-flake8 ../parmoo/*.py --per-file-ignores="__init__.py:F401"
-
-# Run unit tests
-pytest -v --cov=../parmoo --cov-report= unit_tests # -W error::UserWarning
-
-code=$? # capture pytest exit code
-if [ "$code" -eq "0" ]; then
-  echo
-  tput bold;tput setaf 2; echo "Unit tests passed. Continuing...";tput sgr 0
-  echo
-else
-  echo
-  tput bold;tput setaf 1;echo -e "Aborting run-tests.sh: Unit tests failed: $code";tput sgr 0
-  exit $code #return pytest exit code
+# Get operation mode
+export CHECK_PARMOO_SYNTAX=false
+export RUN_PARMOO_TEST=false
+export SHOW_PARMOO_COV=false
+while getopts :tcs flag; do
+  case "${flag}" in
+    (c) CHECK_PARMOO_SYNTAX=true;;
+    (t) RUN_PARMOO_TEST=true;;
+    (s) SHOW_PARMOO_COV=true;;
+  esac
+done
+if [ $OPTIND -eq 1 ]; then
+  export CHECK_PARMOO_SYNTAX=true;
+  export RUN_PARMOO_TEST=true;
+  export SHOW_PARMOO_COV=true;
 fi;
 
-# Run libE unit tests
-#export PYTHONPATH=$PYTHONPATH:$LIBEPATH
-#echo $PYTHONPATH
-#python3 libe_tests/test_libe_gen.py --comms local --nworkers 4
+# Check style with flake8
+if [ $CHECK_PARMOO_SYNTAX == true ]; then
+  flake8 ../parmoo/*.py --per-file-ignores="__init__.py:F401";
+  flake8 unit_tests/*.py;
+fi;
 
-coverage report -m
+# Run unit tests
+if [ $RUN_PARMOO_TEST == true ]; then
+  pytest -v --cov=../parmoo --cov-report= unit_tests -W error::UserWarning;
+
+  code=$? # capture pytest exit code
+  if [ "$code" -eq "0" ]; then
+    echo
+    tput bold;tput setaf 2; echo "Unit tests passed. Continuing...";tput sgr 0
+    echo
+  else
+    echo
+    tput bold;tput setaf 1;echo -e "Aborting run-tests.sh: Unit tests failed: $code";tput sgr 0
+    exit $code #return pytest exit code
+  fi;
+
+fi;
+
+# Show coverage
+if [ $SHOW_PARMOO_COV == true ]; then
+  coverage report -m;
+fi;
