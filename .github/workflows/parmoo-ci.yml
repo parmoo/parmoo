@@ -40,5 +40,7 @@ jobs:
       env:
         PYTHONPATH: $HOME
       run: |
+        echo '$HOME'
+        echo '$PYTHONPATH'
         cd tests
         ./run-tests.sh -ts
