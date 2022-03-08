@@ -39,7 +39,7 @@ jobs:
 
     - name: Test with pytest
       run: |
-        export PYTHONPATH=$HOME
-        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME
+        export PYTHONPATH=$PYTHONPATH:`pwd`
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`
         cd tests
         ./run-tests.sh -ts
