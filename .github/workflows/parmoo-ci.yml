@@ -16,7 +16,7 @@ jobs:
 
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash
 
     steps:
     - uses: actions/checkout@v2
