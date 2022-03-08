@@ -39,9 +39,7 @@ jobs:
 
     - name: Test with pytest
       env:
-          PYTHONPATH: $HOME
+          PYTHONPATH: /home/runner/work/parmoo
       run: |
-        echo $PYTHONPATH
-        pwd
         cd tests
         ./run-tests.sh -ts
