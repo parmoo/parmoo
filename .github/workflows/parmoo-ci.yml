@@ -15,8 +15,9 @@ jobs:
         python-version: ["3.6", "3.10"]
 
     steps:
-    - shell: bash
     - uses: actions/checkout@v2
+
+    - shell: bash
 
     - name: Set up Python version
       uses: actions/setup-python@v2
