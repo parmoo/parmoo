@@ -38,8 +38,8 @@ jobs:
         ./run-tests.sh -c
 
     - name: Test with pytest
-      env:
-          LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$HOME
       run: |
+        export PYTHONPATH=$HOME
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME
         cd tests
         ./run-tests.sh -ts
