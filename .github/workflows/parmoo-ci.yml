@@ -53,9 +53,10 @@ jobs:
     - name: Test with pytest (Windows)
       if: runner.os == 'Windows'
       run: |
+        echo %cd% | Out-File -FilePath $env:PYTHONPATH -Encoding utf8 -Append
         cd tests
         echo %cd% > $env:PYTHONPATH
-        bash run-tests.sh
+        bash run-tests.sh -ts
 
     - name: Test with pytest (Mac/Linux)
       if: runner.os == 'Linux' || runner.os == 'macOS'
