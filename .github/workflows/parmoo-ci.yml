@@ -38,6 +38,6 @@ jobs:
     - name: Test with pytest
       shell: bash
       run: |
-        echo "PYTHONPATH=$PYTHONPATH:`pwd`" >> $GITHUB_ENV
+        echo "PYTHONPATH=`pwd`" >> $GITHUB_ENV
         cd tests
         ./run-tests.sh -ts
