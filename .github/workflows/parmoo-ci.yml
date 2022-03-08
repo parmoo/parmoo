@@ -39,7 +39,7 @@ jobs:
 
     - name: Test with pytest
       env:
-          PYTHONPATH: /home/runner/work/parmoo
+          LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$HOME
       run: |
         cd tests
         ./run-tests.sh -ts
