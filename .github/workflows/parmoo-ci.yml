@@ -19,7 +19,6 @@ jobs:
 
     - name: Set up Python version
       uses: actions/setup-python@v2
-      shell: bash
       with:
         python-version: "${{matrix.python-version}}"
 
