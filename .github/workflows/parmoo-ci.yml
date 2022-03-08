@@ -23,20 +23,20 @@ jobs:
         python-version: "${{matrix.python-version}}"
 
     - name: Install dependencies
-      shell: bash
+      shell: bash -l {0}
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest pytest-cov
         if [ -f REQUIREMENTS ]; then pip install -r REQUIREMENTS; fi
 
     - name: Lint with flake8
-      shell: bash
+      shell: bash -l {0}
       run: |
         cd tests
         ./run-tests.sh -c
 
     - name: Test with pytest
-      shell: bash
+      shell: bash -l {0}
       env:
           PYTHONPATH: $HOME
       run: |
