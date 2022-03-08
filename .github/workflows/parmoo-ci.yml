@@ -38,7 +38,7 @@ jobs:
     - name: Test with pytest
       shell: bash
       env:
-        PYTHONPATH: $HOME/work/parmoo
+          PYTHONPATH: $HOME
       run: |
         echo $PYTHONPATH
         pwd
