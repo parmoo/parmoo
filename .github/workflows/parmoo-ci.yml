@@ -15,6 +15,7 @@ jobs:
         python-version: ["3.6", "3.10"]
 
     steps:
+    - shell: bash
     - uses: actions/checkout@v2
 
     - name: Set up Python version
@@ -22,50 +23,18 @@ jobs:
       with:
         python-version: "${{matrix.python-version}}"
 
-    - name: Set PYTHONPATH (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        echo "PYTHONPATH=%cd%" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        echo %PYTHONPATH%
-
-    - name: Install dependencies (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest pytest-cov
-        if (Test-Path -Path %cd%\REQUIREMENTS) {
-          pip install -r REQUIREMENTS
-        }
-
-    - name: Install dependencies (Mac/Linux)
-      if: runner.os == 'Linux' || runner.os == 'macOS'
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest pytest-cov
         if [ -f REQUIREMENTS ]; then pip install -r REQUIREMENTS; fi
 
-    - name: Lint with flake8 (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        cd tests
-        bash run-tests.sh -c
-
-    - name: Lint with flake8 (Mac/Linux)
-      if: runner.os == 'Linux' || runner.os == 'macOS'
+    - name: Lint with flake8
       run: |
         cd tests
         ./run-tests.sh -c
 
-    - name: Test with pytest (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        echo "PYTHONPATH=%cd%" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        cd tests
-        echo %cd% > $env:PYTHONPATH
-        bash run-tests.sh -ts
-
-    - name: Test with pytest (Mac/Linux)
-      if: runner.os == 'Linux' || runner.os == 'macOS'
+    - name: Test with pytest
       run: |
         export PYTHONPATH=$PYTHONPATH:`pwd`
         cd tests
