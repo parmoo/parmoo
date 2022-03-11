@@ -17,11 +17,5 @@ help:
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile $(EX_OUT)
-	cd ../examples && python3 quickstart.py > quickstart.out
-	cd ../examples && python3 named_var_ex.py > named_var_ex.out
-	cd ../examples && python3 unnamed_var_ex.py > unnamed_var_ex.out
-	cd ../examples && python3 precomputed_data.py > precomputed_data.out
-	cd ../examples && python3 advanced_ex.py > advanced_ex.out
-	cd ../examples && python3 libe_basic_ex.py --comms local --nworkers 3 \
-		> libe_basic_ex.out
+	cd ../examples && make
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
