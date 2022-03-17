@@ -33,7 +33,7 @@ class ToxTest(TestCommand):
 setup(
     name="parmoo",
     version=__version__,
-    description="A parallel multi-objective optimization solver that seeks to exploit simulation-based structure in objective and constraint functions",
+    description="A parallel multiobjective optimization solver that seeks to exploit simulation-based structure in objective and constraint functions",
     url="https://github.com/parmoo/parmoo",
     author="Tyler H. Chang and Stefan M. Wild",
     author_email="parmoo@mcs.anl.gov",

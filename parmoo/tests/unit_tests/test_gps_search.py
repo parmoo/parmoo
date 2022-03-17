@@ -205,3 +205,8 @@ def test_GlobalGPS():
     assert(np.linalg.norm(x2 - x2_soln) < eps)
     assert(np.abs(x3[n-1] - 0.1) < eps)
     return
+
+
+if __name__ == "__main__":
+    test_LocalGPS()
+    test_GlobalGPS()

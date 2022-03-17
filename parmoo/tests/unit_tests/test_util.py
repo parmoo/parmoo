@@ -230,3 +230,10 @@ def test_updatePF():
                      'f_vals': data['f_vals'][5:, :],
                      'c_vals': data['c_vals'][5:, :]}, soln)
     assert(soln['f_vals'].shape == (4, 3))
+
+
+if __name__ == "__main__":
+    test_xerror()
+    test_check_sims()
+    test_lex_leq()
+    test_updatePF()

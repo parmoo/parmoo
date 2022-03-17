@@ -342,3 +342,8 @@ def test_LocalGaussRBF():
     rbf7.fit(x_vals3, y_vals3)
     rbf7.update(x_vals3, y_vals3)
     return
+
+
+if __name__ == "__main__":
+    test_GaussRBF()
+    test_LocalGaussRBF()

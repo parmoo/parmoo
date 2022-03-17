@@ -87,3 +87,7 @@ def test_RandomConstraint():
         assert(all(acqu.scalarizeGrad(fi, gi) <= np.sum(gi, axis=0)) or
                np.any(fi > acqu.f_ub))
     return
+
+
+if __name__ == "__main__":
+    test_RandomConstraint()

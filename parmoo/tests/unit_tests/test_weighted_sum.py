@@ -160,3 +160,8 @@ def test_FixedWeights():
     assert(np.abs(np.sum(acqu.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
                   - 1.0) < 0.00000001)
     return
+
+
+if __name__ == "__main__":
+    test_UniformWeights()
+    test_FixedWeights()

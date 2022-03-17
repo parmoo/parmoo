@@ -1543,23 +1543,60 @@ class MOOP:
 
         """
 
+        import logging
+
         # Check that the budget is a legal integer
         if isinstance(budget, int):
             if budget < 0:
                 raise ValueError("budget must be nonnegative")
         else:
             raise ValueError("budget must be an int type")
+
+        # Print logging info summary of problem setup
+        logging.info(" Beginning new run of ParMOO...")
+        logging.info(" summary of settings:")
+        logging.info(f"   {self.n} design dimensions")
+        logging.info(f"     continuous design variables: {self.n_cont}")
+        logging.info(f"     categorical design variables: {self.n_cat}")
+        logging.info(f"   {self.m_total} simulation outputs")
+        logging.info(f"   {self.s} simulations")
+        for i in range(self.s):
+            logging.info(f"     {self.m[i]} outputs for simulation {i}")
+            logging.info(f"     {self.searches[i].budget} search evaluations" +
+                         f" in iteration 0 for simulation {i}")
+        logging.info(f"   {self.o} objectives")
+        logging.info(f"   {self.p} constraints")
+        logging.info(f"   {len(self.acquisitions)} acquisition functions")
+        logging.info("   estimated simulation evaluations per iteration:" +
+                     f" {len(self.acquisitions) * self.s}")
+        logging.info(f"   iteration limit: {budget}")
+        logging.info(" Done.")
+
         # Perform iterations until budget is exceeded
+        logging.info(" Entering main iteration loop:")
         for k in range(budget + 1):
             # Generate a batch by running one iteration
+            logging.info(f"   Iteration {k: >4}:")
+            logging.info("     generating batch...")
             batch = self.iterate(k)
+            logging.info(f"     {len(batch)} candidate designs generated.")
             if self.s > 0:
                 # Evaluate the batch
+                logging.info("     evaluating batch...")
                 for xi in batch:
                     (x, i) = xi
-                    self.evaluateSimulation(x, i)
+                    logging.info(f"       evaluating design: {x}" +
+                                 f" for simulation: {i}...")
+                    sx = self.evaluateSimulation(x, i)
+                    logging.info(f"         result: {sx}")
+                logging.info(f"     finished evaluating {len(batch)}" +
+                             " simulations.")
+            logging.info("     updating models and internal databases...")
             # Update the database
             self.updateAll(k, batch)
+            logging.info("   Done.")
+        logging.info(" Done.")
+        logging.info(f" ParMOO has successfully completed {k} iterations.")
         return
 
     def getPF(self):
@@ -1586,8 +1623,13 @@ class MOOP:
 
         from parmoo.util import updatePF
 
-        # Return the solutions using function call
-        pf = updatePF(self.data, {})
+        # Get the solutions using function call
+        if self.n_dat > 0:
+            pf = updatePF(self.data, {})
+        else:
+            pf = {'x_vals': np.zeros(0),
+                  'f_vals': np.zeros(0),
+                  'c_vals': np.zeros(0)}
         # Check if names are used
         if self.use_names:
             # Build the data type
@@ -1599,17 +1641,21 @@ class MOOP:
             # Initialize result array
             result = np.zeros(pf['x_vals'].shape[0], dtype=dt)
             # Extract all results
-            x_vals = np.asarray([self.__extract__(xi) for xi in pf['x_vals']])
-            for (name, t) in self.des_names:
-                result[name][:] = x_vals[name][:]
-            for i, (name, t) in enumerate(self.obj_names):
-                result[name][:] = pf['f_vals'][:, i]
-            for i, (name, t) in enumerate(self.const_names):
-                result[name][:] = pf['c_vals'][:, i]
+            if self.n_dat > 0:
+                x_vals = np.asarray([self.__extract__(xi)
+                                     for xi in pf['x_vals']])
+                for (name, t) in self.des_names:
+                    result[name][:] = x_vals[name][:]
+                for i, (name, t) in enumerate(self.obj_names):
+                    result[name][:] = pf['f_vals'][:, i]
+                for i, (name, t) in enumerate(self.const_names):
+                    result[name][:] = pf['c_vals'][:, i]
         else:
-            result = {'x_vals': np.asarray([self.__extract__(xi)
-                                            for xi in pf['x_vals']]),
-                      'f_vals': pf['f_vals'].copy()}
+            result = {'x_vals': np.zeros(0), 'f_vals': np.zeros(0)}
+            if self.n_dat > 0:
+                result = {'x_vals': np.asarray([self.__extract__(xi)
+                                                for xi in pf['x_vals']]),
+                          'f_vals': pf['f_vals'].copy()}
             if self.p > 0:
                 result['c_vals'] = pf['c_vals'].copy()
         return result
@@ -1653,26 +1699,31 @@ class MOOP:
                 else:
                     dt.append(('out', sname[1], sname[2]))
                 # Initialize result array for sname[i]
-                result[sname[0]] = np.zeros(self.sim_db[i]['x_vals'].shape[0],
-                                            dtype=dt)
-                # Copy results
-                for (name, t) in self.des_names:
-                    result[sname[0]][name][:] = x_vals[name][:]
-                if len(sname) == 2:
-                    result[sname[0]]['out'] = self.sim_db[i]['s_vals'][:, 0]
-                else:
-                    result[sname[0]]['out'] = self.sim_db[i]['s_vals']
+                result[sname[0]] = np.zeros(self.sim_db[i]['n'], dtype=dt)
+                if self.sim_db[i]['n'] > 0:
+                    # Copy results
+                    for (name, t) in self.des_names:
+                        result[sname[0]][name][:] = x_vals[name][:]
+                    if len(sname) == 2:
+                        result[sname[0]]['out'] = self.sim_db[i]['s_vals'][:,
+                                                                           0]
+                    else:
+                        result[sname[0]]['out'] = self.sim_db[i]['s_vals']
             return result
         else:
             # Initialize result list
             result = []
             # For each simulation
             for i in range(self.s):
-                # Extract all results
-                x_vals = np.asarray([self.__extract__(xi)
-                                     for xi in self.sim_db[i]['x_vals']])
-                result.append({'x_vals': x_vals,
-                               's_vals': self.sim_db[i]['s_vals'].copy()})
+                if self.sim_db[i]['n'] > 0:
+                    # Extract all results
+                    x_vals = np.asarray([self.__extract__(xi)
+                                         for xi in self.sim_db[i]['x_vals']])
+                    result.append({'x_vals': x_vals,
+                                   's_vals': self.sim_db[i]['s_vals'].copy()})
+                else:
+                    result.append({'x_vals': np.zeros(0),
+                                   's_vals': np.zeros(0)})
             return result
 
     def getObjectiveData(self):
@@ -1706,20 +1757,26 @@ class MOOP:
             for cname in self.const_names:
                 dt.append(cname)
             # Initialize result array
-            result = np.zeros(self.data['x_vals'].shape[0], dtype=dt)
+            if self.n_dat > 0:
+                result = np.zeros(self.data['x_vals'].shape[0], dtype=dt)
+            else:
+                result = np.zeros(0, dtype=dt)
             # Extract all results
-            x_vals = np.asarray([self.__extract__(xi)
-                                 for xi in self.data['x_vals']])
-            for (name, t) in self.des_names:
-                result[name][:] = x_vals[name][:]
-            for i, (name, t) in enumerate(self.obj_names):
-                result[name][:] = self.data['f_vals'][:, i]
-            for i, (name, t) in enumerate(self.const_names):
-                result[name][:] = self.data['c_vals'][:, i]
+            if self.n_dat > 0:
+                x_vals = np.asarray([self.__extract__(xi)
+                                     for xi in self.data['x_vals']])
+                for (name, t) in self.des_names:
+                    result[name][:] = x_vals[name][:]
+                for i, (name, t) in enumerate(self.obj_names):
+                    result[name][:] = self.data['f_vals'][:, i]
+                for i, (name, t) in enumerate(self.const_names):
+                    result[name][:] = self.data['c_vals'][:, i]
         else:
-            result = {'x_vals': np.asarray([self.__extract__(xi)
-                                            for xi in self.data['x_vals']]),
-                      'f_vals': self.data['f_vals'].copy()}
-            if self.p > 0:
-                result['c_vals'] = self.data['c_vals'].copy()
+            result = {'x_vals': np.zeros(0), 'f_vals': np.zeros(0)}
+            if self.n_dat > 0:
+                result = {'x_vals': np.asarray([self.__extract__(xi) for
+                                                xi in self.data['x_vals']]),
+                          'f_vals': self.data['f_vals'].copy()}
+                if self.p > 0:
+                    result['c_vals'] = self.data['c_vals'].copy()
         return result

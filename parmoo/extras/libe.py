@@ -3,7 +3,7 @@ from parmoo import MOOP
 
 
 def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
-    """ A persistent PARMOO generator function for libEnsemble.
+    """ A persistent ParMOO generator function for libEnsemble.
 
     This generator function is meant to be called from within libEnsemble.
 
@@ -11,7 +11,8 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
         H (numpy structured array): The current history.
 
         persis_info (dict): Any information that should persist after this
-            generator has exited.
+            generator has exited. Must contain the following field:
+             * 'moop' (parmoo.MOOP)
 
         gen_specs (dict): A list of specifications for the generator function.
 
@@ -31,7 +32,14 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
     from libensemble.tools.persistent_support import PersistentSupport
 
     # Get moop from pers_info
-    moop = persis_info['moop']
+    if 'moop' in persis_info.keys():
+        moop = persis_info['moop']
+        if not isinstance(moop, MOOP):
+            raise TypeError("persis_info['moop'] must be an instance of " +
+                            "parmoo.MOOP class")
+    else:
+        raise KeyError("'moop' key is required in persis_info dict")
+    # Setup persistent support
     ps = PersistentSupport(libE_info, EVAL_GEN_TAG)
     # Send batches until manager sends stop tag
     tag = None
@@ -86,6 +94,7 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
                         sx = np.zeros(moop.m[sim_name])
                         sx[:] = s_out['f'][:]
                         sname = int(sim_name)
+                    # Copy sim results into ParMOO databases
                     moop.update_sim_db(xx, sx, sname)
                     batch.append((xx, sname))
                     sim_count += 1
@@ -112,11 +121,12 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
                         sx = np.zeros(moop.m[sim_name])
                         sx[:] = s_out['f'][:]
                         sname = int(sim_name)
+                    # Copy sim results into ParMOO databases
                     moop.update_sim_db(xx, sx, sname)
                     batch.append((xx, sname))
                     new_count += 1
                 sim_count += new_count
-        # Update the PARMOO databases
+        # Update the ParMOO databases
         moop.updateAll(k, batch)
         k += 1
     # Return the results
@@ -214,7 +224,7 @@ class libE_MOOP(MOOP):
                    where `der` is an optional argument specifying whether
                    to take the derivative of the simulation. Unless
                    otherwise specified by your solver, `der` is always
-                   omitted by PARMOO's internal structures, and need not
+                   omitted by ParMOO's internal structures, and need not
                    be implemented.
                  * search (GlobalSearch): A GlobalSearch object for performing
                    the initial search over this simulation's design space.
@@ -319,7 +329,7 @@ class libE_MOOP(MOOP):
         return
 
     def solve(self, sim_max=200, wt_max=3600, profile=False):
-        """ Solve a MOOP using PARMOO.
+        """ Solve a MOOP using ParMOO.
 
         Args:
             sim_max (int): The max number of simulation to be performed by

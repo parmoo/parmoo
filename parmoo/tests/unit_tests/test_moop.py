@@ -2170,6 +2170,9 @@ def test_getSimulationData():
     for i in range(4):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     moop.addSimulation(g1, g2)
+    soln = moop.getSimulationData()
+    assert(soln[0]['s_vals'].size == 0)
+    assert(soln[1]['s_vals'].size == 0)
     # Evaluate 5 simulations
     moop.evaluateSimulation(np.asarray([0.0, 0.0, 0.0, 0.0]), 0)
     moop.evaluateSimulation(np.asarray([0.0, 0.0, 0.0, 0.0]), 1)
@@ -2189,6 +2192,9 @@ def test_getSimulationData():
     for i in range(4):
         moop.addDesign({'name': ("x" + str(i + 1)), 'lb': 0.0, 'ub': 1.0})
     moop.addSimulation(g3, g4)
+    soln = moop.getSimulationData()
+    assert(soln['Bobo1']['out'].size == 0)
+    assert(soln['Bobo2']['out'].size == 0)
     # Evaluate 5 simulations
     sample_x = np.zeros(1, dtype=moop.des_names)
     moop.evaluateSimulation(sample_x[0], 0)
@@ -2326,3 +2332,25 @@ def test_getObjectiveData():
     moop.n_dat = 5
     soln = moop.getObjectiveData()
     assert(soln.shape[0] == 5)
+
+
+if __name__ == "__main__":
+    test_MOOP_init()
+    test_MOOP_addDesign()
+    test_MOOP_embed_extract()
+    test_MOOP_addSimulation()
+    test_pack_unpack_sim()
+    test_MOOP_addObjective()
+    test_MOOP_addConstraint()
+    test_MOOP_addAcquisition()
+    test_MOOP_evaluateSimulation()
+    test_MOOP_evaluateSurrogates()
+    test_MOOP_evaluateConstraints()
+    test_MOOP_evaluateLagrangian()
+    test_MOOP_evaluateGradients()
+    test_MOOP_addData()
+    test_MOOP_iterate()
+    test_MOOP_solve()
+    test_getPF()
+    test_getSimulationData()
+    test_getObjectiveData()

@@ -38,3 +38,7 @@ def test_LatinHypercube():
     assert(np.shape(des4) == (100, 5))
     assert(all([all(xi <= ub) and all(xi >= lb) for xi in des4]))
     return
+
+
+if __name__ == "__main__":
+    test_LatinHypercube()
