@@ -393,8 +393,8 @@ class libE_MOOP(MOOP):
         libE_specs['profile'] = profile
 
         if nworkers < 2:
-            sys.exit("Cannot run with a persistent worker if only one worker "
-                     + "-- aborting...")
+            raise ValueError("Cannot run ParMOO + libE with less than 2 " +
+                             "workers -- aborting...")
 
         # Get the max m for all SimGroups
         max_m = max(self.moop.m)

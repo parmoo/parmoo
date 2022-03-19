@@ -81,9 +81,10 @@ if [ $REGRESSION_TESTS == true ]; then
   echo "Running libE tests (w/o pytest) and collecting coverage data..."
   echo
   python3 -m coverage run --rcfile=parmoo/tests/.coveragerc --parallel-mode --concurrency=multiprocessing parmoo/tests/libe_tests/test_libe_gen.py --comms local --nworkers 2
+
+  code=$? # capture test_libe_gen exit code
   coverage combine --append
 
-  code=$? # capture pytest exit code
   if [ "$code" -eq "0" ]; then
     echo
     echo "libEnsemble tests passed. Continuing..."
@@ -91,7 +92,7 @@ if [ $REGRESSION_TESTS == true ]; then
   else
     echo
     echo -e "Aborting run-tests.sh: libEnsemble tests failed: $code"
-    exit $code #return pytest exit code
+    exit $code #return libE exit code
   fi;
 
 fi;

@@ -124,6 +124,69 @@ def test_libE_MOOP():
     assert(moop.getSimulationData()['Eye']['x1'].shape[0] == 0)
 
 
+# @pytest.mark.extra
+def test_libE_MOOP_bad_solve():
+    """ Test the libE_MOOP.solve() method from extras/libe.py.
+
+    Create a problem and check that the solve method handles bad input.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.searches import LatinHypercube
+    from parmoo.surrogates import GaussRBF
+    from parmoo.acquisitions import RandomConstraint
+    from parmoo.optimizers import LocalGPS
+    import numpy as np
+    import pytest
+
+    try:
+        from parmoo.extras.libe import libE_MOOP
+    except BaseException:
+        pytest.skip("libEnsemble or its dependencies not importable. " +
+                    "Skipping.")
+
+    # Create a 1d problem with 1 objective
+    n = 1
+    o = 1
+
+    # Create a libE_MOOP
+    moop = libE_MOOP(LocalGPS)
+
+    # Add 1 design var
+    moop.addDesign({'lb': 0.0, 'ub': 1.0})
+
+    # Add 1 simulation
+    def id_named(x): return x[0]
+    moop.addSimulation({'name': "Eye",
+                        'm': 1,
+                        'sim_func': id_named,
+                        'hyperparams': {'search_budget': 100},
+                        'search': LatinHypercube,
+                        'surrogate': GaussRBF,
+                        'sim_db': {},
+                        'des_tol': 0.00000001})
+
+    # Add 1 objective
+    def obj1(x, s): return s[0]
+    moop.addObjective({'obj_func': obj1})
+
+    # Add 1 acquisition function
+    moop.addAcquisition({'acquisition': RandomConstraint})
+
+    # Hard code bad CL args
+    import sys
+    sys.argv.append("--comms")
+    sys.argv.append("local")
+    sys.argv.append("--nworkers")
+    sys.argv.append("1")
+
+    # Solve with bad CL args
+    with pytest.raises(ValueError):
+        moop.solve()
+
+
 if __name__ == "__main__":
     test_libE_parmoo_persis_gen()
     test_libE_MOOP()
+    test_libE_MOOP_bad_solve()

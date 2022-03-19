@@ -881,6 +881,82 @@ class MOOP:
             self.acquisitions.append(acquisition)
         return
 
+    def getDesType(self):
+        """ Get the numpy dtype of a design point for this MOOP.
+
+        Use this type if allocating a numpy array to store the design
+        points for this MOOP object.
+
+        Returns:
+            The numpy dtype of this MOOP's design points.
+            If no design variables have yet been added, returns None.
+
+        """
+
+        if self.n_cont + self.n_cat < 1:
+            return None
+        elif self.use_names:
+            return self.des_names
+        else:
+            return (float, self.n_cont + self.n_cat)
+
+    def getSimType(self):
+        """ Get the numpy dtypes of the simulation outputs for this MOOP.
+
+        Use this type if allocating a numpy array to store the simulation
+        outputs of this MOOP object.
+
+        Returns:
+            The numpy dtype of this MOOP's simulation outputs.
+            If no simulations have been given, returns None.
+
+        """
+
+        if self.m_total < 1:
+            return None
+        elif self.use_names:
+            return self.sim_names
+        else:
+            return (float, self.m_total)
+
+    def getObjType(self):
+        """ Get the numpy dtype of an objective point for this MOOP.
+
+        Use this type if allocating a numpy array to store the objective
+        values of this MOOP object.
+
+        Returns:
+            The numpy dtype of this MOOP's objective points.
+            If no objectives have yet been added, returns None.
+
+        """
+
+        if self.o < 1:
+            return None
+        elif self.use_names:
+            return self.obj_names
+        else:
+            return (float, self.o)
+
+    def getConstType(self):
+        """ Get the numpy dtype of the constraint violations for this MOOP.
+
+        Use this type if allocating a numpy array to store the constraint
+        scores output of this MOOP object.
+
+        Returns:
+            The numpy dtype of this MOOP's constraint violation output.
+            If no constraints have been given, returns None.
+
+        """
+
+        if self.p < 1:
+            return None
+        elif self.use_names:
+            return self.const_names
+        else:
+            return (float, self.p)
+
     def check_sim_db(self, x, s_name):
         """ Check the sim_db[s_name] in this MOOP for a design point.
 
