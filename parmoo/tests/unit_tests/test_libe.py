@@ -132,12 +132,10 @@ def test_libE_MOOP_bad_solve():
 
     """
 
-    from parmoo import MOOP
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import RandomConstraint
     from parmoo.optimizers import LocalGPS
-    import numpy as np
     import pytest
 
     try:
@@ -145,10 +143,6 @@ def test_libE_MOOP_bad_solve():
     except BaseException:
         pytest.skip("libEnsemble or its dependencies not importable. " +
                     "Skipping.")
-
-    # Create a 1d problem with 1 objective
-    n = 1
-    o = 1
 
     # Create a libE_MOOP
     moop = libE_MOOP(LocalGPS)

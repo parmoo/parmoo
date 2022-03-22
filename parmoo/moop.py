@@ -36,6 +36,13 @@ class MOOP:
     added using:
      * ``addAcquisition(*args)``
 
+    After creating a MOOP, the following methods are used to get the
+    numpy.dtype used to create each of the following input/output arrays:
+     * ``getDesignType()``
+     * ``getSimulationType()``
+     * ``getObjectiveType()``
+     * ``getConstraintType()``
+
     The following methods are used for solving the MOOP and managing the
     internal simulation/objective databases:
      * ``iterate(k)``
@@ -44,6 +51,7 @@ class MOOP:
      * ``check_sim_db(x, s_name)``
      * ``update_sim_db(x, sx, s_name)``
      * ``evaluateSimulation(x, s_name)``
+     * ``addData(x, sx)``
 
     Finally, the following methods are used to retrieve data after the
     problem has been solved:
@@ -66,7 +74,6 @@ class MOOP:
      * ``evaluateConstraints(x)``
      * ``evaluateLagrangian(x)``
      * ``evaluateGradients(x)``
-     * ``addData(x, sx)``
 
     """
 
@@ -881,7 +888,7 @@ class MOOP:
             self.acquisitions.append(acquisition)
         return
 
-    def getDesType(self):
+    def getDesignType(self):
         """ Get the numpy dtype of a design point for this MOOP.
 
         Use this type if allocating a numpy array to store the design
@@ -898,9 +905,9 @@ class MOOP:
         elif self.use_names:
             return self.des_names
         else:
-            return (float, self.n_cont + self.n_cat)
+            return (float, (self.n_cont + self.n_cat,))
 
-    def getSimType(self):
+    def getSimulationType(self):
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
 
         Use this type if allocating a numpy array to store the simulation
@@ -917,9 +924,9 @@ class MOOP:
         elif self.use_names:
             return self.sim_names
         else:
-            return (float, self.m_total)
+            return (float, (self.m_total,))
 
-    def getObjType(self):
+    def getObjectiveType(self):
         """ Get the numpy dtype of an objective point for this MOOP.
 
         Use this type if allocating a numpy array to store the objective
@@ -936,9 +943,9 @@ class MOOP:
         elif self.use_names:
             return self.obj_names
         else:
-            return (float, self.o)
+            return (float, (self.o,))
 
-    def getConstType(self):
+    def getConstraintType(self):
         """ Get the numpy dtype of the constraint violations for this MOOP.
 
         Use this type if allocating a numpy array to store the constraint
@@ -955,7 +962,7 @@ class MOOP:
         elif self.use_names:
             return self.const_names
         else:
-            return (float, self.p)
+            return (float, (self.p,))
 
     def check_sim_db(self, x, s_name):
         """ Check the sim_db[s_name] in this MOOP for a design point.

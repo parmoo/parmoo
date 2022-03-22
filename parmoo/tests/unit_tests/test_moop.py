@@ -780,6 +780,57 @@ def test_MOOP_addAcquisition():
     assert(len(moop.acquisitions) == 3)
 
 
+def test_MOOP_getTypes():
+    """ Check that the MOOP class handles getting dtypes properly.
+
+    Initialize a MOOP object, add design variables, simulations, objectives,
+    and constraints, and get the corresponding types.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.surrogates import GaussRBF
+    from parmoo.searches import LatinHypercube
+    from parmoo.optimizers import LocalGPS
+    import numpy as np
+
+    # Create a simulation for later
+    g1 = {'m': 1,
+          'hyperparams': {},
+          'search': LatinHypercube,
+          'sim_func': lambda x: [np.linalg.norm(x)],
+          'surrogate': GaussRBF}
+
+    # Create a new MOOP
+    moop = MOOP(LocalGPS)
+    # Check that all types are None
+    assert(moop.getDesignType() is None)
+    assert(moop.getSimulationType() is None)
+    assert(moop.getObjectiveType() is None)
+    assert(moop.getConstraintType() is None)
+    # Add some unnamed variables, simulations, objectives, and constraints
+    moop.addDesign({'des_type': "continuous", 'lb': 0.0, 'ub': 1.0})
+    moop.addDesign({'des_type': "categorical", 'levels': 3})
+    moop.addSimulation(g1)
+    moop.addObjective({'obj_func': lambda x, s: [sum(s)]})
+    moop.addConstraint({'constraint': lambda x, s: [sum(s) - 1]})
+    assert(np.zeros(1, dtype=moop.getDesignType()).size == 2)
+    assert(np.zeros(1, dtype=moop.getSimulationType()).size == 1)
+    assert(np.zeros(1, dtype=moop.getObjectiveType()).size == 1)
+    assert(np.zeros(1, dtype=moop.getConstraintType()).size == 1)
+    # Add some named variables, simulations, objectives, and constraints
+    moop = MOOP(LocalGPS)
+    moop.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
+    moop.addDesign({'name': "x2", 'des_type': "categorical", 'levels': 3})
+    moop.addSimulation(g1)
+    moop.addObjective({'obj_func': lambda x, s: [sum(s)]})
+    moop.addConstraint({'constraint': lambda x, s: [sum(s) - 1]})
+    assert(np.zeros(1, dtype=moop.getDesignType()).size == 1)
+    assert(np.zeros(1, dtype=moop.getSimulationType()).size == 1)
+    assert(np.zeros(1, dtype=moop.getObjectiveType()).size == 1)
+    assert(np.zeros(1, dtype=moop.getConstraintType()).size == 1)
+
+
 def test_MOOP_evaluateSimulation():
     """ Check that the MOOP class handles evaluating simulations properly.
 
