@@ -528,7 +528,7 @@ def test_MOOP_addSimulation():
 
 
 def test_pack_unpack_sim():
-    """ Check that the MOOP class handles simulation packing/packing correctly
+    """ Check that the MOOP class handles simulation packing correctly.
 
     Initialize a MOOP objecti with and without design variable names.
     Add 2 simulations and pack/unpack each output.
@@ -644,10 +644,10 @@ def test_MOOP_addObjective():
     # Try to use a repeated name to test error handling
     with pytest.raises(ValueError):
         moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: s[0]})
-    assert(moop.obj_names[0] == ("f1", float))
-    assert(moop.obj_names[1] == ("f2", float))
-    assert(moop.obj_names[2] == ("f3", float))
-    assert(moop.obj_names[3] == ("Bobo", float))
+    assert(moop.obj_names[0] == ("f1", 'f8'))
+    assert(moop.obj_names[1] == ("f2", 'f8'))
+    assert(moop.obj_names[2] == ("f3", 'f8'))
+    assert(moop.obj_names[3] == ("Bobo", 'f8'))
 
 
 def test_MOOP_addConstraint():
@@ -707,14 +707,14 @@ def test_MOOP_addConstraint():
     # Try to use a repeated name to test error handling
     with pytest.raises(ValueError):
         moop.addConstraint({'name': "Bobo", 'constraint': lambda x, s: s[0]})
-    assert(moop.const_names[0] == ("c1", float))
-    assert(moop.const_names[1] == ("c2", float))
-    assert(moop.const_names[2] == ("c3", float))
-    assert(moop.const_names[3] == ("Bobo", float))
+    assert(moop.const_names[0] == ("c1", 'f8'))
+    assert(moop.const_names[1] == ("c2", 'f8'))
+    assert(moop.const_names[2] == ("c3", 'f8'))
+    assert(moop.const_names[3] == ("Bobo", 'f8'))
 
 
 def test_MOOP_addAcquisition():
-    """ Check that the MOOP class handles adding acquisition functions properly.
+    """ Check that the MOOP class handles adding acquisitions properly.
 
     Initialize a MOOP object and check that the addAcquisition() function works
     correctly.
@@ -2073,7 +2073,7 @@ def test_MOOP_solve():
                < 0.00000001)
 
 
-def test_getPF():
+def test_MOOP_getPF():
     """ Test the getPF function.
 
     Create several MOOPs, evaluate simulations, and check the final Pareto
@@ -2178,7 +2178,7 @@ def test_getPF():
     assert(soln.shape[0] == 4)
 
 
-def test_getSimulationData():
+def test_MOOP_getSimulationData():
     """ Test the getSimulationData function.
 
     Create several MOOPs, evaluate simulations, and check the simulation
@@ -2270,7 +2270,7 @@ def test_getSimulationData():
     assert(soln['Bobo2']['out'].shape == (5, 2))
 
 
-def test_getObjectiveData():
+def test_MOOP_getObjectiveData():
     """ Test the getObjectiveData function.
 
     Create several MOOPs, evaluate simulations, and check the objective
@@ -2385,6 +2385,63 @@ def test_getObjectiveData():
     assert(soln.shape[0] == 5)
 
 
+def test_MOOP_save_load():
+    """ Save that a MOOP object can be correctly saved/reloaded.
+
+    Create and save several MOOP objects, then reload them and
+    check that they are correct.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.searches import LatinHypercube
+    from parmoo.surrogates import GaussRBF
+    from parmoo.acquisitions import UniformWeights
+    from parmoo.optimizers import LocalGPS
+    import numpy as np
+    import os
+
+    # Initialize two simulation groups with 1 output each
+    def sim1(x): return [np.linalg.norm(x)]
+    def sim2(x): return [np.linalg.norm(x - 1.0)]
+    g1 = {'m': 1,
+          'hyperparams': {},
+          'search': LatinHypercube,
+          'search_budget': 20,
+          'sim_func': sim1,
+          'surrogate': GaussRBF}
+    g2 = {'m': 1,
+          'hyperparams': {},
+          'search': LatinHypercube,
+          'search_budget': 25,
+          'sim_func': sim2,
+          'surrogate': GaussRBF}
+    # Create a MOOP with 3 design variables and 2 simulations
+    moop = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+
+    # Test empty save
+    moop.save()
+
+    for i in range(2):
+        moop.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop.addDesign({'des_type': "categorical", 'levels': 3})
+    moop.addSimulation(g1, g2)
+    # Now add 2 objectives
+    def f1(x, sim): return sim[0]
+    def f2(x, sim): return sim[1]
+    moop.addObjective({'obj_func': f1},
+                      {'obj_func': f2})
+    # Add 3 acquisition functions
+    for i in range(3):
+        moop.addAcquisition({'acquisition': UniformWeights})
+
+    # Test save
+    moop.save()
+
+    # Clean up test directory
+    os.remove("parmoo.moop")
+
+
 if __name__ == "__main__":
     test_MOOP_init()
     test_MOOP_addDesign()
@@ -2402,6 +2459,7 @@ if __name__ == "__main__":
     test_MOOP_addData()
     test_MOOP_iterate()
     test_MOOP_solve()
-    test_getPF()
-    test_getSimulationData()
-    test_getObjectiveData()
+    test_MOOP_getPF()
+    test_MOOP_getSimulationData()
+    test_MOOP_getObjectiveData()
+    test_MOOP_save_load()

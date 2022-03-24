@@ -86,7 +86,7 @@ class MOOP:
                  'des_tols', 'searches', 'surrogates', 'optimizer',
                  'constraints', 'hyperparams', 'acquisitions', 'history',
                  'scale', 'scaled_lb', 'scaled_ub', 'scaled_des_tols',
-                 'cat_des_tols', 'use_names']
+                 'cat_des_tols', 'use_names', 'iteration']
 
     def __embed__(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
@@ -342,11 +342,17 @@ class MOOP:
         self.cat_names = []
         self.n_cat_d = 0
         self.n_lvls = []
-        self.use_names = True
-        # Set the scale
+        # Initialize the scale
         self.scale = []
         self.scaled_lb = []
         self.scaled_ub = []
+        self.scaled_des_tols = []
+        self.cat_des_tols = []
+        self.cat_lb = []
+        self.cat_scale = []
+        # Initialize the embedding transformation
+        self.RSVT = []
+        self.mean = []
         # Initialize lists for storing simulation information
         self.s = 0
         self.m = []
@@ -369,6 +375,13 @@ class MOOP:
         self.history = {}
         # Initialize the augmented Lagrange multiplier
         self.lam = 1.0
+        # Reset the database
+        self.n_dat = 0
+        self.data = {}
+        # Use names
+        self.use_names = True
+        # Initialize the iteration counter
+        self.iteration = 0
         # Set up the surrogate optimizer
         try:
             # Try initializing the optimizer, to check that it can be done
@@ -462,14 +475,14 @@ class MOOP:
                             if any([arg['name'] == dname[0]
                                     for dname in self.des_names]):
                                 raise ValueError("arg['name'] must be unique")
-                            self.des_names.append((arg['name'], float))
+                            self.des_names.append((arg['name'], 'f8'))
                         else:
                             raise TypeError("When present, 'name' must be a "
                                             + "String type")
                     else:
                         self.use_names = False
                         name = "x" + str(self.n_cont + self.n_cat + 1)
-                        self.des_names.append((name, float, ))
+                        self.des_names.append((name, 'f8', ))
                     # Keep track of design variable indices for bookkeeping
                     for i in range(len(self.des_order)):
                         # Add 1 to all categorical variable indices
@@ -507,7 +520,7 @@ class MOOP:
                     else:
                         self.use_names = False
                         name = "x" + str(self.n_cont + self.n_cat + 1)
-                        self.des_names.append((name, int, ))
+                        self.des_names.append((name, 'i4', ))
                     # Keep track of design variable indices for bookkeeping
                     self.des_order.append(self.n_cont + self.n_cat)
                     self.n_cat += 1
@@ -516,12 +529,12 @@ class MOOP:
                         self.n_lvls.append(arg['levels'])
                         self.cat_names.append([])
                         if 'name' in arg.keys():
-                            self.des_names.append((arg['name'], int))
+                            self.des_names.append((arg['name'], 'i4'))
                     else:
                         self.n_lvls.append(len(arg['levels']))
                         self.cat_names.append(arg['levels'])
                         if 'name' in arg.keys():
-                            self.des_names.append((arg['name'], object))
+                            self.des_names.append((arg['name'], 'U25'))
                     self.__generate_encoding__()
                 else:
                     raise(ValueError("des_type=" + arg['des_type'] +
@@ -552,14 +565,14 @@ class MOOP:
                                          + "'continuous'")
                 if 'name' in arg.keys():
                     if isinstance(arg['name'], str):
-                        self.des_names.append((arg['name'], float))
+                        self.des_names.append((arg['name'], 'f8'))
                     else:
                         raise TypeError("When present, 'name' must be a "
                                         + "String type")
                 else:
                     self.use_names = False
                     name = "x" + str(self.n_cont + self.n_cat + 1)
-                    self.des_names.append((name, float, ))
+                    self.des_names.append((name, 'f8', ))
                 # Keep track of design variable indices for bookkeeping
                 for i in range(len(self.des_order)):
                     # Add 1 to all categorical variable indices
@@ -650,15 +663,15 @@ class MOOP:
                 if any([arg['name'] == dname[0] for dname in self.sim_names]):
                     raise ValueError("arg['name'] must be unique")
                 if m > 1:
-                    self.sim_names.append((arg['name'], float, m))
+                    self.sim_names.append((arg['name'], 'f8', m))
                 else:
-                    self.sim_names.append((arg['name'], float))
+                    self.sim_names.append((arg['name'], 'f8'))
             else:
                 name = "sim" + str(self.s + 1)
                 if m > 1:
-                    self.sim_names.append((name, float, m))
+                    self.sim_names.append((name, 'f8', m))
                 else:
-                    self.sim_names.append((name, float))
+                    self.sim_names.append((name, 'f8'))
             # Track the current num of sim outs and the total num of sim outs
             self.m.append(m)
             self.m_total += m
@@ -771,9 +784,9 @@ class MOOP:
                     if any([arg['name'] == dname[0]
                             for dname in self.obj_names]):
                         raise ValueError("arg['name'] must be unique")
-                    self.obj_names.append((arg['name'], float))
+                    self.obj_names.append((arg['name'], 'f8'))
             else:
-                self.obj_names.append(("f" + str(self.o + 1), float))
+                self.obj_names.append(("f" + str(self.o + 1), 'f8'))
             # Finally, if all else passed, add the objective
             self.objectives.append(arg['obj_func'])
             self.o += 1
@@ -830,9 +843,9 @@ class MOOP:
                     if any([arg['name'] == dname[0]
                             for dname in self.const_names]):
                         raise ValueError("arg['name'] must be unique")
-                    self.const_names.append((arg['name'], float))
+                    self.const_names.append((arg['name'], 'f8'))
             else:
-                self.const_names.append(("c" + str(self.p + 1), float))
+                self.const_names.append(("c" + str(self.p + 1), 'f8'))
             # Finally, if all else passed, add the constraint
             self.constraints.append(arg['constraint'])
             self.p += 1
@@ -905,7 +918,7 @@ class MOOP:
         elif self.use_names:
             return self.des_names
         else:
-            return (float, (self.n_cont + self.n_cat,))
+            return ('f8', (self.n_cont + self.n_cat,))
 
     def getSimulationType(self):
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
@@ -924,7 +937,7 @@ class MOOP:
         elif self.use_names:
             return self.sim_names
         else:
-            return (float, (self.m_total,))
+            return ('f8', (self.m_total,))
 
     def getObjectiveType(self):
         """ Get the numpy dtype of an objective point for this MOOP.
@@ -943,7 +956,7 @@ class MOOP:
         elif self.use_names:
             return self.obj_names
         else:
-            return (float, (self.o,))
+            return ('f8', (self.o,))
 
     def getConstraintType(self):
         """ Get the numpy dtype of the constraint violations for this MOOP.
@@ -962,7 +975,7 @@ class MOOP:
         elif self.use_names:
             return self.const_names
         else:
-            return (float, (self.p,))
+            return ('f8', (self.p,))
 
     def check_sim_db(self, x, s_name):
         """ Check the sim_db[s_name] in this MOOP for a design point.
@@ -1657,11 +1670,16 @@ class MOOP:
 
         # Perform iterations until budget is exceeded
         logging.info(" Entering main iteration loop:")
-        for k in range(budget + 1):
+
+        # Reset the iteration start
+        start = self.iteration
+        for k in range(start, budget + 1):
+            # Track iteration counter
+            self.iteration = k
             # Generate a batch by running one iteration
-            logging.info(f"   Iteration {k: >4}:")
+            logging.info(f"   Iteration {self.iteration: >4}:")
             logging.info("     generating batch...")
-            batch = self.iterate(k)
+            batch = self.iterate(self.iteration)
             logging.info(f"     {len(batch)} candidate designs generated.")
             if self.s > 0:
                 # Evaluate the batch
@@ -1676,10 +1694,11 @@ class MOOP:
                              " simulations.")
             logging.info("     updating models and internal databases...")
             # Update the database
-            self.updateAll(k, batch)
+            self.updateAll(self.iteration, batch)
             logging.info("   Done.")
         logging.info(" Done.")
-        logging.info(f" ParMOO has successfully completed {k} iterations.")
+        logging.info(f" ParMOO has successfully completed {self.iteration} " +
+                     "iterations.")
         return
 
     def getPF(self):
@@ -1863,3 +1882,167 @@ class MOOP:
                 if self.p > 0:
                     result['c_vals'] = self.data['c_vals'].copy()
         return result
+
+    def save(self, filename="parmoo"):
+        """ Serialize and save the MOOP object and all of its dependencies.
+
+        Args:
+            filename (string, optional): The filepath to serialized
+                checkpointing file(s). Do not include file extensions,
+                they will be appended automaically. May create
+                several save files with extensions of this name, in order
+                to recursively save dependencies objects. Defaults to
+                the value "parmoo" (filename will be "parmoo.moop").
+
+        """
+
+        import json
+        import shutil
+
+        # Create a serializable ParMOO dictionary by replacing function refs
+        # with funcion/module names
+        parmoo_state = {'n': self.n,
+                        'm': self.m,
+                        'm_total': self.m_total,
+                        'o': self.o,
+                        'p': self.p,
+                        's': self.s,
+                        'n_dat': self.n_dat,
+                        'lb': self.lb,
+                        'ub': self.ub,
+                        'n_cat_d': self.n_cat_d,
+                        'n_cat': self.n_cat,
+                        'n_cont': self.n_cont,
+                        'n_lvls': self.n_lvls,
+                        'des_order': self.des_order,
+                        'cat_names': self.cat_names,
+                        'sim_names': self.sim_names,
+                        'des_names': self.des_names,
+                        'obj_names': self.obj_names,
+                        'const_names': self.const_names,
+                        'lam': self.lam,
+                        'des_tols': self.des_tols,
+                        'hyperparams': self.hyperparams,
+                        'history': self.history,
+                        'use_names': self.use_names,
+                        'iteration': self.iteration}
+        # Serialize numpy arrays
+        if isinstance(self.scale, np.ndarray):
+            parmoo_state['scale'] = self.scale.tolist()
+        else:
+            parmoo_state['scale'] = self.scale
+        if isinstance(self.scaled_lb, np.ndarray):
+            parmoo_state['scaled_lb'] = self.scaled_lb.tolist()
+        else:
+            parmoo_state['scaled_lb'] = self.scaled_lb
+        if isinstance(self.scaled_ub, np.ndarray):
+            parmoo_state['scaled_ub'] = self.scaled_ub.tolist()
+        else:
+            parmoo_state['scaled_ub'] = self.scaled_ub
+        if isinstance(self.scaled_des_tols, np.ndarray):
+            parmoo_state['scaled_des_tols'] = self.scaled_des_tols.tolist()
+        else:
+            parmoo_state['scaled_des_tols'] = self.scaled_des_tols
+        if isinstance(self.cat_des_tols, np.ndarray):
+            parmoo_state['cat_des_tols'] = self.cat_des_tols.tolist()
+        else:
+            parmoo_state['cat_des_tols'] = self.cat_des_tols
+        if isinstance(self.cat_lb, np.ndarray):
+            parmoo_state['cat_lb'] = self.cat_lb.tolist()
+        else:
+            parmoo_state['cat_lb'] = self.cat_lb
+        if isinstance(self.cat_scale, np.ndarray):
+            parmoo_state['cat_scale'] = self.cat_scale.tolist()
+        else:
+            parmoo_state['cat_scale'] = self.cat_scale
+        if isinstance(self.RSVT, np.ndarray):
+            parmoo_state['RSVT'] = self.RSVT.tolist()
+        else:
+            parmoo_state['RSVT'] = self.RSVT
+        if isinstance(self.mean, np.ndarray):
+            parmoo_state['mean'] = self.mean.tolist()
+        else:
+            parmoo_state['mean'] = self.mean
+        # Serialize internal databases
+        parmoo_state['data'] = {}
+        if 'x_vals' in self.data.keys():
+            parmoo_state['data']['x_vals'] = self.data['x_vals'].tolist()
+        if 'f_vals' in self.data.keys():
+            parmoo_state['data']['f_vals'] = self.data['f_vals'].tolist()
+        if 'c_vals' in self.data.keys():
+            parmoo_state['data']['c_vals'] = self.data['c_vals'].tolist()
+        parmoo_state['sim_db'] = []
+        for dbi in self.sim_db:
+            parmoo_state['sim_db'].append({'x_vals': dbi['x_vals'].tolist(),
+                                           's_vals': dbi['s_vals'].tolist(),
+                                           'n': dbi['n'],
+                                           'old': dbi['old']})
+        # Add names for all callables (functions/objects)
+        try:
+            parmoo_state['objectives'] = [(fi.__name__, fi.__module__)
+                                          for fi in self.objectives]
+        except AttributeError:
+            parmoo_state['objectives'] = [(fi.__class__.__name__,
+                                           fi.__class__.__module__)
+                                          for fi in self.objectives]
+        try:
+            parmoo_state['sim_funcs'] = [(si.__name__, si.__module__)
+                                         for si in self.sim_funcs]
+        except AttributeError:
+            parmoo_state['sim_funcs'] = [(si.__class__.__name__,
+                                          si.__class__.__module__)
+                                         for si in self.sim_funcs]
+        try:
+            parmoo_state['constraints'] = [(ci.__name__, ci.__module__)
+                                           for ci in self.constraints]
+        except AttributeError:
+            parmoo_state['constraints'] = [(ci.__class__.__name__,
+                                            ci.__class__.__module__)
+                                           for ci in self.constraints]
+        # Store names/modules of objects
+        parmoo_state['optimizer'] = (self.optimizer.__name__,
+                                     self.optimizer.__module__)
+        # Store names/modules of object instances
+        parmoo_state['searches'] = [(search.__class__.__name__,
+                                     search.__class__.__module__)
+                                    for search in self.searches]
+        parmoo_state['surrogates'] = [(sur.__class__.__name__,
+                                       sur.__class__.__module__)
+                                      for sur in self.surrogates]
+        parmoo_state['acquisitions'] = [(acq.__class__.__name__,
+                                         acq.__class__.__module__)
+                                        for acq in self.acquisitions]
+        # Try to save search states
+        for i, search in enumerate(self.searches):
+            try:
+                fname = filename + ".search." + str(i + 1)
+                fname_tmp = "." + fname + ".swap"
+                search.save(fname)
+                shutil.move(fname_tmp, fname)
+            except AttributeError:
+                pass
+        # Try to save surrogate states
+        for i, surrogate in enumerate(self.surrogates):
+            try:
+                fname = filename + ".surrogates." + str(i + 1)
+                fname_tmp = "." + fname + ".swap"
+                surrogate.save(fname)
+                shutil.move(fname_tmp, fname)
+            except AttributeError:
+                pass
+        # Try to save acquisition states
+        for i, acquisition in enumerate(self.acquisitions):
+            try:
+                fname = filename + ".acquisition." + str(i + 1)
+                fname_tmp = "." + fname + ".swap"
+                acquisition.save(fname)
+                shutil.move(fname_tmp, fname)
+            except AttributeError:
+                pass
+        # Save serialized dictionary object
+        fname = filename + ".moop"
+        fname_tmp = "." + fname + ".swap"
+        with open(fname_tmp, 'w') as fp:
+            json.dump(parmoo_state, fp)
+        shutil.move(fname_tmp, fname)
+        return
