@@ -2401,6 +2401,8 @@ def test_MOOP_save_load():
     import numpy as np
     import os
 
+    global f1, f2, sim1, sim2
+
     # Initialize two simulation groups with 1 output each
     def sim1(x): return [np.linalg.norm(x)]
     def sim2(x): return [np.linalg.norm(x - 1.0)]
@@ -2417,26 +2419,92 @@ def test_MOOP_save_load():
           'sim_func': sim2,
           'surrogate': GaussRBF}
     # Create a MOOP with 3 design variables and 2 simulations
-    moop = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    moop1 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
 
     # Test empty save
-    moop.save()
+    moop1.save()
 
     for i in range(2):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop.addDesign({'des_type': "categorical", 'levels': 3})
-    moop.addSimulation(g1, g2)
+        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop1.addDesign({'des_type': "categorical", 'levels': 3})
+    moop1.addSimulation(g1, g2)
     # Now add 2 objectives
     def f1(x, sim): return sim[0]
     def f2(x, sim): return sim[1]
-    moop.addObjective({'obj_func': f1},
-                      {'obj_func': f2})
+    moop1.addObjective({'obj_func': f1},
+                       {'obj_func': f2})
     # Add 3 acquisition functions
     for i in range(3):
-        moop.addAcquisition({'acquisition': UniformWeights})
+        moop1.addAcquisition({'acquisition': UniformWeights})
 
     # Test save
-    moop.save()
+    moop1.save()
+
+    # Test load
+    moop2 = MOOP(LocalGPS)
+    moop2.load()
+
+    # Check scalars
+    assert(moop2.n == moop1.n and moop2.m_total == moop1.m_total and
+           moop2.o == moop1.o and moop2.p == moop1.p and
+           moop2.s == moop1.s and moop2.n_dat == moop1.n_dat and
+           moop2.n_cat_d == moop1.n_cat_d and moop2.n_cat == moop1.n_cat and
+           moop2.n_cont == moop1.n_cont and moop2.lam == moop1.lam and
+           moop2.use_names == moop1.use_names and
+           moop2.iteration == moop1.iteration)
+    # Check lists
+    assert(all([dt2i == dt1i for dt2i, dt1i in zip(moop2.des_tols,
+                                                   moop1.des_tols)]))
+    assert(all([m2i == m1i for m2i, m1i in zip(moop2.m, moop1.m)]))
+    assert(all([lb2i == lb1i for lb2i, lb1i in zip(moop2.lb, moop1.lb)]))
+    assert(all([ub2i == ub1i for ub2i, ub1i in zip(moop2.ub, moop1.ub)]))
+    assert(all([nl2i == nl1i for nl2i, nl1i in zip(moop2.n_lvls,
+                                                   moop1.n_lvls)]))
+    assert(all([do2i == do1i for do2i, do1i in zip(moop2.des_order,
+                                                   moop1.des_order)]))
+    assert(all([n2i == n1i for n2i, n1i in zip(moop2.cat_names,
+                                               moop1.cat_names)]))
+    assert(all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.sim_names,
+                                                     moop1.sim_names)]))
+    assert(all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.des_names,
+                                                     moop1.des_names)]))
+    assert(all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.obj_names,
+                                                     moop1.obj_names)]))
+    assert(all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.const_names,
+                                                     moop1.const_names)]))
+    # Check dictionaries
+    assert(all([ki in moop2.hyperparams.keys()
+                for ki in moop1.hyperparams.keys()]))
+    assert(all([ki in moop2.history.keys() for ki in moop1.history.keys()]))
+    # Check np.ndarrays
+    assert(np.all(moop2.scale == np.asarray(moop1.scale)))
+    assert(np.all(moop2.scaled_lb == np.asarray(moop1.scaled_lb)))
+    assert(np.all(moop2.scaled_ub == np.asarray(moop1.scaled_ub)))
+    assert(np.all(moop2.scaled_des_tols == np.asarray(moop1.scaled_des_tols)))
+    assert(np.all(moop2.cat_lb == np.asarray(moop1.cat_lb)))
+    assert(np.all(moop2.cat_scale == np.asarray(moop1.cat_scale)))
+    assert(np.all(moop2.RSVT == np.asarray(moop1.RSVT)))
+    assert(np.all(moop2.mean == np.asarray(moop1.mean)))
+    assert(all([moop2.data[ki].shape == moop1.data[ki].shape
+                for ki in moop2.data.keys()]))
+    assert(all([all([moop2.sim_db[j][ki].shape == moop1.sim_db[j][ki].shape
+                     for ki in ["x_vals", "s_vals"]])
+                for j in range(len(moop1.sim_db))]))
+    assert(all([obj1.__name__ == obj2.__name__
+                for obj1, obj2 in zip(moop1.objectives, moop2.objectives)]))
+    assert(all([sim1.__name__ == sim2.__name__
+                for sim1, sim2 in zip(moop1.sim_funcs, moop2.sim_funcs)]))
+    assert(all([const1.__name__ == const2.__name__
+                for const1, const2 in zip(moop1.constraints,
+                                          moop2.constraints)]))
+    # Check functions
+    assert(moop2.optimizer.__name__ == moop1.optimizer.__name__)
+    assert(all([s1.__class__.__name__ == s2.__class__.__name__
+                for s1, s2 in zip(moop1.searches, moop2.searches)]))
+    assert(all([s1.__class__.__name__ == s2.__class__.__name__
+                for s1, s2 in zip(moop1.surrogates, moop2.surrogates)]))
+    assert(all([s1.__class__.__name__ == s2.__class__.__name__
+                for s1, s2 in zip(moop1.acquisitions, moop2.acquisitions)]))
 
     # Clean up test directory
     os.remove("parmoo.moop")

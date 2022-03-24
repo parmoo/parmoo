@@ -1978,28 +1978,39 @@ class MOOP:
                                            'n': dbi['n'],
                                            'old': dbi['old']})
         # Add names for all callables (functions/objects)
-        try:
-            parmoo_state['objectives'] = [(fi.__name__, fi.__module__)
-                                          for fi in self.objectives]
-        except AttributeError:
-            parmoo_state['objectives'] = [(fi.__class__.__name__,
-                                           fi.__class__.__module__)
-                                          for fi in self.objectives]
-        try:
-            parmoo_state['sim_funcs'] = [(si.__name__, si.__module__)
-                                         for si in self.sim_funcs]
-        except AttributeError:
-            parmoo_state['sim_funcs'] = [(si.__class__.__name__,
-                                          si.__class__.__module__)
-                                         for si in self.sim_funcs]
-        try:
-            parmoo_state['constraints'] = [(ci.__name__, ci.__module__)
-                                           for ci in self.constraints]
-        except AttributeError:
-            parmoo_state['constraints'] = [(ci.__class__.__name__,
-                                            ci.__class__.__module__)
-                                           for ci in self.constraints]
-        # Store names/modules of objects
+        parmoo_state['objectives'] = []
+        parmoo_state['objectives_info'] = []
+        for fi in self.objectives:
+            if type(fi).__name__ == "function":
+                parmoo_state['objectives'].append((fi.__name__, fi.__module__))
+                parmoo_state['objectives_info'].append("function")
+            else:
+                parmoo_state['objectives'].append((fi.__class__.__name__,
+                                                   fi.__class__.__module__))
+                parmoo_state['objectives_info'].append(json.dumps(fi.__dict__))
+        parmoo_state['sim_funcs'] = []
+        parmoo_state['sim_funcs_info'] = []
+        for si in self.sim_funcs:
+            if type(si).__name__ == "function":
+                parmoo_state['sim_funcs'].append((si.__name__, si.__module__))
+                parmoo_state['sim_funcs_info'].append("function")
+            else:
+                parmoo_state['sim_funcs'].append((si.__class__.__name__,
+                                                  si.__class__.__module__))
+                parmoo_state['sim_funcs_info'].append(json.dumps(si.__dict__))
+        parmoo_state['constraints'] = []
+        parmoo_state['constraints_info'] = []
+        for ci in self.constraints:
+            if type(si).__name__ == "function":
+                parmoo_state['constraints'].append((ci.__name__,
+                                                    ci.__module__))
+                parmoo_state['constraints_info'].append("function")
+            else:
+                parmoo_state['constraints'].append((ci.__class__.__name__,
+                                                    ci.__class__.__module__))
+                parmoo_state['constraints_info'].append(
+                                                    json.dumps(ci.__dict__))
+        # Store names/modules of object classes
         parmoo_state['optimizer'] = (self.optimizer.__name__,
                                      self.optimizer.__module__)
         # Store names/modules of object instances
@@ -2019,16 +2030,16 @@ class MOOP:
                 fname_tmp = "." + fname + ".swap"
                 search.save(fname)
                 shutil.move(fname_tmp, fname)
-            except AttributeError:
+            except NotImplementedError:
                 pass
         # Try to save surrogate states
         for i, surrogate in enumerate(self.surrogates):
             try:
-                fname = filename + ".surrogates." + str(i + 1)
+                fname = filename + ".surrogate." + str(i + 1)
                 fname_tmp = "." + fname + ".swap"
                 surrogate.save(fname)
                 shutil.move(fname_tmp, fname)
-            except AttributeError:
+            except NotImplementedError:
                 pass
         # Try to save acquisition states
         for i, acquisition in enumerate(self.acquisitions):
@@ -2037,7 +2048,7 @@ class MOOP:
                 fname_tmp = "." + fname + ".swap"
                 acquisition.save(fname)
                 shutil.move(fname_tmp, fname)
-            except AttributeError:
+            except NotImplementedError:
                 pass
         # Save serialized dictionary object
         fname = filename + ".moop"
@@ -2045,4 +2056,201 @@ class MOOP:
         with open(fname_tmp, 'w') as fp:
             json.dump(parmoo_state, fp)
         shutil.move(fname_tmp, fname)
+        return
+
+    def load(self, filename="parmoo"):
+        """ Load a serialized MOOP object and all of its dependencies.
+
+        Args:
+            filename (string, optional): The filepath to serialized
+                checkpointing file(s). Do not include file extensions,
+                they will be appended automaically. May create
+                several save files with extensions of this name, in order
+                to recursively save dependencies objects. Defaults to
+                the value "parmoo" (filename will be "parmoo.moop").
+
+        """
+
+        import json
+        from importlib import import_module
+
+        PYDOCS = "https://docs.python.org/3/tutorial/modules.html" + \
+                 "#the-module-search-path"
+
+        # Load the serialized dictionary object
+        fname = filename + ".moop"
+        with open(fname, 'r') as fp:
+            parmoo_state = json.load(fp)
+
+        # Reload serialized intrinsic types (scalar values and Python lists)
+        self.n = parmoo_state['n']
+        self.m = parmoo_state['m']
+        self.m_total = parmoo_state['m_total']
+        self.o = parmoo_state['o']
+        self.p = parmoo_state['p']
+        self.s = parmoo_state['s']
+        self.n_dat = parmoo_state['n_dat']
+        self.lb = parmoo_state['lb']
+        self.ub = parmoo_state['ub']
+        self.n_cat_d = parmoo_state['n_cat_d']
+        self.n_cat = parmoo_state['n_cat']
+        self.n_cont = parmoo_state['n_cont']
+        self.n_lvls = parmoo_state['n_lvls']
+        self.des_order = parmoo_state['des_order']
+        self.cat_names = parmoo_state['cat_names']
+        self.sim_names = parmoo_state['sim_names']
+        self.des_names = parmoo_state['des_names']
+        self.obj_names = parmoo_state['obj_names']
+        self.const_names = parmoo_state['const_names']
+        self.lam = parmoo_state['lam']
+        self.des_tols = parmoo_state['des_tols']
+        self.hyperparams = parmoo_state['hyperparams']
+        self.history = parmoo_state['history']
+        self.use_names = parmoo_state['use_names']
+        self.iteration = parmoo_state['iteration']
+        # Reload serialize numpy arrays
+        self.scale = np.array(parmoo_state['scale'])
+        self.scaled_lb = np.array(parmoo_state['scaled_lb'])
+        self.scaled_ub = np.array(parmoo_state['scaled_ub'])
+        self.scaled_des_tols = np.array(parmoo_state['scaled_des_tols'])
+        self.cat_des_tols = np.array(parmoo_state['cat_des_tols'])
+        self.cat_lb = np.array(parmoo_state['cat_lb'])
+        self.cat_scale = np.array(parmoo_state['cat_scale'])
+        self.RSVT = np.array(parmoo_state['RSVT'])
+        self.mean = np.array(parmoo_state['mean'])
+        # Reload serialized internal databases
+        self.data = {}
+        if 'x_vals' in parmoo_state['data'].keys():
+            self.data['x_vals'] = np.array(parmoo_state['data']['x_vals'])
+        if 'f_vals' in parmoo_state['data'].keys():
+            self.data['f_vals'] = np.array(parmoo_state['data']['f_vals'])
+        if 'c_vals' in parmoo_state['data'].keys():
+            self.data['c_vals'] = np.array(parmoo_state['data']['c_vals'])
+        self.sim_db = []
+        for dbi in parmoo_state['sim_db']:
+            self.sim_db.append({'x_vals': np.array(dbi['x_vals']),
+                                's_vals': np.array(dbi['s_vals']),
+                                'n': dbi['n'],
+                                'old': dbi['old']})
+        # Recover callables (functions/objects) by name
+        self.objectives = []
+        for (obj_name, obj_mod), info in zip(parmoo_state['objectives'],
+                                             parmoo_state['objectives_info']):
+            try:
+                mod = import_module(obj_mod)
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError("module: " + obj_mod +
+                                          " could not be loaded. " +
+                                          "Please make sure that " + obj_mod +
+                                          " exists on this machine and is " +
+                                          "part of the module " +
+                                          " search path: " + PYDOCS)
+            try:
+                obj_ptr = getattr(mod, obj_name)
+            except KeyError:
+                raise KeyError("function: " + obj_name +
+                               " defined in " + obj_mod +
+                               " could not be loaded." +
+                               "Please make sure that " + obj_name +
+                               " is defined in " + obj_mod +
+                               " with global scope and try again.")
+            if info == "function":
+                toadd = obj_ptr
+            else:
+                toadd.__dict__ = json.loads(info)
+            self.objectives.append(toadd)
+        self.sim_funcs = []
+        for (sim_name, sim_mod), info in zip(parmoo_state['sim_funcs'],
+                                             parmoo_state['sim_funcs_info']):
+            try:
+                mod = import_module(sim_mod)
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError("module: " + sim_mod +
+                                          " could not be loaded. " +
+                                          "Please make sure that " + sim_mod +
+                                          " exists on this machine and is " +
+                                          "part of the Module " +
+                                          " search path: " + PYDOCS)
+            try:
+                sim_ptr = getattr(mod, sim_name)
+            except KeyError:
+                raise KeyError("function: " + sim_name +
+                               " defined in " + sim_mod +
+                               " could not be loaded." +
+                               "Please make sure that " + sim_name +
+                               " is defined in " + sim_mod +
+                               " with global scope and try again.")
+            if info == "function":
+                toadd = sim_ptr
+            else:
+                toadd.__dict__ = json.loads(info)
+            self.sim_funcs.append(toadd)
+        self.constraints = []
+        for (const_name, const_mod), info in \
+                zip(parmoo_state['constraints'],
+                    parmoo_state['constraints_info']):
+            try:
+                mod = import_module(const_mod)
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError("module: " + const_mod +
+                                          " could not be loaded. " + "Please" +
+                                          " make sure that " + const_mod +
+                                          " exists on this machine and is " +
+                                          "part of the module " +
+                                          " search path: " + PYDOCS)
+            try:
+                const_ptr = getattr(mod, const_name)
+            except KeyError:
+                raise KeyError("function: " + const_name +
+                               " defined in " + const_mod +
+                               " could not be loaded." +
+                               "Please make sure that " + const_name +
+                               " is defined in " + const_mod +
+                               " with global scope and try again.")
+            if info == "function":
+                toadd = const_ptr
+            else:
+                toadd.__dict__ = json.loads(info)
+            self.constraints.append(toadd)
+        # Recover object classes
+        mod = import_module(parmoo_state['optimizer'][1])
+        self.optimizer = getattr(mod, parmoo_state['optimizer'][0])
+        # Recover names/modules of object instances
+        self.searches = []
+        for i, (search_name, search_mod) in enumerate(
+                                                parmoo_state['searches']):
+            mod = import_module(search_mod)
+            new_search = getattr(mod, search_name)
+            toadd = new_search(self.m[i], self.scaled_lb, self.scaled_ub,
+                               self.hyperparams)
+            try:
+                fname = filename + ".search." + str(i + 1)
+                toadd.load(fname)
+            except NotImplementedError:
+                pass
+            self.searches.append(toadd)
+        self.surrogates = []
+        for i, (sur_name, sur_mod) in enumerate(parmoo_state['surrogates']):
+            mod = import_module(sur_mod)
+            new_sur = getattr(mod, sur_name)
+            toadd = new_sur(self.m[i], self.scaled_lb, self.scaled_ub,
+                            self.hyperparams)
+            try:
+                fname = filename + ".surrogate." + str(i + 1)
+                toadd.load(fname)
+            except NotImplementedError:
+                pass
+            self.surrogates.append(toadd)
+        self.acquisitions = []
+        for i, (acq_name, acq_mod) in enumerate(parmoo_state['acquisitions']):
+            mod = import_module(acq_mod)
+            new_acq = getattr(mod, acq_name)
+            toadd = new_acq(self.o, self.scaled_lb, self.scaled_ub,
+                            self.hyperparams)
+            try:
+                fname = filename + ".acquisition." + str(i + 1)
+                toadd.load(fname)
+            except NotImplementedError:
+                pass
+            self.acquisitions.append(toadd)
         return

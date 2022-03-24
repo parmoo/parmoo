@@ -23,6 +23,8 @@ class AcquisitionFunction(ABC):
      * ``setTarget(data, constraint_func, history)``
      * ``scalarize(f_vals)``
      * ``scalarizeGrad(f_vals, g_vals)``
+     * ``save(filename)``
+     * ``load(filename)``
 
     """
 
@@ -46,7 +48,7 @@ class AcquisitionFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def setTarget(self, data, constraint_func, history):
         """ Set a new target value or region for the AcquisitionFunction.
@@ -80,7 +82,7 @@ class AcquisitionFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def scalarize(self, f_vals):
         """ Scalarize a vector-valued function using the AcquisitionFunction.
@@ -94,7 +96,7 @@ class AcquisitionFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def scalarizeGrad(self, f_vals, g_vals):
         """ Scalarize a Jacobian of gradients using the current weights.
@@ -111,7 +113,37 @@ class AcquisitionFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
+
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the load method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the save method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
 
 
 class GlobalSearch(ABC):
@@ -120,6 +152,8 @@ class GlobalSearch(ABC):
     This class contains two methods.
      * ``startSearch(lb, ub)``
      * ``resumeSearch()``
+     * ``save(filename)``
+     * ``load(filename)``
 
     """
 
@@ -144,7 +178,7 @@ class GlobalSearch(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def startSearch(self, lb, ub):
         """ Begin a new global search.
@@ -162,7 +196,7 @@ class GlobalSearch(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def resumeSearch(self):
         """ Resume a global search.
@@ -173,7 +207,37 @@ class GlobalSearch(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
+
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the load method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the save method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
 
 
 class SurrogateFunction(ABC):
@@ -186,6 +250,8 @@ class SurrogateFunction(ABC):
      * ``evaluate(x)``
      * ``gradient(x)``
      * ``improve(x, global_improv)``
+     * ``save(filename)``
+     * ``load(filename)``
 
     """
 
@@ -215,7 +281,7 @@ class SurrogateFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def fit(self, x, f):
         """ Fit a new surrogate to the given data.
@@ -229,7 +295,7 @@ class SurrogateFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def update(self, x, f):
         """ Update an existing surrogate model using new data.
@@ -244,7 +310,7 @@ class SurrogateFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def setCenter(self, center):
         """ Set the center for the fit, if this is a local method.
@@ -255,7 +321,7 @@ class SurrogateFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def evaluate(self, x):
         """ Evaluate the surrogate at a design point.
@@ -270,7 +336,7 @@ class SurrogateFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def gradient(self, x):
         """ Evaluate the gradient of the surrogate at a design point.
@@ -285,7 +351,7 @@ class SurrogateFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def improve(self, x, global_imrpov):
         """ Suggests a design to evaluate to improve the surrogate near x.
@@ -303,7 +369,37 @@ class SurrogateFunction(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
+
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the load method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the save method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
 
 
 class SurrogateOptimizer(ABC):
@@ -311,9 +407,13 @@ class SurrogateOptimizer(ABC):
 
     This class contains three methods.
      * ``setObjective(obj_func)``
+     * ``setGradient(grad_func)``
      * ``setConstraints(constraint_func)``
      * ``addAcquisition(*args)``
+     * ``setReset(reset)``
      * ``solve(x)``
+     * ``save(filename)``
+     * ``load(filename)``
 
     """
 
@@ -337,7 +437,7 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def setObjective(self, obj_func):
         """ Add a vector-valued objective function that will be solved.
@@ -348,7 +448,7 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def setGradient(self, grad_func):
         """ Add a matrix-valued gradient function for obj_func.
@@ -359,7 +459,7 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def setConstraints(self, constraint_func):
         """ Add a constraint function that will be satisfied.
@@ -372,7 +472,7 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def addAcquisition(self, *args):
         """ Add an acquisition function for the surrogate optimizer.
@@ -384,7 +484,7 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def setReset(self, reset):
         """ Add a reset function for resetting surrogate updates.
@@ -396,7 +496,7 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
 
     def solve(self, x):
         """ Solve the surrogate problem.
@@ -411,4 +511,34 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        pass
+        raise NotImplementedError("This class method has not been implemented")
+
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the load method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the save method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")

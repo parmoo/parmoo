@@ -1,7 +1,6 @@
 [run]
 source = parmoo
 omit = parmoo/tests/*
-       parmoo/structs.py
        */__init__.py
        */setup.py
        */version.py
