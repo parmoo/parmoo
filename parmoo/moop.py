@@ -11,6 +11,7 @@ simulations, specified using dictionaries.
 """
 
 import numpy as np
+import json
 from parmoo import structs
 import inspect
 
@@ -42,6 +43,11 @@ class MOOP:
      * ``getSimulationType()``
      * ``getObjectiveType()``
      * ``getConstraintType()``
+
+    The following methods are used to save/load ParMOO objects from memory.
+     * ``setCheckpoint(checkpoint, savedata=False, filename="parmoo")``
+     * ``save(filename="parmoo")``
+     * ``load(filename="parmoo")``
 
     The following methods are used for solving the MOOP and managing the
     internal simulation/objective databases:
@@ -86,7 +92,8 @@ class MOOP:
                  'des_tols', 'searches', 'surrogates', 'optimizer',
                  'constraints', 'hyperparams', 'acquisitions', 'history',
                  'scale', 'scaled_lb', 'scaled_ub', 'scaled_des_tols',
-                 'cat_des_tols', 'use_names', 'iteration']
+                 'cat_des_tols', 'use_names', 'iteration', 'checkpoint',
+                 'checkpointfile', 'savedata']
 
     def __embed__(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
@@ -382,6 +389,10 @@ class MOOP:
         self.use_names = True
         # Initialize the iteration counter
         self.iteration = 0
+        # Initialize the checkpointing
+        self.checkpoint = False
+        self.savedata = False
+        self.checkpointfile = "parmoo"
         # Set up the surrogate optimizer
         try:
             # Try initializing the optimizer, to check that it can be done
@@ -901,6 +912,38 @@ class MOOP:
             self.acquisitions.append(acquisition)
         return
 
+    def setCheckpoint(self, checkpoint, savedata=True, filename="parmoo"):
+        """ Set ParMOO's checkpointing feature.
+
+        Args:
+            checkpoint (bool): Turn checkpointing on (True) or off (False).
+
+            savedata (bool, optional): Also save raw simulation output in
+                a separate .json file (True) or rely on ParMOO's internal
+                simulation database (False). When omitted, this parameter
+                defaults to False.
+
+            filename (str, optional): Set the base checkpoint filename/path.
+                The checkpoint file will have the JSON format and the
+                extension ".moop" appended to the end of filename.
+                Additional checkpoint files may be created with the same
+                filename but different extensions, depending on the choice
+                of AcquisitionFunction, SurrogateFunction, and GlobalSearch.
+                When omitted, this parameter defaults to "parmoo" and
+                is saved inside current working directory.
+
+        """
+
+        if not isinstance(checkpoint, bool):
+            raise TypeError("checkpoint must have the bool type")
+        if not isinstance(filename, str):
+            raise TypeError("filename must have the string type")
+        # Set internal checkpointing variables
+        self.checkpoint = checkpoint
+        self.savedata = savedata
+        self.checkpointfile = filename
+        return
+
     def getDesignType(self):
         """ Get the numpy dtype of a design point for this MOOP.
 
@@ -1053,6 +1096,29 @@ class MOOP:
             self.sim_db[i]['x_vals'][0, :] = xx
             self.sim_db[i]['s_vals'][0, :] = sx
             self.sim_db[i]['n'] += 1
+        # If data-saving is on, append the sim output to a json
+        if self.savedata:
+            # Unpack x/sx pair into a dict for saving
+            if self.use_names:
+                toadd = {'sim_id': s_name}
+                for key in x.names:
+                    toadd[key] = x[key]
+                for key in sx.names:
+                    if isinstance(sx[key], np.ndarray):
+                        toadd[key] = sx[key].tolist()
+                    else:
+                        toadd[key] = sx[key]
+            else:
+                toadd = {'x_vals': x.tolist(),
+                         's_vals': sx.tolist(),
+                         'sim_id': s_name}
+            # Save in file with proper exension
+            fname = self.filename + ".simdb.json"
+            with open(fname, 'a') as fp:
+                json.dump(toadd, fp)
+        # If checkpointing is on, save the moop before continuing
+        if self.checkpoint:
+            self.save(filename=self.checkpointfile)
         return
 
     def evaluateSimulation(self, x, s_name):
@@ -1629,6 +1695,9 @@ class MOOP:
                 # If xi was in every sim_db, add it to the database
                 if is_shared:
                     self.addData(x, self.__unpack_sim__(sim))
+        # If checkpointing is on, save the moop before continuing
+        if self.checkpoint:
+            self.save(filename=self.checkpointfile)
         return
 
     def solve(self, budget):
@@ -1896,7 +1965,6 @@ class MOOP:
 
         """
 
-        import json
         import shutil
 
         # Create a serializable ParMOO dictionary by replacing function refs
@@ -1925,7 +1993,10 @@ class MOOP:
                         'hyperparams': self.hyperparams,
                         'history': self.history,
                         'use_names': self.use_names,
-                        'iteration': self.iteration}
+                        'iteration': self.iteration,
+                        'checkpoint': self.checkpoint,
+                        'savedata': self.savedata,
+                        'checkpointfile': self.checkpointfile}
         # Serialize numpy arrays
         if isinstance(self.scale, np.ndarray):
             parmoo_state['scale'] = self.scale.tolist()
@@ -2028,7 +2099,7 @@ class MOOP:
             try:
                 fname = filename + ".search." + str(i + 1)
                 fname_tmp = "." + fname + ".swap"
-                search.save(fname)
+                search.save(fname_tmp)
                 shutil.move(fname_tmp, fname)
             except NotImplementedError:
                 pass
@@ -2037,7 +2108,7 @@ class MOOP:
             try:
                 fname = filename + ".surrogate." + str(i + 1)
                 fname_tmp = "." + fname + ".swap"
-                surrogate.save(fname)
+                surrogate.save(fname_tmp)
                 shutil.move(fname_tmp, fname)
             except NotImplementedError:
                 pass
@@ -2046,7 +2117,7 @@ class MOOP:
             try:
                 fname = filename + ".acquisition." + str(i + 1)
                 fname_tmp = "." + fname + ".swap"
-                acquisition.save(fname)
+                acquisition.save(fname_tmp)
                 shutil.move(fname_tmp, fname)
             except NotImplementedError:
                 pass
@@ -2071,7 +2142,6 @@ class MOOP:
 
         """
 
-        import json
         from importlib import import_module
 
         PYDOCS = "https://docs.python.org/3/tutorial/modules.html" + \
@@ -2108,6 +2178,9 @@ class MOOP:
         self.history = parmoo_state['history']
         self.use_names = parmoo_state['use_names']
         self.iteration = parmoo_state['iteration']
+        self.checkpoint = parmoo_state['checkpoint']
+        self.savedata = parmoo_state['savedata']
+        self.checkpointfile = parmoo_state['checkpointfile']
         # Reload serialize numpy arrays
         self.scale = np.array(parmoo_state['scale'])
         self.scaled_lb = np.array(parmoo_state['scaled_lb'])

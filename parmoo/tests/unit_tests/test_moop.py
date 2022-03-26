@@ -2508,6 +2508,8 @@ def test_MOOP_save_load():
 
     # Clean up test directory
     os.remove("parmoo.moop")
+    os.remove("parmoo.surrogate.1")
+    os.remove("parmoo.surrogate.2")
 
 
 if __name__ == "__main__":

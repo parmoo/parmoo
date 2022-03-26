@@ -56,11 +56,16 @@ class GaussRBF(SurrogateFunction):
 
         # Check inputs
         xerror(m, lb, ub, hyperparams)
+        # Initialize problem dimensions
         self.m = m
         self.lb = lb
         self.ub = ub
         self.n = self.lb.size
         self.std_dev = 0.0
+        # Create empty database
+        self.x_vals = np.zeros((0, self.n))
+        self.f_vals = np.zeros((0, self.m))
+        self.weights = np.zeros((0, 0))
         # Check for the 'nugget' optional value in hyperparams
         if 'nugget' in hyperparams.keys():
             if isinstance(hyperparams['nugget'], float):
@@ -338,6 +343,66 @@ class GaussRBF(SurrogateFunction):
         # Return the point to be sampled in a 2d array.
         return np.asarray([x_new])
 
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        import json
+
+        # Serialize RBF object in dictionary
+        gp_state = {'m': self.m,
+                    'n': self.n,
+                    'std_dev': self.std_dev,
+                    'nugget': self.nugget}
+        # Serialize numpy.ndarray objects
+        gp_state['lb'] = self.lb.tolist()
+        gp_state['ub'] = self.ub.tolist()
+        gp_state['x_vals'] = self.x_vals.tolist()
+        gp_state['f_vals'] = self.f_vals.tolist()
+        gp_state['eps'] = self.eps.tolist()
+        gp_state['weights'] = self.weights.tolist()
+        # Save file
+        with open(filename, 'w') as fp:
+            json.dump(gp_state, fp)
+        return
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the save method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        import json
+
+        # Load file
+        with open(filename, 'r') as fp:
+            gp_state = json.load(fp)
+        # Deserialize RBF object from dictionary
+        self.m = gp_state['m']
+        self.n = gp_state['n']
+        self.std_dev = gp_state['std_dev']
+        self.nugget = gp_state['nugget']
+        # Deserialize numpy.ndarray objects
+        self.lb = np.array(gp_state['lb'])
+        self.ub = np.array(gp_state['ub'])
+        self.x_vals = np.array(gp_state['x_vals'])
+        self.f_vals = np.array(gp_state['f_vals'])
+        self.eps = np.array(gp_state['eps'])
+        self.weights = np.array(gp_state['weights'])
+        return
+
 
 class LocalGaussRBF(SurrogateFunction):
     """ A local RBF surrogate model, using a Gaussian basis.
@@ -380,11 +445,19 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check inputs
         xerror(m, lb, ub, hyperparams)
+        # Initialize problem dimensions
         self.m = m
         self.lb = lb
         self.ub = ub
         self.n = self.lb.size
         self.std_dev = 0.0
+        # Create empty database
+        self.x_vals = np.zeros((0, self.n))
+        self.f_vals = np.zeros((0, self.m))
+        self.weights = np.zeros((0, 0))
+        # Initialize trust-region settings
+        self.tr_center = np.zeros(0)
+        self.loc_inds = []
         # Check for the 'nugget' optional value in hyperparams
         if 'nugget' in hyperparams.keys():
             if isinstance(hyperparams['nugget'], float):
@@ -677,3 +750,69 @@ class LocalGaussRBF(SurrogateFunction):
                                              * (self.ub[:] - self.lb[:]))
         # Return the point to be sampled in a 2d array.
         return np.asarray([x_new])
+
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        import json
+
+        # Serialize RBF object in dictionary
+        gp_state = {'m': self.m,
+                    'n': self.n,
+                    'std_dev': self.std_dev,
+                    'n_loc': self.n_loc,
+                    'loc_inds': self.loc_inds,
+                    'nugget': self.nugget}
+        # Serialize numpy.ndarray objects
+        gp_state['lb'] = self.lb.tolist()
+        gp_state['ub'] = self.ub.tolist()
+        gp_state['x_vals'] = self.x_vals.tolist()
+        gp_state['f_vals'] = self.f_vals.tolist()
+        gp_state['eps'] = self.eps.tolist()
+        gp_state['tr_center'] = self.tr_center.tolist()
+        gp_state['weights'] = self.weights.tolist()
+        # Save file
+        with open(filename, 'w') as fp:
+            json.dump(gp_state, fp)
+        return
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Note: If this function is left unimplemented, ParMOO will reinitialize
+        a fresh instance after a save/load. If this is the desired behavior,
+        then this method and the save method need not be implemented.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        import json
+
+        # Load file
+        with open(filename, 'r') as fp:
+            gp_state = json.load(fp)
+        # Deserialize RBF object from dictionary
+        self.m = gp_state['m']
+        self.n = gp_state['n']
+        self.std_dev = gp_state['std_dev']
+        self.nugget = gp_state['nugget']
+        self.n_loc = gp_state['n_loc']
+        self.loc_inds = gp_state['loc_inds']
+        # Deserialize numpy.ndarray objects
+        self.lb = np.array(gp_state['lb'])
+        self.ub = np.array(gp_state['ub'])
+        self.x_vals = np.array(gp_state['x_vals'])
+        self.f_vals = np.array(gp_state['f_vals'])
+        self.eps = np.array(gp_state['eps'])
+        self.tr_center = np.array(gp_state['tr_center'])
+        self.weights = np.array(gp_state['weights'])
+        return
