@@ -32,11 +32,11 @@ def test_MOOP_init():
     assert(moop.hyperparams['test'] == 0)
 
 
-def test_MOOP_addDesign():
-    """ Check that the MOOP class handles adding new design variables properly.
+def test_MOOP_addDesign_bad_cont():
+    """ Check that the MOOP class handles adding bad continuous variables.
 
-    Initialize a MOOP objects, and add several design variables. Check that
-    the __embed__/__extract__ function work properly.
+    Initialize a MOOP objects, and add several bad continuous design
+    variables.
 
     """
 
@@ -79,25 +79,6 @@ def test_MOOP_addDesign():
                         'des_type': "continuous",
                         'lb': 0.0,
                         'ub': 1.0})
-    # Add some bad categorical variables
-    with pytest.raises(AttributeError):
-        moop.addDesign({'des_type': "categorical"})
-    with pytest.raises(TypeError):
-        moop.addDesign({'des_type': "categorical",
-                        'levels': 1.0})
-    with pytest.raises(ValueError):
-        moop.addDesign({'des_type': "categorical",
-                        'levels': 1})
-    with pytest.raises(TypeError):
-        moop.addDesign({'name': 5,
-                        'des_type': "categorical",
-                        'levels': 2})
-    with pytest.raises(TypeError):
-        moop.addDesign({'des_type': "categorical",
-                        'levels': [3, "hi"]})
-    with pytest.raises(ValueError):
-        moop.addDesign({'des_type': "categorical",
-                        'levels': ["hi"]})
     # Add some bad continuous variables, using default option
     with pytest.raises(AttributeError):
         moop.addDesign({})
@@ -119,6 +100,56 @@ def test_MOOP_addDesign():
         moop.addDesign({'name': 5,
                         'lb': 0.0,
                         'ub': 1.0})
+
+
+def test_MOOP_addDesign_bad_cat():
+    """ Check that the MOOP class handles adding bad categorical variables.
+
+    Initialize a MOOP objects, and add several bad categorical design
+    variables.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.optimizers import LocalGPS
+    import pytest
+
+    # Initialize a MOOP with no hyperparameters
+    moop = MOOP(LocalGPS)
+    # Add some bad categorical variables
+    with pytest.raises(AttributeError):
+        moop.addDesign({'des_type': "categorical"})
+    with pytest.raises(TypeError):
+        moop.addDesign({'des_type': "categorical",
+                        'levels': 1.0})
+    with pytest.raises(ValueError):
+        moop.addDesign({'des_type': "categorical",
+                        'levels': 1})
+    with pytest.raises(TypeError):
+        moop.addDesign({'name': 5,
+                        'des_type': "categorical",
+                        'levels': 2})
+    with pytest.raises(TypeError):
+        moop.addDesign({'des_type': "categorical",
+                        'levels': [3, "hi"]})
+    with pytest.raises(ValueError):
+        moop.addDesign({'des_type': "categorical",
+                        'levels': ["hi"]})
+
+
+def test_MOOP_addDesign():
+    """ Check that the MOOP class handles adding design variables properly.
+
+    Initialize a MOOP objects, and add several design variables.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.optimizers import LocalGPS
+    import pytest
+
+    # Initialize a MOOP with no hyperparameters
+    moop = MOOP(LocalGPS)
     # Add variables out of order
     with pytest.raises(RuntimeError):
         moop1 = MOOP(LocalGPS)
@@ -193,8 +224,8 @@ def test_MOOP_addDesign():
     assert(moop.n_cont == 8)
 
 
-def test_MOOP_embed_extract():
-    """ Test that the MOOP class is able to embed/extract design variables.
+def test_MOOP_embed_extract_unnamed1():
+    """ Test that the MOOP class can embed/extract unnamed design variables.
 
     Add several design variables and generate an embedding. Then embed and
     extract several inputs, and check that the results match up to the
@@ -284,6 +315,24 @@ def test_MOOP_embed_extract():
     assert(xx1.size == moop.n)
     # Check extraction
     assert(all(moop.__extract__(xx1) - x1 < 1.0e-8))
+
+
+def test_MOOP_embed_extract_unnamed2():
+    """ Test that the MOOP class can embed/extract unnamed design variables.
+
+    Add several design variables and generate an embedding. Then embed and
+    extract several inputs, and check that the results match up to the
+    design tolerance. This test applies to the three hidden methods:
+     * MOOP.__embed__(x)
+     * MOOP.__extract__(x)
+     * MOOP.__generate_encoding__()
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.optimizers import LocalGPS
+    import numpy as np
+
     # Same as above, but reverse the order
     moop = MOOP(LocalGPS)
     # Add two categorical variables and check that they are embedded correctly
@@ -356,6 +405,24 @@ def test_MOOP_embed_extract():
     assert(xx1.size == moop.n)
     # Check extraction
     assert(all(moop.__extract__(xx1) - x1 < 1.0e-8))
+
+
+def test_MOOP_embed_extract_named():
+    """ Test that the MOOP class can embed/extract named design variables.
+
+    Add several design variables and generate an embedding. Then embed and
+    extract several inputs, and check that the results match up to the
+    design tolerance. This test applies to the three hidden methods:
+     * MOOP.__embed__(x)
+     * MOOP.__extract__(x)
+     * MOOP.__generate_encoding__()
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.optimizers import LocalGPS
+    import numpy as np
+
     # Now, create another MOOP where all variables are labeled
     moop = MOOP(LocalGPS)
     # Add two continuous variables and check that they are embedded correctly
@@ -2514,8 +2581,12 @@ def test_MOOP_save_load():
 
 if __name__ == "__main__":
     test_MOOP_init()
+    test_MOOP_addDesign_bad_cont()
+    test_MOOP_addDesign_bad_cat()
     test_MOOP_addDesign()
-    test_MOOP_embed_extract()
+    test_MOOP_embed_extract_unnamed1()
+    test_MOOP_embed_extract_unnamed2()
+    test_MOOP_embed_extract_named()
     test_MOOP_addSimulation()
     test_pack_unpack_sim()
     test_MOOP_addObjective()

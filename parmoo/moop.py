@@ -2135,10 +2135,11 @@ class MOOP:
         Args:
             filename (string, optional): The filepath to serialized
                 checkpointing file(s). Do not include file extensions,
-                they will be appended automaically. May create
-                several save files with extensions of this name, in order
-                to recursively save dependencies objects. Defaults to
-                the value "parmoo" (filename will be "parmoo.moop").
+                they will be appended automaically. May also load from
+                other save files with different extensions of this name,
+                in order to recursively load dependencies objects.
+                Defaults to the value "parmoo" (filename will be
+                "parmoo.moop").
 
         """
 
