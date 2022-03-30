@@ -91,7 +91,7 @@ class g1_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -165,7 +165,7 @@ class g2_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -234,7 +234,7 @@ class g3_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -304,7 +304,7 @@ class g4_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -375,7 +375,7 @@ class dtlz1_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -455,7 +455,7 @@ class dtlz2_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -536,7 +536,7 @@ class dtlz3_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -624,7 +624,7 @@ class dtlz4_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -635,6 +635,8 @@ class dtlz4_sim(sim_func):
         if num_obj < 1:
             raise ValueError("optional input num_obj must be greater than 0")
         self.o = num_obj
+        if not (isinstance(alpha, int) or isinstance(alpha, float)):
+            raise TypeError("alpha must be a numeric type")
         if alpha < 1:
             raise ValueError("alpha must be at least 1")
         self.alpha = alpha
@@ -707,7 +709,7 @@ class dtlz5_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -793,7 +795,7 @@ class dtlz6_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -879,7 +881,7 @@ class dtlz7_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -960,7 +962,7 @@ class dtlz8_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:
@@ -1036,7 +1038,7 @@ class dtlz9_sim(sim_func):
 
         """
 
-        super().__init__(self, des)
+        super().__init__(des)
         if not isinstance(offset, float):
             raise TypeError("optional input offset must have the float type")
         if offset < 0 or offset > 1:

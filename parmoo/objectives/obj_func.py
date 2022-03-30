@@ -8,8 +8,8 @@ import numpy as np
 from abc import ABC
 
 
-class sim_func(ABC):
-    """ Abstract base class (ABC) for simulation function outputs.
+class obj_func(ABC):
+    """ Abstract base class (ABC) for objective function outputs.
 
     Contains 2 methods:
      * ``__init__(des, sim)``
@@ -22,15 +22,20 @@ class sim_func(ABC):
 
     """
 
-    __slots__ = ['n', 'des_type', 'use_names']
+    __slots__ = ['n', 'm', 'des_type', 'sim_type', 'use_names']
 
-    def __init__(self, des):
+    def __init__(self, des, sim):
         """ Constructor for simulation functions.
 
         Args:
             des (list, tuple, or int): Either the numpy.dtype of the
                 design variables (list or tuple) or the number of design
                 variables (assumed to all be continuous, unnamed).
+
+            sim (list, tuple, or int): Either the numpy.dtype of the
+                simultation outputs (list or tuple) or the number of
+                simulation outputs (assumed to all be continuous,
+                unnamed).
 
         """
 
@@ -54,10 +59,34 @@ class sim_func(ABC):
                 raise ValueError("des must be a positive number")
         else:
             raise TypeError("des must be a list, tuple, or int")
+        # Try to read simulation output type
+        if isinstance(sim, list) and self.use_names:
+            try:
+                np.zeros(1, dtype=sim)
+                self.sim_type = sim
+                self.m = len(sim)
+            except TypeError:
+                raise TypeError("sim must contain a valid numpy.dtype")
+        elif isinstance(sim, tuple) and not self.use_names:
+            try:
+                np.zeros(1, dtype=sim)
+                self.sim_type = sim
+                self.m = len(sim)
+            except TypeError:
+                raise TypeError("sim must contain a valid numpy.dtype")
+        elif isinstance(sim, int) and not self.use_names:
+            if sim > 0:
+                self.m = sim
+                self.sim_type = ("f8", self.m)
+            else:
+                raise ValueError("sim must be a positive number")
+        else:
+            raise TypeError("sim must be a list, tuple, or int, and " +
+                            "match the type of des")
         return
 
-    def __call__(self, x):
-        """ Make sim_func objects callable.
+    def __call__(self, x, der=0):
+        """ Make obj_func objects callable.
 
         Args:
             x (numpy.array): A numpy.ndarray (unnamed) or numpy structured
