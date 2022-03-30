@@ -1966,6 +1966,8 @@ class MOOP:
         """
 
         import shutil
+        import pickle
+        import codecs
 
         # Create a serializable ParMOO dictionary by replacing function refs
         # with funcion/module names
@@ -2058,7 +2060,8 @@ class MOOP:
             else:
                 parmoo_state['objectives'].append((fi.__class__.__name__,
                                                    fi.__class__.__module__))
-                parmoo_state['objectives_info'].append(json.dumps(fi.__dict__))
+                parmoo_state['objectives_info'].append(
+                        codecs.encode(pickle.dumps(fi), "base64").decode())
         parmoo_state['sim_funcs'] = []
         parmoo_state['sim_funcs_info'] = []
         for si in self.sim_funcs:
@@ -2068,7 +2071,8 @@ class MOOP:
             else:
                 parmoo_state['sim_funcs'].append((si.__class__.__name__,
                                                   si.__class__.__module__))
-                parmoo_state['sim_funcs_info'].append(json.dumps(si.__dict__))
+                parmoo_state['sim_funcs_info'].append(
+                        codecs.encode(pickle.dumps(si), "base64").decode())
         parmoo_state['constraints'] = []
         parmoo_state['constraints_info'] = []
         for ci in self.constraints:
@@ -2080,7 +2084,7 @@ class MOOP:
                 parmoo_state['constraints'].append((ci.__class__.__name__,
                                                     ci.__class__.__module__))
                 parmoo_state['constraints_info'].append(
-                                                    json.dumps(ci.__dict__))
+                        codecs.encode(pickle.dumps(ci), "base64").decode())
         # Store names/modules of object classes
         parmoo_state['optimizer'] = (self.optimizer.__name__,
                                      self.optimizer.__module__)
@@ -2144,6 +2148,8 @@ class MOOP:
         """
 
         from importlib import import_module
+        import pickle
+        import codecs
 
         PYDOCS = "https://docs.python.org/3/tutorial/modules.html" + \
                  "#the-module-search-path"
@@ -2231,7 +2237,7 @@ class MOOP:
             if info == "function":
                 toadd = obj_ptr
             else:
-                toadd.__dict__ = json.loads(info)
+                toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
             self.objectives.append(toadd)
         self.sim_funcs = []
         for (sim_name, sim_mod), info in zip(parmoo_state['sim_funcs'],
@@ -2257,7 +2263,7 @@ class MOOP:
             if info == "function":
                 toadd = sim_ptr
             else:
-                toadd.__dict__ = json.loads(info)
+                toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
             self.sim_funcs.append(toadd)
         self.constraints = []
         for (const_name, const_mod), info in \
@@ -2284,7 +2290,7 @@ class MOOP:
             if info == "function":
                 toadd = const_ptr
             else:
-                toadd.__dict__ = json.loads(info)
+                toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
             self.constraints.append(toadd)
         # Recover object classes
         mod = import_module(parmoo_state['optimizer'][1])

@@ -8,7 +8,7 @@ import numpy as np
 from abc import ABC
 
 
-class sim_func():
+class sim_func(ABC):
     """ Abstract base class (ABC) for simulation function outputs.
 
     Contains 2 methods:
@@ -22,19 +22,15 @@ class sim_func():
 
     """
 
-    __slots__ = ['n', 'm', 'sim_type', 'des_type', 'use_names']
+    __slots__ = ['n', 'des_type', 'use_names']
 
-    def __init__(des, sim):
+    def __init__(des):
         """ Constructor for simulation functions.
 
         Args:
             des (list, tuple, or int): Either the numpy.dtype of the
                 design variables (list or tuple) or the number of design
                 variables (assumed to all be continuous, unnamed).
-
-            sim (list, tuple, or int): Either the numpy.dtype of the
-                simulation outputs (list or tuple) or the number of simulation
-                outputs (assumed to all be unnamed).
 
         """
 
@@ -58,32 +54,6 @@ class sim_func():
                 raise ValueError("des must be a positive number")
         else:
             raise TypeError("des must be a list, tuple, or int")
-        # Try to read simulation variable type
-        if self.use_names:
-            if isinstance(sim, list):
-                try:
-                    np.zeros(1, dtype=sim)
-                    self.sim_type = sim
-                    self.m = len(sim)
-                except TypeError:
-                    raise TypeError("sim must contain a valid numpy.dtype")
-            else:
-                raise TypeError("sim type must match des type")
-        elif isinstance(sim, tuple):
-            try:
-                np.zeros(1, dtype=sim)
-                self.sim_type = sim
-                self.m = len(sim)
-            except TypeError:
-                raise TypeError("sim must contain a valid numpy.dtype")
-        elif isinstance(sim, int):
-            if sim > 0:
-                self.m = sim
-                self.sim_type = ("f8", self.m)
-            else:
-                raise ValueError("sim must be a positive number")
-        else:
-            raise TypeError("sim must be a list, tuple, or int")
         return
 
     def __call__(self, x):
