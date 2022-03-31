@@ -100,6 +100,26 @@ def test_MOOP_addDesign_bad_cont():
         moop.addDesign({'name': 5,
                         'lb': 0.0,
                         'ub': 1.0})
+    # Try to use a repeated name to test error handling
+    with pytest.raises(ValueError):
+        moop.addDesign({'name': "x_1", 'lb': 0.0, 'ub': 1.0})
+        moop.addDesign({'name': "x_1",
+                        'des_type': "continuous",
+                        'lb': 0.0,
+                        'ub': 1.0})
+    # Add variables out of order
+    with pytest.raises(RuntimeError):
+        moop1 = MOOP(LocalGPS)
+        moop1.acquisitions.append(0)
+        moop1.addDesign({'des_type': "continuous",
+                         'lb': 0.0,
+                         'ub': 1.0})
+    with pytest.raises(RuntimeError):
+        moop2 = MOOP(LocalGPS)
+        moop2.sim_funcs.append(0)
+        moop2.addDesign({'des_type': "continuous",
+                         'lb': 0.0,
+                         'ub': 1.0})
 
 
 def test_MOOP_addDesign_bad_cat():
@@ -146,24 +166,10 @@ def test_MOOP_addDesign():
 
     from parmoo import MOOP
     from parmoo.optimizers import LocalGPS
-    import pytest
 
     # Initialize a MOOP with no hyperparameters
     moop = MOOP(LocalGPS)
-    # Add variables out of order
-    with pytest.raises(RuntimeError):
-        moop1 = MOOP(LocalGPS)
-        moop1.acquisitions.append(0)
-        moop1.addDesign({'des_type': "continuous",
-                         'lb': 0.0,
-                         'ub': 1.0})
-    with pytest.raises(RuntimeError):
-        moop2 = MOOP(LocalGPS)
-        moop2.sim_funcs.append(0)
-        moop2.addDesign({'des_type': "continuous",
-                         'lb': 0.0,
-                         'ub': 1.0})
-    # Now add some good continuous design variables
+    # Now add some continuous design variables
     assert(moop.n == 0)
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
@@ -208,12 +214,6 @@ def test_MOOP_addDesign():
                     'des_type': "categorical",
                     'levels': ["boy", "girl", "doggo"]})
     assert(moop.n_cat == 4)
-    # Try to use a repeated name to test error handling
-    with pytest.raises(ValueError):
-        moop.addDesign({'name': "x_9",
-                        'des_type': "continuous",
-                        'lb': 0.0,
-                        'ub': 1.0})
     # Now add more continuous design variables
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,

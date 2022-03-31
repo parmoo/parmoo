@@ -17,14 +17,10 @@ import inspect
 
 
 class MOOP:
-    """ Class describing a multiobjective optimization problem.
-
-    This class defines a multiobjective optimization problem as a set of
-    objective groups.
+    """ Class for defining a multiobjective optimization problem (MOOP).
 
     Upon initialization, one must supply a scalar optimization procedure
-    and dictionary of hyperparameters (for scalar optimizer and other
-    procedures). Public methods are summarized below.
+    and dictionary of hyperparameters. Class methods are summarized below.
 
     Objectives and algebraic constraints on the design variables and
     objective values can be added using the following functions:
@@ -51,13 +47,13 @@ class MOOP:
 
     The following methods are used for solving the MOOP and managing the
     internal simulation/objective databases:
-     * ``iterate(k)``
-     * ``updateAll(k, batch)``
-     * ``solve(budget)``
      * ``check_sim_db(x, s_name)``
      * ``update_sim_db(x, sx, s_name)``
      * ``evaluateSimulation(x, s_name)``
      * ``addData(x, sx)``
+     * ``iterate(k)``
+     * ``updateAll(k, batch)``
+     * ``solve(budget)``
 
     Finally, the following methods are used to retrieve data after the
     problem has been solved:
