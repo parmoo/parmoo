@@ -52,6 +52,7 @@ def test_libE_MOOP():
     from parmoo.acquisitions import RandomConstraint
     from parmoo.optimizers import LocalGPS
     import numpy as np
+    import os
     import pytest
 
     try:
@@ -59,6 +60,9 @@ def test_libE_MOOP():
     except BaseException:
         pytest.skip("libEnsemble or its dependencies not importable. " +
                     "Skipping.")
+
+    # Make all functions global for save/load
+    global id_named, obj1, obj2, obj3, const1
 
     # Create a 5d problem with 3 objectives
     n = 5
@@ -82,12 +86,11 @@ def test_libE_MOOP():
     assert(isinstance(moop.moop, MOOP))
     moop = libE_MOOP(LocalGPS, hyperparams={})
     assert(isinstance(moop.moop, MOOP))
-
     # Add n design vars
     for i in range(n):
         moop.addDesign({'name': "x" + str(i + 1), 'lb': 0.0, 'ub': 1.0})
-    assert(moop.moop.n == n)
-
+    assert(len(moop.getDesignType()) == n)
+    assert(all([dt[1] == "f8" for dt in moop.getDesignType()]))
     # Add simulation
     moop.addSimulation({'name': "Eye",
                         'm': o,
@@ -97,8 +100,9 @@ def test_libE_MOOP():
                         'surrogate': GaussRBF,
                         'sim_db': {},
                         'des_tol': 0.00000001})
-    assert(moop.moop.m_total == o)
-
+    assert(len(moop.getSimulationType()) == 1)
+    assert(all([dt[1] == "f8" and dt[2] == o
+                for dt in moop.getSimulationType()]))
     # Add o objectives
     def obj1(x, s): return s['Eye'][0]
     def obj2(x, s): return s['Eye'][1]
@@ -106,22 +110,39 @@ def test_libE_MOOP():
     moop.addObjective({'name': "obj1", 'obj_func': obj1})
     moop.addObjective({'name': "obj2", 'obj_func': obj2})
     moop.addObjective({'name': "obj3", 'obj_func': obj3})
-    assert(moop.moop.o == 3)
-
+    assert(len(moop.getObjectiveType()) == 3)
+    assert(all([dt[1] == "f8" for dt in moop.getObjectiveType()]))
     # Add 1 constraint
-    def const1(x, s): return x["x1"] - 0.5
+    def const1(x, s): return x["x5"] - 0.5
     moop.addConstraint({'name': "c1", 'constraint': const1})
-    assert(moop.moop.p == 1)
-
+    assert(len(moop.getConstraintType()) == 1)
+    assert(all([dt[1] == "f8" for dt in moop.getConstraintType()]))
     # Add 4 acquisition functions
     for i in range(4):
         moop.addAcquisition({'acquisition': RandomConstraint})
     assert(len(moop.moop.acquisitions) == 4)
-
+    # Perform 0 iteration manually
+    batch = moop.iterate(0)
+    for (xi, i) in batch:
+        moop.evaluateSimulation(xi, i)
+    moop.updateAll(0, batch)
+    # Add a value in the simulation database
+    x_val = np.zeros(1, dtype=moop.getDesignType())[0]
+    sx_val = np.zeros(1, dtype=moop.getSimulationType())[0]
+    moop.update_sim_db(x_val, sx_val["Eye"], "Eye")
+    assert(np.all(moop.check_sim_db(x_val, "Eye") == 0))
+    moop.addData(x_val, sx_val)
     # Check Pareto front, objective data, sim data
-    assert(moop.getPF()['x1'].shape[0] == 0)
-    assert(moop.getObjectiveData()['x1'].shape[0] == 0)
-    assert(moop.getSimulationData()['Eye']['x1'].shape[0] == 0)
+    assert(moop.getPF()['x1'].shape[0] == 1)
+    assert(moop.getObjectiveData()['x1'].shape[0] == 101)
+    assert(moop.getSimulationData()['Eye']['x1'].shape[0] == 101)
+    # Test checkpointing features
+    moop.setCheckpoint(True)
+    moop.save()
+    moop.load()
+    # Clean up test directory
+    os.remove("parmoo.moop")
+    os.remove("parmoo.surrogate.1")
 
 
 # @pytest.mark.extra

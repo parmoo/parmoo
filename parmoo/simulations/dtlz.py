@@ -413,7 +413,7 @@ class dtlz1_sim(sim_func):
         fx = np.zeros(self.o)
         fx[:] = (1.0 + ker(xx)[0]) / 2.0
         # Calculate the output array
-        for i in range(self.o - 1):
+        for i in range(self.o):
             for j in range(self.o - 1 - i):
                 fx[i] *= xx[j]
             if i > 0:
@@ -493,7 +493,7 @@ class dtlz2_sim(sim_func):
         fx = np.zeros(self.o)
         fx[:] = (1.0 + ker(xx)[0])
         # Calculate the output array
-        for i in range(self.o - 1):
+        for i in range(self.o):
             for j in range(self.o - 1 - i):
                 fx[i] *= np.cos(np.pi * xx[j] / 2)
             if i > 0:
@@ -574,7 +574,7 @@ class dtlz3_sim(sim_func):
         fx = np.zeros(self.o)
         fx[:] = (1.0 + ker(xx)[0])
         # Calculate the output array
-        for i in range(self.o - 1):
+        for i in range(self.o):
             for j in range(self.o - 1 - i):
                 fx[i] *= np.cos(np.pi * xx[j] / 2)
             if i > 0:
@@ -667,7 +667,7 @@ class dtlz4_sim(sim_func):
         fx = np.zeros(self.o)
         fx[:] = (1.0 + ker(xx)[0])
         # Calculate the output array
-        for i in range(self.o - 1):
+        for i in range(self.o):
             for j in range(self.o - 1 - i):
                 fx[i] *= np.cos(np.pi * xx[j] ** self.alpha / 2)
             if i > 0:
@@ -752,7 +752,7 @@ class dtlz5_sim(sim_func):
         fx = np.zeros(self.o)
         fx[:] = (1.0 + g2x)
         # Calculate the output array
-        for i in range(self.o - 1):
+        for i in range(self.o):
             for j in range(self.o - 1 - i):
                 fx[i] *= np.cos(np.pi * theta[j] / 2)
             if i > 0:
@@ -838,7 +838,7 @@ class dtlz6_sim(sim_func):
         fx = np.zeros(self.o)
         fx[:] = (1.0 + g3x)
         # Calculate the output array
-        for i in range(self.o - 1):
+        for i in range(self.o):
             for j in range(self.o - 1 - i):
                 fx[i] *= np.cos(np.pi * theta[j] / 2)
             if i > 0:
@@ -924,7 +924,7 @@ class dtlz7_sim(sim_func):
                       (1.0 + np.sin(3.0 * np.pi * xx[:self.o-1]) / gx))
                       + float(self.o))
         # Calculate the last entry in the output array
-        fx[o] = gx * hx
+        fx[self.o-1] = gx * hx
         return fx
 
 

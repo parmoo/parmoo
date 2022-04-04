@@ -1109,7 +1109,7 @@ class MOOP:
                          's_vals': sx.tolist(),
                          'sim_id': s_name}
             # Save in file with proper exension
-            fname = self.filename + ".simdb.json"
+            fname = self.checkpointfile + ".simdb.json"
             with open(fname, 'a') as fp:
                 json.dump(toadd, fp)
         # If checkpointing is on, save the moop before continuing
@@ -1455,7 +1455,7 @@ class MOOP:
                 containing design variable values (in the order that they
                 were added to the MOOP).
 
-            sim (numpy.ndarray): The corresponding simulation outputs.
+            sx (numpy.ndarray): The corresponding simulation outputs.
 
         """
 
@@ -1539,7 +1539,7 @@ class MOOP:
             # Initialize the database
             self.n_dat = 0
             self.data = {'x_vals': np.zeros((1, self.n)),
-                         'f_vals': None,
+                         'f_vals': np.zeros((1, self.o)),
                          'c_vals': np.zeros((1, 1))}
             # Generate search data
             for j, search in enumerate(self.searches):

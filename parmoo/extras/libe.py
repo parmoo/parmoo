@@ -490,7 +490,7 @@ class libE_MOOP(MOOP):
                 containing design variable values (in the order that they
                 were added to the MOOP).
 
-            sim (numpy.ndarray): The corresponding simulation outputs.
+            sx (numpy.ndarray): The corresponding simulation outputs.
 
         """
 
