@@ -362,3 +362,53 @@ def updatePF(data, nondom):
     return {'x_vals': nondom_out['x_vals'][:ndpts, :],
             'f_vals': nondom_out['f_vals'][:ndpts, :],
             'c_vals': nondom_out['c_vals'][:ndpts, :]}
+
+
+def unpack(x, dtype):
+    """ Unpack an input vector of given dtype into a numpy.ndarray.
+
+    Args:
+        x (numpy.ndarray or numpy structured array): The input vector,
+            which needs to be unpacked.
+
+        dtype (numpy.dtype): The dtype of the simulation.
+
+    Returns:
+        numpy.ndarray: x unpacked into a 1-dimensional numpy.ndarray.
+
+    """
+
+    # Check for illegal inputs
+    try:
+        xdt = np.dtype(dtype)
+    except BaseException:
+        raise TypeError("dtype does not match any known numpy dtype")
+    try:
+        x_in = np.array(x)
+    except BaseException:
+        raise TypeError("x could not be cast as a numpy.array")
+    if (xdt.names is None) != (x_in.dtype.names is None):
+        raise TypeError("x and given dtype are incompatible")
+    elif (xdt.names is not None) and any([name not in x_in.dtype.names
+                                          for name in xdt.names]):
+        raise TypeError("x and given dtype are incompatible")
+    elif (xdt.names is None) and np.prod(xdt.shape) != np.prod(x_in.shape):
+        raise TypeError("x and given dtype are incompatible")
+    # Convert inputs to a numpy ndarray if necessary
+    use_names = xdt.names is not None
+    if use_names:
+        # Allocate output ndarray
+        n = 0
+        for name in xdt.names:
+            n += x_in[name].size
+        xx = np.zeros(n)
+        # Unpack the x vector
+        i = 0
+        for name in xdt.names:
+            j = x_in[name].size
+            xx[i:i+j] = x_in[name].flatten()
+            i += j
+    # Otherwise, do nothing
+    else:
+        xx = x_in
+    return xx

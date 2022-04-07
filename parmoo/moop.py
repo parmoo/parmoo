@@ -955,9 +955,9 @@ class MOOP:
         if self.n_cont + self.n_cat < 1:
             return None
         elif self.use_names:
-            return self.des_names
+            return np.dtype(self.des_names)
         else:
-            return ('f8', (self.n_cont + self.n_cat,))
+            return np.dtype(('f8', (self.n_cont + self.n_cat,)))
 
     def getSimulationType(self):
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
@@ -974,9 +974,9 @@ class MOOP:
         if self.m_total < 1:
             return None
         elif self.use_names:
-            return self.sim_names
+            return np.dtype(self.sim_names)
         else:
-            return ('f8', (self.m_total,))
+            return np.dtype(('f8', (self.m_total,)))
 
     def getObjectiveType(self):
         """ Get the numpy dtype of an objective point for this MOOP.
@@ -993,9 +993,9 @@ class MOOP:
         if self.o < 1:
             return None
         elif self.use_names:
-            return self.obj_names
+            return np.dtype(self.obj_names)
         else:
-            return ('f8', (self.o,))
+            return np.dtype(('f8', (self.o,)))
 
     def getConstraintType(self):
         """ Get the numpy dtype of the constraint violations for this MOOP.
@@ -1012,9 +1012,9 @@ class MOOP:
         if self.p < 1:
             return None
         elif self.use_names:
-            return self.const_names
+            return np.dtype(self.const_names)
         else:
-            return ('f8', (self.p,))
+            return np.dtype(('f8', (self.p,)))
 
     def check_sim_db(self, x, s_name):
         """ Check the sim_db[s_name] in this MOOP for a design point.

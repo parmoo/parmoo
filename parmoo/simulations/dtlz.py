@@ -53,6 +53,7 @@ corresponding to an objective:
 """
 
 from parmoo.simulations import sim_func
+from parmoo.util import unpack
 import numpy as np
 
 
@@ -60,7 +61,7 @@ class g1_sim(sim_func):
     """ Class defining 1 of 4 kernel functions used in the DTLZ problem suite.
 
     g1 = 100 ( (n - o + 1) +
-               \sum_{i=o}^n ((x_i - offset)^2 - cos(20pi(x_i - offset))) )
+               sum_{i=o}^n ((x_i - offset)^2 - cos(20pi(x_i - offset))) )
 
     Contains 2 methods:
      * ``__init__(des, num_obj)``
@@ -92,16 +93,9 @@ class g1_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -117,12 +111,7 @@ class g1_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Calculate output
         result = (1 + self.n - self.o +
                   np.sum((xx[self.o-1:self.n] - self.offset) ** 2 -
@@ -166,14 +155,7 @@ class g2_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
         self.offset = offset
         return
@@ -191,12 +173,7 @@ class g2_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         return np.array([np.sum((xx[self.o-1:self.n] - self.offset) ** 2)])
 
 
@@ -235,16 +212,9 @@ class g3_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -260,12 +230,7 @@ class g3_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         return np.array([np.sum(np.abs(xx[self.o-1:self.n] - self.offset)
                                 ** 0.1)])
 
@@ -305,16 +270,9 @@ class g4_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -330,12 +288,7 @@ class g4_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         return np.array([(9 * np.sum(np.abs(xx[self.o-1:self.n] - self.offset))
                           / float(self.n + 1 - self.o)) + 1.0])
 
@@ -376,16 +329,9 @@ class dtlz1_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -401,12 +347,7 @@ class dtlz1_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize kernel function
         ker = g1_sim(self.n, self.o, self.offset)
         # Initialize output array
@@ -456,16 +397,9 @@ class dtlz2_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -481,12 +415,7 @@ class dtlz2_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize kernel function
         ker = g2_sim(self.n, self.o, self.offset)
         # Initialize output array
@@ -537,16 +466,9 @@ class dtlz3_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -562,12 +484,7 @@ class dtlz3_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize kernel function
         ker = g1_sim(self.n, self.o, self.offset)
         # Initialize output array
@@ -625,20 +542,9 @@ class dtlz4_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset, alpha=alpha)
         self.o = num_obj
-        if not (isinstance(alpha, int) or isinstance(alpha, float)):
-            raise TypeError("alpha must be a numeric type")
-        if alpha < 1:
-            raise ValueError("alpha must be at least 1")
+        self.offset = offset
         self.alpha = alpha
         return
 
@@ -655,12 +561,7 @@ class dtlz4_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize kernel function
         ker = g2_sim(self.n, self.o, self.offset)
         # Initialize output array
@@ -710,16 +611,9 @@ class dtlz5_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -735,12 +629,7 @@ class dtlz5_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize kernel function
         ker = g2_sim(self.n, self.o, self.offset)
         # Calculate theta values
@@ -796,16 +685,9 @@ class dtlz6_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -821,12 +703,7 @@ class dtlz6_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize kernel function
         ker = g3_sim(self.n, self.o, self.offset)
         # Calculate theta values
@@ -882,16 +759,9 @@ class dtlz7_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -907,16 +777,12 @@ class dtlz7_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize kernel function
         ker = g4_sim(self.n, self.o, self.offset)
         # Initialize first o-1 entries in the output array
         fx = np.zeros(self.o)
+        print(xx)
         fx[:self.o-1] = xx[:self.o-1]
         # Calculate kernel functions
         gx = 1.0 + ker(xx)
@@ -963,16 +829,9 @@ class dtlz8_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -988,12 +847,7 @@ class dtlz8_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize the output array
         fx = np.zeros(self.o)
         # Calculate outputs
@@ -1039,16 +893,9 @@ class dtlz9_sim(sim_func):
         """
 
         super().__init__(des)
-        if not isinstance(offset, float):
-            raise TypeError("optional input offset must have the float type")
-        if offset < 0 or offset > 1:
-            raise ValueError("offset must be in the range [0, 1]")
-        self.offset = offset
-        if not isinstance(num_obj, int):
-            raise TypeError("optional input num_obj must be an int type")
-        if num_obj < 1:
-            raise ValueError("optional input num_obj must be greater than 0")
+        __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
+        self.offset = offset
         return
 
     def __call__(self, x):
@@ -1064,12 +911,7 @@ class dtlz9_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
+        xx = unpack(x, self.des_type)
         # Initialize the output array
         fx = np.zeros(self.o)
         # Calculate outputs
@@ -1078,3 +920,25 @@ class dtlz9_sim(sim_func):
             stop = (i + 1) * self.n // self.o
             fx[i] = np.sum(np.abs(xx[start:stop] - self.offset) ** 0.1)
         return fx
+
+
+def __check_optionals__(num_obj=3, offset=0.5, alpha=100.0):
+    """ Check DTLZ optional inputs for illegal values.
+
+    Not recommended for external usage.
+
+    """
+
+    if not isinstance(offset, float):
+        raise TypeError("optional input offset must have the float type")
+    if offset < 0 or offset > 1:
+        raise ValueError("offset must be in the range [0, 1]")
+    if not isinstance(num_obj, int):
+        raise TypeError("optional input num_obj must be an int type")
+    if num_obj < 1:
+        raise ValueError("optional input num_obj must be greater than 0")
+    if not (isinstance(alpha, int) or isinstance(alpha, float)):
+        raise TypeError("alpha must be a numeric type")
+    if alpha < 1:
+        raise ValueError("alpha must be at least 1")
+    return

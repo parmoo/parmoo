@@ -232,8 +232,43 @@ def test_updatePF():
     assert(soln['f_vals'].shape == (4, 3))
 
 
+def test_unpack():
+    """ Test the unpack function.
+
+    Create a named and unnamed output, and try to unpack each.
+
+    """
+
+    from parmoo.util import unpack
+    import numpy as np
+    import pytest
+
+    # Create test inputs
+    dt_bad = "hello world"
+    x_bad = "hello world"
+    dt_unnamed = ("f8", (5,))
+    x_unnamed = np.eye(5)[2]
+    dt_named = [("x1", "f8"), ("x2", "f8"), ("x3", "f8", 3)]
+    x_named = np.zeros(1, dtype=dt_named)[0]
+    x_named["x3"][0] = 1.0
+    # Try some bad unpacks
+    with pytest.raises(TypeError):
+        unpack(x_bad, dt_unnamed)
+    with pytest.raises(TypeError):
+        unpack(x_unnamed, dt_bad)
+    with pytest.raises(TypeError):
+        unpack(x_unnamed, dt_named)
+    with pytest.raises(TypeError):
+        unpack(x_unnamed, [("x4", "f8")])
+    # Test unnamed unpack
+    assert(np.all(x_unnamed == unpack(x_unnamed, dt_unnamed)))
+    # Test named unpack
+    assert(np.all(x_unnamed == unpack(x_named, dt_named)))
+
+
 if __name__ == "__main__":
     test_xerror()
     test_check_sims()
     test_lex_leq()
     test_updatePF()
+    test_unpack()

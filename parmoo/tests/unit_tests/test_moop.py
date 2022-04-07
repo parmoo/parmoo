@@ -2754,6 +2754,7 @@ if __name__ == "__main__":
     test_MOOP_addObjective()
     test_MOOP_addConstraint()
     test_MOOP_addAcquisition()
+    test_MOOP_getTypes()
     test_MOOP_evaluateSimulation()
     test_MOOP_evaluateSurrogates()
     test_MOOP_evaluateConstraints()

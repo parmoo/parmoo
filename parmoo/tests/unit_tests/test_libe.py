@@ -89,8 +89,7 @@ def test_libE_MOOP():
     # Add n design vars
     for i in range(n):
         moop.addDesign({'name': "x" + str(i + 1), 'lb': 0.0, 'ub': 1.0})
-    assert(len(moop.getDesignType()) == n)
-    assert(all([dt[1] == "f8" for dt in moop.getDesignType()]))
+    assert(len(moop.getDesignType().names) == n)
     # Add simulation
     moop.addSimulation({'name': "Eye",
                         'm': o,
@@ -100,9 +99,7 @@ def test_libE_MOOP():
                         'surrogate': GaussRBF,
                         'sim_db': {},
                         'des_tol': 0.00000001})
-    assert(len(moop.getSimulationType()) == 1)
-    assert(all([dt[1] == "f8" and dt[2] == o
-                for dt in moop.getSimulationType()]))
+    assert(len(moop.getSimulationType().names) == 1)
     # Add o objectives
     def obj1(x, s): return s['Eye'][0]
     def obj2(x, s): return s['Eye'][1]
@@ -110,13 +107,11 @@ def test_libE_MOOP():
     moop.addObjective({'name': "obj1", 'obj_func': obj1})
     moop.addObjective({'name': "obj2", 'obj_func': obj2})
     moop.addObjective({'name': "obj3", 'obj_func': obj3})
-    assert(len(moop.getObjectiveType()) == 3)
-    assert(all([dt[1] == "f8" for dt in moop.getObjectiveType()]))
+    assert(len(moop.getObjectiveType().names) == 3)
     # Add 1 constraint
     def const1(x, s): return x["x5"] - 0.5
     moop.addConstraint({'name': "c1", 'constraint': const1})
-    assert(len(moop.getConstraintType()) == 1)
-    assert(all([dt[1] == "f8" for dt in moop.getConstraintType()]))
+    assert(len(moop.getConstraintType().names) == 1)
     # Add 4 acquisition functions
     for i in range(4):
         moop.addAcquisition({'acquisition': RandomConstraint})
