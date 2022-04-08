@@ -1053,7 +1053,8 @@ class MOOP:
     def update_sim_db(self, x, sx, s_name):
         """ Update sim_db[s_name] by adding a new design/objective pair.
 
-        x (np.ndarray): A 1d array specifying the design point to add.
+        x (np.array): A 1d array or numpy structured array specifying
+            the design point to add.
 
         sx (np.ndarray): A 1d array with the corresponding objective value.
 
@@ -1096,14 +1097,17 @@ class MOOP:
         if self.savedata:
             # Unpack x/sx pair into a dict for saving
             if self.use_names:
-                toadd = {'sim_id': s_name}
-                for key in x.names:
-                    toadd[key] = x[key]
-                for key in sx.names:
-                    if isinstance(sx[key], np.ndarray):
-                        toadd[key] = sx[key].tolist()
+                toadd = {'sim_id': s_name,
+                         'out': sx.tolist()}
+                for (key, dt) in self.des_names:
+                    if dt == "f8":
+                        toadd[key] = float(x[key])
+                    elif dt == "i4":
+                        toadd[key] = int(x[key])
                     else:
-                        toadd[key] = sx[key]
+                        raise ValueError("des_names contains an illegal " +
+                                         "value: " + dt +
+                                         " is not a valid type")
             else:
                 toadd = {'x_vals': x.tolist(),
                          's_vals': sx.tolist(),
