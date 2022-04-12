@@ -28,6 +28,7 @@ The 7 DTLZ problems included here are:
 """
 
 from parmoo.objectives import obj_func
+from util import unpack
 import numpy as np
 
 
@@ -56,9 +57,9 @@ class dtlz1_obj(obj_func):
         """ Constructor for DTLZ1 class.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (np.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
             sim (list, tuple, or int): Either the numpy.dtype of the
                 simulation outputs (list or tuple) or the number of simulation
@@ -113,21 +114,9 @@ class dtlz1_obj(obj_func):
 
         """
 
-        # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
-        # Extract sim into sx, if names are used
-        sx = np.zeros(self.m)
-        if self.use_names:
-            for i, name in enumerate(self.sim_type):
-                sx[i] = sim[name[0]]
-        else:
-            for i, si in enumerate(sim):
-                sx[i] = si
+        # Extract x into xx and sim into sx, if names are used
+        xx = unpack(x, self.des_type)
+        sx = unpack(sim, self.sim_type)
         # Evaluate derivative wrt xx
         if der == 1:
             dx = np.zeros(self.n)
@@ -197,9 +186,9 @@ class dtlz2_obj(obj_func):
         """ Constructor for DTLZ2 class.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (np.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
             sim (list, tuple, or int): Either the numpy.dtype of the
                 simulation outputs (list or tuple) or the number of simulation
@@ -254,21 +243,9 @@ class dtlz2_obj(obj_func):
 
         """
 
-        # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
-        # Extract sim into sx, if names are used
-        sx = np.zeros(self.m)
-        if self.use_names:
-            for i, name in enumerate(self.sim_type):
-                sx[i] = sim[name[0]]
-        else:
-            for i, si in enumerate(sim):
-                sx[i] = si
+        # Extract x into xx and sim into sx, if names are used
+        xx = unpack(x, self.des_type)
+        sx = unpack(sim, self.sim_type)
         # Evaluate derivative wrt xx
         if der == 1:
             dx = np.zeros(self.n)
@@ -343,9 +320,9 @@ class dtlz3_obj(obj_func):
         """ Constructor for DTLZ3 class.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (np.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
             sim (list, tuple, or int): Either the numpy.dtype of the
                 simulation outputs (list or tuple) or the number of simulation
@@ -400,21 +377,9 @@ class dtlz3_obj(obj_func):
 
         """
 
-        # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
-        # Extract sim into sx, if names are used
-        sx = np.zeros(self.m)
-        if self.use_names:
-            for i, name in enumerate(self.sim_type):
-                sx[i] = sim[name[0]]
-        else:
-            for i, si in enumerate(sim):
-                sx[i] = si
+        # Extract x into xx and sim into sx, if names are used
+        xx = unpack(x, self.des_type)
+        sx = unpack(sim, self.sim_type)
         # Evaluate derivative wrt xx
         if der == 1:
             dx = np.zeros(self.n)
@@ -491,9 +456,9 @@ class dtlz4_obj(obj_func):
         """ Constructor for DTLZ4 class.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (np.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
             sim (list, tuple, or int): Either the numpy.dtype of the
                 simulation outputs (list or tuple) or the number of simulation
@@ -558,21 +523,9 @@ class dtlz4_obj(obj_func):
 
         """
 
-        # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
-        # Extract sim into sx, if names are used
-        sx = np.zeros(self.m)
-        if self.use_names:
-            for i, name in enumerate(self.sim_type):
-                sx[i] = sim[name[0]]
-        else:
-            for i, si in enumerate(sim):
-                sx[i] = si
+        # Extract x into xx and sim into sx, if names are used
+        xx = unpack(x, self.des_type)
+        sx = unpack(sim, self.sim_type)
         # Evaluate derivative wrt xx
         if der == 1:
             dx = np.zeros(self.n)

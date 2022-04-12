@@ -28,9 +28,9 @@ class sim_func(ABC):
         """ Constructor for simulation functions.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (numpy.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
         """
 

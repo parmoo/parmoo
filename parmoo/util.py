@@ -371,7 +371,7 @@ def unpack(x, dtype):
         x (numpy.ndarray or numpy structured array): The input vector,
             which needs to be unpacked.
 
-        dtype (numpy.dtype): The dtype of the simulation.
+        dtype (numpy.dtype): The dtype of the input x.
 
     Returns:
         numpy.ndarray: x unpacked into a 1-dimensional numpy.ndarray.
