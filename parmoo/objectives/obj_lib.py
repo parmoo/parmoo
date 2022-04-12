@@ -199,13 +199,13 @@ class sos_sim_out(obj_func):
             for si in sim_inds:
                 if isinstance(si, str):
                     try:
-                        assert(si in self.sim_type.names)
+                        assert(si in np.dtype(self.sim_type).names)
                     except BaseException:
                         raise ValueError(si + " is not a legal name in " +
                                          str(np.dtype(sim)))
                 else:
                     try:
-                        assert(si[0] in self.sim_type.names)
+                        assert(si[0] in np.dtype(self.sim_type).names)
                     except BaseException:
                         raise ValueError(str(si[0]) +
                                          " is not a legal name in " +
@@ -270,9 +270,9 @@ class sos_sim_out(obj_func):
             ds = np.zeros(1, dtype=self.sim_type)[0]
             for si in self.sim_inds:
                 if isinstance(si, tuple):
-                    ds[si[0]][si[1]] = self.sim[si[0]][si[1]] * 2.0 * self.goal
+                    ds[si[0]][si[1]] = sim[si[0]][si[1]] * 2.0 * self.goal
                 else:
-                    ds[si] = self.sim[si] * 2.0 * self.goal
+                    ds[si] = sim[si] * 2.0 * self.goal
             return ds
         # Evaluate f(x, sim)
         else:
@@ -352,13 +352,13 @@ class sum_sim_out(obj_func):
             for si in sim_inds:
                 if isinstance(si, str):
                     try:
-                        assert(si in self.sim_type.names)
+                        assert(si in np.dtype(self.sim_type).names)
                     except BaseException:
                         raise ValueError(si + " is not a legal name in " +
                                          str(np.dtype(sim)))
                 else:
                     try:
-                        assert(si[0] in self.sim_type.names)
+                        assert(si[0] in np.dtype(self.sim_type).names)
                     except BaseException:
                         raise ValueError(str(si[0]) +
                                          " is not a legal name in " +
@@ -426,17 +426,29 @@ class sum_sim_out(obj_func):
         elif der == 2:
             ds = np.zeros(1, dtype=self.sim_type)[0]
             for si in self.sim_inds:
-                if self.absolute and sim[self.sim_ind] < 0.0:
-                    ds[self.sim_ind] = -1.0 * self.goal
+                if isinstance(si, tuple):
+                    if self.absolute and sim[si[0]][si[1]] < 0.0:
+                        ds[si[0]][si[1]] = -1.0 * self.goal
+                    else:
+                        ds[si[0]][si[1]] = 1.0 * self.goal
                 else:
-                    ds[self.sim_ind] = 1.0 * self.goal
+                    if self.absolute and sim[si] < 0.0:
+                        ds[si] = -1.0 * self.goal
+                    else:
+                        ds[si] = 1.0 * self.goal
             return ds
         # Evaluate f(x, sim)
         else:
             fx = 0.0
             for si in self.sim_inds:
                 if self.absolute:
-                    fx += abs(sim[si])
+                    if isinstance(si, tuple):
+                        fx += abs(sim[si[0]][si[1]])
+                    else:
+                        fx += abs(sim[si])
                 else:
-                    fx += sim[si]
+                    if isinstance(si, tuple):
+                        fx += sim[si[0]][si[1]]
+                    else:
+                        fx += sim[si]
             return fx * self.goal
