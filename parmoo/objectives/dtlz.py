@@ -28,7 +28,7 @@ The 7 DTLZ problems included here are:
 """
 
 from parmoo.objectives import obj_func
-from util import unpack
+from parmoo.util import unpack
 import numpy as np
 
 
@@ -123,7 +123,7 @@ class dtlz1_obj(obj_func):
             i = self.obj_ind
             for j in range(self.o - i):
                 if j < self.o - i - 1:
-                    dx[j] = (np.prod(xx[0:j]) * np.prod(xx[j+1:self.o-i])
+                    dx[j] = (np.prod(xx[0:j]) * np.prod(xx[j+1:self.o-i-1])
                              * (1 + sx[0]) / 2)
                     if i > 0:
                         dx[j] *= (1.0 - xx[self.o - i - 1])
@@ -132,7 +132,7 @@ class dtlz1_obj(obj_func):
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
                 for i, name in enumerate(self.des_type):
-                    result[0][name] = dx[i]
+                    result[0][name[0]] = dx[i]
                 return result[0]
             else:
                 return dx
@@ -146,7 +146,7 @@ class dtlz1_obj(obj_func):
                 ds[0] *= (1 - xx[self.o - i - 1])
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][sim_type[0][0]] = ds[0]
+                result[0][self.sim_type[0][0]] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -265,7 +265,7 @@ class dtlz2_obj(obj_func):
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
                 for i, name in enumerate(self.des_type):
-                    result[0][name] = dx[i]
+                    result[0][name[0]] = dx[i]
                 return result[0]
             else:
                 return dx
@@ -279,7 +279,7 @@ class dtlz2_obj(obj_func):
                 ds[0] *= np.sin(np.pi * xx[self.o - i - 1] / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][sim_type[0][0]] = ds[0]
+                result[0][self.sim_type[0][0]] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -399,7 +399,7 @@ class dtlz3_obj(obj_func):
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
                 for i, name in enumerate(self.des_type):
-                    result[0][name] = dx[i]
+                    result[0][name[0]] = dx[i]
                 return result[0]
             else:
                 return dx
@@ -413,7 +413,7 @@ class dtlz3_obj(obj_func):
                 ds[0] *= np.sin(np.pi * xx[self.o - i - 1] / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][sim_type[0][0]] = ds[0]
+                result[0][self.sim_type[0][0]] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -545,12 +545,12 @@ class dtlz4_obj(obj_func):
                     dx[j] = (np.prod(np.cos(xx[0:self.o-i-1] ** self.alpha *
                                             np.pi / 2)) * (1 + sx[0]) *
                              (np.pi * self.alpha / 2) *
-                             xx[self.j] ** (self.alpha - 1) *
-                             np.cos(xx[self.j] ** self.alpha * np.pi / 2))
+                             xx[j] ** (self.alpha - 1) *
+                             np.cos(xx[j] ** self.alpha * np.pi / 2))
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
                 for i, name in enumerate(self.des_type):
-                    result[0][name] = dx[i]
+                    result[0][name[0]] = dx[i]
                 return result[0]
             else:
                 return dx
@@ -565,7 +565,7 @@ class dtlz4_obj(obj_func):
                 ds[0] *= np.sin(xx[self.o - i - 1] ** self.alpha * np.pi / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][sim_type[0][0]] = ds[0]
+                result[0][self.sim_type[0][0]] = ds[0]
                 return result[0]
             else:
                 return ds
