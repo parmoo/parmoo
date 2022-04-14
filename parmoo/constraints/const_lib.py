@@ -1,45 +1,44 @@
-""" This module contains a library of common objective functions, matching
+""" This module contains a library of common constraint functions, matching
 ParMOO's interface.
 
-The common objectives are:
- * ``single_sim_out`` -- min or max a single simulation output
- * ``sos_sim_out`` -- min or max the sum-of-squares for several sim outputs
- * ``sum_sim_out`` -- min or max the (absolute) sum of several sim outputs
+The common constraints are:
+ * ``single_sim_bound`` -- min or max bound on a single simulation output
+ * ``sos_sim_bound`` -- min or max bound on the SOS for several sim outputs
+ * ``sum_sim_out`` -- min or max bound on the (abs) sum of several sim outputs
 
 """
 
-from parmoo.objectives import obj_func
+from parmoo.constraints import const_func
 import numpy as np
 
 
-class single_sim_out(obj_func):
-    """ Class for optimizing a single simulation's output.
+class single_sim_bound(const_func):
+    """ Class for bounding a single simulation's output.
 
-    Minimize or maximize a single simulation output. This simulation's
-    value will be used as an objective.
+    Upper or lower bound a single simulation output.
 
-    If minimizing:
+    If upper-bounding:
 
-    ``def obj_func(x, sx, der=0): return sx[self.sim_ind]``
+    ``def const_func(x, sx, der=0): return sx[self.sim_ind] - upper_bound``
 
-    If maximizing:
+    If lower-bounding:
 
-    ``def obj_func(x, sx, der=0): return -sx[self.sim_ind]``
+    ``def obj_func(x, sx, der=0): return lower_bound - sx[self.sim_ind]``
 
     Also supports derivative usage.
 
     Contains 2 methods:
-     * ``__init__(des, sim, sim_ind, goal='min')``
+     * ``__init__(des, sim, sim_ind, type='min', bound=0.0)``
      * ``__call__(x, sim, der=0)``
 
-    The ``__init__`` method inherits from the obj_func ABC.
+    The ``__init__`` method inherits from the const_func ABC.
 
-    The ``__call__`` returns sim[self.sim_ind].
+    The ``__call__`` returns the slace (negative when feasible).
 
     """
 
-    def __init__(self, des, sim, sim_ind, goal='min'):
-        """ Constructor for single_sim_out class.
+    def __init__(self, des, sim, sim_ind, type='lower', bound=0.0):
+        """ Constructor for single_sim_bound class.
 
         Args:
             des (np.dtype or int): Either the numpy.dtype of the
@@ -59,8 +58,11 @@ class single_sim_out(obj_func):
                 second entry is the index of that simulation's output
                 to minimize/maximize.
 
-            goal (str): Either 'min' to minimize or 'max' to maximize.
-                Defaults to 'min'.
+            type (str): Either 'lower' to lower-bound or 'upper' to
+                upper-bound. Defaults to 'upper'.
+
+            bound (float): The lower/upper bound for this constraint.
+                Defaults to 0.
 
         """
 
@@ -76,8 +78,8 @@ class single_sim_out(obj_func):
             try:
                 assert(sim_ind[0] in np.dtype(self.sim_type).names)
             except BaseException:
-                raise ValueError(str(sim_ind[0]) + " is not a legal name in " +
-                                 str(np.dtype(sim)))
+                raise ValueError(str(sim_ind[0]) + " is not a legal name in "
+                                 + str(np.dtype(sim)))
         elif isinstance(sim_ind, int):
             if hasattr(self.sim_type, "names"):
                 raise TypeError("Type mismatch: " + str(sim_ind) + " and " +
@@ -90,17 +92,20 @@ class single_sim_out(obj_func):
             raise TypeError("sim_ind must have the int, str, or tuple type")
         self.sim_ind = sim_ind
         # Check for optional input
-        if goal.lower() not in ('min', 'max'):
-            raise ValueError("goal must be 'min' or 'max', not '" +
-                             str(goal) + "'")
-        if goal.lower() == 'min':
-            self.goal = 1.0
+        if type.lower() not in ('lower', 'upper'):
+            raise ValueError("bound type must be 'upper' or 'lower', not '" +
+                             str(type) + "'")
+        if type.lower() == 'upper':
+            self.type = 1.0
         else:
-            self.goal = -1.0
+            self.type = -1.0
+        if not isinstance(bound, float) and not isinstance(bound, int):
+            raise TypeError("The upper/lower bound must be a numeric type")
+        self.bound = bound
         return
 
     def __call__(self, x, sim, der=0):
-        """ Define objective evaluation.
+        """ Define simulation evaluation.
 
         Args:
             x (numpy.array): A numpy.ndarray (unnamed) or numpy structured
@@ -118,9 +123,9 @@ class single_sim_out(obj_func):
                 Default value is der=0.
 
         Returns:
-            float or numpy.array: The output of this objective for the input
-            x (der=0), the gradient with respect to x (der=1), or the
-            gradient with respect to sim (der=2).
+            float or numpy.array: The (negative when feasible) slack in
+            this constraint for the input x (der=0), the gradient with
+            respect to x (der=1), or the gradient with respect to sim (der=2).
 
         """
 
@@ -131,46 +136,46 @@ class single_sim_out(obj_func):
         elif der == 2:
             ds = np.zeros(1, dtype=self.sim_type)[0]
             if isinstance(self.sim_ind, tuple):
-                ds[self.sim_ind[0]][self.sim_ind[1]] = self.goal
+                ds[self.sim_ind[0]][self.sim_ind[1]] = self.type
             else:
-                ds[self.sim_ind] = self.goal
+                ds[self.sim_ind] = self.type
             return ds
-        # Evaluate f(x, sim)
+        # Evaluate g(x, sim)
         else:
             if isinstance(self.sim_ind, tuple):
-                return sim[self.sim_ind[0]][self.sim_ind[1]] * self.goal
+                return (sim[self.sim_ind[0]][self.sim_ind[1]] - self.bound) \
+                       * self.type
             else:
-                return sim[self.sim_ind] * self.goal
+                return (sim[self.sim_ind] - self.bound) * self.type
 
 
-class sos_sim_out(obj_func):
-    """ Class for optimizing the sum-of-squared simulation outputs.
+class sos_sim_bound(const_func):
+    """ Class for constraining the sum-of-squared simulation outputs.
 
-    Minimize or maximize the sum-of-squared simulation outputs. This
-    sum-of-squares (SOS) will be used as an objective.
+    Upper or lower bound the sum-of-squared simulation outputs.
 
-    If minimizing:
+    If upper bounding:
 
-    ``def obj_func(x, sx, der=0): return sum([sx[i]**2 for i in sim_inds])``
+    ``def obj_func(x, sx): return sum([sx[i]**2 for all i]) - upper_bound``
 
-    If maximizing:
+    If lower bounding:
 
-    ``def obj_func(x, sx, der=0): return -sum([sx[i]**2 for i in sim_inds])``
+    ``def obj_func(x, sx): return lower_bound - sum([sx[i]**2 for all i])``
 
     Also supports derivative usage.
 
     Contains 2 methods:
-     * ``__init__(des, sim, sim_inds, goal='min')``
-     * ``__call__(x, sim, der=0)``
+     * ``__init__(des, sim, sim_inds, type='upper', bound=0.0)``
+     * ``__call__(x, sx, der=0)``
 
-    The ``__init__`` method inherits from the obj_func ABC.
+    The ``__init__`` method inherits from the const_func ABC.
 
-    The ``__call__`` evaluate the sum-of-square outputs.
+    The ``__call__`` evaluate the slack (negative values are feasible).
 
     """
 
-    def __init__(self, des, sim, sim_inds, goal='min'):
-        """ Constructor for sos_sim_out class.
+    def __init__(self, des, sim, sim_inds, type='upper', bound=0.0):
+        """ Constructor for sos_sim_bound class.
 
         Args:
             des (np.dtype or int): Either the numpy.dtype of the
@@ -184,8 +189,11 @@ class sos_sim_out(obj_func):
             sim_inds (list): The list of indices or names of the
                 simulation outputs to sum over.
 
-            goal (str): Either 'min' to minimize SOS or 'max' to maximize SOS.
-                Defaults to 'min'.
+            type (str): Either 'lower' to lower-bound or 'upper' to
+                upper-bound. Defaults to 'upper'.
+
+            bound (float): The lower/upper bound for this constraint.
+                Defaults to 0.
 
         """
 
@@ -228,17 +236,20 @@ class sos_sim_out(obj_func):
                             "strings")
         self.sim_inds = sim_inds
         # Check for optional input
-        if goal.lower() not in ('min', 'max'):
-            raise ValueError("goal must be 'min' or 'max', not '" +
-                             str(goal) + "'")
-        if goal.lower() == 'min':
-            self.goal = 1.0
+        if type.lower() not in ('lower', 'upper'):
+            raise ValueError("bound type must be 'upper' or 'lower', not '" +
+                             str(type) + "'")
+        if type.lower() == 'upper':
+            self.type = 1.0
         else:
-            self.goal = -1.0
+            self.type = -1.0
+        if not isinstance(bound, float) and not isinstance(bound, int):
+            raise TypeError("The upper/lower bound must be a numeric type")
+        self.bound = bound
         return
 
     def __call__(self, x, sim, der=0):
-        """ Define objective evaluation.
+        """ Define constraint evaluation.
 
         Args:
             x (numpy.array): A numpy.ndarray (unnamed) or numpy structured
@@ -256,9 +267,9 @@ class sos_sim_out(obj_func):
                 Default value is der=0.
 
         Returns:
-            float or numpy.array: The output of this objective for the input
-            x (der=0), the gradient with respect to x (der=1), or the
-            gradient with respect to sim (der=2).
+            float or numpy.array: The (negative when feasible) slack in
+            this constraint for the input x (der=0), the gradient with
+            respect to x (der=1), or the gradient with respect to sim (der=2).
 
         """
 
@@ -270,9 +281,9 @@ class sos_sim_out(obj_func):
             ds = np.zeros(1, dtype=self.sim_type)[0]
             for si in self.sim_inds:
                 if isinstance(si, tuple):
-                    ds[si[0]][si[1]] = sim[si[0]][si[1]] * 2.0 * self.goal
+                    ds[si[0]][si[1]] = sim[si[0]][si[1]] * 2.0 * self.type
                 else:
-                    ds[si] = sim[si] * 2.0 * self.goal
+                    ds[si] = sim[si] * 2.0 * self.type
             return ds
         # Evaluate f(x, sim)
         else:
@@ -282,45 +293,45 @@ class sos_sim_out(obj_func):
                     fx += sim[si[0]][si[1]] ** 2.0
                 else:
                     fx += sim[si] ** 2.0
-            return fx * self.goal
+            return (fx - self.bound) * self.type
 
 
-class sum_sim_out(obj_func):
-    """ Class for optimizing the sum of simulation outputs.
+class sum_sim_bound(const_func):
+    """ Class for bounding the sum of simulation outputs.
 
-    Minimize or maximize the (absolute) sum of simulation output.
-    This sum will be used as an objective.
+    Upper or lower bound the (absolute) sum of simulation output.
 
-    If minimizing:
+    If upper bounding:
 
-    ``def obj_func(x, sx, der=0): return sum([sx[i] for i in sim_inds])``
+    ``def const_func(x, sx): return sum([sx[i] for all i]) - upper_bound``
 
-    If maximizing:
+    If lower bounding:
 
-    ``def obj_func(x, sx, der=0): return -sum([sx[i] for i in sim_inds])``
+    ``def const_func(x, sx): return lower_bound - sum([sx[i] for all i])``
 
-    If minimizing absolute sum:
+    If upper bounding absolute sum:
 
-    ``def obj_func(x, sx, der=0): return sum([abs(sx[i]) for i in sim_inds])``
+    ``def const_func(x, sx): return sum([abs(sx[i]) forall i]) - upper_bound``
 
-    If maximizing absolute sum:
+    If lower bounding absolute sum:
 
-    ``def obj_func(x, sx, der=0): return -sum([abs(sx[i]) for i in sim_inds])``
+    ``def const_func(x, sx): return lower_bound - sum([abs(sx[i]) forall i])``
 
     Also supports derivative usage.
 
     Contains 2 methods:
-     * ``__init__(des, sim, sim_inds, goal='min', absolute=False)``
+     * ``__init__(des, sim, sim_inds, type='upper', bound=0, absolute=False)``
      * ``__call__(x, sim, der=0)``
 
-    The ``__init__`` method inherits from the obj_func ABC.
+    The ``__init__`` method inherits from the const_func ABC.
 
-    The ``__call__`` evaluate the (absolute) sum outputs.
+    The ``__call__`` evaluate the slack (negative values are feasible).
 
     """
 
-    def __init__(self, des, sim, sim_inds, goal='min', absolute=False):
-        """ Constructor for sum_sim_out class.
+    def __init__(self, des, sim, sim_inds,
+                 type='upper', bound=0.0, absolute=False):
+        """ Constructor for sum_sim_bound class.
 
         Args:
             des (np.dtype or int): Either the numpy.dtype of the
@@ -334,11 +345,14 @@ class sum_sim_out(obj_func):
             sim_inds (list): The list of indices or names of the
                 simulation outputs to sum over.
 
-            goal (str): Either 'min' to minimize sum or 'max' to maximize sum.
-                Defaults to 'min'.
+            type (str): Either 'lower' to lower-bound or 'upper' to
+                upper-bound. Defaults to 'upper'.
 
-            absolute (bool): True to min/max absolute sum, False to
-                min/max raw sum. Defaults to False.
+            bound (float): The lower/upper bound for this constraint.
+                Defaults to 0.
+
+            absolute (bool): True to bound absolute sum, False to
+                bound raw sum. Defaults to False.
 
         """
 
@@ -380,14 +394,17 @@ class sum_sim_out(obj_func):
             raise TypeError("sim_inds must be a list of ints, tuples, or " +
                             "strings")
         self.sim_inds = sim_inds
-        # Check for optional inputs
-        if goal.lower() not in ('min', 'max'):
-            raise ValueError("goal must be 'min' or 'max', not '" +
-                             str(goal) + "'")
-        if goal.lower() == 'min':
-            self.goal = 1.0
+        # Check for optional input
+        if type.lower() not in ('lower', 'upper'):
+            raise ValueError("bound type must be 'upper' or 'lower', not '" +
+                             str(type) + "'")
+        if type.lower() == 'upper':
+            self.type = 1.0
         else:
-            self.goal = -1.0
+            self.type = -1.0
+        if not isinstance(bound, float) and not isinstance(bound, int):
+            raise TypeError("The upper/lower bound must be a numeric type")
+        self.bound = bound
         if not isinstance(absolute, bool):
             raise TypeError("absolute must be a bool type, not " +
                             str(type(absolute)))
@@ -395,7 +412,7 @@ class sum_sim_out(obj_func):
         return
 
     def __call__(self, x, sim, der=0):
-        """ Define objective evaluation.
+        """ Define constraint evaluation.
 
         Args:
             x (numpy.array): A numpy.ndarray (unnamed) or numpy structured
@@ -413,9 +430,9 @@ class sum_sim_out(obj_func):
                 Default value is der=0.
 
         Returns:
-            float or numpy.array: The output of this objective for the input
-            x (der=0), the gradient with respect to x (der=1), or the
-            gradient with respect to sim (der=2).
+            float or numpy.array: The (negative when feasible) slack in
+            this constraint for the input x (der=0), the gradient with
+            respect to x (der=1), or the gradient with respect to sim (der=2).
 
         """
 
@@ -428,14 +445,14 @@ class sum_sim_out(obj_func):
             for si in self.sim_inds:
                 if isinstance(si, tuple):
                     if self.absolute and sim[si[0]][si[1]] < 0.0:
-                        ds[si[0]][si[1]] = -1.0 * self.goal
+                        ds[si[0]][si[1]] = -1.0 * self.type
                     else:
-                        ds[si[0]][si[1]] = 1.0 * self.goal
+                        ds[si[0]][si[1]] = 1.0 * self.type
                 else:
                     if self.absolute and sim[si] < 0.0:
-                        ds[si] = -1.0 * self.goal
+                        ds[si] = -1.0 * self.type
                     else:
-                        ds[si] = 1.0 * self.goal
+                        ds[si] = 1.0 * self.type
             return ds
         # Evaluate f(x, sim)
         else:
@@ -451,4 +468,4 @@ class sum_sim_out(obj_func):
                         fx += sim[si[0]][si[1]]
                     else:
                         fx += sim[si]
-            return fx * self.goal
+            return (fx - self.bound) * self.type
