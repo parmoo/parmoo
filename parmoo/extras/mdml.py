@@ -312,13 +312,16 @@ class MDML_MOOP(MOOP):
                 lb.append(float(msg['value']['Continuous_Par'][name]['Low']))
                 ub.append(float(msg['value']['Continuous_Par'][name]['High']))
                 logging.info("   Done.")
-            for name in msg['value']['Categorical_Par'].keys():
-                logging.info(f"   Reading categorical design var {name}...")
-                n += 1
-                des_names.append(name)
-                cat_names.append(name)
-                lvls.append(msg['value']['Categorical_Par'][name]['Levels'])
-                logging.info("   Done.")
+            if 'Categorical_Par' in msg['value'].keys():
+                for name in msg['value']['Categorical_Par'].keys():
+                    logging.info("   Reading categorical design var " +
+                                 name + "...")
+                    n += 1
+                    des_names.append(name)
+                    cat_names.append(name)
+                    lvls.append(msg['value']['Categorical_Par'][name]
+                                   ['Levels'])
+                    logging.info("   Done.")
             # Read the simulation outputs into lists
             for i, name in enumerate(msg['value']['Dependent_Par'].keys()):
                 logging.info(f"   Reading sim/exp output {name}...")
