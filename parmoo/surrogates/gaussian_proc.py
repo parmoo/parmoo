@@ -601,7 +601,7 @@ class LocalGaussRBF(SurrogateFunction):
             self.std_dev = np.linalg.norm(center -
                                           self.x_vals[idists[self.n_loc - 1]])
             # Get all points within 2 standard deviations of the center
-            self.loc_inds = [i for i in idists
+            self.loc_inds = [int(i) for i in idists
                              if np.linalg.norm(center - self.x_vals[i])
                              <= 2.0 * self.std_dev]
             # Build the Gaussian covariance matrix

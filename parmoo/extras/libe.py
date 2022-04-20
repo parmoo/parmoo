@@ -159,7 +159,7 @@ class libE_MOOP(MOOP):
      * ``getConstraintType()``
 
     The following methods are used to save/load ParMOO objects from memory.
-     * ``setCheckpoint(checkpoint, savedata=False, filename="parmoo")``
+     * ``setCheckpoint(checkpoint, checkpoint_data=False, filename="parmoo")``
      * ``save(filename="parmoo")``
      * ``load(filename="parmoo")``
 
@@ -497,14 +497,15 @@ class libE_MOOP(MOOP):
         self.moop.addData(x, sx)
         return
 
-    def setCheckpoint(self, checkpoint, savedata=True, filename="parmoo"):
+    def setCheckpoint(self, checkpoint,
+                      checkpoint_data=True, filename="parmoo"):
         """ Set ParMOO's checkpointing feature.
 
         Args:
             checkpoint (bool): Turn checkpointing on (True) or off (False).
 
-            savedata (bool, optional): Also save raw simulation output in
-                a separate .json file (True) or rely on ParMOO's internal
+            checkpoint_data (bool, optional): Also save raw simulation output
+                in a separate .json file (True) or rely on ParMOO's internal
                 simulation database (False). When omitted, this parameter
                 defaults to False.
 
@@ -519,7 +520,7 @@ class libE_MOOP(MOOP):
 
         """
 
-        self.moop.setCheckpoint(checkpoint, savedata=savedata,
+        self.moop.setCheckpoint(checkpoint, checkpoint_data=checkpoint_data,
                                 filename=filename)
 
     def iterate(self, k):

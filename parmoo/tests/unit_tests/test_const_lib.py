@@ -130,8 +130,8 @@ def test_sos_sim_bound_named():
     sx['sim2'][:] = 2.0
     # Create the constraint function
     const_func = sos_sim_bound(xtype, stype,
-                           ['sim1', ('sim2', 0), ('sim2', 1), ('sim2', 2)],
-                           type='lower')
+                               ['sim1', ('sim2', 0), ('sim2', 1), ('sim2', 2)],
+                               type='lower')
     # Test function evaluation
     assert(np.abs(const_func(x, sx) + 16.0) < 1.0e-8)
     # Test dx evaluation
@@ -189,8 +189,8 @@ def test_sum_sim_bound_named():
     sx['sim2'][:] = 2.0
     # Create the constraint function
     const_func = sum_sim_bound(xtype, stype,
-                           ['sim1', ('sim2', 0), ('sim2', 1), ('sim2', 2)],
-                           type='lower')
+                               ['sim1', ('sim2', 0), ('sim2', 1), ('sim2', 2)],
+                               type='lower')
     # Test function evaluation
     assert(np.abs(const_func(x, sx) + 8.0) < 1.0e-8)
     # Test dx evaluation
@@ -226,8 +226,8 @@ def test_sum_sim_bound_named_abs():
     sx['sim2'][:] = -2.0
     # Create the constraint function
     const_func = sum_sim_bound(xtype, stype,
-                           ['sim1', ('sim2', 0), ('sim2', 1), ('sim2', 2)],
-                           type='upper', absolute=True)
+                               ['sim1', ('sim2', 0), ('sim2', 1), ('sim2', 2)],
+                               type='upper', absolute=True)
     # Test function evaluation
     assert(np.abs(const_func(x, sx) - 8.0) < 1.0e-8)
     # Test dx evaluation

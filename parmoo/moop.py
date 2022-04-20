@@ -41,7 +41,7 @@ class MOOP:
      * ``getConstraintType()``
 
     The following methods are used to save/load ParMOO objects from memory.
-     * ``setCheckpoint(checkpoint, savedata=False, filename="parmoo")``
+     * ``setCheckpoint(checkpoint, checkpoint_data=False, filename="parmoo")``
      * ``save(filename="parmoo")``
      * ``load(filename="parmoo")``
 
@@ -89,7 +89,8 @@ class MOOP:
                  'constraints', 'hyperparams', 'acquisitions', 'history',
                  'scale', 'scaled_lb', 'scaled_ub', 'scaled_des_tols',
                  'cat_des_tols', 'use_names', 'iteration', 'checkpoint',
-                 'checkpointfile', 'savedata']
+                 'checkpointfile', 'checkpoint_data', 'new_checkpoint',
+                 'new_data']
 
     def __embed__(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
@@ -387,8 +388,11 @@ class MOOP:
         self.iteration = 0
         # Initialize the checkpointing
         self.checkpoint = False
-        self.savedata = False
+        self.checkpoint_data = False
         self.checkpointfile = "parmoo"
+        # Track whether we are creating a new checkpoint and/or datafile
+        self.new_checkpoint = True
+        self.new_data = True
         # Set up the surrogate optimizer
         try:
             # Try initializing the optimizer, to check that it can be done
@@ -908,14 +912,15 @@ class MOOP:
             self.acquisitions.append(acquisition)
         return
 
-    def setCheckpoint(self, checkpoint, savedata=True, filename="parmoo"):
+    def setCheckpoint(self, checkpoint,
+                      checkpoint_data=True, filename="parmoo"):
         """ Set ParMOO's checkpointing feature.
 
         Args:
             checkpoint (bool): Turn checkpointing on (True) or off (False).
 
-            savedata (bool, optional): Also save raw simulation output in
-                a separate .json file (True) or rely on ParMOO's internal
+            checkpoint_data (bool, optional): Also save raw simulation output
+                in a separate .json file (True) or rely on ParMOO's internal
                 simulation database (False). When omitted, this parameter
                 defaults to False.
 
@@ -936,7 +941,7 @@ class MOOP:
             raise TypeError("filename must have the string type")
         # Set internal checkpointing variables
         self.checkpoint = checkpoint
-        self.savedata = savedata
+        self.checkpoint_data = checkpoint_data
         self.checkpointfile = filename
         return
 
@@ -1093,25 +1098,8 @@ class MOOP:
             self.sim_db[i]['s_vals'][0, :] = sx
             self.sim_db[i]['n'] += 1
         # If data-saving is on, append the sim output to a json
-        if self.savedata:
-            # Unpack x/sx pair into a dict for saving
-            if self.use_names:
-                toadd = {'sim_id': s_name}
-                for key in x.names:
-                    toadd[key] = x[key]
-                for key in sx.names:
-                    if isinstance(sx[key], np.ndarray):
-                        toadd[key] = sx[key].tolist()
-                    else:
-                        toadd[key] = sx[key]
-            else:
-                toadd = {'x_vals': x.tolist(),
-                         's_vals': sx.tolist(),
-                         'sim_id': s_name}
-            # Save in file with proper exension
-            fname = self.checkpointfile + ".simdb.json"
-            with open(fname, 'a') as fp:
-                json.dump(toadd, fp)
+        if self.checkpoint_data:
+            self.savedata(x, sx, s_name, filename=self.checkpointfile)
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpointfile)
@@ -1964,7 +1952,16 @@ class MOOP:
         import shutil
         import pickle
         import codecs
+        from os.path import exists as file_exists
 
+        # Check whether the file exists first
+        exists = file_exists(filename + ".moop")
+        if exists and self.new_checkpoint:
+            raise OSError("Creating a new checkpoint file, but " +
+                          filename + ".moop already exists! " +
+                          "Move the existing file to a new location or " +
+                          "delete it, so that ParMOO doesn't accidentally " +
+                          "overwrite your data...")
         # Create a serializable ParMOO dictionary by replacing function refs
         # with funcion/module names
         parmoo_state = {'n': self.n,
@@ -1993,7 +1990,7 @@ class MOOP:
                         'use_names': self.use_names,
                         'iteration': self.iteration,
                         'checkpoint': self.checkpoint,
-                        'savedata': self.savedata,
+                        'checkpoint_data': self.checkpoint_data,
                         'checkpointfile': self.checkpointfile}
         # Serialize numpy arrays
         if isinstance(self.scale, np.ndarray):
@@ -2127,6 +2124,7 @@ class MOOP:
         with open(fname_tmp, 'w') as fp:
             json.dump(parmoo_state, fp)
         shutil.move(fname_tmp, fname)
+        self.new_checkpoint = False
         return
 
     def load(self, filename="parmoo"):
@@ -2182,7 +2180,7 @@ class MOOP:
         self.use_names = parmoo_state['use_names']
         self.iteration = parmoo_state['iteration']
         self.checkpoint = parmoo_state['checkpoint']
-        self.savedata = parmoo_state['savedata']
+        self.checkpoint_data = parmoo_state['checkpoint_data']
         self.checkpointfile = parmoo_state['checkpointfile']
         # Reload serialize numpy arrays
         self.scale = np.array(parmoo_state['scale'])
@@ -2329,4 +2327,48 @@ class MOOP:
             except NotImplementedError:
                 pass
             self.acquisitions.append(toadd)
+        self.new_checkpoint = False
+        self.new_data = False
+        return
+
+    def savedata(self, x, sx, s_name, filename="parmoo"):
+        """ Save the current simulation database for this MOOP.
+
+        Args:
+            filename (string, optional): The filepath to the checkpointing
+                file(s). Do not include file extensions, they will be
+                appended automaically. Defaults to the value "parmoo"
+                (filename will be "parmoo.simdb.json").
+
+        """
+
+        from os.path import exists as file_exists
+
+        # Check whether file exists first
+        exists = file_exists(filename + ".simdb.json")
+        if exists and self.new_data:
+            raise OSError("Creating a new save file, but " +
+                          filename + ".simdb.json already exists! " +
+                          "Move the existing file to a new location or " +
+                          "delete it so that ParMOO doesn't overwrite your " +
+                          "existing data...")
+        # Unpack x/sx pair into a dict for saving
+        if self.use_names:
+            toadd = {'sim_id': s_name}
+            for key in x.names:
+                toadd[key] = x[key]
+            for key in sx.names:
+                if isinstance(sx[key], np.ndarray):
+                    toadd[key] = sx[key].tolist()
+                else:
+                    toadd[key] = sx[key]
+        else:
+            toadd = {'x_vals': x.tolist(),
+                     's_vals': sx.tolist(),
+                     'sim_id': s_name}
+        # Save in file with proper exension
+        fname = filename + ".simdb.json"
+        with open(fname, 'a') as fp:
+            json.dump(toadd, fp)
+        self.new_data = False
         return
