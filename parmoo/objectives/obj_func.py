@@ -42,47 +42,49 @@ class obj_func(ABC):
         # Decide whether to use named variables
         self.use_names = False
         # Try to read design variable type
-        if isinstance(des, list) or isinstance(des, tuple):
-            try:
-                np.zeros(1, dtype=des)
-                self.des_type = des
-                self.n = len(des)
-            except TypeError:
-                raise TypeError("des must contain a valid numpy.dtype")
-            if isinstance(des, list):
-                self.use_names = True
-        elif isinstance(des, int):
-            if des > 0:
-                self.n = des
-                self.des_type = ("f8", self.n)
+        try:
+            self.des_type = np.dtype(des)
+        except TypeError:
+            if isinstance(des, int):
+                self.des_type = np.dtype(("f8", (des, )))
             else:
-                raise ValueError("des must be a positive number")
+                raise TypeError("des must contain a valid numpy.dtype or int")
+        if self.des_type.names is not None:
+            self.n = len(self.des_type.names)
+            self.use_names = True
         else:
-            raise TypeError("des must be a list, tuple, or int")
-        # Try to read simulation output type
-        if isinstance(sim, list) and self.use_names:
+            self.n = sum(self.des_type.shape)
+        if self.n <= 0:
+            raise ValueError("An illegal des_type was given")
+        # Try to read simulation variable type
+        if (not self.use_names) and isinstance(sim, int):
+            self.sim_type = np.dtype(("f8", (sim, )))
+            self.m = sim
+        else:
             try:
-                np.zeros(1, dtype=sim)
-                self.sim_type = sim
-                self.m = len(sim)
+                self.sim_type = np.dtype(sim)
             except TypeError:
-                raise TypeError("sim must contain a valid numpy.dtype")
-        elif isinstance(sim, tuple) and not self.use_names:
-            try:
-                np.zeros(1, dtype=sim)
-                self.sim_type = sim
-                self.m = len(sim)
-            except TypeError:
-                raise TypeError("sim must contain a valid numpy.dtype")
-        elif isinstance(sim, int) and not self.use_names:
-            if sim > 0:
-                self.m = sim
-                self.sim_type = ("f8", self.m)
+                if isinstance(sim, int):
+                    self.sim_type = np.dtype(("f8", (sim, )))
+                else:
+                    raise TypeError("sim must contain a numpy.dtype or int")
+            if self.sim_type.names is not None:
+                self.m = 0
+                for name in self.sim_type.names:
+                    if len(self.sim_type[name].shape) >= 1:
+                        self.m += sum(self.sim_type[name].shape)
+                    else:
+                        self.m += 1
             else:
-                raise ValueError("sim must be a positive number")
-        else:
-            raise TypeError("sim must be a list, tuple, or int, and " +
-                            "match the type of des")
+                if len(self.sim_type[name].shape) >= 1:
+                    self.m = sum(self.sim_type[name].shape)
+                else:
+                    self.m = 1
+            if (self.sim_type is not None) != self.use_names:
+                raise ValueError("When using names for des_type, sim_type " +
+                                 "must also give named fields")
+        if self.m <= 0:
+            raise ValueError("An illegal sim_type was given")
         return
 
     def __call__(self, x, sx, der=0):

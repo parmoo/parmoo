@@ -131,8 +131,8 @@ class dtlz1_obj(obj_func):
                     dx[j] = -(np.prod(xx[0:self.o-i-1]) * (1 + sx[0]) / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type):
-                    result[0][name[0]] = dx[i]
+                for i, name in enumerate(self.des_type.names):
+                    result[0][name] = dx[i]
                 return result[0]
             else:
                 return dx
@@ -146,7 +146,8 @@ class dtlz1_obj(obj_func):
                 ds[0] *= (1 - xx[self.o - i - 1])
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][self.sim_type[0][0]] = ds[0]
+                for name in self.sim_type.names:
+                    result[0][name] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -264,8 +265,8 @@ class dtlz2_obj(obj_func):
                              np.cos(xx[self.o - i - 1] * np.pi / 2))
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type):
-                    result[0][name[0]] = dx[i]
+                for i, name in enumerate(self.des_type.names):
+                    result[0][name] = dx[i]
                 return result[0]
             else:
                 return dx
@@ -279,7 +280,8 @@ class dtlz2_obj(obj_func):
                 ds[0] *= np.sin(np.pi * xx[self.o - i - 1] / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][self.sim_type[0][0]] = ds[0]
+                for name in self.sim_type.names:
+                    result[0][name] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -398,8 +400,8 @@ class dtlz3_obj(obj_func):
                              np.cos(xx[self.o - i - 1] * np.pi / 2))
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type):
-                    result[0][name[0]] = dx[i]
+                for i, name in enumerate(self.des_type.names):
+                    result[0][name] = dx[i]
                 return result[0]
             else:
                 return dx
@@ -413,7 +415,8 @@ class dtlz3_obj(obj_func):
                 ds[0] *= np.sin(np.pi * xx[self.o - i - 1] / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][self.sim_type[0][0]] = ds[0]
+                for name in self.sim_type.names:
+                    result[0][name] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -549,8 +552,8 @@ class dtlz4_obj(obj_func):
                              np.cos(xx[j] ** self.alpha * np.pi / 2))
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type):
-                    result[0][name[0]] = dx[i]
+                for i, name in enumerate(self.des_type.names):
+                    result[0][name] = dx[i]
                 return result[0]
             else:
                 return dx
@@ -565,7 +568,8 @@ class dtlz4_obj(obj_func):
                 ds[0] *= np.sin(xx[self.o - i - 1] ** self.alpha * np.pi / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][self.sim_type[0][0]] = ds[0]
+                for name in self.sim_type.names:
+                    result[0][name] = ds[0]
                 return result[0]
             else:
                 return ds

@@ -79,7 +79,7 @@ class single_sim_out(obj_func):
                 raise ValueError(str(sim_ind[0]) + " is not a legal name in " +
                                  str(np.dtype(sim)))
         elif isinstance(sim_ind, int):
-            if hasattr(self.sim_type, "names"):
+            if self.sim_type.names is not None:
                 raise TypeError("Type mismatch: " + str(sim_ind) + " and " +
                                 str(np.dtype(self.sim_type)))
             elif sim_ind < 0 or sim_ind > self.m:
@@ -218,7 +218,7 @@ class sos_sim_out(obj_func):
                 raise ValueError(si[0] + " is not a legal name in " +
                                  str(np.dtype(sim)))
         elif all([isinstance(si, int) for si in sim_inds]):
-            if hasattr(self.sim_type, "names"):
+            if self.sim_type.names is not None:
                 raise TypeError("Type mismatch: int and " +
                                 str(np.dtype(self.sim_type)))
             elif any([si < 0 or si > self.m for si in sim_inds]):
@@ -371,7 +371,7 @@ class sum_sim_out(obj_func):
                 raise ValueError(si[0] + " is not a legal name in " +
                                  str(np.dtype(sim)))
         elif all([isinstance(si, int) for si in sim_inds]):
-            if hasattr(self.sim_type, "names"):
+            if self.sim_type.names is not None:
                 raise TypeError("Type mismatch: int and " +
                                 str(np.dtype(self.sim_type)))
             elif any([si < 0 or si > self.m for si in sim_inds]):

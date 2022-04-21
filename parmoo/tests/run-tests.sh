@@ -56,25 +56,6 @@ fi;
 
 # Run regression tests
 if [ $REGRESSION_TESTS == true ]; then
-  echo
-  echo "Running regression tests with pytest and collecting coverage data..."
-  echo
-  #if [ $UNIT_TESTS == true ]; then
-  #  pytest -v --cov-config=parmoo/tests/.coveragerc --cov=parmoo --cov-append --cov-report= parmoo/tests/regression_tests -W error::UserWarning;
-  #else
-  #  pytest -v --cov-config=parmoo/tests/.coveragerc --cov=parmoo --cov-report= parmoo/tests/regression_tests -W error::UserWarning;
-  #fi;
-
-  code=$? # capture pytest exit code
-  if [ "$code" -eq "0" ]; then
-    echo
-    echo "Regression tests passed. Continuing..."
-    echo
-  else
-    echo
-    echo -e "Aborting run-tests.sh: Regression tests failed: $code"
-    exit $code #return pytest exit code
-  fi;
 
   # libE tests
   echo
@@ -95,6 +76,30 @@ if [ $REGRESSION_TESTS == true ]; then
     exit $code #return libE exit code
   fi;
 
+  echo
+  echo "Running regression tests with pytest and collecting coverage data..."
+  echo
+  for TEST_SCRIPT in parmoo/tests/regression_tests/test_*.py; do
+    python3 -m coverage run --rcfile=parmoo/tests/.coveragerc --append $TEST_SCRIPT
+
+    code=$? # capture pytest exit code
+    if [ "$code" -eq "0" ]; then
+      echo
+      echo "$TEST_SCRIPT passed with code: $code"
+      echo
+    else
+      echo
+      echo "$TEST_SCRIPT failed with code: $code"
+      echo -e "Aborting run-tests.sh: Regression tests failed: $code"
+      exit $code #return pytest exit code
+    fi;
+  done;
+
+  if [ "$code" -eq "0" ]; then
+    echo
+    echo "Regression tests passed. Continuing..."
+    echo
+  fi;
 fi;
 
 # Show coverage

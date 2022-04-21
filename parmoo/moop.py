@@ -642,10 +642,6 @@ class MOOP:
                    the initial search over this simulation's design space.
                  * surrogate (SurrogateFunction): A SurrogateFunction object
                    specifying how this simulation's outputs will be modeled.
-                 * des_tol (float): The tolerance for this simulation's
-                   design space; a new design point that is closer than
-                   des_tol to a point that is already in this simulation's
-                   database will not be reevaluated.
                  * hyperparams (dict): A dictionary of hyperparameters, which
                    will be passed to the surrogate and search routines.
                    Most notably, search_budget (int) can be specified

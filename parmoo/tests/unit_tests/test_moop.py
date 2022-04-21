@@ -2564,7 +2564,6 @@ def test_MOOP_save_load2():
     from parmoo.simulations.dtlz import dtlz2_sim
     from parmoo.objectives import single_sim_out
     from parmoo.constraints import single_sim_bound
-    import numpy as np
     import os
 
     # Initialize the simulation group with 3 outputs
