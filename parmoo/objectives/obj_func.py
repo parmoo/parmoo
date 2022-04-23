@@ -76,11 +76,11 @@ class obj_func(ABC):
                     else:
                         self.m += 1
             else:
-                if len(self.sim_type[name].shape) >= 1:
-                    self.m = sum(self.sim_type[name].shape)
+                if len(self.sim_type.shape) >= 1:
+                    self.m = sum(self.sim_type.shape)
                 else:
                     self.m = 1
-            if (self.sim_type is not None) != self.use_names:
+            if (self.sim_type.names is not None) != self.use_names:
                 raise ValueError("When using names for des_type, sim_type " +
                                  "must also give named fields")
         if self.m <= 0:
