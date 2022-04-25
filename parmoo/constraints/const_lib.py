@@ -290,9 +290,12 @@ class sos_sim_bound(const_func):
             fx = 0.0
             for si in self.sim_inds:
                 if isinstance(si, tuple):
-                    fx += sim[si[0]][si[1]] ** 2.0
+                    fx += sim[si[0]][si[1]] ** 2
                 else:
-                    fx += sim[si] ** 2.0
+                    try:
+                        fx += sum(sim[si] ** 2)
+                    except TypeError:
+                        fx += sim[si] ** 2
             return (fx - self.bound) * self.type
 
 

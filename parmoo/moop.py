@@ -1795,8 +1795,9 @@ class MOOP:
             if self.n_dat > 0:
                 x_vals = np.asarray([self.__extract__(xi)
                                      for xi in pf['x_vals']])
-                for (name, t) in self.des_names:
-                    result[name][:] = x_vals[name][:]
+                if x_vals is not None and x_vals.shape[0] > 0:
+                    for (name, t) in self.des_names:
+                        result[name][:] = x_vals[name][:]
                 for i, (name, t) in enumerate(self.obj_names):
                     result[name][:] = pf['f_vals'][:, i]
                 for i, (name, t) in enumerate(self.const_names):
@@ -2351,13 +2352,12 @@ class MOOP:
         # Unpack x/sx pair into a dict for saving
         if self.use_names:
             toadd = {'sim_id': s_name}
-            for key in x.names:
+            for key in x.dtype.names:
                 toadd[key] = x[key]
-            for key in sx.names:
-                if isinstance(sx[key], np.ndarray):
-                    toadd[key] = sx[key].tolist()
-                else:
-                    toadd[key] = sx[key]
+            if isinstance(sx, np.ndarray):
+                toadd['out'] = sx.tolist()
+            else:
+                toadd['out'] = sx
         else:
             toadd = {'x_vals': x.tolist(),
                      's_vals': sx.tolist(),

@@ -566,7 +566,7 @@ class LocalGaussRBF(SurrogateFunction):
         self.x_vals = np.concatenate((self.x_vals, x), axis=0)
         self.f_vals = np.concatenate((self.f_vals, f), axis=0)
         # Reinitialize the local indices for future usage
-        self.tr_center = -1
+        self.tr_center = -np.ones(self.n)
         return
 
     def setCenter(self, center):
