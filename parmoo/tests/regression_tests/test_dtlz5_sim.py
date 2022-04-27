@@ -1,3 +1,11 @@
+
+""" Use ParMOO to solve the DTLZ3 problem, treating DTLZ3 as a simulation.
+
+Uses named variables, the dtlz3_sim simulation function, and the
+single_sim_out objective functions to define the problem.
+
+"""
+
 from parmoo import MOOP
 from parmoo.optimizers import TR_LBFGSB
 from parmoo.surrogates import LocalGaussRBF

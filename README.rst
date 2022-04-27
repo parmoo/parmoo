@@ -1,8 +1,24 @@
 
-.. _Quickstart:
+.. image:: docs/img/logo-ParMOO.svg
+    :align: center
+    :alt: ParMOO
 
-Quickstart
-==========
+|
+
+.. image:: https://img.shields.io/pypi/v/parmoo.svg?color=blue
+    :target: https://pypi.org/project/parmoo
+
+.. image:: https://github.com/parmoo/parmoo/workflows/parmoo/badge.svg?/branch=develop
+    :target: https://github.com/parmoo/parmoo/actions
+
+.. image:: https://readthedocs.org/projects/parmoo/badge/?maxAge=2592000
+    :target: https://parmoo.readthedocs.org/en/latest/
+    :alt: Documentation Status
+
+|
+
+ParMOO: Parallel MultiObjective Optimization in Python
+======================================================
 
 ParMOO is a parallel multiobjective optimization solver that seeks to
 exploit simulation-based structure in objective and constraint functions.
@@ -30,8 +46,9 @@ with the algebraic definition of the objectives and constraints.
 
 |
 
-In order to achieve scalable parallelism, we use libEnsemble_ to distribute
-batches of simulation evaluations across parallel resources.
+ParMOO is implemented in Python. In order to achieve scalable parallelism,
+we use libEnsemble_ to distribute batches of simulation evaluations across
+parallel resources.
 
 Dependencies
 ------------
@@ -81,10 +98,8 @@ These tests are run regularly using GitHub Actions_.
 Basic Usage
 -----------
 
-ParMOO uses `numpy <https://numpy.org/>`_ in an object oriented design,
-based around the :mod:`MOOP <moop.MOOP>` class.
-To get started, create a :mod:`MOOP <moop.MOOP>` object, using the
-:meth:`constructor <moop.MOOP.__init__>`.
+ParMOO uses numpy_ in an object oriented design, based around the ``MOOP``
+class. To get started, create a ``MOOP`` object.
 
 .. code-block:: python
 
@@ -93,14 +108,12 @@ To get started, create a :mod:`MOOP <moop.MOOP>` object, using the
 
    my_moop = MOOP(LocalGPS)
 
-In the above example,
-:mod:`optimizers.LocalGPS <optimizers.gps_search.LocalGPS>`
-is the class of optimizers
-that the ``my_moop`` will use to solve scalarized surrogate problems.
+In the above example, ``LocalGPS`` is the class of optimizers that the
+``my_moop`` will use to solve scalarized surrogate problems.
 
 Next, add design variables to the problem as follows using the
-:meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>` method.
-In this example, we define one continuous and one categorical design variable.
+``MOOP.addDesign(*args)`` method. In this example, we define one continuous
+and one categorical design variable.
 
 .. code-block:: python
 
@@ -118,8 +131,8 @@ In this example, we define one continuous and one categorical design variable.
                      })
 
 Next, add simulations to the problem as follows using the
-:meth:`MOOP.addSimulation(*args) <moop.MOOP.addSimulation>` method.
-In this example, we define a toy simulation ``sim_func(x)``.
+``MOOP.addSimulation`` method. In this example, we define a toy simulation
+``sim_func(x)``.
 
 .. code-block:: python
 
@@ -144,11 +157,9 @@ In this example, we define a toy simulation ``sim_func(x)``.
                                     },
                          })
 
-Now we can add objectives and constraints using
-:meth:`MOOP.addObjective(*args) <moop.MOOP.addObjective>` and
-:meth:`MOOP.addConstraint(*args) <moop.MOOP.addConstraint>`.
-In this example, there are 2 objectives (each corresponding to a single
-simulation output) and one constraint.
+Now we can add objectives and constraints using ``MOOP.addObjective(*args)``
+and ``MOOP.addConstraint(*args)``. In this example, there are 2 objectives
+(each corresponding to a single simulation output) and one constraint.
 
 .. code-block:: python
 
@@ -161,11 +172,10 @@ simulation output) and one constraint.
                           'constraint': lambda x, s: 0.1 - x["x1"]})
 
 Finally, we must add one or more acquisition functions using
-:meth:`MOOP.addAcquisition(*args) <moop.MOOP.addAcquisition>`.
-These are used to scalarize the surrogate problems.
-The number of acquisition functions
-typically determines the number of simulation evaluations per batch.
-This is useful to know if you are using a parallel solver.
+``MOOP.addAcquisition(*args)``. These are used to scalarize the surrogate
+problems. The number of acquisition functions typically determines the
+number of simulation evaluations per batch. This is useful to know if you
+are using a parallel solver.
 
 .. code-block:: python
 
@@ -176,10 +186,8 @@ This is useful to know if you are using a parallel solver.
       my_moop.addAcquisition({'acquisition': UniformWeights,
                               'hyperparams': {}})
 
-Finally, the MOOP is solved using the
-:meth:`MOOP.solve(budget) <moop.MOOP.solve>` method, and the
-results can be viewed using
-:meth:`MOOP.getPF() <moop.MOOP.getPF>`.
+Finally, the MOOP is solved using the ``MOOP.solve(budget)`` method, and the
+results can be viewed using ``MOOP.getPF()`` method.
 
 .. code-block:: python
 
@@ -190,25 +198,12 @@ Congratulations, you now know enough to get started solving MOOPs!
 
 Next steps:
 
- * If you want to take advantage of all that ParMOO has to offer, 
-   please see :doc:`Writing a ParMOO Script <how-to-write>`.
- * If you would like more information on multiobjective optimization
-   terminology and ParMOO's methodology, see the
-   :doc:`Learn About MOOPs <about>` page.
- * See :doc:`More Tutorials <tutorials/basic-tutorials>`.
- * See the :doc:`libEnsemble tutorial <tutorials/libe-tutorial>`.
-
-Minimal Working Example
------------------------
-
-Putting it all together, we get the following minimal working example.
-
-.. literalinclude:: ../examples/quickstart.py
-    :language: python
-
-The above code produces the output below.
-
-.. literalinclude:: ../examples/quickstart.out
+ * Learn more about all that ParMOO has to offer (including saving and
+   checkpointing, INFO-level logging, advanced problem definitions, and
+   different surrogate and solver options) at our ReadTheDocs_ page.
+ * Check-out the advanced examples (including a ``libEnsemble`` example)
+   in the ``examples`` directory.
+ * Install libEnsemble_ and get started solving MOOPs in parallel.
 
 Resources
 ---------

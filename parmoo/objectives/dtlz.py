@@ -6,11 +6,13 @@ evolutionary multiobjective optimization" in Evolutionary Multiobjective
 Optimization, Theoretical Advances and Applications, Ch. 6 (pp. 105--145).
 Springer-Verlag, London, UK, 2005. Abraham, Jain, and Goldberg (Eds).
 
-Since DTLZ1-7 depended upon kernel functions (implemented in
+Since DTLZ[1-7] depended upon kernel functions (implemented in
 parmoo.simulations.dtlz), each of these problems is implemented here
 as an algebraic, differentiable objective, with the kernel function output
 as an input. The problems DTLZ8 and DTLZ9 do not support this modification,
 so they are omitted.
+
+TODO: DTLZ5, DTLZ6, and DTLZ7 have not yet been added.
 
 To use this module, first import one or more of the following simulation/kernel
 functions from parmoo.simulations.dtlz:

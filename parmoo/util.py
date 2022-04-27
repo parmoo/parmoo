@@ -5,6 +5,7 @@ These functions may also be of external interest. They are:
  * check_sims(n, arg1, arg2, ...)
  * lex_leq(a, b)
  * updatePF(data, nondom)
+ * unpack(x, dtype)
 
 """
 
@@ -14,7 +15,7 @@ import inspect
 
 
 def xerror(o, lb, ub, hyperparams):
-    """ Check the input arguments for a class interface.
+    """ Typecheck the input arguments for a class interface.
 
     Args:
         o (int): The number of objectives should be an int greater than or

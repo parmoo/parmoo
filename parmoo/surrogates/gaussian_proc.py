@@ -374,10 +374,6 @@ class GaussRBF(SurrogateFunction):
     def load(self, filename):
         """ Reload important data into this class after a previous save.
 
-        Note: If this function is left unimplemented, ParMOO will reinitialize
-        a fresh instance after a save/load. If this is the desired behavior,
-        then this method and the save method need not be implemented.
-
         Args:
             filename (string): The relative or absolute path to the file
                 where all reload data has been saved.
@@ -784,10 +780,6 @@ class LocalGaussRBF(SurrogateFunction):
 
     def load(self, filename):
         """ Reload important data into this class after a previous save.
-
-        Note: If this function is left unimplemented, ParMOO will reinitialize
-        a fresh instance after a save/load. If this is the desired behavior,
-        then this method and the save method need not be implemented.
 
         Args:
             filename (string): The relative or absolute path to the file

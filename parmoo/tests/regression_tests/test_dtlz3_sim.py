@@ -1,3 +1,13 @@
+
+""" Use ParMOO to solve the DTLZ3 problem, treating DTLZ3 as a simulation.
+
+Uses named variables, the dtlz3_sim simulation function, and the
+single_sim_out objective functions to define the problem.
+
+Also activates ParMOO's checkpointing feature, in order to test checkpointing.
+
+"""
+
 from parmoo import MOOP
 from parmoo.optimizers import GlobalGPS
 from parmoo.surrogates import GaussRBF
@@ -5,7 +15,6 @@ from parmoo.acquisitions import FixedWeights
 from parmoo.searches import LatinHypercube
 from parmoo.simulations.dtlz import dtlz3_sim as sim_func
 from parmoo.objectives import single_sim_out as obj_func
-from parmoo.constraints import sos_sim_bound as const_func
 import os
 import numpy as np
 
@@ -76,14 +85,6 @@ def max_constraint(x, sx, der=0):
 moop.addConstraint({'name': "Lower Bounds", 'constraint': min_constraint})
 moop.addConstraint({'name': "Upper Bounds", 'constraint': max_constraint})
 
-# Add another constraint
-moop.addConstraint({'name': "SOS Sim Bounds",
-                    'constraint': const_func(moop.getDesignType(),
-                                             moop.getSimulationType(),
-                                             sim_inds=[("DTLZ3")],
-                                             type="upper",
-                                             bound=128.0)})
-
 # Add NUM_OBJ acquisition funcitons
 for i in range(NUM_OBJ):
     moop.addAcquisition({'acquisition': FixedWeights,
@@ -97,8 +98,7 @@ moop.solve(5)
 # Check that 150 simulations were evaluated and solutions are feasible
 assert(moop.getObjectiveData().shape[0] == (100 + NUM_OBJ*5))
 assert(moop.getSimulationData()['DTLZ3'].shape[0] == (100 + NUM_OBJ*5))
-assert(all([sum([fi[f"f{i+1}"] ** 2 for i in range(NUM_OBJ)]) <= 128.0
-            for fi in moop.getPF()]))
+assert(moop.getPF().shape[0] > 0)
 
 # Clean up test directory (remove checkpoint files)
 os.remove("parmoo.moop")

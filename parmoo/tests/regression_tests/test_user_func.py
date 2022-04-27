@@ -1,3 +1,13 @@
+
+""" Use ParMOO to solve a convex, user-defined problem.
+
+Uses unnamed variables and public function definitions to define the problem.
+
+Also turns on checkpointing, to test ParMOO's checkpointing of unnamed
+variables and globally defined functions.
+
+"""
+
 from parmoo import MOOP
 from parmoo.optimizers import TR_LBFGSB
 from parmoo.surrogates import LocalGaussRBF

@@ -36,7 +36,7 @@ def quad_sim(x):
                      (x["x3"] - 1.0) ** 2])
 
 # Add the quadratic simulation to the problem
-# Use a 20pt LH search for ex design and a Gaussian RBF surrogate model
+# Use a 10 point LH search for ex design and a Gaussian RBF surrogate model
 my_moop.addSimulation({'name': "f_conv",
                        'm': 2,
                        'sim_func': quad_sim,
@@ -94,6 +94,15 @@ my_moop.addAcquisition({'acquisition': UniformWeights})
 my_moop.addAcquisition({'acquisition': FixedWeights,
                         # Fixed weight with equal weight on both objectives
                         'hyperparams': {'weights': np.array([0.5, 0.5])}})
+
+# Turn on checkpointing -- creates the files parmoo.moop and parmoo.surrogate.1
+my_moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
+
+# Turn on logging
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 # Solve the problem
 my_moop.solve(5)

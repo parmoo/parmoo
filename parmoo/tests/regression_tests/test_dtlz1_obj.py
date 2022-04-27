@@ -1,3 +1,11 @@
+
+""" Use ParMOO to solve the DTLZ1 problem, treating DTLZ1 as an objective.
+
+Uses unnamed variables, the g1_sim simulation function, and the
+dtlz1_obj objective functions to define the problem.
+
+"""
+
 from parmoo import MOOP
 from parmoo.optimizers import LBFGSB
 from parmoo.surrogates import GaussRBF

@@ -29,7 +29,7 @@ Ph.D. dissertation, Virginia Tech, Dept. of Computer Science, 2020.
 For the problems DTLZ8 and DTLZ9, only objective outputs are given
 by the simulation function herein. To fully define the problem, also
 use one or more of the corresponding constraint classes included in
-``parmoo.constraints.dtlz``.
+``parmoo.constraints.dtlz`` [NOT YET IMPLEMENTED].
 
 The full list of simulation functions in this module includes the kernel
 functions:
