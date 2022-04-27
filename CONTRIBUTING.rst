@@ -20,8 +20,7 @@ and interacting with us to ensure that your effort is well-directed.
 Contributions
 -------------
 
-ParMOO is distributed under a 3-clause BSD license (see 
-`LICENSE <https://github.com/parmoo/parmoo/blob/main/LICENSE>`_).  
+ParMOO is distributed under a 3-clause BSD license (see LICENSE_).  
 The act of submitting a pull request or patch will be understood as an 
 affirmation of the following:
 ::
@@ -50,3 +49,6 @@ affirmation of the following:
       personal information I submit with it, including my sign-off) is
       maintained indefinitely and may be redistributed consistent with
       this project or the open source license(s) involved.
+
+
+.. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
