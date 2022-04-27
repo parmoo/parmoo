@@ -13,7 +13,6 @@ from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
 from parmoo.simulations.dtlz import dtlz1_sim as sim_func
 from parmoo.objectives import single_sim_out as obj_func
-from parmoo.constraints import sum_sim_bound as const_func
 import numpy as np
 
 # Set the problem dimensions
@@ -83,14 +82,6 @@ def max_constraint(x, sx, der=0):
 moop.addConstraint({'name': "Lower Bounds", 'constraint': min_constraint})
 moop.addConstraint({'name': "Upper Bounds", 'constraint': max_constraint})
 
-# Add another constraint
-moop.addConstraint({'name': "Sum Sim Bounds",
-                    'constraint': const_func(moop.getDesignType(),
-                                             moop.getSimulationType(),
-                                             sim_inds=[("DTLZ1")],
-                                             type="upper",
-                                             bound=1.0)})
-
 # Add 10 acquisition funcitons
 for i in range(10):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
@@ -101,5 +92,4 @@ moop.solve(5)
 # Check that 150 simulations were evaluated and solutions are feasible
 assert(moop.getObjectiveData().shape[0] == 150)
 assert(moop.getSimulationData()['DTLZ1'].shape[0] == 150)
-assert(all([sum([fi[f"f{i+1}"] for i in range(NUM_OBJ)]) <= 1.0
-            for fi in moop.getPF()]))
+assert(moop.getPF().shape[0] > 0)

@@ -43,7 +43,6 @@ the objectives and constraints.
 .. figure:: docs/img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
     :align: center
-    :scale: 40
 
 |
 

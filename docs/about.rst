@@ -22,7 +22,6 @@ hard rules that every solution must adhere to.
 .. figure:: img/des-obj-space.png
     :alt: Designs variables, objectives, and the Pareto front (tradeoff curve)
     :align: center
-    :scale: 40
 
 |
 
@@ -50,7 +49,6 @@ such problems.
 .. figure:: img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
     :align: center
-    :scale: 40
 
 |
 
@@ -116,7 +114,6 @@ expensive simulations.
     .. figure:: img/parmoo_movie.gif
         :alt: ParMOO animation
         :align: center
-        :scale: 40
 
     |
 
@@ -155,7 +152,6 @@ users to interchange.
 .. figure:: img/algorithm-flowchart.png
     :alt: Flowchart for ParMOO algorithm
     :align: center
-    :scale: 30
 
 |
 

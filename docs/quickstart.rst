@@ -27,7 +27,6 @@ objectives and constraints.
 .. figure:: img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
     :align: center
-    :scale: 40
 
 |
 
@@ -82,7 +81,7 @@ These tests are run regularly using GitHub Actions_.
 Basic Usage
 -----------
 
-ParMOO uses `numpy <https://numpy.org/>`_ in an object oriented design,
+ParMOO uses `numpy_ in an object oriented design,
 based around the :mod:`MOOP <moop.MOOP>` class.
 To get started, create a :mod:`MOOP <moop.MOOP>` object, using the
 :meth:`constructor <moop.MOOP.__init__>`.
