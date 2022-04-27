@@ -1,4 +1,4 @@
-Contributing to the BAND Framework
+Contributing to PARMOO
 ==================================
 
 Contributions of source code, documentations, and fixes are happily
