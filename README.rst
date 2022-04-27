@@ -29,12 +29,12 @@ To exploit structure, ParMOO models *simulations* separately from
  * a **design variable** is an input to the problem, which we can directly
    control;
  * a **simulation** is an expensive or time-consuming process, including
-   real-world experimentation, which must be treated as a blackbox function
+   real-world experimentation, which is treated as a blackbox function
    of the design variables and evaluated sparingly;
  * an **objective** is an algebraic function of the design variables
    and/or simulation outputs, which we would like to optimize; and
  * a **constraint** is an algebraic function of the design variables
-   and/or simulation outputs, which cannot exceed some bound.
+   and/or simulation outputs, which cannot exceed a specified bound.
 
 To solve a multiobjective optimization problem (MOOP), we use surrogate
 models of the simulation outputs, together with the algebraic definition of
@@ -64,7 +64,7 @@ ParMOO's base has the following dependencies:
  * pyDOE_ -- for generating experimental designs
 
 Additional dependencies are needed to use the additional features in
-``parmoo.extras``.
+``parmoo.extras``:
 
  * libEnsemble_ -- for managing parallel simulation evaluations
 
@@ -97,7 +97,7 @@ These tests are run regularly using GitHub Actions_.
 Basic Usage
 -----------
 
-ParMOO uses numpy_ in an object oriented design, based around the ``MOOP``
+ParMOO uses numpy_ in an object-oriented design, based around the ``MOOP``
 class. To get started, create a ``MOOP`` object.
 
 .. code-block:: python
@@ -193,14 +193,15 @@ results can be viewed using ``MOOP.getPF()`` method.
    my_moop.solve(5) # Solve with 5 iterations of ParMOO algorithm
    results = my_moop.getPF() # Extract the results
 
-Congratulations, you now know enough to get started solving MOOPs!
+Congratulations, you now know enough to get started solving MOOPs with
+ParMOO!
 
 Next steps:
 
  * Learn more about all that ParMOO has to offer (including saving and
    checkpointing, INFO-level logging, advanced problem definitions, and
    different surrogate and solver options) at our ReadTheDocs_ page.
- * Check-out the advanced examples (including a ``libEnsemble`` example)
+ * Explore the advanced examples (including a ``libEnsemble`` example)
    in the ``examples`` directory.
  * Install libEnsemble_ and get started solving MOOPs in parallel.
 
