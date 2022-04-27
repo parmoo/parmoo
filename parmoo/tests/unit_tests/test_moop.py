@@ -2465,74 +2465,7 @@ def test_MOOP_save_load1():
     from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalGPS
     import numpy as np
-    import os
-
-    # Functions sim1, sim2, f1, f2, c1 need to be global for save/load to work
-    global sim1, sim2, f1, f2, c1
-
-    # Initialize two simulation groups with 1 output each
-    def sim1(x): return [np.linalg.norm(x)]
-    def sim2(x): return [np.linalg.norm(x - 1.0)]
-    g1 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'search_budget': 20,
-          'sim_func': sim1,
-          'surrogate': GaussRBF}
-    g2 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'search_budget': 25,
-          'sim_func': sim2,
-          'surrogate': GaussRBF}
-    # Create two objectives for later
-    def f1(x, sim): return sim[0]
-    def f2(x, sim): return sim[1]
-    # Create a simulation for later
-    def c1(x, sim): return x[0] - 0.5
-    # Create a MOOP with 3 design variables and 2 simulations
-    moop1 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
-    # Test empty save
-    moop1.save()
-    # Add design variables
-    for i in range(2):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addDesign({'des_type': "categorical", 'levels': 3})
-    moop1.addSimulation(g1, g2)
-    # Add 2 objectives
-    moop1.addObjective({'obj_func': f1},
-                       {'obj_func': f2})
-    # Add 1 constraint
-    moop1.addConstraint({'constraint': c1})
-    # Add 3 acquisition functions
-    for i in range(3):
-        moop1.addAcquisition({'acquisition': UniformWeights})
-    # Test save
-    moop1.save()
-    # Test load
-    moop2 = MOOP(LocalGPS)
-    moop2.load()
-    # Check that save/load are correct
-    check_moops(moop1, moop2)
-    # Clean up test directory
-    os.remove("parmoo.moop")
-    os.remove("parmoo.surrogate.1")
-    os.remove("parmoo.surrogate.2")
-
-
-def test_MOOP_save_load2():
-    """ Check that a MOOP object can be correctly saved/reloaded.
-
-    Create and save a MOOP object, then reload and check that it is the same.
-
-    """
-
-    from parmoo import MOOP
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS
-    import numpy as np
+    import pytest
     import os
 
     # Functions sim1, sim2, f1, f2, c1 need to be global for save/load to work
@@ -2586,10 +2519,91 @@ def test_MOOP_save_load2():
     moop2.load()
     # Check that save/load are correct
     check_moops(moop1, moop2)
+    # Create a new MOOP with same specs
+    moop3 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    for i in range(2):
+        moop3.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop3.addDesign({'des_type': "categorical", 'levels': 3})
+    moop3.addSimulation(g1, g2)
+    moop3.addObjective({'obj_func': f1},
+                       {'obj_func': f2})
+    moop3.addConstraint({'constraint': c1})
+    for i in range(3):
+        moop3.addAcquisition({'acquisition': UniformWeights})
+    # Try to save and overwrite old data
+    with pytest.raises(OSError):
+        moop3.save()
+    # Save a data point with moop1
+    moop1.savedata(np.zeros(1, dtype=moop3.getDesignType())[0],
+                   np.zeros(1), "sim1")
+    # Try to overwrite with moop3
+    with pytest.raises(OSError):
+        moop3.savedata(np.zeros(1, dtype=moop3.getDesignType())[0],
+                       np.zeros(1), "sim1")
+    # Clean up test directory
+    os.remove("parmoo.moop")
+    os.remove("parmoo.simdb.json")
+    os.remove("parmoo.surrogate.1")
+    os.remove("parmoo.surrogate.2")
+
+
+def test_MOOP_save_load2():
+    """ Check that a MOOP object can be correctly saved/reloaded.
+
+    Create and save a MOOP object, then reload and check that it is the same.
+
+    Use simulation/objective callable objects from the library.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.searches import LatinHypercube
+    from parmoo.surrogates import GaussRBF
+    from parmoo.acquisitions import UniformWeights
+    from parmoo.optimizers import LocalGPS
+    from parmoo.simulations.dtlz import dtlz2_sim
+    from parmoo.objectives import single_sim_out
+    from parmoo.constraints import single_sim_bound
+    import os
+
+    # Initialize the simulation group with 3 outputs
+    sim1 = dtlz2_sim(3, num_obj=2)
+    g1 = {'m': 2,
+          'hyperparams': {},
+          'search': LatinHypercube,
+          'search_budget': 20,
+          'sim_func': sim1,
+          'surrogate': GaussRBF}
+    f1 = single_sim_out(3, 2, 0)
+    f2 = single_sim_out(3, 2, 1)
+    c1 = single_sim_bound(3, 2, 1)
+    # Create a MOOP with 3 design variables and 2 simulations
+    moop1 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    # Test empty save
+    moop1.save()
+    # Add design variables
+    for i in range(2):
+        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop1.addDesign({'des_type': "categorical", 'levels': 3})
+    moop1.addSimulation(g1)
+    # Add 2 objectives
+    moop1.addObjective({'obj_func': f1},
+                       {'obj_func': f2})
+    # Add 1 constraint
+    moop1.addConstraint({'constraint': c1})
+    # Add 3 acquisition functions
+    for i in range(3):
+        moop1.addAcquisition({'acquisition': UniformWeights})
+    # Test save
+    moop1.save()
+    # Test load
+    moop2 = MOOP(LocalGPS)
+    moop2.load()
+    # Check that save/load are correct
+    check_moops(moop1, moop2)
     # Clean up test directory
     os.remove("parmoo.moop")
     os.remove("parmoo.surrogate.1")
-    os.remove("parmoo.surrogate.2")
 
 
 def test_MOOP_checkpoint():
@@ -2724,13 +2738,21 @@ def check_moops(moop1, moop2):
     assert(all([all([moop2.sim_db[j][ki].shape == moop1.sim_db[j][ki].shape
                      for ki in ["x_vals", "s_vals"]])
                 for j in range(len(moop1.sim_db))]))
-    assert(all([obj1.__name__ == obj2.__name__
-                for obj1, obj2 in zip(moop1.objectives, moop2.objectives)]))
-    assert(all([sim1.__name__ == sim2.__name__
-                for sim1, sim2 in zip(moop1.sim_funcs, moop2.sim_funcs)]))
-    assert(all([const1.__name__ == const2.__name__
-                for const1, const2 in zip(moop1.constraints,
-                                          moop2.constraints)]))
+    for obj1, obj2 in zip(moop1.objectives, moop2.objectives):
+        if hasattr(obj1, "__name__"):
+            assert(obj1.__name__ == obj2.__name__)
+        else:
+            assert(obj1.__class__.__name__ == obj2.__class__.__name__)
+    for sim1, sim2 in zip(moop1.sim_funcs, moop2.sim_funcs):
+        if hasattr(sim1, "__name__"):
+            assert(sim1.__name__ == sim2.__name__)
+        else:
+            assert(sim1.__class__.__name__ == sim2.__class__.__name__)
+    for const1, const2 in zip(moop1.constraints, moop2.constraints):
+        if hasattr(const1, "__name__"):
+            assert(const1.__name__ == const2.__name__)
+        else:
+            assert(const1.__class__.__name__ == const2.__class__.__name__)
     # Check functions
     assert(moop2.optimizer.__name__ == moop1.optimizer.__name__)
     assert(all([s1.__class__.__name__ == s2.__class__.__name__
@@ -2754,6 +2776,7 @@ if __name__ == "__main__":
     test_MOOP_addObjective()
     test_MOOP_addConstraint()
     test_MOOP_addAcquisition()
+    test_MOOP_getTypes()
     test_MOOP_evaluateSimulation()
     test_MOOP_evaluateSurrogates()
     test_MOOP_evaluateConstraints()

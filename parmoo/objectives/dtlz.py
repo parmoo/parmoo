@@ -6,11 +6,13 @@ evolutionary multiobjective optimization" in Evolutionary Multiobjective
 Optimization, Theoretical Advances and Applications, Ch. 6 (pp. 105--145).
 Springer-Verlag, London, UK, 2005. Abraham, Jain, and Goldberg (Eds).
 
-Since DTLZ1-7 depended upon kernel functions (implemented in
+Since DTLZ[1-7] depended upon kernel functions (implemented in
 parmoo.simulations.dtlz), each of these problems is implemented here
 as an algebraic, differentiable objective, with the kernel function output
 as an input. The problems DTLZ8 and DTLZ9 do not support this modification,
 so they are omitted.
+
+TODO: DTLZ5, DTLZ6, and DTLZ7 have not yet been added.
 
 To use this module, first import one or more of the following simulation/kernel
 functions from parmoo.simulations.dtlz:
@@ -28,6 +30,7 @@ The 7 DTLZ problems included here are:
 """
 
 from parmoo.objectives import obj_func
+from parmoo.util import unpack
 import numpy as np
 
 
@@ -56,9 +59,9 @@ class dtlz1_obj(obj_func):
         """ Constructor for DTLZ1 class.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (np.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
             sim (list, tuple, or int): Either the numpy.dtype of the
                 simulation outputs (list or tuple) or the number of simulation
@@ -113,28 +116,16 @@ class dtlz1_obj(obj_func):
 
         """
 
-        # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
-        # Extract sim into sx, if names are used
-        sx = np.zeros(self.m)
-        if self.use_names:
-            for i, name in enumerate(self.sim_type):
-                sx[i] = sim[name[0]]
-        else:
-            for i, si in enumerate(sim):
-                sx[i] = si
+        # Extract x into xx and sim into sx, if names are used
+        xx = unpack(x, self.des_type)
+        sx = unpack(sim, self.sim_type)
         # Evaluate derivative wrt xx
         if der == 1:
             dx = np.zeros(self.n)
             i = self.obj_ind
             for j in range(self.o - i):
                 if j < self.o - i - 1:
-                    dx[j] = (np.prod(xx[0:j]) * np.prod(xx[j+1:self.o-i])
+                    dx[j] = (np.prod(xx[0:j]) * np.prod(xx[j+1:self.o-i-1])
                              * (1 + sx[0]) / 2)
                     if i > 0:
                         dx[j] *= (1.0 - xx[self.o - i - 1])
@@ -142,7 +133,7 @@ class dtlz1_obj(obj_func):
                     dx[j] = -(np.prod(xx[0:self.o-i-1]) * (1 + sx[0]) / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type):
+                for i, name in enumerate(self.des_type.names):
                     result[0][name] = dx[i]
                 return result[0]
             else:
@@ -157,7 +148,8 @@ class dtlz1_obj(obj_func):
                 ds[0] *= (1 - xx[self.o - i - 1])
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][sim_type[0][0]] = ds[0]
+                for name in self.sim_type.names:
+                    result[0][name] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -197,9 +189,9 @@ class dtlz2_obj(obj_func):
         """ Constructor for DTLZ2 class.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (np.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
             sim (list, tuple, or int): Either the numpy.dtype of the
                 simulation outputs (list or tuple) or the number of simulation
@@ -254,21 +246,9 @@ class dtlz2_obj(obj_func):
 
         """
 
-        # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
-        # Extract sim into sx, if names are used
-        sx = np.zeros(self.m)
-        if self.use_names:
-            for i, name in enumerate(self.sim_type):
-                sx[i] = sim[name[0]]
-        else:
-            for i, si in enumerate(sim):
-                sx[i] = si
+        # Extract x into xx and sim into sx, if names are used
+        xx = unpack(x, self.des_type)
+        sx = unpack(sim, self.sim_type)
         # Evaluate derivative wrt xx
         if der == 1:
             dx = np.zeros(self.n)
@@ -287,7 +267,7 @@ class dtlz2_obj(obj_func):
                              np.cos(xx[self.o - i - 1] * np.pi / 2))
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type):
+                for i, name in enumerate(self.des_type.names):
                     result[0][name] = dx[i]
                 return result[0]
             else:
@@ -302,7 +282,8 @@ class dtlz2_obj(obj_func):
                 ds[0] *= np.sin(np.pi * xx[self.o - i - 1] / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][sim_type[0][0]] = ds[0]
+                for name in self.sim_type.names:
+                    result[0][name] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -343,9 +324,9 @@ class dtlz3_obj(obj_func):
         """ Constructor for DTLZ3 class.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (np.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
             sim (list, tuple, or int): Either the numpy.dtype of the
                 simulation outputs (list or tuple) or the number of simulation
@@ -400,21 +381,9 @@ class dtlz3_obj(obj_func):
 
         """
 
-        # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
-        # Extract sim into sx, if names are used
-        sx = np.zeros(self.m)
-        if self.use_names:
-            for i, name in enumerate(self.sim_type):
-                sx[i] = sim[name[0]]
-        else:
-            for i, si in enumerate(sim):
-                sx[i] = si
+        # Extract x into xx and sim into sx, if names are used
+        xx = unpack(x, self.des_type)
+        sx = unpack(sim, self.sim_type)
         # Evaluate derivative wrt xx
         if der == 1:
             dx = np.zeros(self.n)
@@ -433,7 +402,7 @@ class dtlz3_obj(obj_func):
                              np.cos(xx[self.o - i - 1] * np.pi / 2))
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type):
+                for i, name in enumerate(self.des_type.names):
                     result[0][name] = dx[i]
                 return result[0]
             else:
@@ -448,7 +417,8 @@ class dtlz3_obj(obj_func):
                 ds[0] *= np.sin(np.pi * xx[self.o - i - 1] / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][sim_type[0][0]] = ds[0]
+                for name in self.sim_type.names:
+                    result[0][name] = ds[0]
                 return result[0]
             else:
                 return ds
@@ -491,9 +461,9 @@ class dtlz4_obj(obj_func):
         """ Constructor for DTLZ4 class.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (np.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
             sim (list, tuple, or int): Either the numpy.dtype of the
                 simulation outputs (list or tuple) or the number of simulation
@@ -558,21 +528,9 @@ class dtlz4_obj(obj_func):
 
         """
 
-        # Extract x into xx, if names are used
-        xx = np.zeros(self.n)
-        if self.use_names:
-            for i, name in enumerate(self.des_type):
-                xx[i] = x[name[0]]
-        else:
-            xx[:] = x[:]
-        # Extract sim into sx, if names are used
-        sx = np.zeros(self.m)
-        if self.use_names:
-            for i, name in enumerate(self.sim_type):
-                sx[i] = sim[name[0]]
-        else:
-            for i, si in enumerate(sim):
-                sx[i] = si
+        # Extract x into xx and sim into sx, if names are used
+        xx = unpack(x, self.des_type)
+        sx = unpack(sim, self.sim_type)
         # Evaluate derivative wrt xx
         if der == 1:
             dx = np.zeros(self.n)
@@ -592,11 +550,11 @@ class dtlz4_obj(obj_func):
                     dx[j] = (np.prod(np.cos(xx[0:self.o-i-1] ** self.alpha *
                                             np.pi / 2)) * (1 + sx[0]) *
                              (np.pi * self.alpha / 2) *
-                             xx[self.j] ** (self.alpha - 1) *
-                             np.cos(xx[self.j] ** self.alpha * np.pi / 2))
+                             xx[j] ** (self.alpha - 1) *
+                             np.cos(xx[j] ** self.alpha * np.pi / 2))
             if self.use_names:
                 result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type):
+                for i, name in enumerate(self.des_type.names):
                     result[0][name] = dx[i]
                 return result[0]
             else:
@@ -612,7 +570,8 @@ class dtlz4_obj(obj_func):
                 ds[0] *= np.sin(xx[self.o - i - 1] ** self.alpha * np.pi / 2)
             if self.use_names:
                 result = np.zeros(1, dtype=self.sim_type)
-                result[0][sim_type[0][0]] = ds[0]
+                for name in self.sim_type.names:
+                    result[0][name] = ds[0]
                 return result[0]
             else:
                 return ds

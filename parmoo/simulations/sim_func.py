@@ -28,32 +28,29 @@ class sim_func(ABC):
         """ Constructor for simulation functions.
 
         Args:
-            des (list, tuple, or int): Either the numpy.dtype of the
-                design variables (list or tuple) or the number of design
-                variables (assumed to all be continuous, unnamed).
+            des (numpy.dtype or int): Either the numpy.dtype of the
+                design variables or the number of design variables,
+                assumed to all be continuous and unnamed.
 
         """
 
         # Decide whether to use named variables
         self.use_names = False
         # Try to read design variable type
-        if isinstance(des, list) or isinstance(des, tuple):
-            try:
-                np.zeros(1, dtype=des)
-                self.des_type = des
-                self.n = len(des)
-            except TypeError:
-                raise TypeError("des must contain a valid numpy.dtype")
-            if isinstance(des, list):
-                self.use_names = True
-        elif isinstance(des, int):
-            if des > 0:
-                self.n = des
-                self.des_type = ("f8", self.n)
+        try:
+            self.des_type = np.dtype(des)
+        except TypeError:
+            if isinstance(des, int):
+                self.des_type = np.dtype(("f8", (des, )))
             else:
-                raise ValueError("des must be a positive number")
+                raise TypeError("des must contain a valid numpy.dtype or int")
+        if self.des_type.names is not None:
+            self.n = len(self.des_type.names)
+            self.use_names = True
         else:
-            raise TypeError("des must be a list, tuple, or int")
+            self.n = sum(self.des_type.shape)
+        if self.n == 0:
+            raise ValueError("An illegal des_type was given")
         return
 
     def __call__(self, x):

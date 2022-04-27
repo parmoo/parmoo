@@ -1,6 +1,6 @@
-""" Abstract base class (ABC) for objective functions.
+""" Abstract base class (ABC) for constraint functions.
 
-Defines an ABC for the callable ``obj_func`` class.
+Defines an ABC for the callable ``const_func`` class.
 
 """
 
@@ -8,8 +8,8 @@ import numpy as np
 from abc import ABC
 
 
-class obj_func(ABC):
-    """ Abstract base class (ABC) for objective function outputs.
+class const_func(ABC):
+    """ Abstract base class (ABC) for constraint functions.
 
     Contains 2 methods:
      * ``__init__(des, sim)``
@@ -18,14 +18,14 @@ class obj_func(ABC):
     The ``__init__`` method is already implemented, and is the constructor.
 
     The ``__call__`` method is left to be implemented, and performs the
-    objective evaluation.
+    constraint evaluation.
 
     """
 
     __slots__ = ['n', 'm', 'des_type', 'sim_type', 'use_names']
 
     def __init__(self, des, sim):
-        """ Constructor for objective functions.
+        """ Constructor for constraint functions.
 
         Args:
             des (np.dtype or int): Either the numpy.dtype of the
@@ -87,15 +87,15 @@ class obj_func(ABC):
             raise ValueError("An illegal sim_type was given")
         return
 
-    def __call__(self, x, sx, der=0):
-        """ Make obj_func objects callable.
+    def __call__(self, x, sim, der=0):
+        """ Make const_func objects callable.
 
         Args:
             x (numpy.array): A numpy.ndarray (unnamed) or numpy structured
                 array (named), containing the design point to evaluate.
 
         Returns:
-            float: The output of this objective for the input x.
+            float: The constraint violation for the input x.
 
         """
 

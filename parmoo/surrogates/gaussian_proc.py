@@ -374,10 +374,6 @@ class GaussRBF(SurrogateFunction):
     def load(self, filename):
         """ Reload important data into this class after a previous save.
 
-        Note: If this function is left unimplemented, ParMOO will reinitialize
-        a fresh instance after a save/load. If this is the desired behavior,
-        then this method and the save method need not be implemented.
-
         Args:
             filename (string): The relative or absolute path to the file
                 where all reload data has been saved.
@@ -566,7 +562,7 @@ class LocalGaussRBF(SurrogateFunction):
         self.x_vals = np.concatenate((self.x_vals, x), axis=0)
         self.f_vals = np.concatenate((self.f_vals, f), axis=0)
         # Reinitialize the local indices for future usage
-        self.tr_center = -1
+        self.tr_center = -np.ones(self.n)
         return
 
     def setCenter(self, center):
@@ -601,7 +597,7 @@ class LocalGaussRBF(SurrogateFunction):
             self.std_dev = np.linalg.norm(center -
                                           self.x_vals[idists[self.n_loc - 1]])
             # Get all points within 2 standard deviations of the center
-            self.loc_inds = [i for i in idists
+            self.loc_inds = [int(i) for i in idists
                              if np.linalg.norm(center - self.x_vals[i])
                              <= 2.0 * self.std_dev]
             # Build the Gaussian covariance matrix
@@ -784,10 +780,6 @@ class LocalGaussRBF(SurrogateFunction):
 
     def load(self, filename):
         """ Reload important data into this class after a previous save.
-
-        Note: If this function is left unimplemented, ParMOO will reinitialize
-        a fresh instance after a save/load. If this is the desired behavior,
-        then this method and the save method need not be implemented.
 
         Args:
             filename (string): The relative or absolute path to the file

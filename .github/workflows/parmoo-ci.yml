@@ -1,9 +1,9 @@
 name: ParMOO CI
 on:
   push:
-    branches: [ develop ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ develop ]
+    branches: [ main, develop ]
 
 jobs:
   run-full-tests:
@@ -43,4 +43,4 @@ jobs:
 
     - name: Test with pytest
       run: |
-        parmoo/tests/run-tests.sh -ul
+        parmoo/tests/run-tests.sh -url

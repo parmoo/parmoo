@@ -12,6 +12,7 @@ def test_GaussRBF():
     from parmoo.surrogates import GaussRBF
     import numpy as np
     import pytest
+    import os
 
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -157,6 +158,12 @@ def test_GaussRBF():
     rbf7 = GaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf7.fit(x_vals3, y_vals3)
     rbf7.update(x_vals3, y_vals3)
+    # Test save and load
+    rbf6.save("parmoo.surrogate")
+    rbf7.load("parmoo.surrogate")
+    xx = np.random.random_sample(3)
+    assert(np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
+    os.remove("parmoo.surrogate")
     return
 
 
@@ -173,6 +180,7 @@ def test_LocalGaussRBF():
     from parmoo.surrogates import LocalGaussRBF
     import numpy as np
     import pytest
+    import os
 
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -341,6 +349,12 @@ def test_LocalGaussRBF():
     rbf7 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf7.fit(x_vals3, y_vals3)
     rbf7.update(x_vals3, y_vals3)
+    # Test save and load
+    rbf6.save("parmoo.surrogate")
+    rbf7.load("parmoo.surrogate")
+    xx = np.random.random_sample(3)
+    assert(np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
+    os.remove("parmoo.surrogate")
     return
 
 
