@@ -1128,29 +1128,6 @@ class MOOP:
             self.sim_db[i]['s_vals'][0, :] = sx
             self.sim_db[i]['n'] += 1
         # If data-saving is on, append the sim output to a json
-<<<<<<< HEAD
-        if self.savedata:
-            # Unpack x/sx pair into a dict for saving
-            if self.use_names:
-                toadd = {'sim_id': s_name,
-                         'out': sx.tolist()}
-                for (key, dt) in self.des_names:
-                    if dt == "f8":
-                        toadd[key] = float(x[key])
-                    elif dt == "i4":
-                        toadd[key] = int(x[key])
-                    else:
-                        raise ValueError("des_names contains an illegal " +
-                                         "value: " + dt +
-                                         " is not a valid type")
-            else:
-                toadd = {'x_vals': x.tolist(),
-                         's_vals': sx.tolist(),
-                         'sim_id': s_name}
-            # Save in file with proper exension
-            fname = self.checkpointfile + ".simdb.json"
-            with open(fname, 'a') as fp:
-                json.dump(toadd, fp)
         if self.checkpoint_data:
             self.savedata(x, sx, s_name, filename=self.checkpointfile)
         # If checkpointing is on, save the moop before continuing
