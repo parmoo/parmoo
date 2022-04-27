@@ -15,7 +15,7 @@ class Run_TestSuite(TestCommand):
         import sys
         py_version = sys.version_info[0]
         print("Python version from setup.py is", py_version)
-        run_string = "parmoo/tests/run-tests.sh -t" #+ str(py_version)
+        run_string = "parmoo/tests/run-tests.sh -curl" #+ str(py_version)
         os.system(run_string)
 
 
@@ -45,9 +45,13 @@ setup(
               "parmoo.optimizers",
               "parmoo.searches",
               "parmoo.surrogates",
+              "parmoo.simulations",
+              "parmoo.objectives",
+              "parmoo.constraints",
               "parmoo.tests",
               "parmoo.tests.unit_tests",
-              "parmoo.tests.libe_tests"],
+              "parmoo.tests.libe_tests",
+              "parmoo.tests.regression_tests"],
 
     install_requires=["numpy", "scipy", "pyDOE"],
 
