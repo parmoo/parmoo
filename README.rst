@@ -8,7 +8,7 @@
 .. image:: https://img.shields.io/pypi/v/parmoo.svg?color=blue
     :target: https://pypi.org/project/parmoo
 
-.. image:: https://github.com/parmoo/parmoo/workflows/parmoo/badge.svg?/branch=develop
+.. image:: https://github.com/parmoo/parmoo/workflows/parmoo-ci.yml/badge.svg?/branch=main
     :target: https://github.com/parmoo/parmoo/actions
 
 .. image:: https://readthedocs.org/projects/parmoo/badge/?maxAge=2592000
@@ -216,11 +216,15 @@ Our full documentation is hosted on:
 
  * ReadTheDocs_
 
+Please read our LICENSE_ and CONTRIBUTING_ files.
+
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
+.. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
 .. _libEnsemble: https://github.com/Libensemble/libensemble
+.. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
 .. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x

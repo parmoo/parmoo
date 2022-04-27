@@ -1,9 +1,9 @@
 name: ParMOO CI
 on:
   push:
-    branches: [ develop ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ develop ]
+    branches: [ main, develop ]
 
 jobs:
   run-full-tests:
