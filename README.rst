@@ -8,7 +8,7 @@
 .. image:: https://img.shields.io/pypi/v/parmoo.svg?color=blue
     :target: https://pypi.org/project/parmoo
 
-.. image:: https://github.com/parmoo/parmoo/workflows/parmoo-ci.yml/badge.svg?/branch=main
+.. image:: https://github.com/parmoo/parmoo/actions/workflows/parmoo-ci.yml/badge.svg?/branch=main
     :target: https://github.com/parmoo/parmoo/actions
 
 .. image:: https://readthedocs.org/projects/parmoo/badge/?maxAge=2592000
