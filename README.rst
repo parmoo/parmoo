@@ -135,6 +135,7 @@ Next, add simulations to the problem as follows using the
 
 .. code-block:: python
 
+   import numpy as np
    from parmoo.searches import LatinHypercube
    from parmoo.surrogates import GaussRBF
 
