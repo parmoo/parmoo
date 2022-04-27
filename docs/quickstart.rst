@@ -20,8 +20,9 @@ To exploit structure, ParMOO models *simulations* separately from
  * a **constraint** is an algebraic function of the design variables
    and/or simulation outputs, which cannot exceed some bound.
 
-To solve a MOOP, we use surrogate models of the simulation outputs, together
-with the algebraic definition of the objectives and constraints.
+To solve a multiobjective optimization problem (MOOP), we use surrogate models
+of the simulation outputs, together with the algebraic definition of the
+objectives and constraints.
 
 .. figure:: img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives

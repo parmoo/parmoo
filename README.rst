@@ -36,10 +36,11 @@ To exploit structure, ParMOO models *simulations* separately from
  * a **constraint** is an algebraic function of the design variables
    and/or simulation outputs, which cannot exceed some bound.
 
-To solve a MOOP, we use surrogate models of the simulation outputs, together
-with the algebraic definition of the objectives and constraints.
+To solve a multiobjective optimization problem (MOOP), we use surrogate
+models of the simulation outputs, together with the algebraic definition of
+the objectives and constraints.
 
-.. figure:: img/des-sim-obj-space.png
+.. figure:: docs/img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
     :align: center
     :scale: 40
@@ -79,8 +80,6 @@ On Debian-based systems with a bash shell, this looks like
    git clone https://github.com/parmoo/parmoo
    cd parmoo
    pip install -e .
-
-For detailed instructions, see :doc:`install`.
 
 Testing
 -------
