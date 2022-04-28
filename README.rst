@@ -5,6 +5,10 @@
 
 |
 
+.. image:: https://img.shields.io/badge/License-BSD_3--Clause-blue.svg
+    :target: https://opensource.org/licenses/BSD-3-Clause
+    :alt: License
+
 .. image:: https://img.shields.io/pypi/v/parmoo.svg?color=blue
     :target: https://pypi.org/project/parmoo
 
@@ -14,6 +18,9 @@
 .. image:: https://readthedocs.org/projects/parmoo/badge/?maxAge=2592000
     :target: https://parmoo.readthedocs.org/en/latest/
     :alt: Documentation Status
+
+.. image:: https://img.shields.io/github/downloads/parmoo/parmoo/total.svg
+    :alt: GitHub Downloads
 
 |
 
