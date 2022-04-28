@@ -43,15 +43,15 @@ To exploit structure, ParMOO models *simulations* separately from
  * a **constraint** is an algebraic function of the design variables
    and/or simulation outputs, which cannot exceed a specified bound.
 
-To solve a multiobjective optimization problem (MOOP), we use surrogate
-models of the simulation outputs, together with the algebraic definition of
-the objectives and constraints.
-
 .. figure:: docs/img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
     :align: center
 
 |
+
+To solve a multiobjective optimization problem (MOOP), we use surrogate
+models of the simulation outputs, together with the algebraic definition of
+the objectives and constraints.
 
 ParMOO is implemented in Python. In order to achieve scalable parallelism,
 we use libEnsemble_ to distribute batches of simulation evaluations across
@@ -95,8 +95,7 @@ then you can test your installation.
 
 .. code-block:: bash
 
-   cd [parmoo base]
-   parmoo/tests/run-tests.sh -cu[rl]
+   python3 setup.py test
 
 These tests are run regularly using GitHub Actions_.
 

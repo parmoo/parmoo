@@ -46,19 +46,12 @@ ParMOO is designed to solve multiobjective simulation-based
 optimization problems by exploiting the simulation-based structure in
 such problems.
 
-.. figure:: img/des-sim-obj-space.png
-    :alt: Designs, simulations, and objectives
-    :align: center
-
-|
-
-One of the key concepts in ParMOO is the distinction between simulations
-and objectives.
+**One of the key concepts in ParMOO is the distinction between simulations
+and objectives.**
 
 In ParMOO, a *simulation* is a computationally expensive function:
 it may require significant computational resources and may have
 a nonnegligible execution time.
-A single MOOP may involve multiple simulations, with varying costs, which map from the design variables to an intermediate space
 
 .. math::
     {\bf S} : {\cal X} \rightarrow {\cal S},
@@ -66,6 +59,13 @@ A single MOOP may involve multiple simulations, with varying costs, which map fr
     {\cal X} \subset \mathbb{R}^n,
     {\cal S} \subset \mathbb{R}^m.
 
+A single MOOP may involve multiple simulations, with varying costs, which map from the design variables to an intermediate space
+
+.. figure:: img/des-sim-obj-space.png
+    :alt: Designs, simulations, and objectives
+    :align: center
+
+|
 
 ParMOO provides a framework for solving these problems, while
 parallelizing simulation evaluations.
@@ -88,7 +88,7 @@ Constraints are expressed as
 .. math::
     {\bf G} :{\cal X} \times {\cal S} \rightarrow \mathbb{R}^p.
 
-ParMOO allows one to separately specify simulations, objective functions,
+ParMOO allows its users to separately specify simulations, objective functions,
 and constraint functions. ParMOO will then utilize simulations sparingly,
 but it may use many objective and constraint evaluations to solve problems of
 the form 
@@ -224,7 +224,7 @@ Glossary
       :math:`f_{max}`, you may supply the negated value of that
       objective :math:`-f_{max}` to ParMOO.
  * **Feasible objective space:**
-   The *feasible objective space* is the image of the design space
+   The *feasible objective space* is the image of the feasible design space
    -- i.e., the set of all objective values
    that can be obtained, by evaluating every objective at configurations
    from the feasible design space.
@@ -251,8 +251,8 @@ Glossary
  * **Efficient set:**
    The *efficient set* is the set of all corresponding design
    configurations that produce points on the Pareto front.
-    * These are the solutions in the feasible design space that the 
-      objectives map onto the Pareto front.
+    * These are the solutions in the feasible design space, which are the 
+      pre-image of the Pareto front.
  * **Surrogate:**
    A *surrogate* is a computational model that approximates another
    underlying function.

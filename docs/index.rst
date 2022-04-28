@@ -6,8 +6,8 @@
 ParMOO: Python library for parallel multiobjective simulation optimization
 ==========================================================================
 
-ParMOO is a Python library for solving multiobjective simulation--based optimization
-problems, while exploiting problem structure.
+ParMOO is a Python library for solving multiobjective simulation-based
+optimization problems, while exploiting problem structure.
 
 ParMOO stands for "parallel multiobjective optimization".
 ParMOO can be used to solve multiobjective optimization problems (MOOPs)
