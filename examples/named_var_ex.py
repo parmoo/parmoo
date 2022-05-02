@@ -37,12 +37,12 @@ my_moop.addObjective({'name': "MyObj",
 my_moop.addConstraint({'name': "MyCon",
                        'constraint': lambda x, s: 0.1 - x["MyDes"]})
 
-# Extract final objective and simulation databases
+# Extract numpy dtypes for all of this MOOP's inputs/outputs
 des_dtype = my_moop.getDesignType()
 obj_dtype = my_moop.getObjectiveType()
 sim_dtype = my_moop.getSimulationType()
 
-# Print the data types
+# Display the dtypes as strings
 print("Design variable type:   " + str(des_dtype))
 print("Simulation output type: " + str(sim_dtype))
 print("Objective type:         " + str(obj_dtype))

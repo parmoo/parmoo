@@ -59,7 +59,7 @@ a nonnegligible execution time.
     {\cal X} \subset \mathbb{R}^n,
     {\cal S} \subset \mathbb{R}^m.
 
-A single MOOP may involve multiple simulations, with varying costs, which map 
+A single MOOP may involve multiple simulations, with varying costs, which map
 from the design variables to an intermediate space
 
 .. figure:: img/des-sim-obj-space.png

@@ -16,7 +16,7 @@
     :target: https://github.com/parmoo/parmoo/actions
 
 .. image:: https://readthedocs.org/projects/parmoo/badge/?maxAge=2592000
-    :target: https://parmoo.readthedocs.org/en/latest/
+    :target: https://parmoo.readthedocs.org/en/latest
     :alt: Documentation Status
 
 .. image:: https://img.shields.io/github/downloads/parmoo/parmoo/total.svg
