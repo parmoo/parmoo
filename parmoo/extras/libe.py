@@ -748,14 +748,14 @@ class libE_MOOP(MOOP):
                                  ('sim_name', int)],
                          'user': {}}
 
-        alloc_specs = {'alloc_f': alloc_f, 'out': [('given_back', bool)]}
+        alloc_specs = {'alloc_f': alloc_f, 'out': [('gen_informed', bool)]}
 
         persis_info = {}
         for i in range(nworkers + 1):
             persis_info[i] = {}
         persis_info[1]['moop'] = self.moop
 
-        exit_criteria = {'sim_max': sim_max, 'elapsed_wallclock_time': wt_max}
+        exit_criteria = {'sim_max': sim_max, 'wallclock_max': wt_max}
 
         # Perform the run
         H, persis_info, flag = libE(sim_specs, gen_specs, exit_criteria,
