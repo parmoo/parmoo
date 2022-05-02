@@ -26,20 +26,20 @@ hard rules that every solution must adhere to.
 |
 
 In a multiobjective *simulation-based* optimization problem, the objectives
-are derived from the outputs of one or more expensive 
-simulations.
+are derived from the outputs of one or more expensive simulations.
 
 Here, we use the term *simulation* in its broadest sense.
 In our terminology, a simulation could refer to any data-generating
-process of sufficient complexity,
-including
- * numerical simulations run on a computer or
- * real-world experiments performed in a laboratory environment.
+process of sufficient complexity, including
+ * numerical simulations run on a computer,
+ * physical experiments performed in a laboratory environment, and
+ * other nontrivial data-generating campaigns.
 
 A simulation's expense can be judged by any of several factors, including
  * the amount of time that is required to complete the simulation;
  * the simulation's occupation of valuable scientific resources,
-   such as computing nodes or laboratory equipment; and
+   such as computing nodes or laboratory equipment; 
+ * the need for expert/human involvement to validate simulation outputs;  and
  * consumption of raw resources such as energy or laboratory materials.
 
 ParMOO is designed to solve multiobjective simulation-based
@@ -49,7 +49,7 @@ such problems.
 **One of the key concepts in ParMOO is the distinction between simulations
 and objectives.**
 
-In ParMOO, a *simulation* is a computationally expensive function:
+In ParMOO, a simulation is an expensive or time-consuming process:
 it may require significant computational resources and may have
 a nonnegligible execution time.
 
@@ -59,7 +59,8 @@ a nonnegligible execution time.
     {\cal X} \subset \mathbb{R}^n,
     {\cal S} \subset \mathbb{R}^m.
 
-A single MOOP may involve multiple simulations, with varying costs, which map from the design variables to an intermediate space
+A single MOOP may involve multiple simulations, with varying costs, which map 
+from the design variables to an intermediate space
 
 .. figure:: img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
