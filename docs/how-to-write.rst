@@ -9,12 +9,21 @@ ParMOO.
 Below is a UML diagram showing the key public methods and
 dependencies.
 
-.. image:: ./img/moop-uml.svg
-    :alt: Designs variables, objectives, and the Pareto front (tradeoff curve)
-    :align: center
-    :scale: 5
+.. only:: html
 
-|
+    .. figure:: img/moop-uml.svg
+        :alt: ParMOO UML Diagram
+        :align: center
+
+    |
+
+.. only:: latexpdf
+
+    .. figure:: img/moop-uml.png
+        :alt: ParMOO UML Diagram
+        :align: center
+
+    |
 
 To create an instance of the :mod:`MOOP <moop.MOOP>` class,
 use the :meth:`constructor <moop.MOOP.__init__>`.
@@ -33,6 +42,7 @@ The ``optimizer`` is the surrogate optimization problem solver that will be used
 to generate candidate solutions for the MOOP.
 The choice of surrogate optimizer determines what information
 will be required when defining each objective and constraint.
+
  * If you use a derivative-free technique, such as
    :meth:`LocalGPS <optimizers.gps_search.LocalGPS>`,
    then you do not need to provide derivative information for your
@@ -91,6 +101,7 @@ This operation mode is recommended, especially for first-time users.
 
 After adding all design variables, simulations, objectives, and constraints
 to the MOOP, you can check the numpy dtype for each of these by using
+
  * :meth:`MOOP.getDesignType() <moop.MOOP.getDesignType>`,
  * :meth:`MOOP.getSimulationType() <moop.MOOP.getSimulationType>`,
  * :meth:`MOOP.getObjectiveType() <moop.MOOP.getObjectiveType>`, and
@@ -109,6 +120,7 @@ Working with Unnamed Outputs
 If even a single design variable is left with a blank ``name`` key,
 then all input/output pairs are returned in a Python
 dictionary, with the following keys:
+
  * ``x_vals: (np.ndarray)`` of length :math:`d \times n` --
    number of data points by number of design variables;
  * ``s_vals: (np.ndarray)`` of length :math:`d \times m` --
@@ -131,6 +143,7 @@ over structured arrays may be preferable.*
 
 You can still use the type-getter methods from the previous section to
 check the dtype of each output, knowing that
+
  * :meth:`MOOP.getDesignType() <moop.MOOP.getDesignType>`
    is the dtype of the ``x_vals`` key (when present).
  * :meth:`MOOP.getSimulationType() <moop.MOOP.getSimulationType>`
@@ -156,6 +169,7 @@ Design variables are added to your :mod:`MOOP <moop.MOOP>` object
 using the :meth:`addDesign(*args) <moop.MOOP.addDesign>` method.
 ParMOO currently supports
 two types of design variables:
+
  * ``continuous`` and
  * ``categorical``.
 
@@ -324,6 +338,7 @@ If you are using a gradient-based
 then you are required to supply an additional input named ``der``, 
 which defaults to 0.
 The ``der`` input is used as follows:
+
  * ``der=0`` (default) implies that no derivatives are taken, and
    you will return the objective function value;
  * ``der=1`` implies that you will return an array of derivatives with
@@ -563,6 +578,7 @@ paused and resumed later, and your simulation data can be recovered after
 a crash.
 Checkpointing is off by default.
 To turn it on, use the method:
+
  * :meth:`setCheckpoint(checkpoint, [checkpoint_data, filename]) <moop.MOOP.setCheckpoint>`
 
 .. code-block:: python
@@ -577,6 +593,7 @@ directory, with the name ``parmoo.moop``.
 In order to save the problem definition, ParMOO needs to store information
 for reloading all of your functions.
 For this to work:
+
  * All functions (such as simulation functions, objective functions, and
    constraint functions) are defined in the global scope;
  * All modules are reloaded before attempting to recover a previously-saved
@@ -706,13 +723,14 @@ Built-in and Custom Components
 
 By now you can see that the performance of ParMOO is determined
 by your choices of
+
  * :mod:`AcquisitionFunction <structs.AcquisitionFunction>`,
  * :mod:`GlobalSearch <structs.GlobalSearch>`,
  * :mod:`SurrogateFunction <structs.SurrogateFunction>`, and
  * :mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`.
 
-%GW: Why bold?
 You can find the current options for each of these in the following modules.
+
  * :doc:`parmoo.acquisitions <modules/acquisitions>`
  * :doc:`parmoo.searches <modules/searches>`
  * :doc:`parmoo.surrogates <modules/surrogates>`

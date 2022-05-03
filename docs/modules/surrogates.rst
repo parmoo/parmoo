@@ -1,8 +1,19 @@
-surrogates
-----------
+Surrogate Functions
+-------------------
 
-gaussian_proc
-~~~~~~~~~~~~~
+A surrogte model is associated with each simulation when its
+simulation dictionary is added to the ``MOOP`` object.
+This technique is used for generatng an approximation to the simulation's
+response surface, based on data gathered during the solve.
+
+.. code-block:: python
+
+    from parmoo import surrogates
+
+Available techniques are:
+
+Gaussian Process (RBF) Models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: surrogates.gaussian_proc
 ..    :members: surrogates/gaussian_proc
@@ -18,4 +29,3 @@ gaussian_proc
    :members:
 
    .. automethod:: __init__
-

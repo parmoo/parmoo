@@ -17,13 +17,8 @@ class MOOP:
     """ Class for defining a multiobjective optimization problem (MOOP).
 
     Upon initialization, supply a scalar optimization procedure and
-    dictionary of hyperparameters.
-
-    ``
-    from parmoo import MOOP
-    from parmoo.optimizers import [name of scalar optimizer] as ScalarOpt
-    moop = MOOP(ScalarOpt, [hyperparams={}])
-    ``
+    dictionary of hyperparameters using the default constructor:
+     * ``MOOP.__init__(ScalarOpt, [hyperparams={}])``
 
     Class methods are summarized below.
 
@@ -54,13 +49,8 @@ class MOOP:
     To turn on checkpointing, use:
      * ``MOOP.setCheckpoint(checkpoint, [checkpoint_data, filename])``
 
-    ParMOO also offers logging. To turn on logging, use:
-    ``
-    import logging
-    logging.basicConfig(level=logging.INFO,
-        [format='%(asctime)s %(levelname)-8s %(message)s',
-         datefmt='%Y-%m-%d %H:%M:%S'])
-    ``
+    ParMOO also offers logging. To turn on logging, activate INFO-level
+    logging by importing Python's built-in logging module.
 
     After defining the MOOP and setting up checkpointing and logging info,
     use the following method to solve the MOOP (serially):
@@ -754,18 +744,18 @@ class MOOP:
 
         Args:
             *args (dict): Python dictionary containing objective function
-            info, including:
-             * 'name' (str, optional): The name of this objective
-               (defaults to "obj" + str(i), where i = 1, 2, 3, ... for
-               the first, second, third, ... simulation added to the MOOP).
-             * 'obj_func' (function): An algebraic objective function that maps
-               from R^n X R^m --> R. Interface should match:
-               `cost = obj_func(x, sim_func(x), der=0)`,
-               where `der` is an optional argument specifying whether to
-               take the derivative of the objective function
-                * 0 -- no derivative taken, return f(x, sim_func(x))
-                * 1 -- return derivative wrt x, or
-                * 2 -- return derivative wrt sim(x).
+                information, including:
+                 * 'name' (str, optional): The name of this objective
+                   (defaults to "obj" + str(i), where i = 1, 2, 3, ... for the
+                   first, second, third, ... simulation added to the MOOP).
+                 * 'obj_func' (function): An algebraic objective function that
+                   maps from R^n X R^m --> R. Interface should match:
+                   `cost = obj_func(x, sim_func(x), der=0)`,
+                   where `der` is an optional argument specifying whether to
+                   take the derivative of the objective function
+                    * 0 -- no derivative taken, return f(x, sim_func(x))
+                    * 1 -- return derivative wrt x, or
+                    * 2 -- return derivative wrt sim(x).
 
         """
 
@@ -815,30 +805,30 @@ class MOOP:
         the design variables and/or the simulation outputs.
 
         Args:
-            *args (dict): Python dictionary containing constraint function
-            information, including:
-             * 'name' (str, optional): The name of this constraint
-               (defaults to "const" + str(i), where i = 1, 2, 3, ... for
-               the first, second, third, ... constraint added to the MOOP).
-             * 'constraint' (function): An algebraic constraint function that
-               maps from R^n X R^m --> R and evaluates to zero or a
-               negative number when feasible and positive otherwise.
-               Interface should match:
-               `violation = constraint(x, sim_func(x), der=0)`,
-               where `der` is an optional argument specifying whether to
-               take the derivative of the constraint function
-                * 0 -- no derivative taken, return c(x, sim_func(x))
-                * 1 -- return derivative wrt x, or
-                * 2 -- return derivative wrt sim(x).
-               Note that any
-               ``constraint(x, sim_func(x), der=0) <= 0``
-               indicates that x is feaseible, while
-               ``constraint(x, sim_func(x), der=0) > 0``
-               indicates that x is infeasible, violating the constraint by
-               an amount proportional to the output.
-               It is the user's responsibility to ensure that after adding all
-               constraints, the feasible region is nonempty and has nonzero
-               measure in the design space.
+            args (dict): Python dictionary containing constraint function
+                information, including:
+                 * 'name' (str, optional): The name of this constraint
+                   (defaults to "const" + str(i), where i = 1, 2, 3, ... for
+                   the first, second, third, ... constraint added to the MOOP).
+                 * 'constraint' (function): An algebraic constraint function
+                   that maps from R^n X R^m --> R and evaluates to zero or a
+                   negative number when feasible and positive otherwise.
+                   Interface should match:
+                   `violation = constraint(x, sim_func(x), der=0)`,
+                   where `der` is an optional argument specifying whether to
+                   take the derivative of the constraint function
+                    * 0 -- no derivative taken, return c(x, sim_func(x))
+                    * 1 -- return derivative wrt x, or
+                    * 2 -- return derivative wrt sim(x).
+                   Note that any
+                   ``constraint(x, sim_func(x), der=0) <= 0``
+                   indicates that x is feaseible, while
+                   ``constraint(x, sim_func(x), der=0) > 0``
+                   indicates that x is infeasible, violating the constraint by
+                   an amount proportional to the output.
+                   It is the user's responsibility to ensure that after adding
+                   all constraints, the feasible region is nonempty and has
+                   nonzero measure in the design space.
 
         """
 

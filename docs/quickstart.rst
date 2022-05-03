@@ -196,16 +196,6 @@ results can be viewed using
 
 Congratulations, you now know enough to get started solving MOOPs!
 
-Next steps:
-
- * If you want to take advantage of all that ParMOO has to offer, 
-   please see :doc:`Writing a ParMOO Script <how-to-write>`.
- * If you would like more information on multiobjective optimization
-   terminology and ParMOO's methodology, see the
-   :doc:`Learn About MOOPs <about>` page.
- * See :doc:`More Tutorials <tutorials/basic-tutorials>`.
- * See the :doc:`libEnsemble tutorial <tutorials/libe-tutorial>`.
-
 Minimal Working Example
 -----------------------
 
@@ -217,6 +207,19 @@ Putting it all together, we get the following minimal working example.
 The above code produces the output below.
 
 .. literalinclude:: ../examples/quickstart.out
+
+Next Steps
+----------
+
+ * If you want to take advantage of all that ParMOO has to offer, 
+   please see :doc:`Writing a ParMOO Script <how-to-write>`.
+ * If you would like more information on multiobjective optimization
+   terminology and ParMOO's methodology, see the
+   :doc:`Learn About MOOPs <about>` page.
+ * For a full list of basic usage tutorials, see
+   :doc:`More Tutorials <tutorials/basic-tutorials>`.
+ * To start solving MOOPs on parallel hardware, install libEnsemble_ and
+   see the :doc:`libEnsemble tutorial <tutorials/libe-tutorial>`.
 
 Resources
 ---------

@@ -150,14 +150,10 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
 
 class libE_MOOP(MOOP):
     """ Class for solving a MOOP using libEnsemble to manage parallelism.
-    Upon initialization, supply a scalar optimization procedure and
-    dictionary of hyperparameters.
 
-    ``
-    from parmoo.extras.libE import libE_MOOP
-    from parmoo.optimizers import [name of scalar optimizer] as ScalarOpt
-    moop = libE_MOOP(ScalarOpt, [hyperparams={}])
-    ``
+    Upon initialization, supply a scalar optimization procedure and
+    dictionary of hyperparameters using the default constructor:
+     * ``moop = libE_MOOP.__init__(ScalarOpt, [hyperparams={}])``
 
     Class methods are summarized below.
 
@@ -321,19 +317,19 @@ class libE_MOOP(MOOP):
         functions can be added.
 
         Args:
-            *args (dict): Python dictionary containing objective function
-            info, including:
-             * 'name' (str, optional): The name of this objective
-               (defaults to "obj" + str(i), where i = 1, 2, 3, ... for
-               the first, second, third, ... simulation added to the MOOP).
-             * 'obj_func' (function): An algebraic objective function that maps
-               from R^n X R^m --> R. Interface should match:
-               `cost = obj_func(x, sim_func(x), der=0)`,
-               where `der` is an optional argument specifying whether to
-               take the derivative of the objective function
-                * 0 -- no derivative taken, return f(x, sim_func(x))
-                * 1 -- return derivative wrt x, or
-                * 2 -- return derivative wrt sim(x).
+            args (dict): Python dictionary containing objective function
+                information, including:
+                 * 'name' (str, optional): The name of this objective
+                   (defaults to "obj" + str(i), where i = 1, 2, 3, ... for the
+                   first, second, third, ... simulation added to the MOOP).
+                 * 'obj_func' (function): An algebraic objective function that
+                   maps from R^n X R^m --> R. Interface should match:
+                   `cost = obj_func(x, sim_func(x), der=0)`,
+                   where `der` is an optional argument specifying whether to
+                   take the derivative of the objective function
+                    * 0 -- no derivative taken, return f(x, sim_func(x))
+                    * 1 -- return derivative wrt x, or
+                    * 2 -- return derivative wrt sim(x).
 
         """
 
@@ -349,29 +345,30 @@ class libE_MOOP(MOOP):
 
         Args:
             *args (dict): Python dictionary containing constraint function
-            information, including:
-             * 'name' (str, optional): The name of this constraint
-               (defaults to "const" + str(i), where i = 1, 2, 3, ... for
-               the first, second, third, ... constraint added to the MOOP).
-             * 'constraint' (function): An algebraic constraint function that
-               maps from R^n X R^m --> R and evaluates to zero or a
-               negative number when feasible and positive otherwise.
-               Interface should match:
-               `violation = constraint(x, sim_func(x), der=0)`,
-               where `der` is an optional argument specifying whether to
-               take the derivative of the constraint function
-                * 0 -- no derivative taken, return c(x, sim_func(x))
-                * 1 -- return derivative wrt x, or
-                * 2 -- return derivative wrt sim(x).
-               Note that any
-               ``constraint(x, sim_func(x), der=0) <= 0``
-               indicates that x is feaseible, while
-               ``constraint(x, sim_func(x), der=0) > 0``
-               indicates that x is infeasible, violating the constraint by
-               an amount proportional to the output.
-               It is the user's responsibility to ensure that after adding all
-               constraints, the feasible region is nonempty and has nonzero
-               measure in the design space.
+                information, including:
+                 * 'name' (str, optional): The name of this constraint
+                   (defaults to "const" + str(i), where i = 1, 2, 3, ... for
+                   the first, second, third, ... constraint added to the
+                   MOOP).
+                 * 'constraint' (function): An algebraic constraint function
+                   that maps from R^n X R^m --> R and evaluates to zero or a
+                   negative number when feasible and positive otherwise.
+                   Interface should match:
+                   `violation = constraint(x, sim_func(x), der=0)`,
+                   where `der` is an optional argument specifying whether to
+                   take the derivative of the constraint function
+                    * 0 -- no derivative taken, return c(x, sim_func(x))
+                    * 1 -- return derivative wrt x, or
+                    * 2 -- return derivative wrt sim(x).
+                   Note that any
+                   ``constraint(x, sim_func(x), der=0) <= 0``
+                   indicates that x is feaseible, while
+                   ``constraint(x, sim_func(x), der=0) > 0``
+                   indicates that x is infeasible, violating the constraint by
+                   an amount proportional to the output.
+                   It is the user's responsibility to ensure that after adding
+                   all constraints, the feasible region is nonempty and has
+                   nonzero measure in the design space.
 
         """
 

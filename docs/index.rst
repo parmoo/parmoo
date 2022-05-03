@@ -13,7 +13,12 @@ ParMOO stands for "parallel multiobjective optimization".
 ParMOO can be used to solve multiobjective optimization problems (MOOPs)
 or to generate batches of simulation inputs for parallel evaluation.
 
-To get started, check out the :ref:`Quickstart`.
+If you're new to ParMOO:
+
+ * Check out the :ref:`Quickstart`
+ * Try some of our :doc:`Basic Tutorials <tutorials/basic-tutorials>`
+ * Try :doc:`Running in Parallel using libEnsemble <extras>`
+ * Check us out on `GitHub <https://github.com/parmoo/parmoo>`_
 
 Table of Contents
 =================
@@ -31,6 +36,12 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 2
+   :caption: API:
+
+   api
+
+.. toctree::
+   :maxdepth: 2
    :caption: Tutorials:
 
    tutorials/basic-tutorials
@@ -43,7 +54,7 @@ Table of Contents
    dev-guide/contributing
    dev-guide/release-proc
    dev-guide/release-notes
-   modules/module-home
+   modules/module-home.rst
 
 
 Indices
@@ -51,4 +62,3 @@ Indices
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

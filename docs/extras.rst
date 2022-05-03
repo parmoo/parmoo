@@ -1,8 +1,8 @@
 Extras and Plugins
 ==================
 
-Solving on Parallel Systems Using libEnsemble
----------------------------------------------
+Running in Parallel using libEnsemble
+-------------------------------------
 
 `libEnsemble <https://github.com/Libensemble/libensemble>`_ is
 a Python library to "coordinate concurrent evaluation of dynamic

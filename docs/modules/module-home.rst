@@ -1,17 +1,8 @@
 Module List
 ===========
 
-This section contains the complete list of ParMOO modules.
+See the module index:
+ * :ref:`modindex`
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Modules:
-
-   structs
-   util
-   objectives
-   acquisitions
-   optimizers
-   searches
-   surrogates
-   extras
+Or search the full general index for a specific class, method, or function:
+ * :ref:`genindex`
