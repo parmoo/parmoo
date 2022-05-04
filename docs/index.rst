@@ -54,7 +54,7 @@ Table of Contents
    dev-guide/contributing
    dev-guide/release-proc
    dev-guide/release-notes
-   modules/module-home.rst
+   dev-guide/modules.rst
 
 
 Indices
