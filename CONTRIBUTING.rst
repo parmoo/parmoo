@@ -39,7 +39,6 @@ merge this branch into ``main`` and ``develop`` for a release.
 When a branch closes a related issue, the pull request message should include
 the phrase "Closes #N," where N is the issue number.
 
-Contributed code should pass flake8 tests.
 New features should be accompanied by at least one test case.
 
 All pull requests to ``develop`` or ``main`` must be reviewed by at least one
