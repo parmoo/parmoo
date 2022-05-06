@@ -9,7 +9,7 @@ This is a collection of all tutorials demonstrating basic ParMOO functionality
 Quickstart Demo
 ~~~~~~~~~~~~~~~
 
-This is a basic example of how to build and solve a MOOP with ParMOO,
+This is a basic example (see `quickstart.py <https://github.com/parmoo/parmoo/blob/main/examples/quickstart.py>`_) of how to build and solve a MOOP with ParMOO,
 taken from the :doc:`Quickstart <../quickstart>` guide.
 
 .. literalinclude:: ../../examples/quickstart.py
