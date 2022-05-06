@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('../parmoo'))
 # -- Project information -----------------------------------------------------
 
 project = 'ParMOO'
-copyright = '2020, Tyler Chang, Stefan Wild'
+copyright = '2022, Tyler Chang, Stefan Wild'
 author = 'Tyler Chang, Stefan Wild'
 
 # The full version, including alpha/beta/rc tags
