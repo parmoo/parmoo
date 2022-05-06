@@ -6,7 +6,7 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
-Release 0.0.0
+Release 0.1.0
 -------------
 
 Initial release.
