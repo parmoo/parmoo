@@ -1,0 +1,16 @@
+include setup.py
+include *.cfg
+include *.rst
+include LICENSE
+include CONTRIBUTING
+
+recursive-include parmoo *
+recursive-include examples *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * cov_*
+recursive-exclude * *.o
+recursive-exclude * *.npy
+recursive-exclude * *.gitignore
+
+recursive-include docs *
