@@ -30,7 +30,7 @@ Before release
   - On-line CI (GitHub Actions) tests must pass.
 
   - Documentation must build and display correctly wherever hosted (currently
-    readthedocs.com).
+    readthedocs.org).
 
 - Pull request from either the develop or release branch to main requesting
   one or more reviewers (including at least one other administrator).
