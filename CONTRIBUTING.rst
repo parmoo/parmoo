@@ -4,7 +4,7 @@ Contributing to ParMOO
 Contributions of source code, documentations, and fixes are happily
 accepted via GitHub pull request to
 
-    https://github.com/parmoo/parmoo
+    https://github.com/parmoo/parmoo/tree/develop
 
 If you are planning a contribution, reporting bugs, or suggesting features, 
 we encourage you to discuss the concept by opening a github issue at
