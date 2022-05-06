@@ -4,6 +4,8 @@ Basic Tutorials
 This is a collection of all tutorials demonstrating basic ParMOO functionality
 (collected from throughout the ParMOO User Guide).
 
+.. _quickstart_ex:
+
 Quickstart Demo
 ~~~~~~~~~~~~~~~
 
@@ -55,6 +57,31 @@ to ParMOO's internal simulation databases.
 The above code produces the following output.
 
 .. literalinclude:: ../../examples/precomputed_data.out
+
+Logging and Checkpointing
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When solving a large or expensive problem, logging and checkpointing
+are recommended.
+The following code snippet shows how to solve the same problem from
+the `Quickstart example <quickstart_ex>`_, but with logging and checkpointing
+turned on.
+Then, another MOOP is created by reloading from the checkpoint file,
+and run for 1 extra iteration, in order to demonstrate how to reload
+from a saved checkpoint file.
+
+Note how the lambda functions from `Quickstart example <quickstart_ex>`_
+have been explicitly defined below.
+This is because ParMOO reloads functions by name, which means that it
+does not support checkpointing for lambda functions and any named function
+must be defined with the same name in the global scope during reloading.
+
+.. literalinclude:: ../../examples/checkpointing.py
+    :language: python
+
+The above code produces the following output.
+
+.. literalinclude:: ../../examples/checkpointing.out
 
 .. _advanced_ex:
 

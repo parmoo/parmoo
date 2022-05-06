@@ -1,0 +1,3 @@
+Design variable type:   [('MyDes', '<f8'), ('MyCat', '<i4')]
+Simulation output type: [('MySim', '<f8', (2,))]
+Objective type:         [('MyObj', '<f8')]

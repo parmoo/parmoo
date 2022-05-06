@@ -544,10 +544,16 @@ then ParMOO will generate batches of q*s simulations**.
 In other words, each simulation is evaluated once per acquisition function in
 each iteration of ParMOO's algorithm.
 
-Logging
--------
+Logging and Checkpointing
+-------------------------
 
-For diagnostics, ParMOO logs it progress at the ``logging.INFO`` level.
+When solving large or expensive problems, it is often a good idea to
+activate ParMOO's logging and/or checkpointing features.
+
+Logging
+~~~~~~~
+
+For diagnostics, ParMOO logs its progress at the ``logging.INFO`` level.
 To display these log messages, turn on Python's ``INFO``-level logging.
 
 .. code-block:: python
@@ -571,7 +577,7 @@ Be aware that when using ParMOO together with
 and ParMOO's logging tools will not work.
 
 Checkpointing
--------------
+~~~~~~~~~~~~~
 
 A ParMOO can be run with checkpointing turned on, so that your MOOP can be
 paused and resumed later, and your simulation data can be recovered after
@@ -598,7 +604,7 @@ For this to work:
    constraint functions) are defined in the global scope;
  * All modules are reloaded before attempting to recover a previously-saved
    MOOP object (by calling the :meth:`load(filename) <moop.MOOP.load>` method);
- * ParMOO cannot relaod ``lambda`` functions. Use only regular functions
+ * ParMOO cannot reload ``lambda`` functions. Use only regular functions
    and callable objects when checkpointing.
 
 If the option argument ``checkpoint_data`` is set to ``True`` (default),
@@ -606,6 +612,45 @@ the ParMOO will also save a second copy of all simulation evaluations in a
 human-readable JSON file in the same directory, with the name
 ``parmoo.simdb.json``.
 This file is not used by ParMOO, it is only provided for user-convenience.
+
+Reloading After Crash or Early Stop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After a crash or early termination, reload the saved ``.moop`` file to resume.
+**Make sure that you first import any external modules and redefine any
+functions that are needed by ParMOO (with the exact same signatures).**
+
+.. code-block:: python
+
+    from parmoo import MOOP
+    from optimizers import [optimizer]
+
+    # Create a new MOOP object
+    moop = MOOP([optimizer])
+    # Reload the old problem
+    moop.load(filename="parmoo") # Use your savefile name, omitting ".moop"
+
+Then resume your solve with an increased budget.
+
+.. code-block:: python
+
+    # Resume solve with increased budget
+    moop.solve(6)
+
+Example
+~~~~~~~
+
+The example below shows how the `Quickstart demo <quickstart_ex>`_ can be
+modified to use logging and checkpointing, including an example of how
+to load a MOOP from a saved checkpoint file and resume running.
+
+.. literalinclude:: ../examples/checkpointing.py
+    :language: python
+
+The result is the following.
+
+.. literalinclude:: ../examples/checkpointing.out
+
 
 Methods for Solving
 -------------------
@@ -670,30 +715,6 @@ or
 Additional ParMOO solver execution paradigms (including those where ParMOO
 will handle parallel execution on the user's behalf) are included under
 :doc:`Additional ParMOO Plugins and Features <extras>`.
-
-Reloading After Crash or Early Stop
------------------------------------
-
-After a crash or early termination, reload the saved ``.moop`` file to resume.
-**Make sure that you first import any external modules and redefine any
-functions that are needed by ParMOO (with the exact same signatures).**
-
-.. code-block:: python
-
-    from parmoo import MOOP
-    from optimizers import [optimizer]
-
-    # Create a new MOOP object
-    moop = MOOP([optimizer])
-    # Reload the old problem
-    moop.load(filename="parmoo") # Use your savefile name, omitting ".moop"
-
-Then resume your solve with an increased budget.
-
-.. code-block:: python
-
-    # Resume solve with increased budget
-    moop.solve(6)
 
 Viewing Your Results
 --------------------
