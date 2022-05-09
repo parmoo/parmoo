@@ -1,4 +1,1 @@
-Contributing
-============
-
-This page is under construction.
+.. include:: ../../CONTRIBUTING.rst

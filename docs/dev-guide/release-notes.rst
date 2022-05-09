@@ -1,4 +1,1 @@
-Release Notes
-=============
-
-This page is under construction.
+.. include:: ../../CHANGELOG.rst

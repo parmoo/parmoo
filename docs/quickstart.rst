@@ -20,15 +20,23 @@ To exploit structure, ParMOO models *simulations* separately from
  * a **constraint** is an algebraic function of the design variables
    and/or simulation outputs, which cannot exceed some bound.
 
-To solve a multiobjective optimization problem (MOOP), we use surrogate models
-of the simulation outputs, together with the algebraic definition of the
-objectives and constraints.
-
 .. figure:: img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
     :align: center
 
 |
+
+To solve a multiobjective optimization problem (MOOP), we use surrogate models
+of the simulation outputs, together with the algebraic definition of the
+objectives and constraints.
+
+.. only:: html
+
+    .. figure:: img/parmoo_movie.gif
+        :alt: ParMOO animation
+        :align: center
+
+    |
 
 In order to achieve scalable parallelism, we use libEnsemble_ to distribute
 batches of simulation evaluations across parallel resources.
@@ -81,7 +89,7 @@ These tests are run regularly using GitHub Actions_.
 Basic Usage
 -----------
 
-ParMOO uses `numpy_ in an object oriented design,
+ParMOO uses numpy_ in an object oriented design,
 based around the :mod:`MOOP <moop.MOOP>` class.
 To get started, create a :mod:`MOOP <moop.MOOP>` object, using the
 :meth:`constructor <moop.MOOP.__init__>`.
@@ -188,16 +196,6 @@ results can be viewed using
 
 Congratulations, you now know enough to get started solving MOOPs!
 
-Next steps:
-
- * If you want to take advantage of all that ParMOO has to offer, 
-   please see :doc:`Writing a ParMOO Script <how-to-write>`.
- * If you would like more information on multiobjective optimization
-   terminology and ParMOO's methodology, see the
-   :doc:`Learn About MOOPs <about>` page.
- * See :doc:`More Tutorials <tutorials/basic-tutorials>`.
- * See the :doc:`libEnsemble tutorial <tutorials/libe-tutorial>`.
-
 Minimal Working Example
 -----------------------
 
@@ -210,6 +208,19 @@ The above code produces the output below.
 
 .. literalinclude:: ../examples/quickstart.out
 
+Next Steps
+----------
+
+ * If you want to take advantage of all that ParMOO has to offer, 
+   please see :doc:`Writing a ParMOO Script <how-to-write>`.
+ * If you would like more information on multiobjective optimization
+   terminology and ParMOO's methodology, see the
+   :doc:`Learn About MOOPs <about>` page.
+ * For a full list of basic usage tutorials, see
+   :doc:`More Tutorials <tutorials/basic-tutorials>`.
+ * To start solving MOOPs on parallel hardware, install libEnsemble_ and
+   see the :doc:`libEnsemble tutorial <tutorials/libe-tutorial>`.
+
 Resources
 ---------
 
@@ -221,11 +232,15 @@ Our full documentation is hosted on:
 
  * ReadTheDocs_
 
+Please read our LICENSE_ and CONTRIBUTING_ files.
+
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
+.. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
 .. _libEnsemble: https://github.com/Libensemble/libensemble
+.. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
 .. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x

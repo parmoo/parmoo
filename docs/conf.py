@@ -12,6 +12,9 @@
 #
 import os
 import sys
+from datetime import datetime
+
+# Add ParMOO's modules to path
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../parmoo'))
@@ -20,11 +23,13 @@ sys.path.insert(0, os.path.abspath('../parmoo'))
 # -- Project information -----------------------------------------------------
 
 project = 'ParMOO'
-copyright = '2020, Tyler Chang, Stefan Wild'
-author = 'Tyler Chang, Stefan Wild'
+copyright = str(datetime.now().year) + ' Tyler Chang, Stefan Wild'
+author = 'Tyler Chang and Stefan Wild'
 
 # The full version, including alpha/beta/rc tags
-release = '0'
+exec(open("../parmoo/version.py").read())
+version = __version__
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -53,12 +58,48 @@ exclude_patterns = []
 # see https://github.com/rtfd/readthedocs.org/issues/2569
 master_doc = 'index'
 
+# The latex toctree document
+latex_doc = 'latex_index'
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
+html_theme_options = {'navigation_depth': 3,
+                      'logo_only': True}
+html_logo = './img/logo-ParMOO_white.png'
+
+# -- Options for LaTeX output ------------------------------------------------
+
+latex_elements = {
+    'fncychap': "\\usepackage[Lenny]{fncychap}",
+    'extraclassoptions': "openany",
+    'preamble': r"""
+    \protected\def\sphinxcrossref#1{\texttt{#1}}
+
+    \newsavebox\mytempbox
+    \definecolor{sphinxnoteBgColor}{RGB}{221,233,239}
+    \renewenvironment{sphinxnote}[1]{%
+    \begin{lrbox}{\mytempbox}%
+    \begin{minipage}{\columnwidth}%
+    \begin{sphinxlightbox}%
+    \sphinxstrong{#1}}%
+    {\end{sphinxlightbox}%
+    \end{minipage}%
+    \end{lrbox}%
+    \colorbox{sphinxnoteBgColor}{\usebox{\mytempbox}}}
+    """,
+    }
+
+latex_documents = [
+    (latex_doc, "parmoo.tex", "ParMOO User's Manual",
+     "Tyler Chang and Stefan Wild", "manual"),
+     ]
+
+latex_logo = "img/logo-ParMOO_white.png"
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

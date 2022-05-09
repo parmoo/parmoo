@@ -26,6 +26,19 @@ my_moop.addObjective({'obj_func': lambda x, s: sum(s)})
 
 my_moop.addConstraint({'constraint': lambda x, s: 0.1 - x[0]})
 
+# Extract numpy dtypes for all of this MOOP's inputs/outputs
+des_dtype = my_moop.getDesignType()
+sim_dtype = my_moop.getSimulationType()
+obj_dtype = my_moop.getObjectiveType()
+const_dtype = my_moop.getConstraintType()
+
+# Display the dtypes as strings
+print("Design variable type:   " + str(des_dtype))
+print("Simulation output type: " + str(sim_dtype))
+print("Objective type:         " + str(obj_dtype))
+print("Constraint type:        " + str(const_dtype))
+print()
+
 # Add one acquisition and solve with 0 iterations to initialize databases
 my_moop.addAcquisition({'acquisition': UniformWeights})
 my_moop.solve(0)
@@ -34,11 +47,14 @@ my_moop.solve(0)
 obj_db = my_moop.getObjectiveData()
 sim_db = my_moop.getSimulationData()
 
-# Print the data types
+# Print the objective database dtypes
 print("Objective database keys: " + str([key for key in obj_db.keys()]))
 for key in obj_db.keys():
     print("\t'" + key + "'" + " dtype: " + str(obj_db[key].dtype))
     print("\t'" + key + "'" + " shape: " + str(obj_db[key].shape))
+print()
+
+# Print the simulation database dtypes
 print("Simulation database type: " + str(type(sim_db)))
 print("Simulation database length: " + str(len(sim_db)))
 for i, dbi in enumerate(sim_db):

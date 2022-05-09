@@ -5,6 +5,10 @@
 
 |
 
+.. image:: https://img.shields.io/badge/License-BSD_3--Clause-blue.svg
+    :target: https://opensource.org/licenses/BSD-3-Clause
+    :alt: License
+
 .. image:: https://img.shields.io/pypi/v/parmoo.svg?color=blue
     :target: https://pypi.org/project/parmoo
 
@@ -12,8 +16,11 @@
     :target: https://github.com/parmoo/parmoo/actions
 
 .. image:: https://readthedocs.org/projects/parmoo/badge/?maxAge=2592000
-    :target: https://parmoo.readthedocs.org/en/latest/
+    :target: https://parmoo.readthedocs.org/en/latest
     :alt: Documentation Status
+
+.. image:: https://img.shields.io/github/downloads/parmoo/parmoo/total.svg
+    :alt: GitHub Downloads
 
 |
 
@@ -36,15 +43,15 @@ To exploit structure, ParMOO models *simulations* separately from
  * a **constraint** is an algebraic function of the design variables
    and/or simulation outputs, which cannot exceed a specified bound.
 
-To solve a multiobjective optimization problem (MOOP), we use surrogate
-models of the simulation outputs, together with the algebraic definition of
-the objectives and constraints.
-
 .. figure:: docs/img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
     :align: center
 
 |
+
+To solve a multiobjective optimization problem (MOOP), we use surrogate
+models of the simulation outputs, together with the algebraic definition of
+the objectives and constraints.
 
 ParMOO is implemented in Python. In order to achieve scalable parallelism,
 we use libEnsemble_ to distribute batches of simulation evaluations across
@@ -88,8 +95,7 @@ then you can test your installation.
 
 .. code-block:: bash
 
-   cd [parmoo base]
-   parmoo/tests/run-tests.sh -cu[rl]
+   python3 setup.py test
 
 These tests are run regularly using GitHub Actions_.
 
