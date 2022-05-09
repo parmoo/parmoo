@@ -14,7 +14,7 @@ Before release
 - Release notes for this version are added to the ``CHANGELOG.rst`` file.
 
 - Version number is updated wherever it appears and ``+dev`` suffix is removed
-  (in ``parmoo/version.py``and ``README.rst``).
+  (in ``parmoo/version.py`` and ``README.rst``).
 
 - Check ``README.rst`` *Citing ParMOO* and ``docs/refs.rst`` for correctness.
 
