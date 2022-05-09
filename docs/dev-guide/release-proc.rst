@@ -54,7 +54,7 @@ An administrator will take the following steps.
   branch into develop.
 
 - Create a new commit on develop that appends ``+dev`` to the version number
-  (wherever is appears).
+  (wherever it appears).
 
 After release
 -------------
