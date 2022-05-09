@@ -17,7 +17,7 @@ dependencies.
 
     |
 
-.. only:: latexpdf
+.. only:: latex
 
     .. figure:: img/moop-uml.png
         :alt: ParMOO UML Diagram

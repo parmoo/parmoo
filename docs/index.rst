@@ -1,7 +1,4 @@
-.. ParMOO documentation master file, created by
-   sphinx-quickstart on Thu Jul  9 19:23:48 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. ParMOO documentation master file
 
 .. image:: img/logo-ParMOO.svg
     :align: center
@@ -60,11 +57,10 @@ Table of Contents
    dev-guide/contributing
    dev-guide/release-proc
    dev-guide/release-notes
-   dev-guide/modules.rst
+   dev-guide/modules
 
+Indices:
+========
 
-Indices
-=======
-
-* :ref:`genindex`
-* :ref:`modindex`
+ * :ref:`genindex`
+ * :ref:`modindex`

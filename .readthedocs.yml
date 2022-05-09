@@ -9,8 +9,8 @@ sphinx:
 build:
     image: latest
 
-#formats:
-#  - pdf
+formats:
+  - pdf
 
 python:
     version: 3.7
