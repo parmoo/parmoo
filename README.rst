@@ -5,11 +5,11 @@
 
 |
 
-.. image:: https://img.shields.io/badge/License-BSD_3--Clause-blue.svg
+.. image:: https://img.shields.io/badge/License-BSD_3--Clause-green.svg
     :target: https://opensource.org/licenses/BSD-3-Clause
     :alt: License
 
-.. image:: https://img.shields.io/pypi/v/parmoo.svg?color=blue
+.. image:: https://img.shields.io/pypi/v/parmoo.svg?color=green
     :target: https://pypi.org/project/parmoo
 
 .. image:: https://github.com/parmoo/parmoo/actions/workflows/parmoo-ci.yml/badge.svg?/branch=main
@@ -77,9 +77,23 @@ Additional dependencies are needed to use the additional features in
 Installation
 ------------
 
-The easiest way to install ParMOO, so that you can easily get the latest
-version, is to clone it from our GitHub_ and pip install it in-place.
-On Debian-based systems with a bash shell, this looks like
+The easiest way to install ParMOO is via the Python package index, PyPI
+(commonly called ``pip``):
+
+.. code-block:: bash
+
+    pip install [--user] parmoo
+
+To install *all* dependencies (including libEnsemble) use:
+
+.. code-block:: bash
+
+    pip install [--user] parmoo[extras]
+
+You can also clone this project from our GitHub_ and ``pip`` install it
+in-place, so that you can easily pull the latest version or checkout
+the ``develop`` branch for pre-release features.
+On Debian-based systems with a bash shell, this looks like:
 
 .. code-block:: bash
 
