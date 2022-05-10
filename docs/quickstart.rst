@@ -61,9 +61,23 @@ Additional dependencies are needed to use the additional features in
 Installation
 ------------
 
-The easiest way to install ParMOO, so that you can easily get the latest
-version, is to clone it from our GitHub_ and pip install it in-place.
-On Debian-based systems with a bash shell, this looks like
+The easiest way to install ParMOO is via the Python package index, PyPI
+(commonly called ``pip``):
+
+.. code-block:: bash
+
+    pip install [--user] parmoo
+
+To install *all* dependencies (including libEnsemble) use:
+
+.. code-block:: bash
+
+    pip install [--user] parmoo[extras]
+
+You can also clone this project from our GitHub_ and ``pip`` install it
+in-place, so that you can easily pull the latest version or checkout
+the ``develop`` branch for pre-release features.
+On Debian-based systems with a bash shell, this looks like:
 
 .. code-block:: bash
 
@@ -81,8 +95,7 @@ then you can test your installation.
 
 .. code-block:: bash
 
-   cd [parmoo base]
-   parmoo/tests/run-tests.sh -cu[rl]
+   python3 setup.py test
 
 These tests are run regularly using GitHub Actions_.
 
