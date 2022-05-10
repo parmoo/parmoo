@@ -5,11 +5,11 @@
 
 |
 
-.. image:: https://img.shields.io/badge/License-BSD_3--Clause-blue.svg
+.. image:: https://img.shields.io/badge/License-BSD_3--Clause-green.svg
     :target: https://opensource.org/licenses/BSD-3-Clause
     :alt: License
 
-.. image:: https://img.shields.io/pypi/v/parmoo.svg?color=blue
+.. image:: https://img.shields.io/pypi/v/parmoo.svg?color=green
     :target: https://pypi.org/project/parmoo
 
 .. image:: https://github.com/parmoo/parmoo/actions/workflows/parmoo-ci.yml/badge.svg?/branch=main
