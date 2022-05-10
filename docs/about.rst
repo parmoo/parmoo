@@ -26,39 +26,34 @@ hard rules that every solution must adhere to.
 |
 
 In a multiobjective *simulation-based* optimization problem, the objectives
-are derived from the outputs of one or more expensive 
-simulations.
+are derived from the outputs of one or more expensive simulations.
 
 Here, we use the term *simulation* in its broadest sense.
 In our terminology, a simulation could refer to any data-generating
-process of sufficient complexity,
-including
- * numerical simulations run on a computer or
- * real-world experiments performed in a laboratory environment.
+process of sufficient complexity, including
+
+ * numerical simulations run on a computer,
+ * physical experiments performed in a laboratory environment, and
+ * other nontrivial data-generating campaigns.
 
 A simulation's expense can be judged by any of several factors, including
+
  * the amount of time that is required to complete the simulation;
  * the simulation's occupation of valuable scientific resources,
-   such as computing nodes or laboratory equipment; and
+   such as computing nodes or laboratory equipment; 
+ * the need for expert/human involvement to validate simulation outputs;  and
  * consumption of raw resources such as energy or laboratory materials.
 
 ParMOO is designed to solve multiobjective simulation-based
 optimization problems by exploiting the simulation-based structure in
 such problems.
 
-.. figure:: img/des-sim-obj-space.png
-    :alt: Designs, simulations, and objectives
-    :align: center
+**One of the key concepts in ParMOO is the distinction between simulations
+and objectives.**
 
-|
-
-One of the key concepts in ParMOO is the distinction between simulations
-and objectives.
-
-In ParMOO, a *simulation* is a computationally expensive function:
+In ParMOO, a simulation is an expensive or time-consuming process:
 it may require significant computational resources and may have
 a nonnegligible execution time.
-A single MOOP may involve multiple simulations, with varying costs, which map from the design variables to an intermediate space
 
 .. math::
     {\bf S} : {\cal X} \rightarrow {\cal S},
@@ -66,6 +61,14 @@ A single MOOP may involve multiple simulations, with varying costs, which map fr
     {\cal X} \subset \mathbb{R}^n,
     {\cal S} \subset \mathbb{R}^m.
 
+A single MOOP may involve multiple simulations, with varying costs, which map
+from the design variables to an intermediate space
+
+.. figure:: img/des-sim-obj-space.png
+    :alt: Designs, simulations, and objectives
+    :align: center
+
+|
 
 ParMOO provides a framework for solving these problems, while
 parallelizing simulation evaluations.
@@ -88,7 +91,7 @@ Constraints are expressed as
 .. math::
     {\bf G} :{\cal X} \times {\cal S} \rightarrow \mathbb{R}^p.
 
-ParMOO allows one to separately specify simulations, objective functions,
+ParMOO allows its users to separately specify simulations, objective functions,
 and constraint functions. ParMOO will then utilize simulations sparingly,
 but it may use many objective and constraint evaluations to solve problems of
 the form 
@@ -124,6 +127,7 @@ This allows ParMOO to exploit additional information about your problem,
 in situations where it is available.
 
 Common use cases include the following.
+
  * One or more objectives does not depend on any simulation outputs
    and therefore can be evaluated directly without concern for computational
    expense.
@@ -135,6 +139,7 @@ Common use cases include the following.
 
 This process has several key components, which ParMOO allows
 users to interchange.
+
  * Before fitting any surrogates or performing any scalarizations, ParMOO
    must search the design space using one of the ``GlobalSearch``
    implementations from the ``parmoo.searches`` module.
@@ -166,108 +171,140 @@ Glossary
  * **Design variable:**
    A *design variable* is an input to your simulations, which can be controlled
    within some reasonable bounds.
+
     * **Ex.-** when designing an air foil using a fluid dynamics simulation,
       one design variable might be the angle of attack.
     * ParMOO currently supports continuous and categorical design variables.
+
  * **Design space:**
    The *design space* is the underlying vector space where you could
    represent all possible design variable combinations.
+
     * **Ex.-** if you have :math:`n` continuous design variables, then
       your design space would be all of :math:`\mathbb{R}^n`.
+
  * **Constraint:**
    A *constraint* is a requirement that every solution point must satisfy.
+
     * **Ex.-** if your simulation code fails whenever :math:`x_1 > x_2`,
       then you might impose the constraint: :math:`x_2 - x_1 \leq 0`.
+
  * **Hard constraint:**
    A *hard constraint* cannot be violated by the MOOP solver.
    ParMOO will never attempt to evaluate a point that violates a hard
    constraint.
+
     * **Ex.-** your simulation code does not need to be defined for points
       that are outside the upper/lower bounds on the design variables.
+
  * **Soft constraint:**
    A *soft constraint* must be satisfied for a point to be considered a
    solution, but ParMOO may violate it during the course of the optimization
    process.
+
     * **Ex.-** all nonlinear constraints are soft constraints for ParMOO,
       and ParMOO will evaluate design points that violate these constraints,
       especially early in the optimization process.
+
  * **Bound constraint:**
    A *bound constraint* is a simple upper/lower bound on the range of
    design values.
    In ParMOO, these are treated as hard constraints, while all other
    constraints are considered to be soft.
+
  * **Feasible design space:**
    The *feasible design space* is the subset of the design
    space where all constraints (both hard and soft) are satisfied.
    In other words, this is the set of all "legal" designs.
+
     * **Ex.-** if you have `n` continuous design variables, constrained
       to the unit cube, then your entire design space is still :math:`R^n`,
       but your *feasible* design space is the cube :math:`[0, 1]^n`.
+
  * **Simulation:**
    A *simulation* can refer to any complex process for generating
    scientific or engineering data.
    This includes both numerical simulations and laboratory experiments.
    The data that is gathered from your simulation might used to compute
    your objectives, constraints, or both.
+
     * **Ex.-** if you are designing a material, your simulation may be 
       a molecular dynamics code **or** a process for synthesizing new
       materials in the laboratory.
     * Each simulation may have a single output or many outputs, which will
       be passed on as inputs to your objectives and/or constraints.
+
  * **Objective:**
    An *objective* is one of possibly many criteria that you will use to rank
    the "goodness" of a particular design configuration.
    By convention, we assume that your goal is to minimize all objectives.
+
     * **Ex.-** if you are designing materials, you may want to minimize
       the production of unwanted byproducts.
     * If your goal is actually to maximize an objective
       :math:`f_{max}`, you may supply the negated value of that
       objective :math:`-f_{max}` to ParMOO.
+
  * **Feasible objective space:**
-   The *feasible objective space* is the image of the design space
+   The *feasible objective space* is the image of the feasible design space
    -- i.e., the set of all objective values
    that can be obtained, by evaluating every objective at configurations
    from the feasible design space.
+
     * In practice, you will not know your feasible objective space *a priori*.
+
  * **Nondominated:**
    A point :math:`{\bf y}^*` in a set
    :math:`{\cal V} \subset \mathbb{R}^p`
    is *nondominated* if for all :math:`{\bf y} \in {\cal V}`, either
    :math:`{\bf y} = {\bf y}^*` or :math:`{\bf y}^*` is less than
    :math:`{\bf y}` in at least one of its :math:`p` components.
+
     * Objective values that are feasible and nondominated in the set of
       all observations make up the solution set returned by ParMOO.
+
  * **Pareto optimal:**
    A point in the feasible objective space is *Pareto optimal* for a given
    MOOP if it is nondominated in the feasible objective space.
+
     * This is a member of the true solution set for a MOOP.
     * In practice, we cannot typically guarantee that any point in a
       multiobjective simulation optimization problem is Pareto optimal,
       so we return solutions that are nondominated among all other objective
       values that we have observed.
+
  * **Pareto front:**
    The *Pareto front* is the set of all Pareto optimal objective points.
+
     * This is the true solution to a multiobjective optimization problem.
+
  * **Efficient set:**
    The *efficient set* is the set of all corresponding design
    configurations that produce points on the Pareto front.
-    * These are the solutions in the feasible design space that the 
-      objectives map onto the Pareto front.
+
+    * These are the solutions in the feasible design space, which are the 
+      pre-image of the Pareto front.
+
  * **Surrogate:**
    A *surrogate* is a computational model that approximates another
    underlying function.
+
     * **Ex.-** a trained artificial neural network, Gaussian process,
       RBF model, or spline interpolant.
+
  * **Scalarization:**
    A *scalarization* technique reduces a MOOP into a single-objective
    optimization problem.
    Typically, solving the scalarized problem should produce a solution that
    is efficient/Pareto optimal.
+
     * **Ex.-** minimize the weighted sum of all objectives in a MOOP
       to obtain a single efficient point/Pareto optimal value.
+
  * **Design of experiments/experimental design:**
    An *experimental design* is a set of design points that are in some sense
    space filling and could
    be evaluated to gain some initial data for a particular simulation.
+
     * **Ex.-** generate 100 uniform random samples within the feasible design
       space.

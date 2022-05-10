@@ -1,0 +1,20 @@
+Design variable type:   ('<f8', (1,))
+Simulation output type: ('<f8', (2,))
+Objective type:         ('<f8', (1,))
+Constraint type:        ('<f8', (1,))
+
+Objective database keys: ['x_vals', 'f_vals', 'c_vals']
+	'x_vals' dtype: float64
+	'x_vals' shape: (20, 1)
+	'f_vals' dtype: float64
+	'f_vals' shape: (20, 1)
+	'c_vals' dtype: float64
+	'c_vals' shape: (20, 1)
+
+Simulation database type: <class 'list'>
+Simulation database length: 1
+	sim_db[0] database keys: ['x_vals', 's_vals']
+		'x_vals' dtype: float64
+		'x_vals' shape: (20, 1)
+		's_vals' dtype: float64
+		's_vals' shape: (20, 2)

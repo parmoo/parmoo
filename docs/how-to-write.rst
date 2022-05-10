@@ -9,12 +9,21 @@ ParMOO.
 Below is a UML diagram showing the key public methods and
 dependencies.
 
-.. image:: ./img/moop-uml.svg
-    :alt: Designs variables, objectives, and the Pareto front (tradeoff curve)
-    :align: center
-    :scale: 5
+.. only:: html
 
-|
+    .. figure:: img/moop-uml.svg
+        :alt: ParMOO UML Diagram
+        :align: center
+
+    |
+
+.. only:: latex
+
+    .. figure:: img/moop-uml.png
+        :alt: ParMOO UML Diagram
+        :align: center
+
+    |
 
 To create an instance of the :mod:`MOOP <moop.MOOP>` class,
 use the :meth:`constructor <moop.MOOP.__init__>`.
@@ -25,13 +34,15 @@ use the :meth:`constructor <moop.MOOP.__init__>`.
     moop = MOOP(optimizer, hyperparams=hp)
 
 In the above code snippet, ``optimizer`` should be an implementation
-of the :mod:`SurrogateOptimizer <structs.SurrogateOptimizer>` ABC,
+of the :mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`
+Abstract-Base-Class (ABC),
 and the optional input ``hp`` is a dictionary of hyperparameters for the
 ``optimizer`` object.
-The ``optimizer`` is the surrogate optimization method that will be used
-when solving your MOOP.
+The ``optimizer`` is the surrogate optimization problem solver that will be used
+to generate candidate solutions for the MOOP.
 The choice of surrogate optimizer determines what information
 will be required when defining each objective and constraint.
+
  * If you use a derivative-free technique, such as
    :meth:`LocalGPS <optimizers.gps_search.LocalGPS>`,
    then you do not need to provide derivative information for your
@@ -71,6 +82,7 @@ default to ``{sim|f|c}i``,
 where ``sim`` is for a simulation, ``f`` is for an objective,
 ``c`` is for a constraint, and ``i=1,2,...``
 is determined by the order in which each was added.
+
 For example, if you add 3 simulations, then they will automatically
 be named ``sim1``, ``sim2``, and ``sim3`` unless a different name,
 was specified for one or more by including the ``name`` key.
@@ -87,6 +99,14 @@ then ParMOO formats its output in a numpy structured array, using the
 given/default names to specify each field.
 This operation mode is recommended, especially for first-time users.
 
+After adding all design variables, simulations, objectives, and constraints
+to the MOOP, you can check the numpy dtype for each of these by using
+
+ * :meth:`MOOP.getDesignType() <moop.MOOP.getDesignType>`,
+ * :meth:`MOOP.getSimulationType() <moop.MOOP.getSimulationType>`,
+ * :meth:`MOOP.getObjectiveType() <moop.MOOP.getObjectiveType>`, and
+ * :meth:`MOOP.getConstraintType() <moop.MOOP.getConstraintType>`.
+
 .. literalinclude:: ../examples/named_var_ex.py
     :language: python
 
@@ -98,8 +118,9 @@ Working with Unnamed Outputs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If even a single design variable is left with a blank ``name`` key,
-then all outputs are placed in a Python
+then all input/output pairs are returned in a Python
 dictionary, with the following keys:
+
  * ``x_vals: (np.ndarray)`` of length :math:`d \times n` --
    number of data points by number of design variables;
  * ``s_vals: (np.ndarray)`` of length :math:`d \times m` --
@@ -115,9 +136,22 @@ Each column in each of ``x_vals``, ``s_vals``, ``f_vals``, and ``c_vals``
 will correspond to a specific design variable, simulation output,
 objective function, or constraint, determined by the order in
 which they were added to the MOOP.
-For first-time users, this execution mode may be confusing;
+
+*For first-time users, this execution mode may be confusing;
 however, for advanced users, the convenience of using numpy.ndarrays
-over structured arrays may be preferable.
+over structured arrays may be preferable.*
+
+You can still use the type-getter methods from the previous section to
+check the dtype of each output, knowing that
+
+ * :meth:`MOOP.getDesignType() <moop.MOOP.getDesignType>`
+   is the dtype of the ``x_vals`` key (when present).
+ * :meth:`MOOP.getSimulationType() <moop.MOOP.getSimulationType>`
+   is the dtype of the ``s_vals`` key (when present),
+ * :meth:`MOOP.getObjectiveType() <moop.MOOP.getObjectiveType>`
+   is the dtype of the ``f_vals`` key (when present), and
+ * :meth:`MOOP.getConstraintType() <moop.MOOP.getConstraintType>`
+   is the dtype of the ``c_vals`` key (when present).
 
 .. literalinclude:: ../examples/unnamed_var_ex.py
     :language: python
@@ -135,6 +169,7 @@ Design variables are added to your :mod:`MOOP <moop.MOOP>` object
 using the :meth:`addDesign(*args) <moop.MOOP.addDesign>` method.
 ParMOO currently supports
 two types of design variables:
+
  * ``continuous`` and
  * ``categorical``.
 
@@ -185,9 +220,11 @@ Adding Simulations
 
 Before you can add a simulation to your :mod:`MOOP <moop.MOOP>`, you must
 define the simulation function.
+
+*The simulation function can be either a Python function or a callable object.*
+
 The expected signature of your simulation function depends on whether you
 are working with :ref:`named or unnamed outputs <naming>`.
-%GW: Shouldn't the "or" not be in italics?
 
 When working with named variables, the simulation should take a single
 numpy structured array as input, whose keys match the design variable
@@ -229,7 +266,6 @@ use the :meth:`addSimulation(*args) <moop.MOOP.addSimulation>` method.
                         'surrogate': GaussRBF, # surrogate model
                         'hyperparams': {'search_budget': 20}})
 
-%GW: Why is this in bold in  the  pdf?
 In the above example,
  * ``name`` is used as described in :ref:`named or unnamed outputs <naming>`;
  * ``m`` specifies the number of outputs for this simulation;
@@ -250,17 +286,7 @@ If you wish, you may create a MOOP without any simulations.
 Using a Precomputed Simulation Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-%GW: Why bold  first  sentence?
-The simulation dictionary may actually contain one additional key:
- * The ``sim_db`` key specifies a database of precomputed simulation
-   outputs, which will be used when fitting the surrogate models.
-
-%GW: Again, why  is  "or" in  italics  (presumably  for   ref?)
-Currently, this particular input does not support both of ParMOO's
-execution modes (:ref:`named or unnamed outputs <naming>`), so
-we do not encourage its usage and may remove it in the future.
-Instead, if you would like to specify a precomputed database, you could
-use the
+If you would like to specify a precomputed database, use the
 :meth:`MOOP.update_sim_db(x, sx, s_name) <moop.MOOP.update_sim_db>`
 method to add all simulation data into ParMOO's database after creating
 your MOOP but before solving.
@@ -279,11 +305,15 @@ Adding Objectives
 
 Objectives are algebraic functions of your design variables and
 simulation outputs.
-ParMOO always minimizes objectives.
-To define an objective, make sure you match the expected signature,
-which depends on whether you are using
+*ParMOO always minimizes objectives.*
+If you would like to maximize instead, re-define the problem by minimizing
+the negative-value of your objective.
+
+Just like with simulation functions, ParMOO accepts either a Python
+function or a callable object for each objective.
+Make sure you match the expected signature, which depends on whether you are
+using
 :ref:`named or unnamed outputs <naming>`.
-%GW: or italics?
 
 For named outputs, your objective function should accept two
 numpy structured arrays and return a single scalar output.
@@ -292,7 +322,7 @@ named ``MySim.``
 
 .. code-block:: python
 
-def min_sim(x, sim):
+    def min_sim(x, sim):
         return sim["MySim"]
 
 Similarly, the following objective minimizes the squared value of the
@@ -308,6 +338,7 @@ If you are using a gradient-based
 then you are required to supply an additional input named ``der``, 
 which defaults to 0.
 The ``der`` input is used as follows:
+
  * ``der=0`` (default) implies that no derivatives are taken, and
    you will return the objective function value;
  * ``der=1`` implies that you will return an array of derivatives with
@@ -422,7 +453,7 @@ following constraint functions.
         return x["MyDes"] - 0.9
 
 As with objectives, if you want to use a gradient-based
-:mod:`SurrogateOptimizer <structs.SurrogateOptimizer,>` you must
+:mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`, you must
 modify the above constraint functions as follows.
 
 .. code-block:: python
@@ -498,7 +529,6 @@ method.
     moop.addAcquisition({'acquisition': FixedWeights,
                          'hyperparams': {'weights': np.array([0.5, 0.5])}})
 
-%GW: why bold?
 The acquisition dictionary may contain two keys:
  * ``acquisition`` (required) specifies one
    :mod:`AcquisitionFunction <structs.AcquisitionFunction>`
@@ -510,9 +540,117 @@ The acquisition dictionary may contain two keys:
 The number of acquisitions added determines the batch size for each of
 ParMOO's batches of simulation evaluations (which could be done in parallel).
 **In general, if there are q acquisition functions and s simulations,
-the ParMOO will generate batches of q*s simulations**.
-In other words, each simulation is evaluated once per acquisition function in each
-iteration of ParMOO's algorithm.
+then ParMOO will generate batches of q*s simulations**.
+In other words, each simulation is evaluated once per acquisition function in
+each iteration of ParMOO's algorithm.
+
+Logging and Checkpointing
+-------------------------
+
+When solving large or expensive problems, it is often a good idea to
+activate ParMOO's logging and/or checkpointing features.
+
+Logging
+~~~~~~~
+
+For diagnostics, ParMOO logs its progress at the ``logging.INFO`` level.
+To display these log messages, turn on Python's ``INFO``-level logging.
+
+.. code-block:: python
+
+    import logging
+    logging.basicConfig(level=logging.INFO)
+
+If you would like to also print a formatted timestamp, use the Python
+logger's built-in formatting options.
+
+.. code-block:: python
+
+    import logging
+    logging.basicConfig(level=logging.INFO,
+                        [format='%(asctime)s %(levelname)-8s %(message)s',
+                         datefmt='%Y-%m-%d %H:%M:%S'])
+
+Be aware that when using ParMOO together with
+`libEnsemble <https://github.com/Libensemble/libensemble>`_,
+``libE`` already comes with its own logging tools, which are recommended,
+and ParMOO's logging tools will not work.
+
+Checkpointing
+~~~~~~~~~~~~~
+
+A ParMOO can be run with checkpointing turned on, so that your MOOP can be
+paused and resumed later, and your simulation data can be recovered after
+a crash.
+Checkpointing is off by default.
+To turn it on, use the method:
+
+ * :meth:`setCheckpoint(checkpoint, [checkpoint_data, filename]) <moop.MOOP.setCheckpoint>`
+
+.. code-block:: python
+
+    moop.setCheckpoint(True, checkpoint_data=True, filename="parmoo")
+
+The first argument tells ParMOO to save its internal class attributes and
+databases, so that they can be reloaded in the future.
+In the above example, this save data will be written to a file in the calling
+directory, with the name ``parmoo.moop``.
+
+In order to save the problem definition, ParMOO needs to store information
+for reloading all of your functions.
+For this to work:
+
+ * All functions (such as simulation functions, objective functions, and
+   constraint functions) are defined in the global scope;
+ * All modules are reloaded before attempting to recover a previously-saved
+   MOOP object (by calling the :meth:`load(filename) <moop.MOOP.load>` method);
+ * ParMOO cannot reload ``lambda`` functions. Use only regular functions
+   and callable objects when checkpointing.
+
+If the option argument ``checkpoint_data`` is set to ``True`` (default),
+the ParMOO will also save a second copy of all simulation evaluations in a
+human-readable JSON file in the same directory, with the name
+``parmoo.simdb.json``.
+This file is not used by ParMOO, it is only provided for user-convenience.
+
+Reloading After Crash or Early Stop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After a crash or early termination, reload the saved ``.moop`` file to resume.
+**Make sure that you first import any external modules and redefine any
+functions that are needed by ParMOO (with the exact same signatures).**
+
+.. code-block:: python
+
+    from parmoo import MOOP
+    from optimizers import [optimizer]
+
+    # Create a new MOOP object
+    moop = MOOP([optimizer])
+    # Reload the old problem
+    moop.load(filename="parmoo") # Use your savefile name, omitting ".moop"
+
+Then resume your solve with an increased budget.
+
+.. code-block:: python
+
+    # Resume solve with increased budget
+    moop.solve(6)
+
+Example
+~~~~~~~
+
+The example below shows how the `Quickstart demo <quickstart_ex>`_ can be
+modified to use logging and checkpointing, including an example of how
+to load a MOOP from a saved checkpoint file and resume running.
+
+.. literalinclude:: ../examples/checkpointing.py
+    :language: python
+
+The result is the following.
+
+.. literalinclude:: ../examples/checkpointing.out
+
 
 Methods for Solving
 -------------------
@@ -535,14 +673,14 @@ without ever attempting to solve a single scalarized surrogate problems.
 
 Note that the above command will perform all simulation evaluations serially.
 To generate a batch of simulations that you could evaluate in parallel,
-use :meth:`MOOP.iterate(k) <moop.MOOP.iterate,>` where ``k`` is the iteration
+use :meth:`MOOP.iterate(k) <moop.MOOP.iterate>`, where ``k`` is the iteration
 index.
 You can let ParMOO handle the simulation evaluations with
-:meth:`MOOP.evaluateSimulation(x, s_name) <moop.MOOP.evaluateSimulation>,`
+:meth:`MOOP.evaluateSimulation(x, s_name) <moop.MOOP.evaluateSimulation>`,
 or you can evaluate the simulations yourself and add them to the simulation
 database using
-:meth:`MOOP.update_sim_db(x, sx, s_name) <moop.MOOP.update_sim_db>.`
-Afterward, call `MOOP.updateAll(k, batch) <moop.MOOP.updateAll>` to
+:meth:`MOOP.update_sim_db(x, sx, s_name) <moop.MOOP.update_sim_db>`.
+Afterward, call :meth:`MOOP.updateAll(k, batch) <moop.MOOP.updateAll>` to
 update the surrogate models and objective database.
 
 .. code-block:: python
@@ -606,13 +744,14 @@ Built-in and Custom Components
 
 By now you can see that the performance of ParMOO is determined
 by your choices of
+
  * :mod:`AcquisitionFunction <structs.AcquisitionFunction>`,
  * :mod:`GlobalSearch <structs.GlobalSearch>`,
  * :mod:`SurrogateFunction <structs.SurrogateFunction>`, and
  * :mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`.
 
-%GW: Why bold?
 You can find the current options for each of these in the following modules.
+
  * :doc:`parmoo.acquisitions <modules/acquisitions>`
  * :doc:`parmoo.searches <modules/searches>`
  * :doc:`parmoo.surrogates <modules/surrogates>`

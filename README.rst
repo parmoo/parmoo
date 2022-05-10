@@ -5,6 +5,10 @@
 
 |
 
+.. image:: https://img.shields.io/badge/License-BSD_3--Clause-blue.svg
+    :target: https://opensource.org/licenses/BSD-3-Clause
+    :alt: License
+
 .. image:: https://img.shields.io/pypi/v/parmoo.svg?color=blue
     :target: https://pypi.org/project/parmoo
 
@@ -12,13 +16,16 @@
     :target: https://github.com/parmoo/parmoo/actions
 
 .. image:: https://readthedocs.org/projects/parmoo/badge/?maxAge=2592000
-    :target: https://parmoo.readthedocs.org/en/latest/
+    :target: https://parmoo.readthedocs.org/en/latest
     :alt: Documentation Status
+
+.. image:: https://img.shields.io/github/downloads/parmoo/parmoo/total.svg
+    :alt: GitHub Downloads
 
 |
 
-ParMOO: Parallel MultiObjective Optimization in Python
-======================================================
+ParMOO: Python library for parallel multiobjective simulation optimization
+==========================================================================
 
 ParMOO is a parallel multiobjective optimization solver that seeks to
 exploit simulation-based structure in objective and constraint functions.
@@ -36,15 +43,15 @@ To exploit structure, ParMOO models *simulations* separately from
  * a **constraint** is an algebraic function of the design variables
    and/or simulation outputs, which cannot exceed a specified bound.
 
-To solve a multiobjective optimization problem (MOOP), we use surrogate
-models of the simulation outputs, together with the algebraic definition of
-the objectives and constraints.
-
 .. figure:: docs/img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
     :align: center
 
 |
+
+To solve a multiobjective optimization problem (MOOP), we use surrogate
+models of the simulation outputs, together with the algebraic definition of
+the objectives and constraints.
 
 ParMOO is implemented in Python. In order to achieve scalable parallelism,
 we use libEnsemble_ to distribute batches of simulation evaluations across
@@ -88,8 +95,7 @@ then you can test your installation.
 
 .. code-block:: bash
 
-   cd [parmoo base]
-   parmoo/tests/run-tests.sh -cu[rl]
+   python3 setup.py test
 
 These tests are run regularly using GitHub Actions_.
 
@@ -217,6 +223,21 @@ Our full documentation is hosted on:
  * ReadTheDocs_
 
 Please read our LICENSE_ and CONTRIBUTING_ files.
+
+Citing ParMOO:
+
+ * Please use the following to cite ParMOO:
+
+.. code-block:: bibtex
+
+    @techreport{parmoo-docs,
+        title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
+        author      = {Chang, Tyler H. and Wild, Stefan M.},
+        institution = {Argonne National Laboratory},
+        number      = {Version 0.1.0},
+        year        = {2022},
+        url         = {https://parmoo.readthedocs.io/en/latest}
+    }
 
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
