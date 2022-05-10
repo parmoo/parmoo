@@ -1,0 +1,24 @@
+include setup.py
+include *.cfg
+include *.rst
+include LICENSE
+include REQUIREMENTS
+
+recursive-include parmoo *
+recursive-include examples *
+recursive-include docs *
+
+recursive-exclude * *.gitignore
+recursive-exclude * *.coverage
+recursive-exclude * __pycache__
+recursive-exclude * *pytest_cache
+recursive-exclude docs/build *
+recursive-exclude * cov_*
+recursive-exclude * *.o
+recursive-exclude * *.py[co]
+recursive-exclude * *.npy
+recursive-exclude * *.log
+recursive-exclude * libE_stats.txt
+recursive-exclude * parmoo.moop
+recursive-exclude * parmoo.simdb.json
+recursive-exclude * parmoo.surrogate.*

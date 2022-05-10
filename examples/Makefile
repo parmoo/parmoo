@@ -1,5 +1,6 @@
 OUT_FILES = quickstart.out named_var_ex.out unnamed_var_ex.out \
-			precomputed_data.out advanced_ex.out libe_basic_ex.out
+			precomputed_data.out checkpointing.out advanced_ex.out \
+			libe_basic_ex.out
 
 all: $(OUT_FILES)
 
@@ -14,6 +15,10 @@ unnamed_var_ex.out: unnamed_var_ex.py
 
 precomputed_data.out: precomputed_data.py
 	python3 precomputed_data.py > precomputed_data.out
+
+checkpointing.out: checkpointing.py
+	python3 checkpointing.py > checkpointing.out
+	rm -f parmoo.moop parmoo.surrogate.1
 
 advanced_ex.out: advanced_ex.py
 	python3 advanced_ex.py > advanced_ex.out
