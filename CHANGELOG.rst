@@ -9,6 +9,8 @@ https://github.com/parmoo/parmoo/issues
 Release 0.1.0
 -------------
 
+:Date: May 10, 2022
+
 Initial release.
 
 Known issues and desired features will be raised on GitHub post-release.
@@ -21,7 +23,8 @@ Known issues:
  - ``solve()`` method(s) should support additional stopping criteria
  - allow for maximizing objectives and constraint lower bounds without
    "hacky" solution (negating values)
- - note missing functions from DTLZ libraries
+ - missing functions from DTLZ libraries
+ - ``README.md`` needs a code coverage badge
 
 Desired features:
 
@@ -34,3 +37,5 @@ Desired features:
  - static visualization tools for plotting results
    (from ``MOOP.getPF()`` method)
  - a visualization dashboard for viewing progress interactively
+ - design variable types should be a class, with embed/extract methods
+   that can be called by ``MOOP.__embed__()`` and ``MOOP.__extract__()``
