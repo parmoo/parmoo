@@ -19,8 +19,6 @@
     :target: https://parmoo.readthedocs.org/en/latest
     :alt: Documentation Status
 
-.. image:: https://img.shields.io/github/downloads/parmoo/parmoo/total.svg
-    :alt: GitHub Downloads
 
 |
 
