@@ -49,8 +49,7 @@ Additionally, ParMOO is:
 
 Scientific software packages for solving
 multiobjective simulation optimization problems include
-@blank:2020, @campana:2018, @chang:2022, @cooper:2020,
-@kandasamy:2020, @shields:2021, and @tavares:2021.
+@pymoo, @modir, @vtmop, @pymoso, @dragonfly, @edbo, and @boostdfo.
 The above-listed software packages:
 
  a) are not restricted to a particular MOOP application,
@@ -72,7 +71,7 @@ However, ParMOO is distinct for the following reasons:
     introductory and expert users.
  3) ParMOO provides bells and whistles that are required in production-quality
     solvers, such as checkpointing and logging.
- 4) By layering on top of libEnsemble [@hudson:2022], ParMOO provides an 
+ 4) By layering on top of libEnsemble [@libensemble], ParMOO provides an 
     easy-to-use interface for distributing expensive simulation calculations
     over HPC resources.
  5) ParMOO provides complete documentation, including instructions for
