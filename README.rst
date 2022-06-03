@@ -190,7 +190,7 @@ and ``MOOP.addConstraint(*args)``. In this example, there are 2 objectives
 
 Finally, we must add one or more acquisition functions using
 ``MOOP.addAcquisition(*args)``. These are used to scalarize the surrogate
-problems. The number of acquisition CHEESEE functions typically determines the
+problems. The number of acquisition functions typically determines the
 number of simulation evaluations per batch. This is useful to know if you
 are using a parallel solver.
 
