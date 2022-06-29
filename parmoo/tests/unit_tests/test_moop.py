@@ -157,6 +157,43 @@ def test_MOOP_addDesign_bad_cat():
                         'levels': ["hi"]})
 
 
+def test_MOOP_addDesign_bad_int():
+    """ Check that the MOOP class handles adding bad integer variables.
+
+    Initialize a MOOP objects, and add several bad integer design
+    variables.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.optimizers import LocalGPS
+    import pytest
+
+    # Initialize a MOOP with no hyperparameters
+    moop = MOOP(LocalGPS)
+    # Add some bad integer variables
+    with pytest.raises(AttributeError):
+        moop.addDesign({'des_type': "integer"})
+    with pytest.raises(TypeError):
+        moop.addDesign({'des_type': "integer",
+                        'des_tol': "hello world",
+                        'lb': 0.0,
+                        'ub': 1.0})
+    with pytest.raises(TypeError):
+        moop.addDesign({'des_type': "integer",
+                        'lb': "hello",
+                        'ub': "world"})
+    with pytest.raises(ValueError):
+        moop.addDesign({'des_type': "integer",
+                        'lb': 0,
+                        'ub': 0})
+    with pytest.raises(TypeError):
+        moop.addDesign({'name': 5,
+                        'des_type': "integer",
+                        'lb': 0,
+                        'ub': 1})
+
+
 def test_MOOP_addDesign():
     """ Check that the MOOP class handles adding design variables properly.
 
@@ -169,17 +206,17 @@ def test_MOOP_addDesign():
 
     # Initialize a MOOP with no hyperparameters
     moop = MOOP(LocalGPS)
-    # Now add some continuous design variables
+    # Now add some continuous and integer design variables
     assert(moop.n == 0)
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
     assert(moop.n == 1)
-    moop.addDesign({'des_type': "continuous",
-                    'des_tol': 0.01,
-                    'lb': 0.0,
-                    'ub': 1.0})
+    moop.addDesign({'des_type': "integer",
+                    'lb': 0,
+                    'ub': 4})
     assert(moop.n == 2)
+    assert(moop.n_int == 1)
     moop.addDesign({'name': "x_3",
                     'des_type': "continuous",
                     'des_tol': 0.01,
@@ -198,7 +235,7 @@ def test_MOOP_addDesign():
                     'lb': 0.0,
                     'ub': 1.0})
     assert(moop.n == 6)
-    # Now add some good categorical design variables
+    # Now add some categorical design variables
     assert(moop.n_cat == 0)
     moop.addDesign({'des_type': "categorical",
                     'levels': 2})
@@ -218,10 +255,10 @@ def test_MOOP_addDesign():
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n_cont == 7)
+    assert(moop.n_cont == 6)
     moop.addDesign({'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n_cont == 8)
+    assert(moop.n_cont == 7)
 
 
 def test_MOOP_embed_extract_unnamed1():
@@ -243,8 +280,9 @@ def test_MOOP_embed_extract_unnamed1():
     # Initialize a MOOP with no hyperparameters
     moop = MOOP(LocalGPS)
     # Add two continuous variables and check that they are embedded correctly
-    moop.addDesign({'lb': 0.0,
-                    'ub': 1000.0})
+    moop.addDesign({'des_type': "integer",
+                    'lb': 0,
+                    'ub': 1000})
     moop.addDesign({'lb': -1.0,
                     'ub': 0.0})
     # Test 5 random variables
@@ -257,7 +295,8 @@ def test_MOOP_embed_extract_unnamed1():
         assert(all(xxi >= 0.0) and all(xxi <= 1.0))
         assert(xxi.size == moop.n)
         # Check extraction
-        assert(all(moop.__extract__(xxi) - xi < 1.0e-8))
+        assert(moop.__extract__(xxi)[0] - xi[0] <= 0.5)
+        assert(moop.__extract__(xxi)[1] - xi[1] < 1.0e-8)
     # Test upper and lower bounds
     x0 = np.zeros(2)
     x0[0] *= 1000.0
@@ -285,7 +324,8 @@ def test_MOOP_embed_extract_unnamed1():
     # Test 5 random variables
     for i in range(5):
         xi = np.random.random_sample(4)
-        xi[0] *= 1000.0
+        xi[0] *= 1000
+        xi[0] = int(xi[0])
         xi[1] -= 1.0
         xi[2:] = np.round(xi[2:])
         xxi = moop.__embed__(xi)
@@ -427,8 +467,9 @@ def test_MOOP_embed_extract_named():
     moop = MOOP(LocalGPS)
     # Add two continuous variables and check that they are embedded correctly
     moop.addDesign({'name': "x0",
-                    'lb': 0.0,
-                    'ub': 1000.0})
+                    'des_type': "integer",
+                    'lb': 0,
+                    'ub': 1000})
     moop.addDesign({'name': "x1",
                     'lb': -1.0,
                     'ub': 0.0})
@@ -436,7 +477,7 @@ def test_MOOP_embed_extract_named():
     for i in range(5):
         nums = np.random.random_sample(2)
         xi = np.zeros(1, dtype=[("x0", float), ("x1", float)])
-        xi["x0"] = 1000.0 * nums[0]
+        xi["x0"] = int(1000.0 * nums[0])
         xi["x1"] = nums[1] - 1.0
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
@@ -457,7 +498,7 @@ def test_MOOP_embed_extract_named():
         num = np.random.random_sample(4)
         xi = np.zeros(1, dtype=[("x0", float), ("x1", float), ("x2", float),
                                 ("x3", object)])
-        xi["x0"] = 1000.0 * num[0]
+        xi["x0"] = int(1000.0 * num[0])
         xi["x1"] = num[1] - 1.0
         xi["x2"] = np.round(num[2])
         xi["x3"] = np.random.choice(["biggie", "shortie", "shmedium"])
@@ -2767,6 +2808,7 @@ if __name__ == "__main__":
     test_MOOP_init()
     test_MOOP_addDesign_bad_cont()
     test_MOOP_addDesign_bad_cat()
+    test_MOOP_addDesign_bad_int()
     test_MOOP_addDesign()
     test_MOOP_embed_extract_unnamed1()
     test_MOOP_embed_extract_unnamed2()
