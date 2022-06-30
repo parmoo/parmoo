@@ -27,16 +27,18 @@ The functions are:
   * ``radviz(moop)`` -- Plot MOOP results as RadViz
   * ``star_coordinates(moop)`` -- Plot MOOP results as star coordinates
 
- Development
+ Utilities
+
   * ``dummyFunction(moop)`` -- place functions here for testing
 
 """
 
+from ast import Return
 import plotly.express as px         # 15.2 MB package
-# import plotly.graph_objects as go
+import plotly.graph_objects as go
 from tabulate import tabulate       # 29 kB package
 # from parmoo import MOOP
-# import numpy as np
+import numpy as np
 
 # des_type = moop.getDesignType()
 # obj_type = moop.getObjectiveType()
@@ -302,17 +304,6 @@ def scatter(moop):
     for obj_key in obj_type.names:
         axes.append(obj_key)
 
-    # sim_axes = [] # axes from the simulation database
-    # for
-
-    # plot pareto front
-    pf_fig = px.scatter_matrix(pf,
-                               dimensions=axes,
-                               title="Pareto Front",
-                               )
-    pf_fig.update_traces(diagonal_visible=False)
-    pf_fig.show()
-
     # plot objectives
     obj_fig = px.scatter_matrix(obj_db,
                                 dimensions=axes,
@@ -321,14 +312,13 @@ def scatter(moop):
     obj_fig.update_traces(diagonal_visible=False)
     obj_fig.show()
 
-    # plot simulation data
-    # sim_fig = px.scatter_matrix(sim_db,
-    #                             dimensions=axes,
-    #                             title="Simulation Data",
-    #                             )
-    # sim_fig.update_traces(diagonal_visible=False)
-    # sim_fig.show()
-
+    # plot pareto front
+    pf_fig = px.scatter_matrix(pf,
+                               dimensions=axes,
+                               title="Pareto Front",
+                               )
+    pf_fig.update_traces(diagonal_visible=False)
+    pf_fig.show()
 
 def scatter3d(moop):
     """ Display MOOP results as matrix of 3D scatterplots.
@@ -360,43 +350,82 @@ def radar(moop):
 
     """
 
-    # algo
-    # each index in db gets a plot
-    # for each objective db
-        # objective[index] is the r for that plot
-        
-
-    # des_type = moop.getDesignType()
     obj_type = moop.getObjectiveType()
-    # sim_type = moop.getSimulationType()
-    # const_type = moop.getConstraintType()
+    obj_db = moop.getObjectiveData()
     pf = moop.getPF()
-    # obj_db = moop.getObjectiveData()
-    # sim_db = moop.getSimulationData()
 
-    # choose axes
-    axes = []  # each axis relates to an objective
+    # create axes
+    axes = [] 
     for obj_key in obj_type.names:
         axes.append(obj_key)
 
-    # plot pareto front
-    pf_fig = px.line_polar(pf,
-                           theta=axes,
-                           r=pf[axes]
-                           # title="Pareto Front",
-                           )
-    # pf_fig.update_traces(diagonal_visible=False)
+    # if there are less than three objectives, prompt alternate options
+    if recommendPlot(moop=moop, objective_count=len(axes), min_count=3, plot_name='radar') == False:
+        return
+
+    # create figure
+    obj_fig = go.Figure()
+    pf_fig = go.Figure()
+
+    # plotting code here
+    for i in range(len(obj_db)):
+        values = []
+        for obj_key in obj_type.names:
+            values.append(obj_db[obj_key][i])
+            # print(tabulate(values))
+        traceName = ("design " + str(i))
+        obj_fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=axes,
+            # fill='toself',
+            name=traceName
+        ))
+
+    for i in range(len(pf)):
+        values = []
+        for obj_key in obj_type.names:
+            values.append(pf[obj_key][i])
+            # print(tabulate(values))
+        traceName = ("design " + str(i))
+        obj_fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=axes,
+            # fill='toself',
+            name=traceName
+        ))
+    
+    # aesthetics code here
+    obj_fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0,5]
+            )),
+        showlegend=True
+    )
+    obj_fig.update_layout(
+        title = dict(
+            text = 'Objective Data'
+        )
+    )
+
+    pf_fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0,5]
+            )),
+        showlegend=True
+    )
+    pf_fig.update_layout(
+        title = dict(
+            text = 'Pareto Front'
+        )
+    )
+
+    # display plot
+    obj_fig.show()
     pf_fig.show()
-
-    # # plot objectives
-    # obj_fig = px.line_polar(obj_db,
-    #                         theta=axes,
-    #                         r=obj_db[axes]
-    #                         # title="Objective Data",
-    #                         )
-    # # obj_fig.update_traces(diagonal_visible=False)
-    # obj_fig.show()
-
 
 def parallel_coordinates(moop):
     """ Display MOOP results as parallel coordinates plot.
@@ -422,19 +451,19 @@ def parallel_coordinates(moop):
     for obj_key in obj_type.names:
         axes.append(obj_key)
 
-    # plot pareto front
-    pf_fig = px.parallel_coordinates(pf,
-                                     labels=axes,
-                                     title="Pareto Front",
-                                     )
-    pf_fig.show()
-
     # plot objectives
     obj_fig = px.parallel_coordinates(obj_db,
                                       labels=axes,
                                       title="Objective Data",
                                       )
     obj_fig.show()
+
+    # plot pareto front
+    pf_fig = px.parallel_coordinates(pf,
+                                     labels=axes,
+                                     title="Pareto Front",
+                                     )
+    pf_fig.show()
 
 
 def heatmap(moop):
@@ -497,10 +526,45 @@ def star_coordinates(moop):
     pass
 
 #
-# ! TEST FUNCTION FOR DEVELOPMENT PURPOSES
-# ! ALL EXAMPLES RUN DUMMY FUNCTION
+# ! UTILITIES
 #
 
+def recommendPlot(moop, objective_count, min_count, plot_name):
+    """ Evaluate whether a plot type is appropriate for the number of objectives.
+
+    If a plot type is a poor choice for a given number of objectives,
+    displays a dialogue in the terminal guiding user to an appropriate 
+    plot type. If a plot type is appropriate, this function does nothing.
+
+    Args:
+        moop (MOOP): A ParMOO MOOP containing the results to plot.
+        objective_count (int): The number of objectives in your moop
+        count_min (int): the minimum number of objectives for a plot type to be recommended
+        plot_name (string): the name of the selected plot type
+
+    Returns:
+        Boolean value dictating whether function should be plotted or not
+
+    """
+
+    if objective_count < min_count:
+        print("\nPlotting " + str(plot_name) + "plots with less than two objectives is not recommended.")
+        print("A scatterplot or parallel coordinates plot may be a better choice. ")
+        print("\nEnter 'scatter' or 'parallel' to switch the respective plot.")
+        print("Enter 'exit' to exit this dialogue without plotting ")
+        print("Enter anything else to create a " + str(plot_name) + " plot with " + str(objective_count) + " objectives.\n")
+        userInput = input()
+        userInput = str(userInput)
+        if (userInput == 'scatter'):
+            scatter(moop)
+            return False
+        elif (userInput == 'parallel'):
+            parallel_coordinates(moop)
+            return False
+        elif (userInput == 'exit'):
+            return False
+        else:
+            return True
 
 def dummyFunction(moop):
     """ Dummy function for development purposes
@@ -516,7 +580,4 @@ def dummyFunction(moop):
         currently all viz functions return None)
 
     """
-    printMOOP_raw(moop)
-    printMOOP(moop)
-    parallel_coordinates(moop)
-    scatter(moop)
+    radar(moop)
