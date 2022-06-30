@@ -31,19 +31,19 @@ The functions are:
 
   * ``dummyFunction(moop)`` -- place functions here for testing
 
-For all interactve browser plot functions, there is a known issue where Plotly images
-may not export from Safari correctly. To resolve this issue,
-change your default browser to Chrome, Firefox, or Edge.
+For all interactve browser plot functions, there is a known issue
+causing Plotly images to not export from Safari correctly. If you
+encounter this issue, change your default browser to Chrome, Firefox,
+or Edge.
 
 """
 
-from ast import Return
 import plotly.express as px         # 15.2 MB package
 import plotly.graph_objects as go
-import plotly.io as pio
+# import plotly.io as pio
 from tabulate import tabulate       # 29 kB package
 # from parmoo import MOOP
-import numpy as np
+# import numpy as np
 import warnings
 
 # des_type = moop.getDesignType()
@@ -322,6 +322,7 @@ def scatter(moop):
     pf_fig.update_traces(diagonal_visible=False)
     pf_fig.show()
 
+
 def scatter3d(moop):
     """ Display MOOP results as matrix of 3D scatterplots.
 
@@ -425,17 +426,18 @@ def radar(moop, db='pf'):
     )
     # combining the above and below functions will cause a SyntaxError
     fig.update_layout(
-        title = dict(
-            text = plotTitle
+        title=dict(
+            text=plotTitle
         )
     )
     if plotTitle == "Pareto Front":
-        fig.update_layout(showlegend = False)
+        fig.update_layout(showlegend=False)
     else:
-        fig.update_layout(showlegend = True)
+        fig.update_layout(showlegend=True)
 
     # display figure
     fig.show()
+
 
 def parallel_coordinates(moop):
     """ Display MOOP results as parallel coordinates plot.
@@ -539,42 +541,6 @@ def star_coordinates(moop):
 # ! UTILITIES
 #
 
-# def recommendPlot(moop, objective_count, min_count, plot_name):
-#     """ Evaluate whether a plot type is appropriate for the number of objectives.
-
-#     If a plot type is a poor choice for a given number of objectives,
-#     displays a dialogue in the terminal guiding user to an appropriate
-#     plot type. If a plot type is appropriate, this function does nothing.
-
-#     Args:
-#         moop (MOOP): A ParMOO MOOP containing the results to plot.
-#         objective_count (int): The number of objectives in your moop
-#         count_min (int): the minimum number of objectives for a plot type to be recommended
-#         plot_name (string): the name of the selected plot type
-
-#     Returns:
-#         Boolean value dictating whether function should be plotted or not
-
-#     """
-
-#     if objective_count < min_count:
-#         print("\nPlotting " + str(plot_name) + "plots with less than two objectives is not recommended.")
-#         print("A scatterplot or parallel coordinates plot may be a better choice. ")
-#         print("\nEnter 'scatter' or 'parallel' to switch the respective plot.")
-#         print("Enter 'exit' to exit this dialogue without plotting ")
-#         print("Enter anything else to create a " + str(plot_name) + " plot with " + str(objective_count) + " objectives.\n")
-#         userInput = input()
-#         userInput = str(userInput)
-#         if (userInput == 'scatter'):
-#             scatter(moop)
-#             return False
-#         elif (userInput == 'parallel'):
-#             parallel_coordinates(moop)
-#             return False
-#         elif (userInput == 'exit'):
-#             return False
-#         else:
-#             return True
 
 def dummyFunction(moop):
     """ Dummy function for development purposes.
