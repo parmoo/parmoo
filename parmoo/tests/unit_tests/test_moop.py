@@ -259,6 +259,9 @@ def test_MOOP_addDesign():
     moop.addDesign({'lb': 0.0,
                     'ub': 1.0})
     assert(moop.n_cont == 7)
+    # Check the design order
+    right_order = [0, 7, 1, 2, 3, 4, 8, 9, 10, 11, 5, 6]
+    assert(all([moop.des_order[i] == right_order[i] for i in range(12)]))
 
 
 def test_MOOP_embed_extract_unnamed1():
@@ -2745,8 +2748,14 @@ def check_moops(moop1, moop2):
     assert(all([dt2i == dt1i for dt2i, dt1i in zip(moop2.des_tols,
                                                    moop1.des_tols)]))
     assert(all([m2i == m1i for m2i, m1i in zip(moop2.m, moop1.m)]))
-    assert(all([lb2i == lb1i for lb2i, lb1i in zip(moop2.lb, moop1.lb)]))
-    assert(all([ub2i == ub1i for ub2i, ub1i in zip(moop2.ub, moop1.ub)]))
+    assert(all([lb2i == lb1i for lb2i, lb1i in zip(moop2.cont_lb,
+                                                   moop1.cont_lb)]))
+    assert(all([ub2i == ub1i for ub2i, ub1i in zip(moop2.cont_ub,
+                                                   moop1.cont_ub)]))
+    assert(all([lb2i == lb1i for lb2i, lb1i in zip(moop2.int_lb,
+                                                   moop1.int_lb)]))
+    assert(all([ub2i == ub1i for ub2i, ub1i in zip(moop2.int_ub,
+                                                   moop1.int_ub)]))
     assert(all([nl2i == nl1i for nl2i, nl1i in zip(moop2.n_lvls,
                                                    moop1.n_lvls)]))
     assert(all([do2i == do1i for do2i, do1i in zip(moop2.des_order,

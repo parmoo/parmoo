@@ -88,7 +88,8 @@ class MOOP:
     """
 
     # Slots for the MOOP class
-    __slots__ = ['n', 'm', 'm_total', 'o', 'p', 's', 'n_dat', 'lb', 'ub',
+    __slots__ = ['n', 'm', 'm_total', 'o', 'p', 's', 'n_dat',
+                 'cont_lb', 'cont_ub', 'int_lb', 'int_ub',
                  'n_cat_d', 'n_custom_d', 'cat_lb', 'cat_scale', 'RSVT',
                  'mean', 'custom_embedders', 'custom_extracters',
                  'n_cat', 'n_cont', 'n_int', 'n_custom', 'n_raw', 'n_lvls',
@@ -128,8 +129,8 @@ class MOOP:
             for i, j in enumerate(self.des_order):
                 if ((i in range(self.n_cont+self.n_int,
                                 self.n_cont+self.n_int+self.n_cat))
-                    and (len(self.cat_names[i - self.n_cont - self.n_int]))
-                         > 0):
+                    and (len(self.cat_names[i - self.n_cont - self.n_int])
+                         > 0)):
                     x_tmp[i] = float(self.cat_names[j - self.n_cont -
                                                     self.n_int].index(
                                                                 x_labels[j]))
@@ -139,32 +140,32 @@ class MOOP:
             x_tmp = x[self.des_order]
         # Create the output array
         xx = np.zeros(self.n)
-        # Rescale the continuous variables
+        # Rescale the continuous and integer variables
         start = 0
         end = self.n_cont
-        xx[start:end] = ((x_tmp[start:end] - self.lb[start:end]) /
+        xx[start:end] = ((x_tmp[start:end] - self.cont_lb[:]) /
                          self.scale[start:end] + self.scaled_lb[start:end])
         # Pull inside bounding box, in case perturbed outside
         xx[start:end] = np.maximum(xx[start:end], self.scaled_lb[start:end])
         xx[start:end] = np.minimum(xx[start:end], self.scaled_ub[start:end])
-        # Rescale the integer variables
+        # Rescale the continuous and integer variables
         start = end
         end = start + self.n_int
-        xx[start:end] = ((x_tmp[start:end] - self.lb[start:end]) /
+        xx[start:end] = ((x_tmp[start:end] - self.int_lb[:]) /
                          self.scale[start:end] + self.scaled_lb[start:end])
         # Pull inside bounding box, in case perturbed outside
         xx[start:end] = np.maximum(xx[start:end], self.scaled_lb[start:end])
         xx[start:end] = np.minimum(xx[start:end], self.scaled_ub[start:end])
         # Embed the categorical variables
         if self.n_cat_d > 0:
+            start = end
+            end = start + self.n_cat_d
             bvec = np.zeros(sum(self.n_lvls))
             count = 0
             for i, n_lvl in enumerate(self.n_lvls):
-                bvec[count + int(x_tmp[self.n_cont + i])] = 1.0
+                bvec[count + int(x_tmp[start + i])] = 1.0
                 count += n_lvl
             bvec -= self.mean
-            start = end
-            end = start + self.n_cat_d
             xx[start:end] = ((np.matmul(self.RSVT, bvec) - self.cat_lb[:])
                              / self.scale[start:end]
                              + self.scaled_lb[start:end])
@@ -203,12 +204,20 @@ class MOOP:
                       + self.n_raw)
         # Descale the continuous variables
         start = 0
-        end = self.n_cont + self.n_int
+        end = self.n_cont
         xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
-                         * self.scale[start:end] + self.lb[start:end])
+                         * self.scale[start:end] + self.cont_lb[:])
         # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.lb[start:end])
-        xx[start:end] = np.minimum(xx[start:end], self.ub[start:end])
+        xx[start:end] = np.maximum(xx[start:end], self.cont_lb[:])
+        xx[start:end] = np.minimum(xx[start:end], self.cont_ub[:])
+        # Descale the integer variables
+        start = end
+        end = start + self.n_int
+        xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
+                         * self.scale[start:end] + self.int_lb[:])
+        # Pull inside bounding box, in case perturbed outside
+        xx[start:end] = np.maximum(xx[start:end], self.int_lb[:])
+        xx[start:end] = np.minimum(xx[start:end], self.int_ub[:])
         # Bin the integer variables
         for i in range(self.n_cont, self.n_cont + self.n_int):
             xx[i] = int(xx[i])
@@ -217,8 +226,10 @@ class MOOP:
             start = end
             end = start + self.n_cat_d
             bvec = (np.matmul(np.transpose(self.RSVT),
-                              (x[start:end] - self.scaled_lb[start:end])
-                              * self.scale[start:end] + self.cat_lb[:])
+                              (x[start:end]
+                               - self.scaled_lb[start:end])
+                              * self.scale[start:end]
+                              + self.cat_lb[:])
                     + self.mean)
             count = 0
             for i, n_lvl in enumerate(self.n_lvls):
@@ -235,9 +246,9 @@ class MOOP:
             for i, j in enumerate(self.des_order):
                 if ((i in range(self.n_cont+self.n_int,
                                 self.n_cont+self.n_int+self.n_cat))
-                    and (len(self.cat_names[i - self.n_cont - self.n_int]))
-                         > 0):
-                    out[self.des_names[i][0]] = (self.cat_names[i -
+                    and (len(self.cat_names[i - self.n_cont - self.n_int])
+                         > 0)):
+                    out[self.des_names[i][0]] = (self.cat_names[j -
                                                                 self.n_cont -
                                                                 self.n_int]
                                                                [int(xx[j])])
@@ -383,8 +394,10 @@ class MOOP:
         self.des_order = []
         self.int_inds = []
         self.des_tols = []
-        self.lb = []
-        self.ub = []
+        self.cont_lb = []
+        self.cont_ub = []
+        self.int_lb = []
+        self.int_ub = []
         self.n_cat = 0
         self.n_cont = 0
         self.n_int = 0
@@ -559,8 +572,8 @@ class MOOP:
                 self.des_order.append(self.n_cont)
                 self.n_cont += 1
                 self.des_tols.append(des_tol)
-                self.lb.append(arg['lb'])
-                self.ub.append(arg['ub'])
+                self.cont_lb.append(arg['lb'])
+                self.cont_ub.append(arg['ub'])
             # Append a new categorical design variable to the list
             elif arg['des_type'] in ["categorical", "cat"]:
                 if 'levels' in arg.keys():
@@ -614,8 +627,8 @@ class MOOP:
                 self.__generate_encoding__()
             # Add an integer design variable
             elif arg['des_type'] in ["integer", "int"]:
-                # Relax to a continuous design variable with des_tol ~ 1
-                des_tol = 0.9999
+                # Relax to a continuous design variable with des_tol = 0.5
+                des_tol = 0.5
                 if 'lb' in arg.keys() and 'ub' in arg.keys():
                     if not (isinstance(arg['lb'], int) and
                             isinstance(arg['ub'], int)):
@@ -652,8 +665,8 @@ class MOOP:
                 self.int_inds.append(self.n_cont + self.n_int)
                 self.n_int += 1
                 self.des_tols.append(des_tol)
-                self.lb.append(arg['lb'])
-                self.ub.append(arg['ub'])
+                self.int_lb.append(arg['lb'])
+                self.int_ub.append(arg['ub'])
             # Append a new custom design variable to the list
             elif arg['des_type'] in ["custom"]:
                 if 'embedding_size' in arg.keys():
@@ -718,11 +731,18 @@ class MOOP:
         self.scale = np.ones(self.n)
         self.scaled_des_tols = np.zeros(self.n)
         n_total = 0
-        # Calculate scaling for continuous and integer variables
-        for i in range(self.n_cont + self.n_int):
-            self.scale[i] = self.ub[i] - self.lb[i]
-            self.scaled_des_tols[i] = self.des_tols[i] / self.scale[i]
-        n_total = n_total + self.n_cont + self.n_int
+        # Calculate scaling for continuous variables
+        for i in range(self.n_cont):
+            self.scale[i] = self.cont_ub[i] - self.cont_lb[i]
+            self.scaled_des_tols[i] = (self.des_tols[self.des_order.index(i)] /
+                                       self.scale[i])
+        n_total = n_total + self.n_cont
+        # Calculate scaling for continuous variables
+        for i in range(self.n_int):
+            self.scale[n_total + i] = self.int_ub[i] - self.int_lb[i]
+            self.scaled_des_tols[n_total + i] = \
+                self.des_tols[self.des_order.index(i)] / self.scale[i]
+        n_total = n_total + self.n_int
         # Calculate scaling for categorical variables
         self.scale[n_total:n_total+self.n_cat_d] = self.cat_scale[:]
         self.scaled_des_tols[n_total:n_total+self.n_cat_d] = \
@@ -2192,8 +2212,10 @@ class MOOP:
                         'p': self.p,
                         's': self.s,
                         'n_dat': self.n_dat,
-                        'lb': self.lb,
-                        'ub': self.ub,
+                        'cont_lb': self.cont_lb,
+                        'cont_ub': self.cont_ub,
+                        'int_lb': self.int_lb,
+                        'int_ub': self.int_ub,
                         'n_cat_d': self.n_cat_d,
                         'n_custom_d': self.n_custom_d,
                         'n_cat': self.n_cat,
@@ -2393,8 +2415,10 @@ class MOOP:
         self.p = parmoo_state['p']
         self.s = parmoo_state['s']
         self.n_dat = parmoo_state['n_dat']
-        self.lb = parmoo_state['lb']
-        self.ub = parmoo_state['ub']
+        self.cont_lb = parmoo_state['cont_lb']
+        self.cont_ub = parmoo_state['cont_ub']
+        self.int_lb = parmoo_state['int_lb']
+        self.int_ub = parmoo_state['int_ub']
         self.n_cat_d = parmoo_state['n_cat_d']
         self.n_custom_d = parmoo_state['n_custom_d']
         self.n_cat = parmoo_state['n_cat']
