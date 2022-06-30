@@ -31,6 +31,10 @@ The functions are:
 
   * ``dummyFunction(moop)`` -- place functions here for testing
 
+For all interactve browser plot functions, there is a known issue where Plotly images
+may not export from Safari correctly. To resolve this issue,
+change your default browser to Chrome, Firefox, or Edge.
+
 """
 
 from ast import Return
@@ -40,6 +44,7 @@ import plotly.io as pio
 from tabulate import tabulate       # 29 kB package
 # from parmoo import MOOP
 import numpy as np
+import warnings
 
 # des_type = moop.getDesignType()
 # obj_type = moop.getObjectiveType()
@@ -292,13 +297,9 @@ def scatter(moop):
         None
 
     """
-    # des_type = moop.getDesignType()
     obj_type = moop.getObjectiveType()
-    # sim_type = moop.getSimulationType()
-    # const_type = moop.getConstraintType()
     pf = moop.getPF()
     obj_db = moop.getObjectiveData()
-    # sim_db = moop.getSimulationData()
 
     # choose axes
     axes = []  # each axis relates to an objective
@@ -338,7 +339,7 @@ def scatter3d(moop):
     pass
 
 
-def radar(moop, db):
+def radar(moop, db='pf'):
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
@@ -359,14 +360,16 @@ def radar(moop, db):
     obj_db = moop.getObjectiveData()
     pf = moop.getPF()
 
-    if (db == 'pf') or (db == None):
+    if (db == 'pf'):
         database = pf
         plotTitle = "Pareto Front"
     elif db == 'obj':
         database = obj_db
         plotTitle = "Objective Data"
     else:
-        raise ValueError("'" + str(db) + "' is not an acceptible value for 'db'")
+        message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
+        message += "Consider using 'pf' or 'obj' instead."
+        raise ValueError(message)
 
     # create axes
     axes = []
@@ -374,56 +377,64 @@ def radar(moop, db):
         axes.append(obj_key)
 
     # if there are less than three objectives, prompt alternate options
-    if recommendPlot(moop, objective_count=len(axes), min_count=3, plot_name='radar') == False:
-        return
+    if len(axes) < 3:
+        message = """
+        Radar plots are best suited for MOOPs with at least 3 objectives.
+        Consider using a scatterplot or parallel coordinates plot instead.
+        """
+        warnings.warn(message)
 
-    # create figure
+    # plot figure
     fig = go.Figure()
-
-    # plotting code here
     for i in range(len(database)):
+        if plotTitle == "Pareto Front":
+            hoverInfo = ""
+        else:
+            hoverInfo = "Design #" + str(i) + "\n"
+        for key in database.dtype.names:
+            hoverInfo += str(key)
+            hoverInfo += ": "
+            hoverInfo += str(database[key][i])
+            hoverInfo += "<br>"
+            # since plotly is JavaScript-based
+            # it uses HTML string formatting
         values = []
         for obj_key in obj_type.names:
             values.append(database[obj_key][i])
-            traceName = ("design #" + str(i))
+            traceName = ("design #" + str(i + 1))
         fig.add_trace(go.Scatterpolar(
             r=values,
             theta=axes,
-            name=traceName
+            name=traceName,
+            hovertext=hoverInfo
         ))
 
-    # aesthetics code here
+    # improve aesthetics
+    fig.update_traces(
+        hoverinfo='text',
+        selector=dict(
+            type='scatterpolar'
+        )
+    )
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True
-            )),
+            )
+        )
     )
+    # combining the above and below functions will cause a SyntaxError
     fig.update_layout(
         title = dict(
             text = plotTitle
         )
     )
     if plotTitle == "Pareto Front":
-        fig.update_layout(showlegend = True)
-    elif plotTitle == "Pareto Front":
         fig.update_layout(showlegend = False)
+    else:
+        fig.update_layout(showlegend = True)
 
-    # config = {
-    #     'format': 'svg', # one of png, svg, jpeg, webp
-    #     'filename': 'custom_image',
-    #     'height': 500,
-    #     'width': 700,
-    #     'scale': 1 # Multiply title/legend/axis/canvas sizes by this factor
-    # }
-    # }
-
-    # fig = px.bar(x=[1, 2, 3], y=[1, 3, 1])
-
-    # obj_fig.show(config=config)
-    # obj_fig.show(config=config)
-
-    # display plot
+    # display figure
     fig.show()
 
 def parallel_coordinates(moop):
@@ -528,59 +539,57 @@ def star_coordinates(moop):
 # ! UTILITIES
 #
 
-def recommendPlot(moop, objective_count, min_count, plot_name):
-    """ Evaluate whether a plot type is appropriate for the number of objectives.
+# def recommendPlot(moop, objective_count, min_count, plot_name):
+#     """ Evaluate whether a plot type is appropriate for the number of objectives.
 
-    If a plot type is a poor choice for a given number of objectives,
-    displays a dialogue in the terminal guiding user to an appropriate
-    plot type. If a plot type is appropriate, this function does nothing.
+#     If a plot type is a poor choice for a given number of objectives,
+#     displays a dialogue in the terminal guiding user to an appropriate
+#     plot type. If a plot type is appropriate, this function does nothing.
 
-    Args:
-        moop (MOOP): A ParMOO MOOP containing the results to plot.
-        objective_count (int): The number of objectives in your moop
-        count_min (int): the minimum number of objectives for a plot type to be recommended
-        plot_name (string): the name of the selected plot type
+#     Args:
+#         moop (MOOP): A ParMOO MOOP containing the results to plot.
+#         objective_count (int): The number of objectives in your moop
+#         count_min (int): the minimum number of objectives for a plot type to be recommended
+#         plot_name (string): the name of the selected plot type
 
-    Returns:
-        Boolean value dictating whether function should be plotted or not
+#     Returns:
+#         Boolean value dictating whether function should be plotted or not
 
-    """
+#     """
 
-    if objective_count < min_count:
-        print("\nPlotting " + str(plot_name) + "plots with less than two objectives is not recommended.")
-        print("A scatterplot or parallel coordinates plot may be a better choice. ")
-        print("\nEnter 'scatter' or 'parallel' to switch the respective plot.")
-        print("Enter 'exit' to exit this dialogue without plotting ")
-        print("Enter anything else to create a " + str(plot_name) + " plot with " + str(objective_count) + " objectives.\n")
-        userInput = input()
-        userInput = str(userInput)
-        if (userInput == 'scatter'):
-            scatter(moop)
-            return False
-        elif (userInput == 'parallel'):
-            parallel_coordinates(moop)
-            return False
-        elif (userInput == 'exit'):
-            return False
-        else:
-            return True
+#     if objective_count < min_count:
+#         print("\nPlotting " + str(plot_name) + "plots with less than two objectives is not recommended.")
+#         print("A scatterplot or parallel coordinates plot may be a better choice. ")
+#         print("\nEnter 'scatter' or 'parallel' to switch the respective plot.")
+#         print("Enter 'exit' to exit this dialogue without plotting ")
+#         print("Enter anything else to create a " + str(plot_name) + " plot with " + str(objective_count) + " objectives.\n")
+#         userInput = input()
+#         userInput = str(userInput)
+#         if (userInput == 'scatter'):
+#             scatter(moop)
+#             return False
+#         elif (userInput == 'parallel'):
+#             parallel_coordinates(moop)
+#             return False
+#         elif (userInput == 'exit'):
+#             return False
+#         else:
+#             return True
 
 def dummyFunction(moop):
-    """ Dummy function for development purposes
+    """ Dummy function for development purposes.
 
     Functions to be tested in examples should be placed here.
 
     Args:
-        moop (MOOP): A ParMOO MOOP for testing function(s) on.
+        moop (MOOP): A ParMOO MOOP for testing functions on.
 
     Returns:
         None
-        (theoretically depends on test contents but
-        currently all viz functions return None)
 
     """
-    radar(moop, db='pf')
     radar(moop, db='obj')
+    radar(moop)
     radar(moop, db='cheese')
     # parallel_coordinates(moop)
     # scatter(moop)
