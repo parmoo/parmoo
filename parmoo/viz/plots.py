@@ -36,6 +36,7 @@ The functions are:
 from ast import Return
 import plotly.express as px         # 15.2 MB package
 import plotly.graph_objects as go
+import plotly.io as pio
 from tabulate import tabulate       # 29 kB package
 # from parmoo import MOOP
 import numpy as np
@@ -355,7 +356,7 @@ def radar(moop):
     pf = moop.getPF()
 
     # create axes
-    axes = [] 
+    axes = []
     for obj_key in obj_type.names:
         axes.append(obj_key)
 
@@ -387,19 +388,18 @@ def radar(moop):
             values.append(pf[obj_key][i])
             # print(tabulate(values))
         traceName = ("design " + str(i))
-        obj_fig.add_trace(go.Scatterpolar(
+        pf_fig.add_trace(go.Scatterpolar(
             r=values,
             theta=axes,
             # fill='toself',
             name=traceName
         ))
-    
+
     # aesthetics code here
     obj_fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
-                range=[0,5]
             )),
         showlegend=True
     )
@@ -411,17 +411,29 @@ def radar(moop):
 
     pf_fig.update_layout(
         polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0,5]
-            )),
-        showlegend=True
+            visible=True,
+            ),
+        showlegend=False
     )
     pf_fig.update_layout(
         title = dict(
             text = 'Pareto Front'
         )
     )
+
+    # config = {
+    #     'format': 'svg', # one of png, svg, jpeg, webp
+    #     'filename': 'custom_image',
+    #     'height': 500,
+    #     'width': 700,
+    #     'scale': 1 # Multiply title/legend/axis/canvas sizes by this factor
+    # }
+    # }
+
+    # fig = px.bar(x=[1, 2, 3], y=[1, 3, 1])
+
+    # obj_fig.show(config=config)
+    # obj_fig.show(config=config)
 
     # display plot
     obj_fig.show()
@@ -533,7 +545,7 @@ def recommendPlot(moop, objective_count, min_count, plot_name):
     """ Evaluate whether a plot type is appropriate for the number of objectives.
 
     If a plot type is a poor choice for a given number of objectives,
-    displays a dialogue in the terminal guiding user to an appropriate 
+    displays a dialogue in the terminal guiding user to an appropriate
     plot type. If a plot type is appropriate, this function does nothing.
 
     Args:
@@ -581,3 +593,5 @@ def dummyFunction(moop):
 
     """
     radar(moop)
+    # parallel_coordinates(moop)
+    # scatter(moop)
