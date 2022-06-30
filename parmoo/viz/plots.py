@@ -338,13 +338,17 @@ def scatter3d(moop):
     pass
 
 
-def radar(moop):
+def radar(moop, db):
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the results to plot.
+        db (String): Indicates which database to plot.
+                     Defaults to "pf".
+                     Other options: "obj".
+                     A keyword other than "pf" or "obj" throws an error.
 
     Returns:
         None
@@ -355,71 +359,55 @@ def radar(moop):
     obj_db = moop.getObjectiveData()
     pf = moop.getPF()
 
+    if (db == 'pf') or (db == None):
+        database = pf
+        plotTitle = "Pareto Front"
+    elif db == 'obj':
+        database = obj_db
+        plotTitle = "Objective Data"
+    else:
+        raise ValueError("'" + str(db) + "' is not an acceptible value for 'db'")
+
     # create axes
     axes = []
     for obj_key in obj_type.names:
         axes.append(obj_key)
 
     # if there are less than three objectives, prompt alternate options
-    if recommendPlot(moop=moop, objective_count=len(axes), min_count=3, plot_name='radar') == False:
+    if recommendPlot(moop, objective_count=len(axes), min_count=3, plot_name='radar') == False:
         return
 
     # create figure
-    obj_fig = go.Figure()
-    pf_fig = go.Figure()
+    fig = go.Figure()
 
     # plotting code here
-    for i in range(len(obj_db)):
+    for i in range(len(database)):
         values = []
         for obj_key in obj_type.names:
-            values.append(obj_db[obj_key][i])
-            # print(tabulate(values))
-        traceName = ("design " + str(i))
-        obj_fig.add_trace(go.Scatterpolar(
+            values.append(database[obj_key][i])
+            traceName = ("design #" + str(i))
+        fig.add_trace(go.Scatterpolar(
             r=values,
             theta=axes,
-            # fill='toself',
-            name=traceName
-        ))
-
-    for i in range(len(pf)):
-        values = []
-        for obj_key in obj_type.names:
-            values.append(pf[obj_key][i])
-            # print(tabulate(values))
-        traceName = ("design " + str(i))
-        pf_fig.add_trace(go.Scatterpolar(
-            r=values,
-            theta=axes,
-            # fill='toself',
             name=traceName
         ))
 
     # aesthetics code here
-    obj_fig.update_layout(
+    fig.update_layout(
         polar=dict(
             radialaxis=dict(
-                visible=True,
+                visible=True
             )),
-        showlegend=True
     )
-    obj_fig.update_layout(
+    fig.update_layout(
         title = dict(
-            text = 'Objective Data'
+            text = plotTitle
         )
     )
-
-    pf_fig.update_layout(
-        polar=dict(
-            visible=True,
-            ),
-        showlegend=False
-    )
-    pf_fig.update_layout(
-        title = dict(
-            text = 'Pareto Front'
-        )
-    )
+    if plotTitle == "Pareto Front":
+        fig.update_layout(showlegend = True)
+    elif plotTitle == "Pareto Front":
+        fig.update_layout(showlegend = False)
 
     # config = {
     #     'format': 'svg', # one of png, svg, jpeg, webp
@@ -436,8 +424,7 @@ def radar(moop):
     # obj_fig.show(config=config)
 
     # display plot
-    obj_fig.show()
-    pf_fig.show()
+    fig.show()
 
 def parallel_coordinates(moop):
     """ Display MOOP results as parallel coordinates plot.
@@ -592,6 +579,8 @@ def dummyFunction(moop):
         currently all viz functions return None)
 
     """
-    radar(moop)
+    radar(moop, db='pf')
+    radar(moop, db='obj')
+    radar(moop, db='cheese')
     # parallel_coordinates(moop)
     # scatter(moop)
