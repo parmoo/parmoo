@@ -87,10 +87,20 @@ def scatter(moop, db='pf'):
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
+    hoverInfo = []
+    for key in database.dtype.names:
+        redundant = False
+        for ax in axes:
+            if ax == key:
+                redundant = True
+        if redundant is False:
+            hoverInfo.append(key)
+
     # * create plot
     fig = px.scatter_matrix(database,
                             dimensions=axes,
                             title=plotTitle,
+                            hover_data=hoverInfo
                             )
     fig.update_traces(diagonal_visible=False)
 
@@ -256,10 +266,20 @@ def parallel_coordinates(moop, db='pf'):
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
+    hoverInfo = []
+    for key in database.dtype.names:
+        redundant = False
+        for ax in axes:
+            if ax == key:
+                redundant = True
+        if redundant is False:
+            hoverInfo.append(key)
+
     # * create plot
     obj_fig = px.parallel_coordinates(database,
                                       labels=axes,
                                       title=plotTitle,
+                                      hover_data=hoverInfo
                                       )
 
     # * display plot
@@ -342,11 +362,6 @@ def dummyFunction(moop):
         None
 
     """
-    # radar(moop, db='obj')
-    # radar(moop)
-    # radar(moop, db='cheese')
-    parallel_coordinates(moop)
-    parallel_coordinates(moop, db='obj')
+
     scatter(moop)
-    scatter(moop, db='obj')
-    scatter(moop, db='rf')
+    parallel_coordinates(moop)
