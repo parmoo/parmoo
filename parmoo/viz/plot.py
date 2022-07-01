@@ -44,7 +44,7 @@ import warnings                     # native python package
 #
 
 
-def scatter(moop):
+def scatter(moop, db='pf'):
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -55,35 +55,47 @@ def scatter(moop):
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the MOOP results to plot.
+        db (String): Indicates which database to plot.
+                     Defaults to "pf".
+                     Other options: "obj".
+                     A keyword other than "pf" or "obj" throws an error.
 
     Returns:
         None
 
     """
+
+    # * get info
     obj_type = moop.getObjectiveType()
-    pf = moop.getPF()
     obj_db = moop.getObjectiveData()
+    pf = moop.getPF()
 
     # * choose axes
     axes = []  # each axis relates to an objective
     for obj_key in obj_type.names:
         axes.append(obj_key)
 
-    # * plot objectives
-    obj_fig = px.scatter_matrix(obj_db,
-                                dimensions=axes,
-                                title="Objective Data",
-                                )
-    obj_fig.update_traces(diagonal_visible=False)
-    obj_fig.show()
+    # * choose database
+    if (db == 'pf'):
+        database = pf
+        plotTitle = "Pareto Front"
+    elif db == 'obj':
+        database = obj_db
+        plotTitle = "Objective Data"
+    else:
+        message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
+        message += "Consider using 'pf' or 'obj' instead."
+        raise ValueError(message)
 
-    # * plot pareto front
-    pf_fig = px.scatter_matrix(pf,
-                               dimensions=axes,
-                               title="Pareto Front",
-                               )
-    pf_fig.update_traces(diagonal_visible=False)
-    pf_fig.show()
+    # * create plot
+    fig = px.scatter_matrix(database,
+                            dimensions=axes,
+                            title=plotTitle,
+                            )
+    fig.update_traces(diagonal_visible=False)
+
+    # * display plot
+    fig.show()
 
 
 def scatter3d(moop):
@@ -119,11 +131,17 @@ def radar(moop, db='pf'):
         None
 
     """
-
+    # * get info
     obj_type = moop.getObjectiveType()
     obj_db = moop.getObjectiveData()
     pf = moop.getPF()
 
+    # * setup axes
+    axes = []
+    for obj_key in obj_type.names:
+        axes.append(obj_key)
+
+    # * choose database
     if (db == 'pf'):
         database = pf
         plotTitle = "Pareto Front"
@@ -135,12 +153,7 @@ def radar(moop, db='pf'):
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
-    # * create axes
-    axes = []
-    for obj_key in obj_type.names:
-        axes.append(obj_key)
-
-    # * if there are less than three objectives, prompt alternate options
+    # * raise warnings
     if len(axes) < 3:
         message = """
         Radar plots are best suited for MOOPs with at least 3 objectives.
@@ -148,7 +161,7 @@ def radar(moop, db='pf'):
         """
         warnings.warn(message)
 
-    # * plot figure
+    # * create plot
     fig = go.Figure()
     for i in range(len(database)):
         if plotTitle == "Pareto Front":
@@ -187,7 +200,7 @@ def radar(moop, db='pf'):
             )
         )
     )
-    # * combining the above and below functions will cause a SyntaxError
+    # combining the above and below functions will cause a SyntaxError
     fig.update_layout(
         title=dict(
             text=plotTitle
@@ -198,11 +211,11 @@ def radar(moop, db='pf'):
     else:
         fig.update_layout(showlegend=True)
 
-    # * display figure
+    # * display plot
     fig.show()
 
 
-def parallel_coordinates(moop):
+def parallel_coordinates(moop, db='pf'):
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the browser.
@@ -212,33 +225,45 @@ def parallel_coordinates(moop):
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the results to plot.
+        db (String): Indicates which database to plot.
+                     Defaults to "pf".
+                     Other options: "obj".
+                     A keyword other than "pf" or "obj" throws an error.
 
     Returns:
         None
 
     """
+    # * get info
     obj_type = moop.getObjectiveType()
     pf = moop.getPF()
     obj_db = moop.getObjectiveData()
 
-    # * choose axes
+    # * setup axes
     axes = []  # each axis relates to an objective
     for obj_key in obj_type.names:
         axes.append(obj_key)
 
-    # * plot objectives
-    obj_fig = px.parallel_coordinates(obj_db,
-                                      labels=axes,
-                                      title="Objective Data",
-                                      )
-    obj_fig.show()
+    # * choose database
+    if (db == 'pf'):
+        database = pf
+        plotTitle = "Pareto Front"
+    elif db == 'obj':
+        database = obj_db
+        plotTitle = "Objective Data"
+    else:
+        message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
+        message += "Consider using 'pf' or 'obj' instead."
+        raise ValueError(message)
 
-    # * plot pareto front
-    pf_fig = px.parallel_coordinates(pf,
-                                     labels=axes,
-                                     title="Pareto Front",
-                                     )
-    pf_fig.show()
+    # * create plot
+    obj_fig = px.parallel_coordinates(database,
+                                      labels=axes,
+                                      title=plotTitle,
+                                      )
+
+    # * display plot
+    obj_fig.show()
 
 
 def heatmap(moop):
@@ -317,8 +342,11 @@ def dummyFunction(moop):
         None
 
     """
-    radar(moop, db='obj')
-    radar(moop)
-    radar(moop, db='cheese')
-    # parallel_coordinates(moop)
-    # scatter(moop)
+    # radar(moop, db='obj')
+    # radar(moop)
+    # radar(moop, db='cheese')
+    parallel_coordinates(moop)
+    parallel_coordinates(moop, db='obj')
+    scatter(moop)
+    scatter(moop, db='obj')
+    scatter(moop, db='rf')
