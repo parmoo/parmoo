@@ -93,7 +93,7 @@ class MOOP:
                  'n_cat_d', 'n_custom_d', 'cat_lb', 'cat_scale', 'RSVT',
                  'mean', 'custom_embedders', 'custom_extracters',
                  'n_cat', 'n_cont', 'n_int', 'n_custom', 'n_raw', 'n_lvls',
-                 'des_order', 'int_inds', 'cat_names', 'sim_names',
+                 'des_order', 'cat_names', 'sim_names',
                  'des_names', 'obj_names', 'const_names',
                  'lam', 'epsilon', 'objectives', 'data', 'sim_funcs',
                  'sim_db', 'des_tols', 'searches', 'surrogates', 'optimizer',
@@ -137,7 +137,7 @@ class MOOP:
                 else:
                     x_tmp[i] = x_labels[j]
         else:
-            x_tmp = x[self.des_order]
+            x_tmp[self.des_order] = x[:]
         # Create the output array
         xx = np.zeros(self.n)
         # Rescale the continuous and integer variables
@@ -180,6 +180,11 @@ class MOOP:
             end = start + self.n_custom_d[i]
             xx[start:end] = embed_i(x_tmp[self.n_cont + self.n_cat +
                                           self.n_int + i])
+        # Embed the raw variables
+        start = end
+        end = start + self.n_raw
+        xx[start:end] = x_tmp[self.n_cont + self.n_cat + self.n_int +
+                              self.n_custom:]
         return xx
 
     def __extract__(self, x):
@@ -200,7 +205,7 @@ class MOOP:
         """
 
         # Create the output array
-        xx = np.zeros(self.n_cont + self.n_cat + self.n_cont + self.n_custom
+        xx = np.zeros(self.n_cont + self.n_cat + self.n_int + self.n_custom
                       + self.n_raw)
         # Descale the continuous variables
         start = 0
@@ -239,11 +244,20 @@ class MOOP:
         for i, ex_i in enumerate(self.custom_extracters):
             start = end
             end = start + self.n_custom_d[i]
-            xx[self.n_cont + self.n_cat + self.n_int + i] = ex_i(x[start:end])
+            if not self.use_names:
+                xx[self.n_cont + self.n_cat + self.n_int + i] = \
+                    ex_i(x[start:end])
+        # Extract the raw variables
+        start = end
+        end = start + self.n_raw
+        xx[self.n_cont + self.n_cat + self.n_int + self.n_custom:] = \
+            x[start:end]
         # Unshuffle xx and pack into a numpy structured array
         if self.use_names:
             out = np.zeros(1, dtype=np.dtype(self.des_names))
+            n_customs = 0
             for i, j in enumerate(self.des_order):
+                # Unpack categorical variables when cat_names given
                 if ((i in range(self.n_cont+self.n_int,
                                 self.n_cont+self.n_int+self.n_cat))
                     and (len(self.cat_names[i - self.n_cont - self.n_int])
@@ -252,6 +266,16 @@ class MOOP:
                                                                 self.n_cont -
                                                                 self.n_int]
                                                                [int(xx[j])])
+                # Unpack custom variables
+                elif (i in range(self.n_cont + self.n_int + self.n_cat,
+                                 self.n_cont + self.n_int + self.n_cat +
+                                 self.n_custom)):
+                    start = (self.n_cont + self.n_cat_d + self.n_int +
+                             sum(self.n_custom_d[:n_customs]))
+                    end = start + self.n_custom_d[n_customs]
+                    exi = self.custom_extracters[n_customs]
+                    out[self.des_names[i][0]] = exi(x[start:end])
+                    n_customs += 1  # increment counter
                 else:
                     out[self.des_names[i][0]] = xx[j]
             return out[0]
@@ -392,7 +416,6 @@ class MOOP:
         self.n = 0
         self.des_names = []
         self.des_order = []
-        self.int_inds = []
         self.des_tols = []
         self.cont_lb = []
         self.cont_ub = []
@@ -662,7 +685,6 @@ class MOOP:
                     if self.des_order[i] >= self.n_cont + self.n_int:
                         self.des_order[i] += 1
                 self.des_order.append(self.n_cont + self.n_int)
-                self.int_inds.append(self.n_cont + self.n_int)
                 self.n_int += 1
                 self.des_tols.append(des_tol)
                 self.int_lb.append(arg['lb'])
@@ -719,6 +741,28 @@ class MOOP:
                 self.des_tols.append(1.0e-8)
                 for i in range(arg["embedding_size"]):
                     self.custom_des_tols.append(1.0e-8)
+            # Append a new raw design variable to the list
+            elif arg['des_type'] in ["raw"]:
+                if 'name' in arg.keys():
+                    if not isinstance(arg['name'], str):
+                        raise TypeError("When present, 'name' must be a "
+                                        + "str type")
+                else:
+                    self.use_names = False
+                    name = "x" + str(self.n_cont + self.n_cat + self.n_int
+                                     + self.n_custom + self.n_raw + 1)
+                    self.des_names.append((name, 'i4', ))
+                # Keep track of design variable indices for bookkeeping
+                for i in range(len(self.des_order)):
+                    # Add 1 to all later variable indices (should be none)
+                    if self.des_order[i] >= (self.n_cont + self.n_int +
+                                             self.n_cat + self.n_custom +
+                                             self.n_raw):
+                        self.des_order[i] += 1
+                self.des_order.append(self.n_cont + self.n_int +
+                                      self.n_cat + self.n_custom + self.n_raw)
+                self.n_raw += 1
+                self.des_tols.append(1.0e-8)
             else:
                 raise(ValueError("des_type=" + arg['des_type'] +
                                  " is not a recognized value"))
@@ -2225,7 +2269,6 @@ class MOOP:
                         'n_raw': self.n_raw,
                         'n_lvls': self.n_lvls,
                         'des_order': self.des_order,
-                        'int_inds': self.int_inds,
                         'cat_names': self.cat_names,
                         'sim_names': self.sim_names,
                         'des_names': self.des_names,
@@ -2331,6 +2374,12 @@ class MOOP:
                                                     ci.__class__.__module__))
                 parmoo_state['constraints_info'].append(
                         codecs.encode(pickle.dumps(ci), "base64").decode())
+        # Store names/modules of custom embedders
+        parmoo_state['custom_embedders'] = [(ei.__name__, ei.__module__)
+                                            for ei in self.custom_embedders]
+        # Store names/modules of custom extracters
+        parmoo_state['custom_extracters'] = [(ei.__name__, ei.__module__)
+                                             for ei in self.custom_extracters]
         # Store names/modules of object classes
         parmoo_state['optimizer'] = (self.optimizer.__name__,
                                      self.optimizer.__module__)
@@ -2428,7 +2477,6 @@ class MOOP:
         self.n_raw = parmoo_state['n_raw']
         self.n_lvls = parmoo_state['n_lvls']
         self.des_order = parmoo_state['des_order']
-        self.int_inds = parmoo_state['int_inds']
         self.cat_names = parmoo_state['cat_names']
         self.sim_names = [tuple(item) for item in parmoo_state['sim_names']]
         self.des_names = [tuple(item) for item in parmoo_state['des_names']]
@@ -2550,6 +2598,18 @@ class MOOP:
             else:
                 toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
             self.constraints.append(toadd)
+        # Recover custom embedders
+        self.custom_embedders = []
+        for i, (e_name, e_mod) in enumerate(parmoo_state['custom_embedders']):
+            mod = import_module(e_mod)
+            new_em = getattr(mod, e_name)
+            self.custom_embedders.append(new_em)
+        # Recover custom extracters
+        self.custom_extracters = []
+        for i, (e_name, e_mod) in enumerate(parmoo_state['custom_extracters']):
+            mod = import_module(e_mod)
+            new_em = getattr(mod, e_name)
+            self.custom_extracters.append(new_em)
         # Recover object classes
         mod = import_module(parmoo_state['optimizer'][1])
         self.optimizer = getattr(mod, parmoo_state['optimizer'][0])
