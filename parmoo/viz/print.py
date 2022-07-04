@@ -9,8 +9,6 @@ The functions are:
   * ``printSimulationData(moop, style)`` -- print simulation database(s)
   * ``printMOOP(moop, style)`` -- print all MOOP data
 
- Utilities
-  * ``dummyPrintFunction(moop)`` -- place functions here for testing
 
 """
 
@@ -204,24 +202,3 @@ def printMOOP(moop, style='table'):
 #     for const_key in const_type.names:
 #         print(f"Constraint: {const_key}:")
 #         print(obj_db[const_key])
-
-
-#
-# ! UTILITIES
-#
-
-
-def dummyPrintFunction(moop):
-    """ Dummy function for development purposes.
-
-    Functions to be tested in examples should be placed here.
-
-    Args:
-        moop (MOOP): A ParMOO MOOP for testing functions on.
-
-    Returns:
-        None
-
-    """
-    printMOOP(moop)
-    printMOOP(moop, style='raw')

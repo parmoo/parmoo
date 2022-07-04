@@ -99,6 +99,7 @@ def scatter(moop, db='pf'):
     # * create plot
     fig = px.scatter_matrix(database,
                             dimensions=axes,
+                            # color=axes,
                             title=plotTitle,
                             hover_data=hoverInfo
                             )
@@ -345,23 +346,4 @@ def star_coordinates(moop):
     """
     pass
 
-#
-# ! UTILITIES
-#
 
-
-def dummyFunction(moop):
-    """ Dummy function for development purposes.
-
-    Functions to be tested in examples should be placed here.
-
-    Args:
-        moop (MOOP): A ParMOO MOOP for testing functions on.
-
-    Returns:
-        None
-
-    """
-
-    scatter(moop)
-    parallel_coordinates(moop)
