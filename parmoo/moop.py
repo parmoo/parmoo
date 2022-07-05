@@ -127,15 +127,22 @@ class MOOP:
             for d_name in self.des_names:
                 x_labels.append(x[d_name[0]])
             for i, j in enumerate(self.des_order):
-                if ((i in range(self.n_cont+self.n_int,
+                if ((j in range(self.n_cont+self.n_int,
                                 self.n_cont+self.n_int+self.n_cat))
-                    and (len(self.cat_names[i - self.n_cont - self.n_int])
+                    and (len(self.cat_names[j - self.n_cont - self.n_int])
                          > 0)):
-                    x_tmp[i] = float(self.cat_names[j - self.n_cont -
+                    x_tmp[j] = float(self.cat_names[j - self.n_cont -
                                                     self.n_int].index(
-                                                                x_labels[j]))
+                                                                x_labels[i]))
+                elif (j in range(self.n_cont+self.n_int+self.n_cat,
+                                  self.n_cont+self.n_int+self.n_cat+
+                                  self.n_custom)):
+                    # TODO HERE HERE HERE
+                    x_tmp[j] = self.custom_embedders[i](
+                                                    self.n_int].index(
+                                                                x_labels[i]))
                 else:
-                    x_tmp[i] = x_labels[j]
+                    x_tmp[j] = x_labels[i]
         else:
             x_tmp[self.des_order] = x[:]
         # Create the output array
@@ -258,16 +265,16 @@ class MOOP:
             n_customs = 0
             for i, j in enumerate(self.des_order):
                 # Unpack categorical variables when cat_names given
-                if ((i in range(self.n_cont+self.n_int,
+                if ((j in range(self.n_cont+self.n_int,
                                 self.n_cont+self.n_int+self.n_cat))
-                    and (len(self.cat_names[i - self.n_cont - self.n_int])
+                    and (len(self.cat_names[j - self.n_cont - self.n_int])
                          > 0)):
                     out[self.des_names[i][0]] = (self.cat_names[j -
                                                                 self.n_cont -
                                                                 self.n_int]
                                                                [int(xx[j])])
                 # Unpack custom variables
-                elif (i in range(self.n_cont + self.n_int + self.n_cat,
+                elif (j in range(self.n_cont + self.n_int + self.n_cat,
                                  self.n_cont + self.n_int + self.n_cat +
                                  self.n_custom)):
                     start = (self.n_cont + self.n_cat_d + self.n_int +
@@ -706,6 +713,7 @@ class MOOP:
                     if not isinstance(arg['name'], str):
                         raise TypeError("When present, 'name' must be a "
                                         + "str type")
+                    self.des_names.append((arg['name'], 'U25'))
                 else:
                     self.use_names = False
                     name = "x" + str(self.n_cont + self.n_cat + self.n_int

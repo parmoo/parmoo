@@ -520,7 +520,7 @@ def test_MOOP_embed_extract_named():
         assert(all(xxi >= 0.0) and all(xxi <= 1.0))
         assert(xxi.size == moop.n)
         # Check extraction
-        assert(all([moop.__extract__(xxi)[key] - xi[key] < 1.0e-8
+        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
                     for key in ["x0", "x1"]]))
     # Add two categorical variables and check that they are embedded correctly
     moop.addDesign({'name': "x2",
@@ -543,9 +543,58 @@ def test_MOOP_embed_extract_named():
         assert(all(xxi >= 0.0) and all(xxi <= 1.0))
         assert(xxi.size == moop.n)
         # Check extraction
-        assert(all([moop.__extract__(xxi)[key] - xi[key] < 1.0e-8
+        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
                     for key in ["x0", "x1", "x2"]]))
         assert(moop.__extract__(xxi)["x3"] == xi["x3"])
+    # Add an integer variables and check that it is embedded correctly
+    moop.addDesign({'name': "x4",
+                    'des_type': "int",
+                    'lb': -5,
+                    'ub': 5})
+    # Test 5 random variables
+    for i in range(5):
+        num = np.random.random_sample(5)
+        xi = np.zeros(1, dtype=[("x0", float), ("x1", float), ("x2", float),
+                                ("x3", object), ("x4", int)])[0]
+        xi["x0"] = int(1000.0 * num[0])
+        xi["x1"] = num[1] - 1.0
+        xi["x2"] = np.round(num[2])
+        xi["x3"] = np.random.choice(["biggie", "shortie", "shmedium"])
+        xi["x4"] = np.random.randint(-5, 5)
+        xxi = moop.__embed__(xi)
+        # Check that embedding is legal
+        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert(xxi.size == moop.n)
+        # Check extraction
+        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                    for key in ["x0", "x1", "x2", "x4"]]))
+        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
+    # Add an integer variables and check that it is embedded correctly
+    moop.addDesign({'name': "x5",
+                    'des_type': "custom",
+                    'embedding_size': 1,
+                    'embedder': lambda x: float(x),
+                    'extracter': lambda x: str(x)})
+    # Test 5 random variables
+    for i in range(5):
+        num = np.random.random_sample(6)
+        xi = np.zeros(1, dtype=[("x0", float), ("x1", float), ("x2", float),
+                                ("x3", object), ("x4", int), ("x5", str)])[0]
+        xi["x0"] = int(1000.0 * num[0])
+        xi["x1"] = num[1] - 1.0
+        xi["x2"] = np.round(num[2])
+        xi["x3"] = np.random.choice(["biggie", "shortie", "shmedium"])
+        xi["x4"] = np.random.randint(-5, 5)
+        xi["x5"] = str(num[5])
+        xxi = moop.__embed__(xi)
+        # Check that embedding is legal
+        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert(xxi.size == moop.n)
+        # Check extraction
+        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                    for key in ["x0", "x1", "x2", "x4"]]))
+        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert(abs(float(moop.__extract__(xxi)["x5"]) - xi["x5"]) < 1.0e-8)
 
 
 if __name__ == "__main__":
