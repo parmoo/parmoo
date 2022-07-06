@@ -44,7 +44,7 @@ import warnings                     # native python package
 #
 
 
-def scatter(moop, db='pf'):
+def scatter(moop, db='pf', export='none', browser=True):
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -55,10 +55,26 @@ def scatter(moop, db='pf'):
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the MOOP results to plot.
-        db (String): Indicates which database to plot.
-                     Defaults to "pf".
-                     Other options: "obj".
-                     A keyword other than "pf" or "obj" throws an error.
+        db (String): Indicate which database to plot.
+                     'pf' (default) plot Pareto Front
+                     'obj' plot objective data
+        export (String): Indicate export type
+                     'none' (default) don't export image file
+                     'pdf' export plot as pdf
+                     'svg' export plot as svg
+                     'webp' export plot as webp
+                     'jpeg' export plot as jpeg
+                     'png' export plot as png
+        browser (boolean): Choose to open interactive plot in browser window.
+                    True: (default) display interactive plot in browser window
+                    False: don't display interactive plot in browser window
+                    It is recommended that this setting be left on True
+                    The 'browser' and 'export' keywords will not
+                    interfere with each other. If you choose to export an image
+                    of the plot by using the 'export' keyword, and leave
+                    'browser' to True, you will BOTH export an image file to
+                    the current working directory AND open an interactive
+                    figure in the browser.
 
     Returns:
         None
@@ -78,10 +94,10 @@ def scatter(moop, db='pf'):
     # * choose database
     if (db == 'pf'):
         database = pf
-        plotTitle = "Pareto Front"
+        plotName = "Pareto Front"
     elif db == 'obj':
         database = obj_db
-        plotTitle = "Objective Data"
+        plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
         message += "Consider using 'pf' or 'obj' instead."
@@ -100,15 +116,18 @@ def scatter(moop, db='pf'):
     fig = px.scatter_matrix(database,
                             dimensions=axes,
                             # color=,
-                            title=plotTitle,
+                            title=plotName,
                             hover_data=hoverInfo
                             )
     fig.update_traces(diagonal_visible=False)
 
-
-
     # * display plot
-    fig.show()
+    if browser is True:
+        fig.show()
+
+    # * export plot
+    if export != 'none':
+        exportFile(fig=fig, plotName=plotName, fileType=export)
 
 
 def scatter3d(moop):
@@ -128,17 +147,33 @@ def scatter3d(moop):
     pass
 
 
-def radar(moop, db='pf'):
+def radar(moop, db='pf', export='none', browser=True):
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the results to plot.
-        db (String): Indicates which database to plot.
-                     Defaults to "pf".
-                     Other options: "obj".
-                     A keyword other than "pf" or "obj" throws an error.
+        db (String): Indicate which database to plot.
+                     'pf' (default) plot Pareto Front
+                     'obj' plot objective data
+        export (String): Indicate export type
+                     'none' (default) don't export image file
+                     'pdf' export plot as pdf
+                     'svg' export plot as svg
+                     'webp' export plot as webp
+                     'jpeg' export plot as jpeg
+                     'png' export plot as png
+        browser (boolean): Choose to open interactive plot in browser window.
+                    True: (default) display interactive plot in browser window
+                    False: don't display interactive plot in browser window
+                    It is recommended that this setting be left on True
+                    The 'browser' and 'export' keywords will not
+                    interfere with each other. If you choose to export an image
+                    of the plot by using the 'export' keyword, and leave
+                    'browser' to True, you will BOTH export an image file to
+                    the current working directory AND open an interactive
+                    figure in the browser.
 
     Returns:
         None
@@ -163,10 +198,10 @@ def radar(moop, db='pf'):
     # * choose database
     if (db == 'pf'):
         database = pf
-        plotTitle = "Pareto Front"
+        plotName = "Pareto Front"
     elif db == 'obj':
         database = obj_db
-        plotTitle = "Objective Data"
+        plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
         message += "Consider using 'pf' or 'obj' instead."
@@ -184,7 +219,7 @@ def radar(moop, db='pf'):
     fig = go.Figure()
     for i in range(len(database)):
         traceName = (i)
-        if plotTitle == "Pareto Front":
+        if plotName == "Pareto Front":
             hoverInfo = ""
         else:
             hoverInfo = "Design #" + str(i) + "\n"
@@ -235,19 +270,24 @@ def radar(moop, db='pf'):
     # combining the above and below functions will cause a SyntaxError
     fig.update_layout(
         title=dict(
-            text=plotTitle
+            text=plotName
         )
     )
-    if plotTitle == "Pareto Front":
+    if plotName == "Pareto Front":
         fig.update_layout(showlegend=True)
     else:
         fig.update_layout(showlegend=True)
 
     # * display plot
-    fig.show()
+    if browser is True:
+        fig.show()
+
+    # * export plot
+    if export != 'none':
+        exportFile(fig=fig, plotName=plotName, fileType=export)
 
 
-def parallel_coordinates(moop, db='pf'):
+def parallel_coordinates(moop, db='pf', export='none', browser=True):
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the browser.
@@ -257,10 +297,26 @@ def parallel_coordinates(moop, db='pf'):
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the results to plot.
-        db (String): Indicates which database to plot.
-                     Defaults to "pf".
-                     Other options: "obj".
-                     A keyword other than "pf" or "obj" throws an error.
+        db (String): Indicate which database to plot.
+                     'pf' (default) plot Pareto Front
+                     'obj' plot objective data
+        export (String): Indicate export type
+                     'none' (default) don't export image file
+                     'pdf' export plot as pdf
+                     'svg' export plot as svg
+                     'webp' export plot as webp
+                     'jpeg' export plot as jpeg
+                     'png' export plot as png
+        browser (boolean): Choose to open interactive plot in browser window.
+                    True: (default) display interactive plot in browser window
+                    False: don't display interactive plot in browser window
+                    It is recommended that this setting be left on True
+                    The 'browser' and 'export' keywords will not
+                    interfere with each other. If you choose to export an image
+                    of the plot by using the 'export' keyword, and leave
+                    'browser' to True, you will BOTH export an image file to
+                    the current working directory AND open an interactive
+                    figure in the browser.
 
     Returns:
         None
@@ -279,10 +335,10 @@ def parallel_coordinates(moop, db='pf'):
     # * choose database
     if (db == 'pf'):
         database = pf
-        plotTitle = "Pareto Front"
+        plotName = "Pareto Front"
     elif db == 'obj':
         database = obj_db
-        plotTitle = "Objective Data"
+        plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
         message += "Consider using 'pf' or 'obj' instead."
@@ -298,14 +354,19 @@ def parallel_coordinates(moop, db='pf'):
             hoverInfo.append(key)
 
     # * create plot
-    obj_fig = px.parallel_coordinates(database,
-                                      labels=axes,
-                                      title=plotTitle,
-                                    #   hover_data=hoverInfo
-                                      )
+    fig = px.parallel_coordinates(database,
+                                  labels=axes,
+                                  title=plotName,
+                                  #   hover_data=hoverInfo
+                                  )
 
     # * display plot
-    obj_fig.show()
+    if browser is True:
+        fig.show()
+
+    # * export plot
+    if export != 'none':
+        exportFile(fig=fig, plotName=plotName, fileType=export)
 
 
 def heatmap(moop):
@@ -366,3 +427,47 @@ def star_coordinates(moop):
 
     """
     pass
+
+
+def exportFile(fig, plotName, fileType):
+    """ Display MOOP plot.
+
+    Export plot.
+
+    Args:
+        fig (Plotly figure): figure to export.
+        db (String): Indicate which database to plot.
+                     'pf' (default) plot Pareto Front
+                     'obj' plot objective data
+        export (String): Indicate export type
+                     'none' (default) don't export image file
+                     'pdf' export plot as pdf
+                     'svg' export plot as svg
+                     'webp' export plot as webp
+                     'jpeg' export plot as jpeg
+                     'png' export plot as png
+
+    Returns:
+        None
+
+    """
+    if fileType == 'pdf':
+        fig.write_image(plotName + ".pdf")
+    elif fileType == 'svg':
+        fig.write_image(plotName + ".svg")
+    elif fileType == 'webp':
+        fig.write_image(plotName + ".webp")
+    elif fileType == 'jpeg':
+        fig.write_image(plotName + ".jpeg")
+    elif fileType == 'png':
+        fig.write_image(plotName + ".png")
+    else:
+        message = "ParMOO does not support exporting to '" + fileType + "'.\n"
+        message += "Supported types:\n"
+        message += "'none'\n"
+        message += "'pdf'\n"
+        message += "'svg'\n"
+        message += "'webp'\n"
+        message += "'jpeg'\n"
+        message += "'png'\n"
+        raise ValueError(message)
