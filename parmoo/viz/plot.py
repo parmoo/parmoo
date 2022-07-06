@@ -122,9 +122,12 @@ def scatter(moop, db='pf', export='none', browser=True):
                             )
     fig.update_traces(diagonal_visible=False)
 
+    # * configure plot
+    config = configure(export=export)
+
     # * display plot
     if browser is True:
-        fig.show()
+        fig.show(config=config)
 
     # * export plot
     if export != 'none':
@@ -217,6 +220,9 @@ def radar(moop, db='pf', export='none', browser=True):
         """
         warnings.warn(message)
 
+    # * configure plot
+    config = configure(export=export)
+
     # * create plot
     fig = go.Figure()
     for i in range(len(database)):
@@ -282,7 +288,7 @@ def radar(moop, db='pf', export='none', browser=True):
 
     # * display plot
     if browser is True:
-        fig.show()
+        fig.show(config=config)
 
     # * export plot
     if export != 'none':
@@ -363,9 +369,12 @@ def parallel_coordinates(moop, db='pf', export='none', browser=True):
                                   #   hover_data=hoverInfo
                                   )
 
+    # * configure plot
+    config = configure(export=export)
+
     # * display plot
     if browser is True:
-        fig.show()
+        fig.show(config=config)
 
     # * export plot
     if export != 'none':
@@ -475,3 +484,26 @@ def exportFile(fig, plotName, fileType):
         message += "'jpeg'\n"
         message += "'png'\n"
         raise ValueError(message)
+
+
+def configure(export):
+    if (export == 'png'):
+        screenshot = export
+    elif (export == 'webp'):
+        screenshot = export
+    elif (export == 'jpeg'):
+        screenshot = export
+    else:
+        screenshot = 'svg'
+    config = {
+        'displaylogo': False,
+        'displayModeBar': True,
+        'toImageButtonOptions': {
+            'format': screenshot,  # one of png, svg, jpeg, webp
+            'filename': 'custom_image',
+            'height': 1000,
+            'width': 1400,
+            'scale': 1  # Multiply title/legend/axis/canvas sizes by factor
+        }
+    }
+    return config
