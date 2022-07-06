@@ -99,11 +99,13 @@ def scatter(moop, db='pf'):
     # * create plot
     fig = px.scatter_matrix(database,
                             dimensions=axes,
-                            # color=axes,
+                            # color=,
                             title=plotTitle,
                             hover_data=hoverInfo
                             )
     fig.update_traces(diagonal_visible=False)
+
+
 
     # * display plot
     fig.show()
@@ -149,8 +151,14 @@ def radar(moop, db='pf'):
 
     # * setup axes
     axes = []
+    wrap_around_key = ""
+    wrap_around_count = 0
     for obj_key in obj_type.names:
         axes.append(obj_key)
+        if wrap_around_count == 0:
+            wrap_around_key = obj_key
+        wrap_around_count += 1
+    axes.append(wrap_around_key)
 
     # * choose database
     if (db == 'pf'):
@@ -175,6 +183,7 @@ def radar(moop, db='pf'):
     # * create plot
     fig = go.Figure()
     for i in range(len(database)):
+        traceName = (i)
         if plotTitle == "Pareto Front":
             hoverInfo = ""
         else:
@@ -187,9 +196,14 @@ def radar(moop, db='pf'):
             # since plotly is JavaScript-based
             # it uses HTML string formatting
         values = []
+        count = 0
+        wrap_around_value = ""
         for obj_key in obj_type.names:
             values.append(database[obj_key][i])
-            traceName = ("design #" + str(i + 1))
+            if count == 0:
+                wrap_around_value = obj_key
+            count += 1
+        values.append(database[wrap_around_value][i])
         fig.add_trace(go.Scatterpolar(
             r=values,
             theta=axes,
@@ -204,6 +218,13 @@ def radar(moop, db='pf'):
             type='scatterpolar'
         )
     )
+    # fig.update_traces(
+    #     marker_color=traceName,
+    #     marker_coloraxis=traceName,
+    #     selector=dict(
+    #         type='scatterpolar'
+    #     )
+    # )
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
@@ -218,7 +239,7 @@ def radar(moop, db='pf'):
         )
     )
     if plotTitle == "Pareto Front":
-        fig.update_layout(showlegend=False)
+        fig.update_layout(showlegend=True)
     else:
         fig.update_layout(showlegend=True)
 
@@ -280,7 +301,7 @@ def parallel_coordinates(moop, db='pf'):
     obj_fig = px.parallel_coordinates(database,
                                       labels=axes,
                                       title=plotTitle,
-                                      hover_data=hoverInfo
+                                    #   hover_data=hoverInfo
                                       )
 
     # * display plot
@@ -345,5 +366,3 @@ def star_coordinates(moop):
 
     """
     pass
-
-
