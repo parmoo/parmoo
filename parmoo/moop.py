@@ -135,12 +135,9 @@ class MOOP:
                                                     self.n_int].index(
                                                                 x_labels[i]))
                 elif (j in range(self.n_cont+self.n_int+self.n_cat,
-                                  self.n_cont+self.n_int+self.n_cat+
-                                  self.n_custom)):
-                    # TODO HERE HERE HERE
-                    x_tmp[j] = self.custom_embedders[i](
-                                                    self.n_int].index(
-                                                                x_labels[i]))
+                                 self.n_cont+self.n_int+self.n_cat+
+                                 self.n_custom)):
+                    x_tmp[j] = i
                 else:
                     x_tmp[j] = x_labels[i]
         else:
@@ -185,8 +182,14 @@ class MOOP:
         for i, embed_i in enumerate(self.custom_embedders):
             start = end
             end = start + self.n_custom_d[i]
-            xx[start:end] = embed_i(x_tmp[self.n_cont + self.n_cat +
-                                          self.n_int + i])
+            if self.use_names:
+                # HERE, special rule for self.n_custom_d = 1
+                xx[start:end] = embed_i(x_labels[int(x_tmp[self.n_cont +
+                                                           self.n_cat +
+                                                           self.n_int + i])])
+            else:
+                xx[start:end] = embed_i(x_tmp[self.n_cont + self.n_cat +
+                                              self.n_int + i])
         # Embed the raw variables
         start = end
         end = start + self.n_raw
@@ -281,6 +284,7 @@ class MOOP:
                              sum(self.n_custom_d[:n_customs]))
                     end = start + self.n_custom_d[n_customs]
                     exi = self.custom_extracters[n_customs]
+                    # HERE, special rule for self.n_custom_d = 1
                     out[self.des_names[i][0]] = exi(x[start:end])
                     n_customs += 1  # increment counter
                 else:
