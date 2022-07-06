@@ -55,17 +55,18 @@ def scatter(moop, db='pf', export='none', browser=True):
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the MOOP results to plot.
-        db (String): Indicate which database to plot.
+        db (String): Choose database to plot
                      'pf' (default) plot Pareto Front
                      'obj' plot objective data
-        export (String): Indicate export type
+        export (String): Export plot to working directory.
                      'none' (default) don't export image file
+                     'html' export plot as html
                      'pdf' export plot as pdf
                      'svg' export plot as svg
                      'webp' export plot as webp
                      'jpeg' export plot as jpeg
                      'png' export plot as png
-        browser (boolean): Choose to open interactive plot in browser window.
+        browser (boolean): Display interactive plot in browser window.
                     True: (default) display interactive plot in browser window
                     False: don't display interactive plot in browser window
                     It is recommended that this setting be left on True
@@ -154,17 +155,18 @@ def radar(moop, db='pf', export='none', browser=True):
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the results to plot.
-        db (String): Indicate which database to plot.
+        db (String): Choose database to plot
                      'pf' (default) plot Pareto Front
                      'obj' plot objective data
-        export (String): Indicate export type
+        export (String): Export plot to working directory.
                      'none' (default) don't export image file
+                     'html' export plot as html
                      'pdf' export plot as pdf
                      'svg' export plot as svg
                      'webp' export plot as webp
                      'jpeg' export plot as jpeg
                      'png' export plot as png
-        browser (boolean): Choose to open interactive plot in browser window.
+        browser (boolean): Display interactive plot in browser window.
                     True: (default) display interactive plot in browser window
                     False: don't display interactive plot in browser window
                     It is recommended that this setting be left on True
@@ -297,17 +299,18 @@ def parallel_coordinates(moop, db='pf', export='none', browser=True):
 
     Args:
         moop (MOOP): A ParMOO MOOP containing the results to plot.
-        db (String): Indicate which database to plot.
+        db (String): Choose database to plot
                      'pf' (default) plot Pareto Front
                      'obj' plot objective data
-        export (String): Indicate export type
+        export (String): Export plot to working directory.
                      'none' (default) don't export image file
+                     'html' export plot as html
                      'pdf' export plot as pdf
                      'svg' export plot as svg
                      'webp' export plot as webp
                      'jpeg' export plot as jpeg
                      'png' export plot as png
-        browser (boolean): Choose to open interactive plot in browser window.
+        browser (boolean): Display interactive plot in browser window.
                     True: (default) display interactive plot in browser window
                     False: don't display interactive plot in browser window
                     It is recommended that this setting be left on True
@@ -436,11 +439,10 @@ def exportFile(fig, plotName, fileType):
 
     Args:
         fig (Plotly figure): figure to export.
-        db (String): Indicate which database to plot.
-                     'pf' (default) plot Pareto Front
-                     'obj' plot objective data
+        plotName (String): Used for naming export files
         export (String): Indicate export type
                      'none' (default) don't export image file
+                     'html' export plot as html
                      'pdf' export plot as pdf
                      'svg' export plot as svg
                      'webp' export plot as webp
@@ -451,7 +453,9 @@ def exportFile(fig, plotName, fileType):
         None
 
     """
-    if fileType == 'pdf':
+    if fileType == 'html':
+        fig.write_html(plotName + ".html")
+    elif fileType == 'pdf':
         fig.write_image(plotName + ".pdf")
     elif fileType == 'svg':
         fig.write_image(plotName + ".svg")
@@ -464,7 +468,7 @@ def exportFile(fig, plotName, fileType):
     else:
         message = "ParMOO does not support exporting to '" + fileType + "'.\n"
         message += "Supported types:\n"
-        message += "'none'\n"
+        message += "'html'\n"
         message += "'pdf'\n"
         message += "'svg'\n"
         message += "'webp'\n"
