@@ -135,7 +135,7 @@ class MOOP:
                                                     self.n_int].index(
                                                                 x_labels[i]))
                 elif (j in range(self.n_cont+self.n_int+self.n_cat,
-                                 self.n_cont+self.n_int+self.n_cat+
+                                 self.n_cont+self.n_int+self.n_cat +
                                  self.n_custom)):
                     x_tmp[j] = i
                 else:
@@ -183,8 +183,14 @@ class MOOP:
             start = end
             end = start + self.n_custom_d[i]
             if self.use_names:
-                # HERE, special rule for self.n_custom_d = 1
-                xx[start:end] = embed_i(x_labels[int(x_tmp[self.n_cont +
+                if end - start > 1:
+                    xx[start:end] = embed_i(x_labels[int(x_tmp[self.n_cont +
+                                                               self.n_cat +
+                                                               self.n_int +
+                                                               i])])
+                # Special rule for self.n_custom_d = 1
+                else:
+                    xx[start] = embed_i(x_labels[int(x_tmp[self.n_cont +
                                                            self.n_cat +
                                                            self.n_int + i])])
             else:
@@ -284,8 +290,11 @@ class MOOP:
                              sum(self.n_custom_d[:n_customs]))
                     end = start + self.n_custom_d[n_customs]
                     exi = self.custom_extracters[n_customs]
-                    # HERE, special rule for self.n_custom_d = 1
-                    out[self.des_names[i][0]] = exi(x[start:end])
+                    if end - start > 1:
+                        out[self.des_names[i][0]] = exi(x[start:end])
+                    # Special rule for self.n_custom_d = 1
+                    else:
+                        out[self.des_names[i][0]] = exi(x[start])
                     n_customs += 1  # increment counter
                 else:
                     out[self.des_names[i][0]] = xx[j]

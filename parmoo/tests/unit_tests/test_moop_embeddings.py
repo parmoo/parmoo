@@ -594,7 +594,8 @@ def test_MOOP_embed_extract_named():
         assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
                     for key in ["x0", "x1", "x2", "x4"]]))
         assert(moop.__extract__(xxi)["x3"] == xi["x3"])
-        assert(abs(float(moop.__extract__(xxi)["x5"]) - xi["x5"]) < 1.0e-8)
+        assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
+               < 1.0e-8)
 
 
 if __name__ == "__main__":
