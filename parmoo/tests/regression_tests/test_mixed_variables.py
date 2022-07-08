@@ -61,20 +61,19 @@ moop.addSimulation({'name': "my sim",
                     'sim_func': sim,
                     'search': LatinHypercube,
                     'surrogate': GaussRBF,
-                    'hyperparams': {}})
+                    'hyperparams': {'search_budget': 20}})
 
 # Add user objective functions
 moop.addObjective({'obj_func': obj1}, {'obj_func': obj2})
 
 # Add NUM_OBJ acquisition funcitons
-for i in range(10):
+for i in range(1):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
 # Solve the problem with 5 iterations with checkpointing on
-moop.solve(5)
+moop.solve(20)
 
-# Check that 150 simulations were evaluated and solutions are feasible
-#assert(moop.getObjectiveData()['f1'].shape[0] == 150)
-#assert(moop.getSimulationData()['my sim'].shape[0] == 150)
-#assert(moop.getPF()['f1'].shape[0] > 0)
-print(moop.getObjectiveData())
+# Check that 40 simulations were evaluated and solutions are feasible
+assert(moop.getSimulationData()["my sim"].size == 40)
+assert(moop.getObjectiveData().size == 40)
+assert(moop.getPF().size > 0)
