@@ -7,8 +7,8 @@ Uses named variables and public function definitions to define the problem.
 """
 
 from parmoo import MOOP
-from parmoo.optimizers import TR_LBFGSB
-from parmoo.surrogates import LocalGaussRBF
+from parmoo.optimizers import GlobalGPS
+from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
 import os
@@ -30,25 +30,16 @@ def sim(x):
                      result + (x["cont var"] - 1.0) ** 2 + x["int var"] ** 2 +
                      float(x["custom var"]) ** 2])
 
-def obj1(x, sx, der=0):
+def obj1(x, sx):
     " User obj1 for sample problem. "
-    if der == 1:
-        return np.zeros(1, dtype=moop.getDesignType())[0]
-    elif der == 2:
-        return np.ones(1, dtype=moop.getSimulationType())[0]
-    else:
-        return sx["my sim"][0]
+    return sx["my sim"][0]
 
-def obj2(x, sx, der=0):
-    if der == 1:
-        return np.zeros(1, dtype=moop.getDesignType())[0]
-    elif der == 2:
-        return np.ones(1, dtype=moop.getSimulationType())[0]
-    else:
-        return sx["my sim"][1]
+def obj2(x, sx):
+    " User obj2 for sample problem. "
+    return sx["my sim"][1]
 
 # Create a MOOP
-moop = MOOP(TR_LBFGSB)
+moop = MOOP(GlobalGPS)
 
 # Add design variables
 moop.addDesign({'name': "cont var", 'ub': 1.0, 'lb': 0.0,
@@ -69,7 +60,7 @@ moop.addSimulation({'name': "my sim",
                     'm': 2,
                     'sim_func': sim,
                     'search': LatinHypercube,
-                    'surrogate': LocalGaussRBF,
+                    'surrogate': GaussRBF,
                     'hyperparams': {}})
 
 # Add user objective functions
@@ -86,4 +77,4 @@ moop.solve(5)
 #assert(moop.getObjectiveData()['f1'].shape[0] == 150)
 #assert(moop.getSimulationData()['my sim'].shape[0] == 150)
 #assert(moop.getPF()['f1'].shape[0] > 0)
-print(moop.getPF())
+print(moop.getObjectiveData())
