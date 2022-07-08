@@ -768,11 +768,12 @@ class MOOP:
                     if not isinstance(arg['name'], str):
                         raise TypeError("When present, 'name' must be a "
                                         + "str type")
+                    self.des_names.append((arg['name'], 'f8'))
                 else:
                     self.use_names = False
                     name = "x" + str(self.n_cont + self.n_cat + self.n_int
                                      + self.n_custom + self.n_raw + 1)
-                    self.des_names.append((name, 'i4', ))
+                    self.des_names.append((name, 'f8', ))
                 # Keep track of design variable indices for bookkeeping
                 for i in range(len(self.des_order)):
                     # Add 1 to all later variable indices (should be none)

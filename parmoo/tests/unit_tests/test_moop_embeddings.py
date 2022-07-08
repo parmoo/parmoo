@@ -483,7 +483,7 @@ def test_MOOP_embed_extract_unnamed2():
     assert(all(moop.__extract__(xx1) - x1 < 1.0e-8))
 
 
-def test_MOOP_embed_extract_named():
+def test_MOOP_embed_extract_named1():
     """ Test that the MOOP class can embed/extract named design variables.
 
     Add several design variables and generate an embedding. Then embed and
@@ -569,7 +569,7 @@ def test_MOOP_embed_extract_named():
         assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
                     for key in ["x0", "x1", "x2", "x4"]]))
         assert(moop.__extract__(xxi)["x3"] == xi["x3"])
-    # Add an integer variables and check that it is embedded correctly
+    # Add a custom variable and check that it is embedded correctly
     moop.addDesign({'name': "x5",
                     'des_type': "custom",
                     'embedding_size': 1,
@@ -596,6 +596,149 @@ def test_MOOP_embed_extract_named():
         assert(moop.__extract__(xxi)["x3"] == xi["x3"])
         assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
                < 1.0e-8)
+    # Add a raw variable
+    moop.addDesign({'name': "x6",
+                    'des_type': "raw"})
+    # Test 5 random variables
+    for i in range(5):
+        num = np.random.random_sample(7)
+        xi = np.zeros(1, dtype=[("x0", float), ("x1", float), ("x2", float),
+                                ("x3", object), ("x4", int), ("x5", "U5"),
+                                ("x6", float)])[0]
+        xi["x0"] = int(1000.0 * num[0])
+        xi["x1"] = num[1] - 1.0
+        xi["x2"] = np.round(num[2])
+        xi["x3"] = np.random.choice(["biggie", "shortie", "shmedium"])
+        xi["x4"] = np.random.randint(-5, 5)
+        xi["x5"] = str(num[5])
+        xi["x6"] = num[6]
+        xxi = moop.__embed__(xi)
+        # Check that embedding is legal
+        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert(xxi.size == moop.n)
+        # Check extraction
+        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                    for key in ["x0", "x1", "x2", "x4", "x6"]]))
+        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
+               < 1.0e-8)
+    # Add another custom variable and check that it is embedded correctly
+    moop.addDesign({'name': "x7",
+                    'des_type': "custom",
+                    'embedding_size': 3,
+                    'embedder': lambda x: [float(x[0]), float(x[1]),
+                                           float(x[2])],
+                    'extracter': lambda x: (str(int(x[0])) + str(int(x[1])) +
+                                            str(int(x[2])))})
+    # Test 5 random variables
+    for i in range(5):
+        num = np.random.random_sample(8)
+        xi = np.zeros(1, dtype=[("x0", float), ("x1", float), ("x2", float),
+                                ("x3", object), ("x4", int), ("x5", "U5"),
+                                ("x6", float), ("x7", "U5")])[0]
+        xi["x0"] = int(1000.0 * num[0])
+        xi["x1"] = num[1] - 1.0
+        xi["x2"] = np.round(num[2])
+        xi["x3"] = np.random.choice(["biggie", "shortie", "shmedium"])
+        xi["x4"] = np.random.randint(-5, 5)
+        xi["x5"] = str(num[5])
+        xi["x6"] = num[6]
+        xi["x7"] = "010"
+        xxi = moop.__embed__(xi)
+        # Check that embedding is legal
+        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert(xxi.size == moop.n)
+        # Check extraction
+        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                    for key in ["x0", "x1", "x2", "x4", "x6"]]))
+        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
+               < 1.0e-8)
+        assert(moop.__extract__(xxi)["x7"] == xi["x7"])
+
+
+def test_MOOP_embed_extract_named2():
+    """ Test that the MOOP class can embed/extract named design variables.
+
+    Add several design variables and generate an embedding. Then embed and
+    extract several inputs, and check that the results match up to the
+    design tolerance. This test applies to the three hidden methods:
+     * MOOP.__embed__(x)
+     * MOOP.__extract__(x)
+     * MOOP.__generate_encoding__()
+
+    Define the same problem as above, but add variables in reverse order.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.optimizers import LocalGPS
+    import numpy as np
+
+    # Now, create another MOOP where all variables are labeled
+    moop = MOOP(LocalGPS)
+    # Add a custom variable
+    moop.addDesign({'name': "x7",
+                    'des_type': "custom",
+                    'embedding_size': 3,
+                    'embedder': lambda x: [float(x[0]), float(x[1]),
+                                           float(x[2])],
+                    'extracter': lambda x: (str(int(x[0])) + str(int(x[1])) +
+                                            str(int(x[2])))})
+    # Add a raw variable
+    moop.addDesign({'name': "x6",
+                    'des_type': "raw"})
+    # Add a custom variable
+    moop.addDesign({'name': "x5",
+                    'des_type': "custom",
+                    'embedding_size': 1,
+                    'embedder': lambda x: float(x),
+                    'extracter': lambda x: str(x)})
+    # Add an integer variable
+    moop.addDesign({'name': "x4",
+                    'des_type': "int",
+                    'lb': -5,
+                    'ub': 5})
+    # Add two categorical variables
+    moop.addDesign({'name': "x3",
+                    'des_type': "categorical",
+                    'levels': ["biggie", "shortie", "shmedium"]})
+    moop.addDesign({'name': "x2",
+                    'des_type': "categorical",
+                    'levels': 2})
+    # Add two continuous variables and check that they are embedded correctly
+    moop.addDesign({'name': "x1",
+                    'lb': -1.0,
+                    'ub': 0.0})
+    moop.addDesign({'name': "x0",
+                    'des_type': "integer",
+                    'lb': 0,
+                    'ub': 1000})
+    # Test 5 random variables
+    for i in range(5):
+        num = np.random.random_sample(8)
+        xi = np.zeros(1, dtype=[("x0", float), ("x1", float), ("x2", float),
+                                ("x3", object), ("x4", int), ("x5", "U5"),
+                                ("x6", float), ("x7", "U5")])[0]
+        xi["x0"] = int(1000.0 * num[0])
+        xi["x1"] = num[1] - 1.0
+        xi["x2"] = np.round(num[2])
+        xi["x3"] = np.random.choice(["biggie", "shortie", "shmedium"])
+        xi["x4"] = np.random.randint(-5, 5)
+        xi["x5"] = str(num[5])
+        xi["x6"] = num[6]
+        xi["x7"] = "010"
+        xxi = moop.__embed__(xi)
+        # Check that embedding is legal
+        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert(xxi.size == moop.n)
+        # Check extraction
+        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                    for key in ["x0", "x1", "x2", "x4", "x6"]]))
+        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
+               < 1.0e-8)
+        assert(moop.__extract__(xxi)["x7"] == xi["x7"])
 
 
 if __name__ == "__main__":
@@ -605,4 +748,5 @@ if __name__ == "__main__":
     test_MOOP_addDesign()
     test_MOOP_embed_extract_unnamed1()
     test_MOOP_embed_extract_unnamed2()
-    test_MOOP_embed_extract_named()
+    test_MOOP_embed_extract_named1()
+    test_MOOP_embed_extract_named2()
