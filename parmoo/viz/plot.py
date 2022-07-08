@@ -86,8 +86,10 @@ def scatter(moop, db='pf', export='none', browser=True):
 
     # * choose axes
     axes = []  # each axis relates to an objective
+    axCount = 0
     for obj_key in obj_type.names:
         axes.append(obj_key)
+        axCount += 1
 
     # * choose database
     if (db == 'pf'):
@@ -111,13 +113,20 @@ def scatter(moop, db='pf', export='none', browser=True):
             hoverInfo.append(key)
 
     # * create plot
-    fig = px.scatter_matrix(database,
-                            dimensions=axes,
-                            # color=,
-                            title=plotName,
-                            hover_data=hoverInfo
-                            )
-    fig.update_traces(diagonal_visible=False)
+    if (axCount == 2):
+        fig = px.scatter(database,
+                         x=axes[0],
+                         y=axes[1],
+                         title=plotName,
+                         hover_data=hoverInfo,
+                         )
+    else:
+        fig = px.scatter_matrix(database,
+                                dimensions=axes,
+                                title=plotName,
+                                hover_data=hoverInfo,
+                                )
+        fig.update_traces(diagonal_visible=False)
 
     # * configure plot
     config = configure(export=export)
