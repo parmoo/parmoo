@@ -12,12 +12,8 @@ The functions are:
   * ``radviz(moop)`` -- Plot MOOP results as RadViz
   * ``star_coordinates(moop)`` -- Plot MOOP results as star coordinates
 
- Utilities
-
-  * ``dummyFunction(moop)`` -- place functions here for testing
-
 For all interactve browser plot functions, there is a known issue
-causing Plotly images to not export from Safari correctly. If you
+where Plotly images may not export from Safari correctly. If you
 encounter this issue, change your default browser to Chrome, Firefox,
 or Edge.
 
@@ -29,6 +25,7 @@ import plotly.graph_objects as go
 # from parmoo import MOOP
 # import numpy as np
 import warnings                     # native python package
+from .dashboard import buildDashApp
 
 # des_type = moop.getDesignType()
 # obj_type = moop.getObjectiveType()
@@ -125,13 +122,14 @@ def scatter(moop, db='pf', export='none', browser=True):
     # * configure plot
     config = configure(export=export)
 
-    # * display plot
-    if browser is True:
-        fig.show(config=config)
-
     # * export plot
     if export != 'none':
         exportFile(fig=fig, plotName=plotName, fileType=export)
+
+        # * display plot
+    if browser is True:
+        # fig.show(config=config)
+        buildDashApp(moop=moop, db=db, fig=fig)
 
 
 def scatter3d(moop):
@@ -286,13 +284,14 @@ def radar(moop, db='pf', export='none', browser=True):
     else:
         fig.update_layout(showlegend=True)
 
-    # * display plot
-    if browser is True:
-        fig.show(config=config)
-
     # * export plot
     if export != 'none':
         exportFile(fig=fig, plotName=plotName, fileType=export)
+
+    # * display plot
+    if browser is True:
+        # fig.show(config=config)
+        buildDashApp(moop=moop, db=db, fig=fig)
 
 
 def parallel_coordinates(moop, db='pf', export='none', browser=True):
@@ -372,13 +371,14 @@ def parallel_coordinates(moop, db='pf', export='none', browser=True):
     # * configure plot
     config = configure(export=export)
 
-    # * display plot
-    if browser is True:
-        fig.show(config=config)
-
     # * export plot
     if export != 'none':
         exportFile(fig=fig, plotName=plotName, fileType=export)
+
+    # * display plot
+    if browser is True:
+        # fig.show(config=config)
+        buildDashApp(moop=moop, db=db, fig=fig)
 
 
 def heatmap(moop):

@@ -9,7 +9,6 @@ The functions are:
   * ``printSimulationData(moop, style)`` -- print simulation database(s)
   * ``printMOOP(moop, style)`` -- print all MOOP data
 
-
 """
 
 from tabulate import tabulate       # 29 kB package
