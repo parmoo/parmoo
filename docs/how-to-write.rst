@@ -168,10 +168,13 @@ Adding Design Variables
 Design variables are added to your :mod:`MOOP <moop.MOOP>` object
 using the :meth:`addDesign(*args) <moop.MOOP.addDesign>` method.
 ParMOO currently supports
-two types of design variables:
+several types of design variables:
 
- * ``continuous`` and
- * ``categorical``.
+ * ``continuous`` (or ``real`` or ``cont``),
+ * ``integer`` (or ``int``),
+ * ``categorical`` (or ``cat``),
+ * ``custom``,
+ * ``raw`` -- not recommended, for advanced users only.
 
 To add a continuous variable, use the following format.
 
@@ -208,9 +211,12 @@ To add a categorical design variable, use the following format.
 
 |
 
- * The ``levels`` key is is an integer specifying the
-   number of categories taken on by this design variable.
-   ParMOO will index these levels by :math:`0, 1, \ldots, \text{levels}-1`.
+ * The ``levels`` key is either an integer specifying the
+   number of categories taken on by this design variable
+   (ParMOO will index these levels by :math:`0, 1, \ldots, \text{levels}-1`)
+   or a list of strings specifying the name for each category
+   (ParMOO will use these names for the levels, e.g.,
+   ``["first cat", "second cat", ... ]``)
 
 Note that for every MOOP, at least one design variable is required
 before solving.

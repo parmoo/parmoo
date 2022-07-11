@@ -691,6 +691,7 @@ def test_MOOP_embed_extract_named2():
     # Add a custom variable
     moop.addDesign({'name': "x5",
                     'des_type': "custom",
+                    'dtype': "U40",
                     'embedding_size': 1,
                     'embedder': lambda x: float(x),
                     'extracter': lambda x: str(x)})

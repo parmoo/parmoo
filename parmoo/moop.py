@@ -533,6 +533,8 @@ class MOOP:
                     * 'continuous' (or 'cont' or 'real')
                     * 'categorical' (or 'cat')
                     * 'integer' (or 'int')
+                    * 'custom'
+                    * 'raw' -- for advanced use only, not recommended
                  * 'lb' (float): When des_type is 'continuous' or 'integer',
                    this specifies the lower bound for the design variable.
                    This value must be specified, and must be strictly less
@@ -549,6 +551,20 @@ class MOOP:
                  * 'levels' (int or list): When des_type is 'categorical', this
                    specifies the number of levels for the variable (when int)
                    or the names of each valid category (when a list).
+                 * 'embedding_size' (int): When des_type is 'custom', this
+                   specifies the dimension of the custom embedding.
+                 * 'dtype' (str): When des_type is 'custom', this contains
+                   a string specifying the numpy dtype of the custom input.
+                   Only used when operating with named variables, otherwise
+                   it must be numeric. When using named variables, defaults
+                   to 'U25'.
+                 * 'embedder': When des_type is 'custom', this is a custom
+                   embedding function, which maps the input to a point in the
+                   unit hypercube of dimension 'embedding_size'.
+                 * 'extracter': When des_type is 'custom', this is a custom
+                   extracting function, which maps a point in the unit
+                   hypercube of dimension 'embedding_size' to a legal input
+                   value of type 'dtype'.
 
         """
 
@@ -722,16 +738,26 @@ class MOOP:
                 else:
                     raise AttributeError("'embedding_size' must be present"
                                          + " when 'des_type' is 'custom'")
+                if 'dtype' in arg.keys():
+                    if not isinstance(arg['dtype'], str):
+                        raise TypeError("When present, 'dtype' must be a " +
+                                        "str type")
+                    else:
+                        # Make sure this is a legal numpy dtype
+                        np.dtype(arg['dtype'])
                 if 'name' in arg.keys():
                     if not isinstance(arg['name'], str):
                         raise TypeError("When present, 'name' must be a "
                                         + "str type")
-                    self.des_names.append((arg['name'], 'U25'))
+                    if 'dtype' in arg.keys():
+                        self.des_names.append((arg['name'], arg['dtype']))
+                    else:
+                        self.des_names.append((arg['name'], 'U25'))
                 else:
                     self.use_names = False
                     name = "x" + str(self.n_cont + self.n_cat + self.n_int
                                      + self.n_custom + self.n_raw + 1)
-                    self.des_names.append((name, 'i4', ))
+                    self.des_names.append((name, 'f8', ))
                 # Load the custom embedder/extracter
                 if 'embedder' in arg.keys():
                     if not callable(arg['embedder']):
