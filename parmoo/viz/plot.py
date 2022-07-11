@@ -26,6 +26,7 @@ import plotly.graph_objects as go
 # import numpy as np
 import warnings                     # native python package
 from .dashboard import buildDashApp
+import pandas as pd
 
 # des_type = moop.getDesignType()
 # obj_type = moop.getObjectiveType()
@@ -93,10 +94,10 @@ def scatter(moop, db='pf', export='none', browser=True):
 
     # * choose database
     if (db == 'pf'):
-        database = pf
+        database = pd.DataFrame(pf)
         plotName = "Pareto Front"
     elif db == 'obj':
-        database = obj_db
+        database = pd.DataFrame(obj_db)
         plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
@@ -104,7 +105,7 @@ def scatter(moop, db='pf', export='none', browser=True):
         raise ValueError(message)
 
     hoverInfo = []
-    for key in database.dtype.names:
+    for key in database.columns:
         redundant = False
         for ax in axes:
             if ax == key:
@@ -209,10 +210,10 @@ def radar(moop, db='pf', export='none', browser=True):
 
     # * choose database
     if (db == 'pf'):
-        database = pf
+        database = pd.DataFrame(pf)
         plotName = "Pareto Front"
     elif db == 'obj':
-        database = obj_db
+        database = pd.DataFrame(obj_db)
         plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
@@ -238,7 +239,7 @@ def radar(moop, db='pf', export='none', browser=True):
             hoverInfo = ""
         else:
             hoverInfo = "Design #" + str(i) + "\n"
-        for key in database.dtype.names:
+        for key in database.columns:
             hoverInfo += str(key)
             hoverInfo += ": "
             hoverInfo += str(database[key][i])
@@ -351,10 +352,10 @@ def parallel_coordinates(moop, db='pf', export='none', browser=True):
 
     # * choose database
     if (db == 'pf'):
-        database = pf
+        database = pd.DataFrame(pf)
         plotName = "Pareto Front"
     elif db == 'obj':
-        database = obj_db
+        database = pd.DataFrame(obj_db)
         plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
@@ -362,7 +363,7 @@ def parallel_coordinates(moop, db='pf', export='none', browser=True):
         raise ValueError(message)
 
     hoverInfo = []
-    for key in database.dtype.names:
+    for key in database.columns:
         redundant = False
         for ax in axes:
             if ax == key:
