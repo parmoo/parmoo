@@ -16,7 +16,7 @@ import io
 # dashboard (and put information inside). The purpose is to
 # make various kinds of plots and have a consistent functionality
 # wrapper around them
-def buildDashApp(moop, db, fig):
+def buildDashApp(moop, db, fig, config):
 
     # * define database
     # (initially, all graph data is selected)
@@ -49,6 +49,7 @@ def buildDashApp(moop, db, fig):
         dcc.Graph(
             id='parmoo_plot',
             figure=fig,
+            config=config,
         ),
         dcc.Store(
             id='selection',
@@ -141,6 +142,7 @@ def buildDashApp(moop, db, fig):
                 content=selection_db.to_csv(),
             )
 
+    # * run application
     app.run(
         debug=True,
         dev_tools_hot_reload=True

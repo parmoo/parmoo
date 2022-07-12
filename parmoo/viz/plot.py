@@ -42,7 +42,7 @@ import pandas as pd
 #
 
 
-def scatter(moop, db='pf', export='none', browser=True):
+def scatter(moop, db='pf', export='none', display=True):
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -136,9 +136,9 @@ def scatter(moop, db='pf', export='none', browser=True):
         exportFile(fig=fig, plotName=plotName, fileType=export)
 
         # * display plot
-    if browser is True:
+    if display is True:
         # fig.show(config=config)
-        buildDashApp(moop=moop, db=db, fig=fig)
+        buildDashApp(moop=moop, db=db, fig=fig, config=config)
 
 
 def scatter3d(moop):
@@ -158,7 +158,7 @@ def scatter3d(moop):
     pass
 
 
-def radar(moop, db='pf', export='none', browser=True):
+def radar(moop, db='pf', export='none', display=True):
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
@@ -295,15 +295,15 @@ def radar(moop, db='pf', export='none', browser=True):
         exportFile(fig=fig, plotName=plotName, fileType=export)
 
     # * display plot
-    if browser is True:
+    if display is True:
         # fig.show(config=config)
-        buildDashApp(moop=moop, db=db, fig=fig)
+        buildDashApp(moop=moop, db=db, fig=fig, config=config)
 
 
-def parallel_coordinates(moop, db='pf', export='none', browser=True):
+def parallel_coordinates(moop, db='pf', export='none', display=True):
     """ Display MOOP results as parallel coordinates plot.
 
-    Create an interactive plot that displays in the browser.
+    Create an interactive plot that displays in the display.
 
     Users can select item(s) in a parallel coordinates plot
     by selecting an axis section which item(s) pass through.
@@ -379,9 +379,9 @@ def parallel_coordinates(moop, db='pf', export='none', browser=True):
         exportFile(fig=fig, plotName=plotName, fileType=export)
 
     # * display plot
-    if browser is True:
+    if display is True:
         # fig.show(config=config)
-        buildDashApp(moop=moop, db=db, fig=fig)
+        buildDashApp(moop=moop, db=db, fig=fig, config=config)
 
 
 def heatmap(moop):
