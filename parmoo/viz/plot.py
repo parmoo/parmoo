@@ -82,8 +82,6 @@ def scatter(moop, db='pf', export='none', browser=True):
 
     # * get info
     obj_type = moop.getObjectiveType()
-    obj_db = moop.getObjectiveData()
-    pf = moop.getPF()
 
     # * choose axes
     axes = []  # each axis relates to an objective
@@ -94,16 +92,17 @@ def scatter(moop, db='pf', export='none', browser=True):
 
     # * choose database
     if (db == 'pf'):
-        database = pd.DataFrame(pf)
+        database = pd.DataFrame(moop.getPF())
         plotName = "Pareto Front"
     elif db == 'obj':
-        database = pd.DataFrame(obj_db)
+        database = pd.DataFrame(moop.getObjectiveData())
         plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
+    # * set up hoverinfo
     hoverInfo = []
     for key in database.columns:
         redundant = False
@@ -192,13 +191,10 @@ def radar(moop, db='pf', export='none', browser=True):
         None
 
     """
-    # * get info
-    obj_type = moop.getObjectiveType()
-    obj_db = moop.getObjectiveData()
-    pf = moop.getPF()
 
     # * setup axes
     axes = []
+    obj_type = moop.getObjectiveType()
     wrap_around_key = ""
     wrap_around_count = 0
     for obj_key in obj_type.names:
@@ -210,10 +206,10 @@ def radar(moop, db='pf', export='none', browser=True):
 
     # * choose database
     if (db == 'pf'):
-        database = pd.DataFrame(pf)
+        database = pd.DataFrame(moop.getPF())
         plotName = "Pareto Front"
     elif db == 'obj':
-        database = pd.DataFrame(obj_db)
+        database = pd.DataFrame(moop.getObjectiveData())
         plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
@@ -340,22 +336,19 @@ def parallel_coordinates(moop, db='pf', export='none', browser=True):
         None
 
     """
-    # * get info
-    obj_type = moop.getObjectiveType()
-    pf = moop.getPF()
-    obj_db = moop.getObjectiveData()
 
     # * setup axes
     axes = []  # each axis relates to an objective
+    obj_type = moop.getObjectiveType()
     for obj_key in obj_type.names:
         axes.append(obj_key)
 
     # * choose database
     if (db == 'pf'):
-        database = pd.DataFrame(pf)
+        database = pd.DataFrame(moop.getPF())
         plotName = "Pareto Front"
     elif db == 'obj':
-        database = pd.DataFrame(obj_db)
+        database = pd.DataFrame(moop.getObjectiveData())
         plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"

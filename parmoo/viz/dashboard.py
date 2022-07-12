@@ -20,17 +20,23 @@ def buildDashApp(moop, db, fig):
 
     # * define database
     # (initially, all graph data is selected)
-    if db == 'pf':
-        database = moop.getPF()
+    if (db == 'pf'):
+        database = pd.DataFrame(moop.getPF())
+        plotName = "Pareto Front"
     elif db == 'obj':
-        database = moop.getObjectiveData()
+        database = pd.DataFrame(moop.getObjectiveData())
+        plotName = "Objective Data"
     else:
         message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
+    # * define selection
+    selection = pd.DataFrame()
+
     # * create app
     app = dash.Dash(__name__)
+    selection_indexes = []
     app.layout = html.Div(children=[
         # * header stuff (we don't really need this)
         html.H1(
@@ -41,16 +47,29 @@ def buildDashApp(moop, db, fig):
         ),
         # * main plot
         dcc.Graph(
-            id='parmoo-plot',
+            id='parmoo_plot',
             figure=fig,
         ),
-        # * download button
+        dcc.Store(
+            id='selection',
+        ),
+        # * download dataset button
         html.Button(
             children='Download dataset as CSV',
-            id='button_text',
+            id='dataset_button_text',
         ),
         dcc.Download(
-            id='download_csv',
+            id='dataset_download_csv',
+        ),
+        html.Br(),
+        html.Br(),
+        # * download selection button
+        html.Button(
+            children='Download selection as CSV',
+            id='selection_button_text',
+        ),
+        dcc.Download(
+            id='selection_download_csv',
         ),
         # # * csv export data
         # dash_table.DataTable(
@@ -61,23 +80,65 @@ def buildDashApp(moop, db, fig):
         # )
     ])
 
-    # * functionality of download button
+    # * functionality of dataset download button
     @app.callback(
         Output(
-            component_id='download_csv',
+            component_id='dataset_download_csv',
             component_property='data'),
         Input(
-            component_id='button_text',
+            component_id='dataset_button_text',
             component_property='n_clicks'),
     )
-    def func(n_clicks):
+    def download_dataset(n_clicks):
         if n_clicks is None:
             raise dash.exceptions.PreventUpdate
         else:
-            pandasData = pd.DataFrame(database).to_csv()
+            return dict(
+                filename=str(plotName) + ".csv",
+                content=database.to_csv(),
+            )
+
+    # * create object holding selected data
+    @app.callback(
+        Output(
+            component_id='selection',
+            component_property='data'),
+        Input(
+            component_id='parmoo_plot',
+            component_property='selectedData'),
+    )
+    def store_selection(selectedData):
+        if selectedData is None:
+            raise dash.exceptions.PreventUpdate
+        else:
+            pointskey = selectedData['points']
+            for index in range(len(pointskey)):
+                level1 = pointskey[index]
+                point_index = level1['pointIndex']
+                selection_indexes.append(point_index)
+
+    # * functionality of selection download button
+    @app.callback(
+        Output(
+            component_id='selection_download_csv',
+            component_property='data'),
+        Input(
+            component_id='selection_button_text',
+            component_property='n_clicks'),
+    )
+    def download_selection(n_clicks):
+        if n_clicks is None:
+            raise dash.exceptions.PreventUpdate
+        else:
+            selection_db = database.iloc[:0, :].copy()
+            print(selection_indexes)
+            for i in selection_indexes:
+                print(i)
+                selection_db = pd.concat([selection_db, database.iloc[[i]]])
+                print(selection_db)
             return dict(
                 filename="selected_data.csv",
-                content=pandasData,
+                content=selection_db.to_csv(),
             )
 
     app.run(
