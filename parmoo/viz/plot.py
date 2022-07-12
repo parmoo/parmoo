@@ -42,7 +42,12 @@ import pandas as pd
 #
 
 
-def scatter(moop, db='pf', export='none', display=True):
+def scatter(moop,
+            db='pf',
+            export='none',
+            display=True,
+            height='auto',
+            width='auto'):
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -74,6 +79,7 @@ def scatter(moop, db='pf', export='none', display=True):
                     'browser' to True, you will BOTH export an image file to
                     the current working directory AND open an interactive
                     figure in the browser.
+        x (String)
 
     Returns:
         None
@@ -129,16 +135,24 @@ def scatter(moop, db='pf', export='none', display=True):
         fig.update_traces(diagonal_visible=False)
 
     # * configure plot
-    config = configure(export=export)
+    config = configure(export=export,
+                       height=height,
+                       width=width,
+                       plotName=plotName,)
 
     # * export plot
     if export != 'none':
-        exportFile(fig=fig, plotName=plotName, fileType=export)
+        exportFile(fig=fig,
+                   plotName=plotName,
+                   fileType=export)
 
         # * display plot
     if display is True:
         # fig.show(config=config)
-        buildDashApp(moop=moop, db=db, fig=fig, config=config)
+        buildDashApp(moop=moop,
+                     db=db,
+                     fig=fig,
+                     config=config,)
 
 
 def scatter3d(moop):
@@ -158,7 +172,12 @@ def scatter3d(moop):
     pass
 
 
-def radar(moop, db='pf', export='none', display=True):
+def radar(moop,
+          db='pf',
+          export='none',
+          display=True,
+          height='auto',
+          width='auto'):
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
@@ -225,7 +244,10 @@ def radar(moop, db='pf', export='none', display=True):
         warnings.warn(message)
 
     # * configure plot
-    config = configure(export=export)
+    config = configure(export=export,
+                       height=height,
+                       width=width,
+                       plotName=plotName,)
 
     # * create plot
     fig = go.Figure()
@@ -255,7 +277,7 @@ def radar(moop, db='pf', export='none', display=True):
             r=values,
             theta=axes,
             name=traceName,
-            hovertext=hoverInfo
+            hovertext=hoverInfo,
         ))
 
     # * improve aesthetics
@@ -285,6 +307,9 @@ def radar(moop, db='pf', export='none', display=True):
             text=plotName
         )
     )
+    fig.update_layout(
+        autosize=True,
+    )
     if plotName == "Pareto Front":
         fig.update_layout(showlegend=True)
     else:
@@ -292,15 +317,24 @@ def radar(moop, db='pf', export='none', display=True):
 
     # * export plot
     if export != 'none':
-        exportFile(fig=fig, plotName=plotName, fileType=export)
+        exportFile(fig=fig,
+                   plotName=plotName,
+                   fileType=export,)
 
     # * display plot
     if display is True:
-        # fig.show(config=config)
-        buildDashApp(moop=moop, db=db, fig=fig, config=config)
+        buildDashApp(moop=moop,
+                     db=db,
+                     fig=fig,
+                     config=config,)
 
 
-def parallel_coordinates(moop, db='pf', export='none', display=True):
+def parallel_coordinates(moop,
+                         db='pf',
+                         export='none',
+                         display=True,
+                         height='auto',
+                         width='auto'):
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the display.
@@ -367,21 +401,27 @@ def parallel_coordinates(moop, db='pf', export='none', display=True):
     # * create plot
     fig = px.parallel_coordinates(database,
                                   labels=axes,
-                                  title=plotName,
-                                  #   hover_data=hoverInfo
-                                  )
+                                  title=plotName,)
 
     # * configure plot
-    config = configure(export=export)
+    config = configure(export=export,
+                       height=height,
+                       width=width,
+                       plotName=plotName,)
 
     # * export plot
     if export != 'none':
-        exportFile(fig=fig, plotName=plotName, fileType=export)
+        exportFile(fig=fig,
+                   plotName=plotName,
+                   fileType=export,)
 
     # * display plot
     if display is True:
         # fig.show(config=config)
-        buildDashApp(moop=moop, db=db, fig=fig, config=config)
+        buildDashApp(moop=moop,
+                     db=db,
+                     fig=fig,
+                     config=config)
 
 
 def heatmap(moop):
@@ -489,24 +529,38 @@ def exportFile(fig, plotName, fileType):
         raise ValueError(message)
 
 
-def configure(export):
-    if (export == 'png'):
+def configure(export, height, width, plotName):
+
+    # * set screenshot type based on export type
+    if export == 'png':
         screenshot = export
-    elif (export == 'webp'):
+    elif export == 'webp':
         screenshot = export
-    elif (export == 'jpeg'):
+    elif export == 'jpeg':
         screenshot = export
     else:
         screenshot = 'svg'
-    config = {
-        'displaylogo': False,
-        'displayModeBar': True,
-        'toImageButtonOptions': {
-            'format': screenshot,  # one of png, svg, jpeg, webp
-            'filename': 'custom_image',
-            'height': 1000,
-            'width': 1400,
-            'scale': 1  # Multiply title/legend/axis/canvas sizes by factor
+
+    # * set config based on scale
+    if height != 'auto' and width != 'auto':
+        config = {
+            'displaylogo': False,
+            'displayModeBar': True,
+            'toImageButtonOptions': {
+                'format': screenshot,  # one of png, svg, jpeg, webp
+                'filename': str(plotName),
+                'height': int(height),
+                'width': int(width),
+                'scale': 1  # Multiply title/legend/axis/canvas sizes by factor
+            }
         }
-    }
+    else:
+        config = {
+            'displaylogo': False,
+            'displayModeBar': True,
+            'toImageButtonOptions': {
+                'format': screenshot,  # one of png, svg, jpeg, webp
+                'filename': str(plotName),
+            }
+        }
     return config
