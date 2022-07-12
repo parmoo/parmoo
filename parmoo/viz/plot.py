@@ -334,7 +334,8 @@ def parallel_coordinates(moop,
                          export='none',
                          display=True,
                          height='auto',
-                         width='auto'):
+                         width='auto',
+                         objectives_only=True,):
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the display.
@@ -365,6 +366,9 @@ def parallel_coordinates(moop,
                     'browser' to True, you will BOTH export an image file to
                     the current working directory AND open an interactive
                     figure in the browser.
+        objectives_only (boolean): display all data, or objectives only
+                    True: (default) plot objectives as axes only
+                    False: plot inputs as axes as well
 
     Returns:
         None
@@ -376,6 +380,12 @@ def parallel_coordinates(moop,
     obj_type = moop.getObjectiveType()
     for obj_key in obj_type.names:
         axes.append(obj_key)
+    if db == 'obj':
+        const_type = moop.getConstraintType()
+        if const_type is not None:
+            for const_key in const_type.names:
+                if const_key is not None:
+                    axes.append(const_key)
 
     # * choose database
     if (db == 'pf'):
@@ -389,19 +399,27 @@ def parallel_coordinates(moop,
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
-    hoverInfo = []
-    for key in database.columns:
-        redundant = False
-        for ax in axes:
-            if ax == key:
-                redundant = True
-        if redundant is False:
-            hoverInfo.append(key)
+    # * hoverinfo isn't part of Plotly's parallel_coordinates API
+    # TODO: could we perhaps reuse this code but display
+    # TODO: the info in another way?
+    # hoverInfo = []
+    # for key in database.columns:
+    #     redundant = False
+    #     for ax in axes:
+    #         if ax == key:
+    #             redundant = True
+    #     if redundant is False:
+    #         hoverInfo.append(key)
 
     # * create plot
-    fig = px.parallel_coordinates(database,
-                                  labels=axes,
-                                  title=plotName,)
+    if objectives_only == True:
+        fig = px.parallel_coordinates(database,
+                                      dimensions=axes,
+                                      title=plotName,)
+    else:
+        fig = px.parallel_coordinates(database,
+                                      labels=axes,
+                                      title=plotName,)
 
     # * configure plot
     config = configure(export=export,
@@ -417,7 +435,6 @@ def parallel_coordinates(moop,
 
     # * display plot
     if display is True:
-        # fig.show(config=config)
         buildDashApp(moop=moop,
                      db=db,
                      fig=fig,
