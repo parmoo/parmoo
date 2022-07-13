@@ -9,7 +9,7 @@
 // Give class/dict details
 [<<class>>;MOOP|Scalar Surrogate Problem Solver: SurrogateOptimizer; Global Hyperparameters: dict; List of Design Variables: list; List of Simulations: list; List of Objectives: list; List of Constraints: list; List of Acquisitions: list|addDesign(*args); addSimulation(*args); addObjective(*args); addConstraint(*args); addAcquisition(*args); getDesignType(); getSimulationType(); getObjectiveType(); getConstraintType(); save(filename="parmoo"); load(filename="parmoo"); setCheckpoint(checkpoint, checkpoint_data=True, filename="parmoo"); iterate(k); updateAll(k, batch); check_sim_db(x, s_name); update_sim_db(x, sx, s_name); evaluateSimulation(x, s_name); solve(budget); getPF(); getSimulationData(); getObjectiveData()]
 
-[<<dict>>;Design Variable|name: String, optional;des_type: 'continuous' or 'categorical';lb: float (only when 'continuous');ub: float (only when 'continuous');tol: float (only when 'continuous');levels: int (only when 'categorical')]
+[<<dict>>;Design Variable|name: String, optional;des_type: 'cont', 'int', 'cat', 'custom', or 'raw';lb: float (only when 'cont' or 'int');ub: float (only when 'cont' or 'int');tol: float (only when 'cont');levels: int or list (only when 'cat');embedding_size: int (only when 'custom');embedder: function (only when 'custom';extracter: function (only when 'custom');dtype: str (only when 'custom')]
 
 [<<dict>>;Simulation|name: String, optional;m: int;sim_func: function;search: GlobalSearch;surrogate: SurrogateFunction;des_tol: float;hyperparams: dict;sim_db: dict, optional;]
 
