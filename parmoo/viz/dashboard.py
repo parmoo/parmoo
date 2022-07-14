@@ -6,6 +6,8 @@ from dash import dcc
 from dash import Input, Output
 import pandas as pd
 import io
+import os
+import webbrowser
 
 
 # all examples build the dash app in an independent script
@@ -132,15 +134,15 @@ def buildDashApp(moop, db, fig, config):
             raise dash.exceptions.PreventUpdate
         else:
             selection_db = database.iloc[:0, :].copy()
-            print(selection_indexes)
             for i in selection_indexes:
-                print(i)
                 selection_db = pd.concat([selection_db, database.iloc[[i]]])
-                print(selection_db)
             return dict(
                 filename="selected_data.csv",
                 content=selection_db.to_csv(),
             )
+
+    if not os.environ.get("WERKZEUG_RUN_MAIN"):
+        webbrowser.open_new('http://127.0.0.1:8050/')
 
     # * run application
     app.run(
