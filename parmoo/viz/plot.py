@@ -41,25 +41,25 @@ import pandas as pd
 # ! THESE FUNCTIONS DISPLAY DATA IN AN INTERACTIVE BROWSER PLOT
 #
 
-def printDataTypes(moop):
-    """ Print data types to terminal.
+# def printDataTypes(moop):
+#     """ Print data types to terminal.
 
-    Args:
-        moop (MOOP): A ParMOO MOOP containing the data types to print.
+#     Args:
+#         moop (MOOP): A ParMOO MOOP containing the data types to print.
 
-    Returns:
-        None
+#     Returns:
+#         None
 
-    """
-    des_type = moop.getDesignType()
-    obj_type = moop.getObjectiveType()
-    sim_type = moop.getSimulationType()
-    const_type = moop.getConstraintType()
-    print("\nDATA TYPES FOR YOUR MOOP:\n")
-    print("Design variable type:   " + str(des_type))
-    print("Simulation output type: " + str(sim_type))
-    print("Objective type:         " + str(obj_type))
-    print("Constraint type:        " + str(const_type))
+#     """
+#     des_type = moop.getDesignType()
+#     obj_type = moop.getObjectiveType()
+#     sim_type = moop.getSimulationType()
+#     const_type = moop.getConstraintType()
+#     print("\nDATA TYPES FOR YOUR MOOP:\n")
+#     print("Design variable type:   " + str(des_type))
+#     print("Simulation output type: " + str(sim_type))
+#     print("Objective type:         " + str(obj_type))
+#     print("Constraint type:        " + str(const_type))
 
 
 def scatter(moop,
@@ -67,7 +67,9 @@ def scatter(moop,
             export='none',
             display=True,
             height='auto',
-            width='auto'):
+            width='auto',
+            verbose=True,
+            hot_reload=False,):
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -172,7 +174,9 @@ def scatter(moop,
         buildDashApp(moop=moop,
                      db=db,
                      fig=fig,
-                     config=config,)
+                     config=config,
+                     verbose=verbose,
+                     hot_reload=hot_reload,)
 
 
 def scatter3d(moop):
@@ -197,7 +201,9 @@ def radar(moop,
           export='none',
           display=True,
           height='auto',
-          width='auto'):
+          width='auto',
+          verbose=True,
+          hot_reload=False,):
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
@@ -346,7 +352,9 @@ def radar(moop,
         buildDashApp(moop=moop,
                      db=db,
                      fig=fig,
-                     config=config,)
+                     config=config,
+                     verbose=verbose,
+                     hot_reload=hot_reload,)
 
 
 def parallel_coordinates(moop,
@@ -355,7 +363,9 @@ def parallel_coordinates(moop,
                          display=True,
                          height='auto',
                          width='auto',
-                         objectives_only=True,):
+                         objectives_only=True,
+                         verbose=True,
+                         hot_reload=False,):
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the display.
@@ -458,7 +468,9 @@ def parallel_coordinates(moop,
         buildDashApp(moop=moop,
                      db=db,
                      fig=fig,
-                     config=config)
+                     config=config,
+                     verbose=verbose,
+                     hot_reload=hot_reload,)
 
 
 def heatmap(moop):

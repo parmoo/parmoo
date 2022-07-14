@@ -8,7 +8,7 @@ import pandas as pd
 import io
 import os
 import webbrowser
-
+import logging
 
 # all examples build the dash app in an independent script
 # by making dash app construction a function dependent
@@ -18,7 +18,12 @@ import webbrowser
 # dashboard (and put information inside). The purpose is to
 # make various kinds of plots and have a consistent functionality
 # wrapper around them
-def buildDashApp(moop, db, fig, config):
+def buildDashApp(moop,
+                 db,
+                 fig,
+                 config,
+                 verbose=True,
+                 hot_reload=True,):
 
     # * define database
     # (initially, all graph data is selected)
@@ -74,13 +79,6 @@ def buildDashApp(moop, db, fig, config):
         dcc.Download(
             id='selection_download_csv',
         ),
-        # # * csv export data
-        # dash_table.DataTable(
-        #     data=database,
-        #     columns=[{"name": key} for key in database.dtype.names],
-        #     id='csv_data',
-        #     export_format='csv'
-        # )
     ])
 
     # * functionality of dataset download button
@@ -145,7 +143,17 @@ def buildDashApp(moop, db, fig, config):
         webbrowser.open_new('http://127.0.0.1:8050/')
 
     # * run application
-    app.run(
-        debug=True,
-        dev_tools_hot_reload=True
-    )
+    if hot_reload:
+        app.run(
+            debug=True,
+            dev_tools_hot_reload=True,
+        )
+    elif not hot_reload:
+        app.run(
+            debug=True,
+            dev_tools_hot_reload=False,
+        )
+    else:
+        message = str(hot_reload) + " is an invalid value for 'hot_reload'. "
+        message += "\nInstead, use on of the boolean values 'True' and 'False'"
+        raise ValueError(message)
