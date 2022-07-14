@@ -57,6 +57,16 @@ and with Python's built-in multiprocessing module.
 
     python3 libe_basic_ex.py --comms local --nworkers N
 
+|
+
+ * Note: When running a ``libE_MOOP`` with Python multiprocessing, MacOS and
+   Windows systems default to using the ``spawn`` method.
+   When using the ``spawn`` method, one must enclose the ``libE_MOOP.solve()``
+   command inside an ``if __name__ == '__main__':`` block, as shown in the
+   example above.
+   Read more about the issue here:
+     https://libensemble.readthedocs.io/en/main/running_libE.html#local-comms
+
 The result from running the example is shown below.
 
 .. literalinclude:: ../examples/libe_basic_ex.out
