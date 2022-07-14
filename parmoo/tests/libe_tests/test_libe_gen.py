@@ -67,8 +67,9 @@ def dtlz2_sim_named(x):
 
     # Unpack names into array
     xx = np.zeros(n)
-    for i, name in enumerate(moop.moop.des_names):
-        xx[i] = x[name[0]]
+    names = [f"x{i+1}" for i in range(n)]
+    for i, name in enumerate(names):
+        xx[i] = x[name]
     # Use dtlz2_sim to evaluate
     return dtlz2_sim_unnamed(xx)
 
