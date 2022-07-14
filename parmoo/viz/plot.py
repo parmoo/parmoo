@@ -41,6 +41,26 @@ import pandas as pd
 # ! THESE FUNCTIONS DISPLAY DATA IN AN INTERACTIVE BROWSER PLOT
 #
 
+def printDataTypes(moop):
+    """ Print data types to terminal.
+
+    Args:
+        moop (MOOP): A ParMOO MOOP containing the data types to print.
+
+    Returns:
+        None
+
+    """
+    des_type = moop.getDesignType()
+    obj_type = moop.getObjectiveType()
+    sim_type = moop.getSimulationType()
+    const_type = moop.getConstraintType()
+    print("\nDATA TYPES FOR YOUR MOOP:\n")
+    print("Design variable type:   " + str(des_type))
+    print("Simulation output type: " + str(sim_type))
+    print("Objective type:         " + str(obj_type))
+    print("Constraint type:        " + str(const_type))
+
 
 def scatter(moop,
             db='pf',
