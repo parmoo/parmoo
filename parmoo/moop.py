@@ -11,6 +11,7 @@ import numpy as np
 import json
 from parmoo import structs
 import inspect
+import pandas as pd
 
 
 class MOOP:
@@ -1850,7 +1851,7 @@ class MOOP:
                      "iterations.")
         return
 
-    def getPF(self):
+    def getPF(self, format='ndarray'):
         """ Extract nondominated and efficient sets from internal databases.
 
         Returns:
@@ -1910,9 +1911,14 @@ class MOOP:
                           'f_vals': pf['f_vals'].copy()}
             if self.p > 0:
                 result['c_vals'] = pf['c_vals'].copy()
-        return result
+        if format == 'pandas':
+            return pd.DataFrame(result)
+        elif format == 'ndarray':
+            return result
+        else:
+            raise ValueError(str(format) + "is not a valid value for 'format'")
 
-    def getSimulationData(self):
+    def getSimulationData(self, format='ndarray'):
         """ Extract all computed simulation outputs from the MOOP's database.
 
         Returns:
@@ -1961,7 +1967,12 @@ class MOOP:
                                                                            0]
                     else:
                         result[sname[0]]['out'] = self.sim_db[i]['s_vals']
-            return result
+            if format == 'pandas':
+                return pd.DataFrame(result)
+            elif format == 'ndarray':
+                return result
+            else:
+                raise ValueError(str(format) + "is invalid value for 'format'")
         else:
             # Initialize result list
             result = []
@@ -1976,9 +1987,14 @@ class MOOP:
                 else:
                     result.append({'x_vals': np.zeros(0),
                                    's_vals': np.zeros(0)})
-            return result
+            if format == 'pandas':
+                return pd.DataFrame(result)
+            elif format == 'ndarray':
+                return result
+            else:
+                raise ValueError(str(format) + "is invalid value for 'format'")
 
-    def getObjectiveData(self):
+    def getObjectiveData(self, format='ndarray'):
         """ Extract all computed objective scores from this MOOP's database.
 
         Returns:
@@ -2031,7 +2047,12 @@ class MOOP:
                           'f_vals': self.data['f_vals'].copy()}
                 if self.p > 0:
                     result['c_vals'] = self.data['c_vals'].copy()
-        return result
+        if format == 'pandas':
+            return pd.DataFrame(result)
+        elif format == 'ndarray':
+            return result
+        else:
+            raise ValueError(str(format) + "is invalid value for 'format'")
 
     def save(self, filename="parmoo"):
         """ Serialize and save the MOOP object and all of its dependencies.
