@@ -136,6 +136,8 @@ def buildDashApp(moop,
             for i in selection_indexes:
                 selection_db = pd.concat([selection_db, database.iloc[[i]]])
                 selection_db.index.name = 'index'
+            selection_db.drop_duplicates(inplace=True)
+            selection_db.sort_index(inplace=True)
             return dict(
                 filename="selected_data.csv",
                 content=selection_db.to_csv(),
