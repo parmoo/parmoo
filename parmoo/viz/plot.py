@@ -68,8 +68,9 @@ def scatter(moop,
             height='auto',
             width='auto',
             verbose=True,
-            hot_reload=True,
-            pop_up=True,):  # TODO
+            hot_reload=False,
+            pop_up=True,
+            port='http://127.0.0.1:8050/',):
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -170,7 +171,8 @@ def scatter(moop,
                      config=config,
                      verbose=verbose,
                      hot_reload=hot_reload,
-                     pop_up=pop_up,)
+                     pop_up=pop_up,
+                     port=port,)
     elif output == 'no_dash':
         fig.show(config=config)
     else:
@@ -202,8 +204,9 @@ def radar(moop,
           height='auto',
           width='auto',
           verbose=True,
-          hot_reload=True,
-          pop_up=True,):  # TODO
+          hot_reload=False,
+          pop_up=True,
+          port='http://127.0.0.1:8050/',):
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
@@ -348,7 +351,8 @@ def radar(moop,
                      config=config,
                      verbose=verbose,
                      hot_reload=hot_reload,
-                     pop_up=pop_up,)
+                     pop_up=pop_up,
+                     port=port,)
     elif output == 'no_dash':
         fig.show(config=config)
     else:
@@ -364,8 +368,9 @@ def parallel_coordinates(moop,
                          width='auto',
                          objectives_only=True,
                          verbose=True,
-                         hot_reload=True,
-                         pop_up=True,):  # TODO + fix others before produc
+                         hot_reload=False,
+                         pop_up=True,
+                         port='http://127.0.0.1:8050/',):
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the display.
@@ -453,7 +458,8 @@ def parallel_coordinates(moop,
                      config=config,
                      verbose=verbose,
                      hot_reload=hot_reload,
-                     pop_up=pop_up,)
+                     pop_up=pop_up,
+                     port=port,)
     elif output == 'no_dash':
         fig.show(config=config)
     else:
