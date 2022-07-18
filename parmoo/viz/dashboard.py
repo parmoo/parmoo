@@ -39,9 +39,6 @@ def buildDashApp(moop,
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
-    # * define selection
-    selection = pd.DataFrame()
-
     # * create app
     app = dash.Dash(__name__)
     selection_indexes = []
@@ -97,6 +94,7 @@ def buildDashApp(moop,
         if n_clicks is None:
             raise dash.exceptions.PreventUpdate
         else:
+            database.index.name = 'index'
             return dict(
                 filename=str(plotName) + ".csv",
                 content=database.to_csv(),
@@ -137,6 +135,7 @@ def buildDashApp(moop,
             selection_db = database.iloc[:0, :].copy()
             for i in selection_indexes:
                 selection_db = pd.concat([selection_db, database.iloc[[i]]])
+                selection_db.index.name = 'index'
             return dict(
                 filename="selected_data.csv",
                 content=selection_db.to_csv(),
