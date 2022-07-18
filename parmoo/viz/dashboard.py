@@ -1,16 +1,15 @@
 
 import dash
-from dash import dash_table
+# from dash import dash_table
 from dash import html
 from dash import dcc
 from dash import Input, Output
 import pandas as pd
-import io
-import os
-import webbrowser
-import logging
+from os import environ
+from webbrowser import open_new
 
-# all examples build the dash app in an independent script
+
+# all dash docs examples build the dash app in an independent script
 # by making dash app construction a function dependent
 # on calls from a plotting function, we choose a different
 # structure than what's used by most apps. This is because
@@ -18,12 +17,14 @@ import logging
 # dashboard (and put information inside). The purpose is to
 # make various kinds of plots and have a consistent functionality
 # wrapper around them
+
+
 def buildDashApp(moop,
                  db,
                  fig,
                  config,
-                 verbose=True,
-                 hot_reload=True,):
+                 verbose,
+                 hot_reload,):
 
     # * define database
     # (initially, all graph data is selected)
@@ -47,9 +48,11 @@ def buildDashApp(moop,
     app.layout = html.Div(children=[
         # * header stuff (we don't really need this)
         html.H1(
+            id='header',
             children='ParMOO data viz',
         ),
         html.Div(
+            id='subheader',
             children='Interact with your MOOP results',
         ),
         # * main plot
@@ -139,8 +142,8 @@ def buildDashApp(moop,
                 content=selection_db.to_csv(),
             )
 
-    if not os.environ.get("WERKZEUG_RUN_MAIN"):
-        webbrowser.open_new('http://127.0.0.1:8050/')
+    if not environ.get("WERKZEUG_RUN_MAIN"):
+        open_new('http://127.0.0.1:8050/')
 
     # * run application
     if hot_reload:

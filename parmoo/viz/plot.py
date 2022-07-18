@@ -24,7 +24,7 @@ import plotly.graph_objects as go
 # import plotly.io as pio
 # from parmoo import MOOP
 # import numpy as np
-import warnings                     # native python package
+from warnings import warn                    # native python package
 from .dashboard import buildDashApp
 import pandas as pd
 
@@ -69,7 +69,7 @@ def scatter(moop,
             height='auto',
             width='auto',
             verbose=True,
-            hot_reload=False,):
+            hot_reload=True,): # TODO
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -203,7 +203,7 @@ def radar(moop,
           height='auto',
           width='auto',
           verbose=True,
-          hot_reload=False,):
+          hot_reload=True,): # TODO
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
@@ -267,7 +267,7 @@ def radar(moop,
         Radar plots are best suited for MOOPs with at least 3 objectives.
         Consider using a scatterplot or parallel coordinates plot instead.
         """
-        warnings.warn(message)
+        warn(message)
 
     # * configure plot
     config = configure(export=export,
@@ -365,7 +365,7 @@ def parallel_coordinates(moop,
                          width='auto',
                          objectives_only=True,
                          verbose=True,
-                         hot_reload=False,):
+                         hot_reload=True,):# TODO
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the display.
