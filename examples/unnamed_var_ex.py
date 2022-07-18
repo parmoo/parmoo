@@ -5,32 +5,33 @@ from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
 from parmoo.optimizers import LocalGPS
+from parmoo.viz import *
 
-my_moop = MOOP(LocalGPS)
+moop = MOOP(LocalGPS)
 
 # Define a simulation to use below
 def sim_func(x):
     return np.array([(x[0]) ** 2, (x[0] - 1.0) ** 2])
 
 # Add a design variable, simulation, objective, and constraint, w/o name key
-my_moop.addDesign({'des_type': "continuous",
+moop.addDesign({'des_type': "continuous",
                    'lb': 0.0, 'ub': 1.0})
 
-my_moop.addSimulation({'m': 2,
+moop.addSimulation({'m': 2,
                        'sim_func': sim_func,
                        'search': LatinHypercube,
                        'surrogate': GaussRBF,
                        'hyperparams': {'search_budget': 20}})
 
-my_moop.addObjective({'obj_func': lambda x, s: sum(s)})
+moop.addObjective({'obj_func': lambda x, s: sum(s)})
 
-my_moop.addConstraint({'constraint': lambda x, s: 0.1 - x[0]})
+moop.addConstraint({'constraint': lambda x, s: 0.1 - x[0]})
 
 # Extract numpy dtypes for all of this MOOP's inputs/outputs
-des_dtype = my_moop.getDesignType()
-sim_dtype = my_moop.getSimulationType()
-obj_dtype = my_moop.getObjectiveType()
-const_dtype = my_moop.getConstraintType()
+des_dtype = moop.getDesignType()
+sim_dtype = moop.getSimulationType()
+obj_dtype = moop.getObjectiveType()
+const_dtype = moop.getConstraintType()
 
 # Display the dtypes as strings
 print("Design variable type:   " + str(des_dtype))
@@ -40,12 +41,12 @@ print("Constraint type:        " + str(const_dtype))
 print()
 
 # Add one acquisition and solve with 0 iterations to initialize databases
-my_moop.addAcquisition({'acquisition': UniformWeights})
-my_moop.solve(0)
+moop.addAcquisition({'acquisition': UniformWeights})
+moop.solve(0)
 
 # Extract final objective and simulation databases
-obj_db = my_moop.getObjectiveData()
-sim_db = my_moop.getSimulationData()
+obj_db = moop.getObjectiveData()
+sim_db = moop.getSimulationData()
 
 # Print the objective database dtypes
 print("Objective database keys: " + str([key for key in obj_db.keys()]))
@@ -63,3 +64,6 @@ for i, dbi in enumerate(sim_db):
     for key in dbi.keys():
         print("\t\t'" + key + "'" + " dtype: " + str(dbi[key].dtype))
         print("\t\t'" + key + "'" + " shape: " + str(dbi[key].shape))
+
+# Display solution
+vizTest(moop)

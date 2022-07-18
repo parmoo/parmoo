@@ -1,17 +1,16 @@
 
 import dash
-# from dash import dash_table
+from dash import dash_table
 from dash import html
 from dash import dcc
 from dash import Input, Output
 import pandas as pd
-from os import environ
-from webbrowser import open_new
-from .graph import *
-from warnings import warn
+import io
+import os
+import webbrowser
+import logging
 
-
-# all dash docs examples build the dash app in an independent script
+# all examples build the dash app in an independent script
 # by making dash app construction a function dependent
 # on calls from a plotting function, we choose a different
 # structure than what's used by most apps. This is because
@@ -19,18 +18,12 @@ from warnings import warn
 # dashboard (and put information inside). The purpose is to
 # make various kinds of plots and have a consistent functionality
 # wrapper around them
-
-
 def buildDashApp(moop,
-                 plotType,
                  db,
-                 height,
-                 width,
-                 verbose,
-                 hot_reload,
-                 pop_up,
-                 port,
-                 objectives_only=True,):
+                 fig,
+                 config,
+                 verbose=True,
+                 hot_reload=True,):
 
     # * define database
     # (initially, all graph data is selected)
@@ -45,43 +38,26 @@ def buildDashApp(moop,
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
+    # * define selection
+    selection = pd.DataFrame()
+
     # * create app
     app = dash.Dash(__name__)
     selection_indexes = []
-
-    # * create plot
-    if plotType == 'scatter':
-        graph = generate_scatter(moop,
-            db,
-            height,
-            width,
-            verbose,)
-    elif plotType == 'parallel_coordinates':
-        graph = generate_parallel(moop,
-            db,
-            height,
-            width,
-            verbose,
-            objectives_only,)
-    elif plotType == 'radar':
-        graph = generate_radar(moop,
-            db,
-            height,
-            width,
-            verbose,)
-    else:
-        warn("invalid plotType")
-
-    config = configure(height=height,
-                width=width,
-                plotName=plotName)
-
-    # * lay out app
     app.layout = html.Div(children=[
+        # * header stuff (we don't really need this)
+        html.H1(
+            id='header',
+            children='ParMOO data viz',
+        ),
+        html.Div(
+            id='subheader',
+            children='Interact with your MOOP results',
+        ),
         # * main plot
         dcc.Graph(
             id='parmoo_plot',
-            figure=graph,
+            figure=fig,
             config=config,
         ),
         dcc.Store(
@@ -120,7 +96,6 @@ def buildDashApp(moop,
         if n_clicks is None:
             raise dash.exceptions.PreventUpdate
         else:
-            database.index.name = 'index'
             return dict(
                 filename=str(plotName) + ".csv",
                 content=database.to_csv(),
@@ -161,16 +136,13 @@ def buildDashApp(moop,
             selection_db = database.iloc[:0, :].copy()
             for i in selection_indexes:
                 selection_db = pd.concat([selection_db, database.iloc[[i]]])
-                selection_db.index.name = 'index'
-            selection_db.drop_duplicates(inplace=True)
-            selection_db.sort_index(inplace=True)
             return dict(
                 filename="selected_data.csv",
                 content=selection_db.to_csv(),
             )
-    if pop_up:
-        if not environ.get("WERKZEUG_RUN_MAIN"):
-            open_new(port)
+
+    if not os.environ.get("WERKZEUG_RUN_MAIN"):
+        webbrowser.open_new('http://127.0.0.1:8050/')
 
     # * run application
     if hot_reload:
