@@ -127,3 +127,18 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# extra Hyrum-specific stuff
+.DS_Store
+libE_stats.txt
+examples/advanced_ex.py
+examples/checkpointing.py
+examples/dtlz2.py
+examples/libe_basic_ex.py
+examples/named_var_ex.py
+examples/opal_reload.py
+parmoo.surrogate.1
+examples/precomputed_data.py
+examples/quickstart.py
+uniform_sample_vtmop_opal_2022-01-21_sim5968.npy
+examples/unnamed_var_ex.py
