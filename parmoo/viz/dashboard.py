@@ -24,7 +24,8 @@ def buildDashApp(moop,
                  fig,
                  config,
                  verbose,
-                 hot_reload,):
+                 hot_reload,
+                 pop_up,):
 
     # * define database
     # (initially, all graph data is selected)
@@ -142,9 +143,9 @@ def buildDashApp(moop,
                 filename="selected_data.csv",
                 content=selection_db.to_csv(),
             )
-
-    if not environ.get("WERKZEUG_RUN_MAIN"):
-        open_new('http://127.0.0.1:8050/')
+    if pop_up:
+        if not environ.get("WERKZEUG_RUN_MAIN"):
+            open_new('http://127.0.0.1:8050/')
 
     # * run application
     if hot_reload:

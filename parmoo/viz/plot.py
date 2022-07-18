@@ -64,12 +64,12 @@ import pandas as pd
 
 def scatter(moop,
             db='pf',
-            export='none',
-            display=True,
+            output='dash',
             height='auto',
             width='auto',
             verbose=True,
-            hot_reload=True,): # TODO
+            hot_reload=True,
+            pop_up=True,):  # TODO
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -83,14 +83,15 @@ def scatter(moop,
         db (String): Choose database to plot
                      'pf' (default) plot Pareto Front
                      'obj' plot objective data
-        export (String): Export plot to working directory.
-                     'none' (default) don't export image file
-                     'html' export plot as html
-                     'pdf' export plot as pdf
-                     'svg' export plot as svg
-                     'webp' export plot as webp
-                     'jpeg' export plot as jpeg
-                     'png' export plot as png
+        output (String):
+                     'dash' (default) display plot in dash app
+                     'no_dash' display plot in browser without dash
+                     'html' export plot as html to working directory
+                     'pdf' export plot as pdf to working directory
+                     'svg' export plot as svg to working directory
+                     'webp' export plot as webp to working directory
+                     'jpeg' export plot as jpeg to working directory
+                     'png' export plot as png to working directory
         browser (boolean): Display interactive plot in browser window.
                     True: (default) display interactive plot in browser window
                     False: don't display interactive plot in browser window
@@ -100,8 +101,7 @@ def scatter(moop,
                     of the plot by using the 'export' keyword, and leave
                     'browser' to True, you will BOTH export an image file to
                     the current working directory AND open an interactive
-                    figure in the browser.
-        x (String)
+                    figure in the browser
 
     Returns:
         None
@@ -157,26 +157,26 @@ def scatter(moop,
         fig.update_traces(diagonal_visible=False)
 
     # * configure plot
-    config = configure(export=export,
+    config = configure(export=output,
                        height=height,
                        width=width,
                        plotName=plotName,)
 
-    # * export plot
-    if export != 'none':
-        exportFile(fig=fig,
-                   plotName=plotName,
-                   fileType=export)
-
-        # * display plot
-    if display is True:
-        # fig.show(config=config)
+    # * output
+    if output == 'dash':
         buildDashApp(moop=moop,
                      db=db,
                      fig=fig,
                      config=config,
                      verbose=verbose,
-                     hot_reload=hot_reload,)
+                     hot_reload=hot_reload,
+                     pop_up=pop_up,)
+    elif output == 'no_dash':
+        fig.show(config=config)
+    else:
+        exportFile(fig=fig,
+                   plotName=plotName,
+                   fileType=output)
 
 
 def scatter3d(moop):
@@ -198,12 +198,12 @@ def scatter3d(moop):
 
 def radar(moop,
           db='pf',
-          export='none',
-          display=True,
+          output='dash',
           height='auto',
           width='auto',
           verbose=True,
-          hot_reload=True,): # TODO
+          hot_reload=True,
+          pop_up=True,):  # TODO
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
@@ -261,6 +261,12 @@ def radar(moop,
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
+    # * create scaled database
+    j = pd.DataFrame(database)
+    for i in j.columns:
+        j[i] = (j[i] - j[i].min()) / (j[i].max() - j[i].min())
+    scaled_db = j
+
     # * raise warnings
     if len(axes) < 3:
         message = """
@@ -270,7 +276,7 @@ def radar(moop,
         warn(message)
 
     # * configure plot
-    config = configure(export=export,
+    config = configure(export=output,
                        height=height,
                        width=width,
                        plotName=plotName,)
@@ -294,11 +300,11 @@ def radar(moop,
         count = 0
         wrap_around_value = ""
         for obj_key in obj_type.names:
-            values.append(database[obj_key][i])
+            values.append(scaled_db[obj_key][i])
             if count == 0:
                 wrap_around_value = obj_key
             count += 1
-        values.append(database[wrap_around_value][i])
+        values.append(scaled_db[wrap_around_value][i])
         fig.add_trace(go.Scatterpolar(
             r=values,
             theta=axes,
@@ -313,13 +319,6 @@ def radar(moop,
             type='scatterpolar'
         )
     )
-    # fig.update_traces(
-    #     marker_color=traceName,
-    #     marker_coloraxis=traceName,
-    #     selector=dict(
-    #         type='scatterpolar'
-    #     )
-    # )
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
@@ -341,31 +340,32 @@ def radar(moop,
     else:
         fig.update_layout(showlegend=True)
 
-    # * export plot
-    if export != 'none':
-        exportFile(fig=fig,
-                   plotName=plotName,
-                   fileType=export,)
-
-    # * display plot
-    if display is True:
+    # * output
+    if output == 'dash':
         buildDashApp(moop=moop,
                      db=db,
                      fig=fig,
                      config=config,
                      verbose=verbose,
-                     hot_reload=hot_reload,)
+                     hot_reload=hot_reload,
+                     pop_up=pop_up,)
+    elif output == 'no_dash':
+        fig.show(config=config)
+    else:
+        exportFile(fig=fig,
+                   plotName=plotName,
+                   fileType=output)
 
 
 def parallel_coordinates(moop,
                          db='pf',
-                         export='none',
-                         display=True,
+                         output='dash',
                          height='auto',
                          width='auto',
                          objectives_only=True,
                          verbose=True,
-                         hot_reload=True,):# TODO
+                         hot_reload=True,
+                         pop_up=True,):  # TODO + fix others before produc
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the display.
@@ -429,20 +429,8 @@ def parallel_coordinates(moop,
         message += "Consider using 'pf' or 'obj' instead."
         raise ValueError(message)
 
-    # * hoverinfo isn't part of Plotly's parallel_coordinates API
-    # TODO: could we perhaps reuse this code but display
-    # TODO: the info in another way?
-    # hoverInfo = []
-    # for key in database.columns:
-    #     redundant = False
-    #     for ax in axes:
-    #         if ax == key:
-    #             redundant = True
-    #     if redundant is False:
-    #         hoverInfo.append(key)
-
     # * create plot
-    if objectives_only == True:
+    if objectives_only:
         fig = px.parallel_coordinates(database,
                                       dimensions=axes,
                                       title=plotName,)
@@ -452,25 +440,26 @@ def parallel_coordinates(moop,
                                       title=plotName,)
 
     # * configure plot
-    config = configure(export=export,
+    config = configure(export=output,
                        height=height,
                        width=width,
                        plotName=plotName,)
 
-    # * export plot
-    if export != 'none':
-        exportFile(fig=fig,
-                   plotName=plotName,
-                   fileType=export,)
-
-    # * display plot
-    if display is True:
+    # * output
+    if output == 'dash':
         buildDashApp(moop=moop,
                      db=db,
                      fig=fig,
                      config=config,
                      verbose=verbose,
-                     hot_reload=hot_reload,)
+                     hot_reload=hot_reload,
+                     pop_up=pop_up,)
+    elif output == 'no_dash':
+        fig.show(config=config)
+    else:
+        exportFile(fig=fig,
+                   plotName=plotName,
+                   fileType=output)
 
 
 def heatmap(moop):
@@ -567,8 +556,10 @@ def exportFile(fig, plotName, fileType):
     elif fileType == 'png':
         fig.write_image(plotName + ".png")
     else:
-        message = "ParMOO does not support exporting to '" + fileType + "'.\n"
-        message += "Supported types:\n"
+        message = "ParMOO does not support outputting to '" + fileType + "'.\n"
+        message += "Supported outputs:\n"
+        message += "'dash'\n"
+        message += "'no_dash'\n"
         message += "'html'\n"
         message += "'pdf'\n"
         message += "'svg'\n"
@@ -580,15 +571,16 @@ def exportFile(fig, plotName, fileType):
 
 def configure(export, height, width, plotName):
 
-    # * set screenshot type based on export type
-    if export == 'png':
-        screenshot = export
-    elif export == 'webp':
-        screenshot = export
-    elif export == 'jpeg':
-        screenshot = export
-    else:
-        screenshot = 'svg'
+    # # * set screenshot type based on export type
+    # if export == 'png':
+    #     screenshot = export
+    # elif export == 'webp':
+    #     screenshot = export
+    # elif export == 'jpeg':
+    #     screenshot = export
+    # elif export
+    #     screenshot = 'svg'
+    screenshot = 'svg'
 
     # * set config based on scale
     if height != 'auto' and width != 'auto':
