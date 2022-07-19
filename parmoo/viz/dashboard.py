@@ -7,8 +7,6 @@ from dash import Input, Output
 import pandas as pd
 from os import environ
 from webbrowser import open_new
-from .graph import *
-from warnings import warn
 
 
 # all dash docs examples build the dash app in an independent script
@@ -22,15 +20,13 @@ from warnings import warn
 
 
 def buildDashApp(moop,
-                 plotType,
                  db,
-                 height,
-                 width,
+                 fig,
+                 config,
                  verbose,
                  hot_reload,
                  pop_up,
-                 port,
-                 objectives_only=True,):
+                 port,):
 
     # * define database
     # (initially, all graph data is selected)
@@ -48,40 +44,20 @@ def buildDashApp(moop,
     # * create app
     app = dash.Dash(__name__)
     selection_indexes = []
-
-    # * create plot
-    if plotType == 'scatter':
-        graph = generate_scatter(moop,
-            db,
-            height,
-            width,
-            verbose,)
-    elif plotType == 'parallel_coordinates':
-        graph = generate_parallel(moop,
-            db,
-            height,
-            width,
-            verbose,
-            objectives_only,)
-    elif plotType == 'radar':
-        graph = generate_radar(moop,
-            db,
-            height,
-            width,
-            verbose,)
-    else:
-        warn("invalid plotType")
-
-    config = configure(height=height,
-                width=width,
-                plotName=plotName)
-
-    # * lay out app
     app.layout = html.Div(children=[
+        # * header stuff (we don't really need this)
+        html.H1(
+            id='header',
+            children='ParMOO data viz',
+        ),
+        html.Div(
+            id='subheader',
+            children='Interact with your MOOP results',
+        ),
         # * main plot
         dcc.Graph(
             id='parmoo_plot',
-            figure=graph,
+            figure=fig,
             config=config,
         ),
         dcc.Store(

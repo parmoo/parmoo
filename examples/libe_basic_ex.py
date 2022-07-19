@@ -5,16 +5,15 @@ from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
 from parmoo.optimizers import LocalGPS
-from parmoo.viz import *
 
 # Create a libE_MOOP
-moop = libE_MOOP(LocalGPS)
+my_moop = libE_MOOP(LocalGPS)
 
 # Add 2 design variables (one continuous and one categorical)
-moop.addDesign({'name': "x1",
+my_moop.addDesign({'name': "x1",
                    'des_type': "continuous",
                    'lb': 0.0, 'ub': 1.0})
-moop.addDesign({'name': "x2", 'des_type': "categorical",
+my_moop.addDesign({'name': "x2", 'des_type': "categorical",
                    'levels': 3})
 
 # All functions are defined below.
@@ -35,7 +34,7 @@ def const_c1(x, s):
     return 0.1 - x["x1"]
 
 # Add the simulation (note the budget of 20 sim evals during the search phase)
-moop.addSimulation({'name': "MySim",
+my_moop.addSimulation({'name': "MySim",
                        'm': 2,
                        'sim_func': sim_func,
                        'search': LatinHypercube,
@@ -43,26 +42,23 @@ moop.addSimulation({'name': "MySim",
                        'hyperparams': {'search_budget': 20}})
 
 # Add the objectives
-moop.addObjective({'name': "f1", 'obj_func': obj_f1})
-moop.addObjective({'name': "f2", 'obj_func': obj_f2})
+my_moop.addObjective({'name': "f1", 'obj_func': obj_f1})
+my_moop.addObjective({'name': "f2", 'obj_func': obj_f2})
 
 # Add the constraint
-moop.addConstraint({'name': "c1", 'constraint': const_c1})
+my_moop.addConstraint({'name': "c1", 'constraint': const_c1})
 
 # Add 3 acquisition functions
 for i in range(3):
-   moop.addAcquisition({'acquisition': UniformWeights,
+   my_moop.addAcquisition({'acquisition': UniformWeights,
                            'hyperparams': {}})
 
 # Turn on checkpointing -- creates the files parmoo.moop and parmoo.surrogate.1
-moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
+my_moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
 
 # Use sim_max = 30 to perform just 30 simulations
-moop.solve(sim_max=30)
-results = moop.getPF()
+my_moop.solve(sim_max=30)
+results = my_moop.getPF()
 
 # Display the solution
 print(results, "\n dtype=" + str(results.dtype))
-
-# Display solution
-vizTest(moop)
