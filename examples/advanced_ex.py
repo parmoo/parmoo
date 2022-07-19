@@ -1,5 +1,3 @@
-import os
-os.system("rm parmoo.moop")
 
 import numpy as np
 from parmoo import MOOP
@@ -7,20 +5,19 @@ from parmoo.acquisitions import UniformWeights, FixedWeights
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.optimizers import LBFGSB
-from parmoo.viz import *
 
 # Create a new MOOP with a derivative-based solver
-moop = MOOP(LBFGSB, hyperparams={})
+my_moop = MOOP(LBFGSB, hyperparams={})
 
 # Add 3 continuous variables named x1, x2, x3
 for i in range(3):
-    moop.addDesign({'name': "x" + str(i+1),
+    my_moop.addDesign({'name': "x" + str(i+1),
                        'des_type': "continuous",
                        'lb': 0.0,
                        'ub': 1.0,
                        'des_tol': 1.0e-8})
 # Add one categorical variable named x4
-moop.addDesign({'name': "x4",
+my_moop.addDesign({'name': "x4",
                    'des_type': "categorical",
                    'levels': 3})
 
@@ -40,7 +37,7 @@ def quad_sim(x):
 
 # Add the quadratic simulation to the problem
 # Use a 10 point LH search for ex design and a Gaussian RBF surrogate model
-moop.addSimulation({'name': "f_conv",
+my_moop.addSimulation({'name': "f_conv",
                        'm': 2,
                        'sim_func': quad_sim,
                        'search': LatinHypercube,
@@ -72,9 +69,9 @@ def obj_f2(x, sim, der=0):
         return result
 
 # Minimize each of the 2 outputs from the quadratic simulation
-moop.addObjective({'name': "f1",
+my_moop.addObjective({'name': "f1",
                       'obj_func': obj_f1})
-moop.addObjective({'name': "f2",
+my_moop.addObjective({'name': "f2",
                       'obj_func': obj_f2})
 
 def const_x4(x, sim, der=0):
@@ -89,17 +86,17 @@ def const_x4(x, sim, der=0):
         return np.zeros(1, dtype=sim.dtype)[0]
 
 # Add the single constraint to the problem
-moop.addConstraint({'name': "c_x4",
+my_moop.addConstraint({'name': "c_x4",
                        'constraint': const_x4})
 
 # Add 2 different acquisition functions to the problem
-moop.addAcquisition({'acquisition': UniformWeights})
-moop.addAcquisition({'acquisition': FixedWeights,
+my_moop.addAcquisition({'acquisition': UniformWeights})
+my_moop.addAcquisition({'acquisition': FixedWeights,
                         # Fixed weight with equal weight on both objectives
                         'hyperparams': {'weights': np.array([0.5, 0.5])}})
 
 # Turn on checkpointing -- creates the files parmoo.moop and parmoo.surrogate.1
-moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
+my_moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
 
 # Turn on logging
 import logging
@@ -108,18 +105,15 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # Solve the problem
-moop.solve(5)
+my_moop.solve(5)
 
-# # Get and print full simulation database
-# sim_db = moop.getSimulationData()
-# print("Simulation data:")
-# print(sim_db)
+# Get and print full simulation database
+sim_db = my_moop.getSimulationData()
+print("Simulation data:")
+print(sim_db)
 
-# # Get and print results
-# soln = moop.getPF()
-# print("\n\n")
-# print("Solution points:")
-# print(soln)
-
-# Display solution
-vizTest(moop)
+# Get and print results
+soln = my_moop.getPF()
+print("\n\n")
+print("Solution points:")
+print(soln)
