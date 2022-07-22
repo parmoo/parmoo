@@ -6,11 +6,14 @@ from dash import Input, Output
 import pandas as pd
 from os import environ
 from webbrowser import open_new
-from .graph import *
+from .graph import (generate_scatter,
+                    generate_parallel,
+                    generate_radar,)
+from .utilities import configure
 from warnings import warn
-import base64
+# import base64
 
-# parmoo_logo = '/Users/hyrumdickinson/parmoo/parmoo/viz/logo-ParMOO.png' # replace with your own image
+# parmoo_logo = '/Users/hyrumdickinson/parmoo/parmoo/viz/logo-ParMOO.png'
 # parmoo_logo_encoded = base64.b64encode(open(parmoo_logo, 'rb').read())
 
 
@@ -55,29 +58,29 @@ def buildDashApp(moop,
     # * create plot
     if plotType == 'scatter':
         graph = generate_scatter(moop,
-            db,
-            height,
-            width,
-            verbose,)
+                                 db,
+                                 height,
+                                 width,
+                                 verbose,)
     elif plotType == 'parallel_coordinates':
         graph = generate_parallel(moop,
-            db,
-            height,
-            width,
-            verbose,
-            objectives_only,)
+                                  db,
+                                  height,
+                                  width,
+                                  verbose,
+                                  objectives_only,)
     elif plotType == 'radar':
         graph = generate_radar(moop,
-            db,
-            height,
-            width,
-            verbose,)
+                               db,
+                               height,
+                               width,
+                               verbose,)
     else:
         warn("invalid plotType")
 
     config = configure(height=height,
-                width=width,
-                plotName=plotName)
+                       width=width,
+                       plotName=plotName)
 
     # * lay out app
     app.layout = html.Div(children=[

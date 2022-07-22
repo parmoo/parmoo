@@ -25,7 +25,7 @@ import plotly.graph_objects as go
 # from parmoo import MOOP
 # import numpy as np
 from warnings import warn                    # native python package
-from .settings import *
+# from .settings import configure, exportFile
 import pandas as pd
 
 # des_type = moop.getDesignType()
@@ -63,10 +63,10 @@ import pandas as pd
 
 
 def generate_scatter(moop,
-            db,
-            height,
-            width,
-            verbose,):
+                     db,
+                     height,
+                     width,
+                     verbose,):
     """ Display MOOP results as matrix of 2D scatterplots.
 
     Create an interactive plot that displays in the browser.
@@ -160,11 +160,11 @@ def generate_scatter(moop,
 
 
 def generate_parallel(moop,
-            db,
-            height,
-            width,
-            verbose,
-            objectives_only,):
+                      db,
+                      height,
+                      width,
+                      verbose,
+                      objectives_only,):
     """ Display MOOP results as parallel coordinates plot.
 
     Create an interactive plot that displays in the display.
@@ -243,10 +243,10 @@ def generate_parallel(moop,
 
 
 def generate_radar(moop,
-            db,
-            height,
-            width,
-            verbose,):
+                   db,
+                   height,
+                   width,
+                   verbose,):
     """ Display MOOP results as radar plot.
 
     Create an interactive plot that displays in the browser.
@@ -318,10 +318,10 @@ def generate_radar(moop,
         """
         warn(message)
 
-    # * configure plot
-    config = configure(height=height,
-                       width=width,
-                       plotName=plotName,)
+    # # * configure plot
+    # config = configure(height=height,
+    #                    width=width,
+    #                    plotName=plotName,)
 
     # * create plot
     fig = go.Figure()

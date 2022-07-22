@@ -98,3 +98,13 @@ def configure(height, width, plotName):
 #         exportFile(fig=fig,
 #                    plotName=plotName,
 #                    fileType=output)
+
+
+def setPlotName(db):
+    if db == 'pf':
+        plotName = "Pareto Front"
+    elif db == 'obj':
+        plotName = "Objective Data"
+    else:
+        raise ValueError(str(db) + "is invalid argument for 'db'")
+    return plotName
