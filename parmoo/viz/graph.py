@@ -145,6 +145,8 @@ def generate_scatter(moop,
                          title=plotName,
                          hover_data=hoverInfo,
                          )
+        # fig.update_xaxes(showticklabels=False)
+        # fig.update_yaxes(showticklabels=False)
     else:
         fig = px.scatter_matrix(database,
                                 dimensions=axes,
@@ -303,7 +305,7 @@ def generate_radar(moop,
         raise ValueError(message)
 
     # * create scaled database
-    j = pd.DataFrame(database)
+    j = database.copy(deep=True)
     for i in j.columns:
         j[i] = (j[i] - j[i].min()) / (j[i].max() - j[i].min())
     scaled_db = j
@@ -362,7 +364,8 @@ def generate_radar(moop,
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
-                visible=True
+                visible=True,
+                showticklabels=False,
             )
         )
     )
