@@ -28,7 +28,11 @@ def scatter(moop,
     #     graph.scatter(config=config)
     else:
         plotName = setPlotName(db=db)
-        exportFile(fig=generate_scatter(moop),
+        exportFile(fig=generate_scatter(moop,
+                                        db=db,
+                                        height=height,
+                                        width=width,
+                                        verbose=verbose,),
                    plotName=plotName,
                    fileType=output)
 
@@ -58,7 +62,11 @@ def parallel_coordinates(moop,
     #     graph.scatter(config=config)
     else:
         plotName = setPlotName(db=db)
-        exportFile(fig=generate_parallel(moop),
+        exportFile(fig=generate_parallel(moop=moop,
+                                         db=db,
+                                         height=height,
+                                         width=width,
+                                         verbose=verbose,),
                    plotName=plotName,
                    fileType=output)
 
@@ -87,6 +95,10 @@ def radar(moop,
     #     graph.scatter(config=config)
     else:
         plotName = setPlotName(db=db)
-        exportFile(fig=generate_radar(moop),
+        exportFile(fig=generate_radar(moop,
+                                      db=db,
+                                      height=height,
+                                      width=width,
+                                      verbose=verbose,),
                    plotName=plotName,
                    fileType=output)
