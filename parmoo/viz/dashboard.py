@@ -8,6 +8,10 @@ from os import environ
 from webbrowser import open_new
 from .graph import *
 from warnings import warn
+import base64
+
+# parmoo_logo = '/Users/hyrumdickinson/parmoo/parmoo/viz/logo-ParMOO.png' # replace with your own image
+# parmoo_logo_encoded = base64.b64encode(open(parmoo_logo, 'rb').read())
 
 
 # all dash docs examples build the dash app in an independent script
@@ -77,6 +81,10 @@ def buildDashApp(moop,
 
     # * lay out app
     app.layout = html.Div(children=[
+        # * parmoo logo
+        # html.Img(
+        #     src='data:image/png;base64,{}'.format(parmoo_logo_encoded)
+        # ),
         # * main plot
         dcc.Graph(
             id='parmoo_plot',
