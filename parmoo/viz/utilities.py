@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 def exportFile(fig, plotName, fileType):
     """ Display MOOP plot.
 
@@ -108,3 +111,25 @@ def setPlotName(db):
     else:
         raise ValueError(str(db) + "is invalid argument for 'db'")
     return plotName
+
+
+def setDatabase(moop, db):
+    if db == 'pf':
+        database = pd.DataFrame(moop.getPF())
+    elif db == 'obj':
+        database = pd.DataFrame(moop.getObjectiveData())
+    else:
+        raise ValueError(str(db) + "is invalid argument for 'db'")
+    return database
+
+
+def setHoverInfo(database, i):
+    hoverInfo = ""
+    for key in database.columns:
+        hoverInfo += str(key)
+        hoverInfo += ": "
+        hoverInfo += str(database[key][i])
+        hoverInfo += "<br>"
+        # since plotly is JavaScript-based
+        # it uses HTML string formatting
+    return hoverInfo
