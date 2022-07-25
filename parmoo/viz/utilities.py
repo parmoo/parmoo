@@ -1,6 +1,32 @@
 import pandas as pd
 
 
+def customize(
+    fig,
+    font,
+    fontsize,
+    background_color,
+    margins,
+):
+    if font != 'auto':
+        fig.update_layout(
+            font=dict(
+                family=font
+            )
+        )
+    if fontsize != 'auto':
+        fig.update_layout(
+            font=dict(
+                size=int(fontsize)
+            )
+        )
+    if background_color != 'auto':
+        pass
+    if margins != 'auto':
+        pass
+    return fig
+
+
 def export_file(fig, plot_name, file_type):
     """ Display MOOP plot.
 
@@ -84,15 +110,6 @@ def configure(height, width, plot_name):
             }
         }
     return config
-
-
-def customize(fig,
-              font,):
-    if font != 'auto':
-        fig.update_layout(
-            font_family=font
-        )
-    return fig
 
 
 def set_plot_name(db):

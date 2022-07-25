@@ -12,16 +12,26 @@ The functions are:
 import plotly.express as px
 import plotly.graph_objects as go
 from warnings import warn
-from .utilities import set_plot_name, set_database, set_hover_info, customize
+from .utilities import (
+    set_plot_name,
+    set_database,
+    set_hover_info,
+    customize,
+)
 
 
-def generate_scatter(moop,
-                     db,
-                     height,
-                     width,
-                     verbose,
-                     font,
-                     objectives_only,):
+def generate_scatter(
+    moop,
+    db,
+    height,
+    width,
+    verbose,
+    font,
+    fontsize,
+    background_color,
+    margins,
+    objectives_only,
+):
 
     # * get info
     objectives = moop.getObjectiveType().names
@@ -31,34 +41,48 @@ def generate_scatter(moop,
     plot_name = set_plot_name(db=db)
     # * create plot
     if (len(objectives) == 2):
-        fig = px.scatter(database,
-                         x=objectives[0],
-                         y=objectives[1],
-                         title=plot_name,
-                         hover_data=database.columns)
+        fig = px.scatter(
+            database,
+            x=objectives[0],
+            y=objectives[1],
+            title=plot_name,
+            hover_data=database.columns
+        )
         # fig.update_xaxes(showticklabels=False)
         # fig.update_yaxes(showticklabels=False)
     else:
-        fig = px.scatter_matrix(database,
-                                dimensions=objectives,
-                                title=plot_name,
-                                hover_data=database.columns)
+        fig = px.scatter_matrix(
+            database,
+            dimensions=objectives,
+            title=plot_name,
+            hover_data=database.columns
+        )
         fig.update_traces(diagonal_visible=False)
 
-    fig = customize(fig,
-                    font=font,)
+    fig = customize(
+        fig,
+        font=font,
+        fontsize=fontsize,
+        background_color=background_color,
+        margins=margins,
+    )
 
     # * return figure
     return fig
 
 
-def generate_parallel(moop,
-                      db,
-                      height,
-                      width,
-                      verbose,
-                      font,
-                      objectives_only,):
+def generate_parallel(
+    moop,
+    db,
+    height,
+    width,
+    verbose,
+    font,
+    fontsize,
+    background_color,
+    margins,
+    objectives_only,
+):
 
     # * setup axes
     objectives = moop.getObjectiveType().names
@@ -73,29 +97,43 @@ def generate_parallel(moop,
 
     # * create plot
     if objectives_only:
-        fig = px.parallel_coordinates(database,
-                                      dimensions=objectives,
-                                      title=plot_name,)
+        fig = px.parallel_coordinates(
+            database,
+            dimensions=objectives,
+            title=plot_name,
+        )
     else:
         axes = objectives + constraints
-        fig = px.parallel_coordinates(database,
-                                      labels=axes,
-                                      title=plot_name,)
+        fig = px.parallel_coordinates(
+            database,
+            labels=axes,
+            title=plot_name,
+        )
 
-    fig = customize(fig,
-                    font=font,)
+    fig = customize(
+        fig,
+        font=font,
+        fontsize=fontsize,
+        background_color=background_color,
+        margins=margins,
+    )
 
     # * return figure
     return fig
 
 
-def generate_radar(moop,
-                   db,
-                   height,
-                   width,
-                   verbose,
-                   font,
-                   objectives_only,):
+def generate_radar(
+    moop,
+    db,
+    height,
+    width,
+    verbose,
+    font,
+    fontsize,
+    background_color,
+    margins,
+    objectives_only,
+):
 
     # * setup axes
     objectives = moop.getObjectiveType().names
@@ -152,8 +190,13 @@ def generate_radar(moop,
     fig.update_layout(
         autosize=True,)
 
-    fig = customize(fig,
-                    font=font,)
+    fig = customize(
+        fig,
+        font=font,
+        fontsize=fontsize,
+        background_color=background_color,
+        margins=margins,
+    )
 
     # * return figure
     return fig

@@ -1,8 +1,13 @@
 from .dashboard import build_dash_app
-from .utilities import export_file, set_plot_name
-from .graph import (generate_scatter,
-                    generate_parallel,
-                    generate_radar,)
+from .utilities import (
+    export_file,
+    set_plot_name,
+)
+from .graph import (
+    generate_scatter,
+    generate_parallel,
+    generate_radar,
+)
 
 """
 For all interactve browser plot functions, there is a known issue
@@ -50,38 +55,57 @@ Returns:
 """
 
 
-def scatter(moop,
-            db='pf',
-            output='dash',
+def scatter(
+    moop,
+    db='pf',
+    output='dash',
+    height='auto',
+    width='auto',
+    verbose=True,
+    font='auto',
+    fontsize='auto',
+    background_color='auto',
+    margins='auto',
+    objectives_only=True,
+    hot_reload=False,
+    pop_up=True,
+    port='http://127.0.0.1:8050/',
+):
+    if output == 'dash':
+        build_dash_app(
+            plot_type='scatter',
+            moop=moop,
+            db=db,
             height='auto',
             width='auto',
-            verbose=True,
-            font='auto',
-            hot_reload=False,
-            pop_up=True,
-            port='http://127.0.0.1:8050/',):
-    if output == 'dash':
-        build_dash_app(plot_type='scatter',
-                       moop=moop,
-                       db=db,
-                       height='auto',
-                       width='auto',
-                       verbose=verbose,
-                       font=font,
-                       hot_reload=hot_reload,
-                       pop_up=pop_up,
-                       port=port,)
+            verbose=verbose,
+            font=font,
+            fontsize=fontsize,
+            background_color=background_color,
+            margins=margins,
+            objectives_only=objectives_only,
+            hot_reload=hot_reload,
+            pop_up=pop_up,
+            port=port,
+        )
     else:
         plot_name = set_plot_name(db=db)
         export_file(
-            fig=generate_scatter(moop,
-                                 db=db,
-                                 height=height,
-                                 width=width,
-                                 verbose=verbose,
-                                 font=font,),
+            fig=generate_scatter(
+                moop,
+                db=db,
+                height=height,
+                width=width,
+                verbose=verbose,
+                font=font,
+                fontsize=fontsize,
+                background_color=background_color,
+                margins=margins,
+                objectives_only=objectives_only,
+            ),
             plot_name=plot_name,
-            file_type=output)
+            file_type=output,
+        )
 
 
 """ Display MOOP results as parallel coordinates plot.
@@ -124,39 +148,58 @@ def scatter(moop,
     """
 
 
-def parallel_coordinates(moop,
-                         db='pf',
-                         output='dash',
-                         height='auto',
-                         width='auto',
-                         font='auto',
-                         objectives_only=True,
-                         verbose=True,
-                         hot_reload=False,
-                         pop_up=True,
-                         port='http://127.0.0.1:8050/',):
+def parallel_coordinates(
+    moop,
+    db='pf',
+    output='dash',
+    height='auto',
+    width='auto',
+    verbose=True,
+    font='auto',
+    fontsize='auto',
+    background_color='auto',
+    margins='auto',
+    objectives_only=True,
+    hot_reload=False,
+    pop_up=True,
+    port='http://127.0.0.1:8050/',
+):
 
     if output == 'dash':
-        build_dash_app(plot_type='parallel',
-                       moop=moop,
-                       db=db,
-                       height=height,
-                       width=width,
-                       verbose=verbose,
-                       font=font,
-                       hot_reload=hot_reload,
-                       pop_up=pop_up,
-                       port=port,)
+        build_dash_app(
+            plot_type='parallel',
+            moop=moop,
+            db=db,
+            height=height,
+            width=width,
+            verbose=verbose,
+            font=font,
+            fontsize=fontsize,
+            background_color=background_color,
+            margins=margins,
+            objectives_only=objectives_only,
+            hot_reload=hot_reload,
+            pop_up=pop_up,
+            port=port,
+        )
     else:
         plot_name = set_plot_name(db=db)
-        export_file(fig=generate_parallel(moop=moop,
-                                          db=db,
-                                          height=height,
-                                          width=width,
-                                          verbose=verbose,
-                                          font=font,),
-                    plot_name=plot_name,
-                    file_type=output)
+        export_file(
+            fig=generate_parallel(
+                moop=moop,
+                db=db,
+                height=height,
+                width=width,
+                verbose=verbose,
+                font=font,
+                fontsize=fontsize,
+                background_color=background_color,
+                margins=margins,
+                objectives_only=objectives_only,
+            ),
+            plot_name=plot_name,
+            file_type=output
+        )
 
 
 """ Display MOOP results as radar plot.
@@ -193,35 +236,55 @@ def parallel_coordinates(moop,
     """
 
 
-def radar(moop,
-          db='pf',
-          output='dash',
-          height='auto',
-          width='auto',
-          verbose=True,
-          font='auto',
-          hot_reload=False,
-          pop_up=True,
-          port='http://127.0.0.1:8050/',):
+def radar(
+    moop,
+    db='pf',
+    output='dash',
+    height='auto',
+    width='auto',
+    verbose=True,
+    font='auto',
+    fontsize='auto',
+    background_color='auto',
+    margins='auto',
+    objectives_only=True,
+    hot_reload=False,
+    pop_up=True,
+    port='http://127.0.0.1:8050/',
+):
 
     if output == 'dash':
-        build_dash_app(plot_type='radar',
-                       moop=moop,
-                       db=db,
-                       height=height,
-                       width=width,
-                       verbose=verbose,
-                       font=font,
-                       hot_reload=hot_reload,
-                       pop_up=pop_up,
-                       port=port,)
+        build_dash_app(
+            plot_type='radar',
+            moop=moop,
+            db=db,
+            height=height,
+            width=width,
+            verbose=verbose,
+            font=font,
+            fontsize=fontsize,
+            background_color=background_color,
+            margins=margins,
+            objectives_only=objectives_only,
+            hot_reload=hot_reload,
+            pop_up=pop_up,
+            port=port,
+        )
     else:
         plot_name = set_plot_name(db=db)
-        export_file(fig=generate_radar(moop,
-                                       db=db,
-                                       height=height,
-                                       width=width,
-                                       verbose=verbose,
-                                       font=font,),
-                    plot_name=plot_name,
-                    file_type=output)
+        export_file(
+            fig=generate_radar(
+                moop,
+                db=db,
+                height=height,
+                width=width,
+                verbose=verbose,
+                font=font,
+                fontsize=fontsize,
+                background_color=background_color,
+                margins=margins,
+                objectives_only=objectives_only,
+            ),
+            plot_name=plot_name,
+            file_type=output
+        )

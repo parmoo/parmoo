@@ -1,16 +1,26 @@
-import dash
-# from dash import dash_table
-from dash import html
-from dash import dcc
-from dash import Input, Output
+from dash import (
+    Dash,
+    callback_context,
+    Input,
+    Output,
+    html,
+    dcc,
+    exceptions,
+)
 import pandas as pd
 from os import environ
 from webbrowser import open_new
-from .graph import (generate_scatter,
-                    generate_parallel,
-                    generate_radar,)
-from .utilities import configure, set_plot_name, set_database
 from warnings import warn
+from .graph import (
+    generate_scatter,
+    generate_parallel,
+    generate_radar,
+)
+from .utilities import (
+    configure,
+    set_plot_name,
+    set_database
+)
 # import base64
 
 # parmoo_logo = '/Users/hyrumdickinson/parmoo/parmoo/viz/logo-ParMOO.png'
@@ -27,17 +37,22 @@ from warnings import warn
 # wrapper around them
 
 
-def build_dash_app(plot_type,
-                   moop,
-                   db,
-                   height,
-                   width,
-                   verbose,
-                   font,
-                   hot_reload,
-                   pop_up,
-                   port,
-                   objectives_only=True,):
+def build_dash_app(
+    plot_type,
+    moop,
+    db,
+    height,
+    width,
+    verbose,
+    font,
+    fontsize,
+    background_color,
+    margins,
+    hot_reload,
+    pop_up,
+    port,
+    objectives_only,
+):
 
     # * define database
     # (initially, all graph data is selected)
@@ -45,22 +60,29 @@ def build_dash_app(plot_type,
     plot_name = set_plot_name(db=db)
 
     # * create app
-    app = dash.Dash(__name__)
+    app = Dash(__name__)
     selection_indexes = []
 
     # * create plot
-    graph = generate_graph(plot_type=plot_type,
-                           moop=moop,
-                           db=db,
-                           height=height,
-                           width=width,
-                           verbose=verbose,
-                           font=font,
-                           objectives_only=objectives_only,)
+    graph = generate_graph(
+        plot_type=plot_type,
+        moop=moop,
+        db=db,
+        height=height,
+        width=width,
+        verbose=verbose,
+        font=font,
+        fontsize=fontsize,
+        background_color=background_color,
+        margins=margins,
+        objectives_only=objectives_only,
+    )
 
-    config = configure(height=height,
-                       width=width,
-                       plot_name=plot_name,)
+    config = configure(
+        height=height,
+        width=width,
+        plot_name=plot_name,
+    )
 
     # * lay out app
     app.layout = html.Div(children=[
@@ -102,9 +124,18 @@ def build_dash_app(plot_type,
              'Times New Roman',
              'Verdana',
              'Arial',
-             'Calibri',],
-            placeholder="Select a font",
-            id='font_selection_downdown'),
+             'Calibri'],
+            placeholder='Select font',
+            id='font_selection_downdown',
+        ),
+        html.Br(),
+        html.Br(),
+        dcc.Input(
+            placeholder='Select font size',
+            type='number',
+            value='',
+            id='font_size_dropdown',
+        )
     ])
 
     # * functionality of dataset download button
@@ -118,7 +149,7 @@ def build_dash_app(plot_type,
     )
     def download_dataset(n_clicks):
         if n_clicks is None:
-            raise dash.exceptions.PreventUpdate
+            raise exceptions.PreventUpdate
         else:
             database.index.name = 'index'
             return dict(
@@ -137,7 +168,7 @@ def build_dash_app(plot_type,
     )
     def store_selection(selectedData):
         if selectedData is None:
-            raise dash.exceptions.PreventUpdate
+            raise exceptions.PreventUpdate
         else:
             pointskey = selectedData['points']
             for index in range(len(pointskey)):
@@ -156,7 +187,7 @@ def build_dash_app(plot_type,
     )
     def download_selection(n_clicks):
         if n_clicks is None:
-            raise dash.exceptions.PreventUpdate
+            raise exceptions.PreventUpdate
         else:
             selection_db = database.iloc[:0, :].copy()
             for i in selection_indexes:
@@ -169,28 +200,63 @@ def build_dash_app(plot_type,
                 content=selection_db.to_csv(),
             )
 
-    # * functionality of select font button
+    # * customize graph
     @app.callback(
         Output(
             component_id='parmoo_graph',
-            component_property='figure'),
+            component_property='figure',),
         Input(
             component_id='font_selection_downdown',
-            component_property='value'),
+            component_property='value',),
+        Input(
+            component_id='font_size_dropdown',
+            component_property='value',),
+        prevent_initial_call=True
     )
+    def update_graph(
+        font_value,
+        size_value,
+    ):
+        triggered_id = callback_context.triggered[0]['prop_id']
+        if 'font_selection_downdown.value' == triggered_id:
+            return update_font(font_value)
+        elif 'font_size_dropdown.value' == triggered_id:
+            return update_font_size(size_value)
+
+    # * functionality of select font button
     def update_font(value):
-        if value != 'reset to default':
-            font = value
-        else:
-            font = 'auto'
-        graph = generate_graph(plot_type=plot_type,
-                               moop=moop,
-                               db=db,
-                               height=height,
-                               width=width,
-                               verbose=verbose,
-                               font=font,
-                               objectives_only=objectives_only,)
+        font = value
+        graph = generate_graph(
+            plot_type=plot_type,
+            moop=moop,
+            db=db,
+            height=height,
+            width=width,
+            verbose=verbose,
+            font=font,
+            fontsize=fontsize,
+            background_color=background_color,
+            margins=margins,
+            objectives_only=objectives_only,
+        )
+        return graph
+
+    # * functionality of select font size button
+    def update_font_size(value):
+        fontsize = value
+        graph = generate_graph(
+            plot_type=plot_type,
+            moop=moop,
+            db=db,
+            height=height,
+            width=width,
+            verbose=verbose,
+            font=font,
+            fontsize=fontsize,
+            background_color=background_color,
+            margins=margins,
+            objectives_only=objectives_only,
+        )
         return graph
 
     # * pop_up
@@ -215,38 +281,58 @@ def build_dash_app(plot_type,
         raise ValueError(message)
 
 
-def generate_graph(plot_type,
-                   moop,
-                   db,
-                   height,
-                   width,
-                   verbose,
-                   font,
-                   objectives_only,):
+def generate_graph(
+    plot_type,
+    moop,
+    db,
+    height,
+    width,
+    verbose,
+    font,
+    fontsize,
+    background_color,
+    margins,
+    objectives_only,
+):
     if plot_type == 'scatter':
-        graph = generate_scatter(moop,
-                                 db=db,
-                                 height=height,
-                                 width=width,
-                                 verbose=verbose,
-                                 font=font,
-                                 objectives_only=objectives_only,)
+        graph = generate_scatter(
+            moop,
+            db=db,
+            height=height,
+            width=width,
+            verbose=verbose,
+            font=font,
+            fontsize=fontsize,
+            background_color=background_color,
+            margins=margins,
+            objectives_only=objectives_only,
+        )
     elif plot_type == 'parallel':
-        graph = generate_parallel(moop,
-                                  db=db,
-                                  height=height,
-                                  width=width,
-                                  verbose=verbose,
-                                  font=font,
-                                  objectives_only=objectives_only,)
+        graph = generate_parallel(
+            moop,
+            db=db,
+            height=height,
+            width=width,
+            verbose=verbose,
+            font=font,
+            fontsize=fontsize,
+            background_color=background_color,
+            margins=margins,
+            objectives_only=objectives_only,
+        )
     elif plot_type == 'radar':
-        graph = generate_radar(moop,
-                               db=db,
-                               height=height,
-                               width=width,
-                               verbose=verbose,
-                               font=font,
-                               objectives_only=objectives_only,)
+        graph = generate_radar(
+            moop,
+            db=db,
+            height=height,
+            width=width,
+            verbose=verbose,
+            font=font,
+            fontsize=fontsize,
+            background_color=background_color,
+            margins=margins,
+            objectives_only=objectives_only,
+        )
     else:
         warn("invalid plot_type")
 
