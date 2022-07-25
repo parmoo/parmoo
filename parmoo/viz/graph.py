@@ -12,41 +12,41 @@ The functions are:
 import plotly.express as px
 import plotly.graph_objects as go
 from warnings import warn
-from .utilities import setPlotName, setDatabase, setHoverInfo
-
-
-#
-# ! THESE FUNCTIONS DISPLAY DATA IN AN INTERACTIVE BROWSER PLOT
-#
+from .utilities import set_plot_name, set_database, set_hover_info, customize
 
 
 def generate_scatter(moop,
                      db,
                      height,
                      width,
-                     verbose,):
+                     verbose,
+                     font,
+                     objectives_only,):
 
     # * get info
     objectives = moop.getObjectiveType().names
 
     # * choose database
-    database = setDatabase(moop, db=db)
-    plotName = setPlotName(db=db)
+    database = set_database(moop, db=db)
+    plot_name = set_plot_name(db=db)
     # * create plot
     if (len(objectives) == 2):
         fig = px.scatter(database,
                          x=objectives[0],
                          y=objectives[1],
-                         title=plotName,
+                         title=plot_name,
                          hover_data=database.columns)
         # fig.update_xaxes(showticklabels=False)
         # fig.update_yaxes(showticklabels=False)
     else:
         fig = px.scatter_matrix(database,
                                 dimensions=objectives,
-                                title=plotName,
+                                title=plot_name,
                                 hover_data=database.columns)
         fig.update_traces(diagonal_visible=False)
+
+    fig = customize(fig,
+                    font=font,)
 
     # * return figure
     return fig
@@ -57,6 +57,7 @@ def generate_parallel(moop,
                       height,
                       width,
                       verbose,
+                      font,
                       objectives_only,):
 
     # * setup axes
@@ -67,19 +68,22 @@ def generate_parallel(moop,
         constraints = ()
 
     # * choose database
-    database = setDatabase(moop, db=db)
-    plotName = setPlotName(db=db)
+    database = set_database(moop, db=db)
+    plot_name = set_plot_name(db=db)
 
     # * create plot
     if objectives_only:
         fig = px.parallel_coordinates(database,
                                       dimensions=objectives,
-                                      title=plotName,)
+                                      title=plot_name,)
     else:
         axes = objectives + constraints
         fig = px.parallel_coordinates(database,
                                       labels=axes,
-                                      title=plotName,)
+                                      title=plot_name,)
+
+    fig = customize(fig,
+                    font=font,)
 
     # * return figure
     return fig
@@ -89,7 +93,9 @@ def generate_radar(moop,
                    db,
                    height,
                    width,
-                   verbose,):
+                   verbose,
+                   font,
+                   objectives_only,):
 
     # * setup axes
     objectives = moop.getObjectiveType().names
@@ -99,8 +105,8 @@ def generate_radar(moop,
     axes = tuple(temp_variable)
 
     # * choose database
-    database = setDatabase(moop, db=db)
-    plotName = setPlotName(db=db)
+    database = set_database(moop, db=db)
+    plot_name = set_plot_name(db=db)
 
     # * create scaled database
     j = database.copy(deep=True)
@@ -120,7 +126,7 @@ def generate_radar(moop,
     fig = go.Figure()
     for i in range(len(database)):
         trace = (i)
-        hoverInfo = setHoverInfo(database=database, i=i,)
+        hover_info = set_hover_info(database=database, i=i,)
         values = []
         for key in axes:
             values.append(scaled_db[key][i])
@@ -128,11 +134,11 @@ def generate_radar(moop,
             r=values,
             theta=axes,
             name=trace,
-            hovertext=hoverInfo,))
+            hovertext=hover_info,))
 
     # * improve aesthetics
     fig.update_traces(
-        hoverinfo='text',
+        hover_info='text',
         selector=dict(
             type='scatterpolar'))
     fig.update_layout(
@@ -142,9 +148,12 @@ def generate_radar(moop,
                 showticklabels=False,)))
     fig.update_layout(
         title=dict(
-            text=plotName))
+            text=plot_name))
     fig.update_layout(
         autosize=True,)
+
+    fig = customize(fig,
+                    font=font,)
 
     # * return figure
     return fig

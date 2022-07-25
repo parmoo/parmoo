@@ -9,7 +9,7 @@ from webbrowser import open_new
 from .graph import (generate_scatter,
                     generate_parallel,
                     generate_radar,)
-from .utilities import configure
+from .utilities import configure, set_plot_name, set_database
 from warnings import warn
 # import base64
 
@@ -27,60 +27,40 @@ from warnings import warn
 # wrapper around them
 
 
-def buildDashApp(moop,
-                 plotType,
-                 db,
-                 height,
-                 width,
-                 verbose,
-                 hot_reload,
-                 pop_up,
-                 port,
-                 objectives_only=True,):
+def build_dash_app(plot_type,
+                   moop,
+                   db,
+                   height,
+                   width,
+                   verbose,
+                   font,
+                   hot_reload,
+                   pop_up,
+                   port,
+                   objectives_only=True,):
 
     # * define database
     # (initially, all graph data is selected)
-    if (db == 'pf'):
-        database = pd.DataFrame(moop.getPF())
-        plotName = "Pareto Front"
-    elif db == 'obj':
-        database = pd.DataFrame(moop.getObjectiveData())
-        plotName = "Objective Data"
-    else:
-        message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
-        message += "Consider using 'pf' or 'obj' instead."
-        raise ValueError(message)
+    database = set_database(moop, db=db)
+    plot_name = set_plot_name(db=db)
 
     # * create app
     app = dash.Dash(__name__)
     selection_indexes = []
 
     # * create plot
-    if plotType == 'scatter':
-        graph = generate_scatter(moop,
-                                 db,
-                                 height,
-                                 width,
-                                 verbose,)
-    elif plotType == 'parallel_coordinates':
-        graph = generate_parallel(moop,
-                                  db,
-                                  height,
-                                  width,
-                                  verbose,
-                                  objectives_only,)
-    elif plotType == 'radar':
-        graph = generate_radar(moop,
-                               db,
-                               height,
-                               width,
-                               verbose,)
-    else:
-        warn("invalid plotType")
+    graph = generate_graph(plot_type=plot_type,
+                           moop=moop,
+                           db=db,
+                           height=height,
+                           width=width,
+                           verbose=verbose,
+                           font=font,
+                           objectives_only=objectives_only,)
 
     config = configure(height=height,
                        width=width,
-                       plotName=plotName)
+                       plot_name=plot_name,)
 
     # * lay out app
     app.layout = html.Div(children=[
@@ -90,7 +70,7 @@ def buildDashApp(moop,
         # ),
         # * main plot
         dcc.Graph(
-            id='parmoo_plot',
+            id='parmoo_graph',
             figure=graph,
             config=config,
         ),
@@ -100,7 +80,7 @@ def buildDashApp(moop,
         # * download dataset button
         html.Button(
             children='Download dataset as CSV',
-            id='dataset_button_text',
+            id='download_dataset_button',
         ),
         dcc.Download(
             id='dataset_download_csv',
@@ -110,11 +90,21 @@ def buildDashApp(moop,
         # * download selection button
         html.Button(
             children='Download selection as CSV',
-            id='selection_button_text',
+            id='download_selection_button',
         ),
         dcc.Download(
             id='selection_download_csv',
         ),
+        html.Br(),
+        html.Br(),
+        dcc.Dropdown(
+            ['Open Sans',
+             'Times New Roman',
+             'Verdana',
+             'Arial',
+             'Calibri',],
+            placeholder="Select a font",
+            id='font_selection_downdown'),
     ])
 
     # * functionality of dataset download button
@@ -123,7 +113,7 @@ def buildDashApp(moop,
             component_id='dataset_download_csv',
             component_property='data'),
         Input(
-            component_id='dataset_button_text',
+            component_id='download_dataset_button',
             component_property='n_clicks'),
     )
     def download_dataset(n_clicks):
@@ -132,7 +122,7 @@ def buildDashApp(moop,
         else:
             database.index.name = 'index'
             return dict(
-                filename=str(plotName) + ".csv",
+                filename=str(plot_name) + ".csv",
                 content=database.to_csv(),
             )
 
@@ -142,7 +132,7 @@ def buildDashApp(moop,
             component_id='selection',
             component_property='data'),
         Input(
-            component_id='parmoo_plot',
+            component_id='parmoo_graph',
             component_property='selectedData'),
     )
     def store_selection(selectedData):
@@ -161,7 +151,7 @@ def buildDashApp(moop,
             component_id='selection_download_csv',
             component_property='data'),
         Input(
-            component_id='selection_button_text',
+            component_id='download_selection_button',
             component_property='n_clicks'),
     )
     def download_selection(n_clicks):
@@ -178,6 +168,32 @@ def buildDashApp(moop,
                 filename="selected_data.csv",
                 content=selection_db.to_csv(),
             )
+
+    # * functionality of select font button
+    @app.callback(
+        Output(
+            component_id='parmoo_graph',
+            component_property='figure'),
+        Input(
+            component_id='font_selection_downdown',
+            component_property='value'),
+    )
+    def update_font(value):
+        if value != 'reset to default':
+            font = value
+        else:
+            font = 'auto'
+        graph = generate_graph(plot_type=plot_type,
+                               moop=moop,
+                               db=db,
+                               height=height,
+                               width=width,
+                               verbose=verbose,
+                               font=font,
+                               objectives_only=objectives_only,)
+        return graph
+
+    # * pop_up
     if pop_up:
         if not environ.get("WERKZEUG_RUN_MAIN"):
             open_new(port)
@@ -197,3 +213,41 @@ def buildDashApp(moop,
         message = str(hot_reload) + " is an invalid value for 'hot_reload'. "
         message += "\nInstead, use on of the boolean values 'True' and 'False'"
         raise ValueError(message)
+
+
+def generate_graph(plot_type,
+                   moop,
+                   db,
+                   height,
+                   width,
+                   verbose,
+                   font,
+                   objectives_only,):
+    if plot_type == 'scatter':
+        graph = generate_scatter(moop,
+                                 db=db,
+                                 height=height,
+                                 width=width,
+                                 verbose=verbose,
+                                 font=font,
+                                 objectives_only=objectives_only,)
+    elif plot_type == 'parallel':
+        graph = generate_parallel(moop,
+                                  db=db,
+                                  height=height,
+                                  width=width,
+                                  verbose=verbose,
+                                  font=font,
+                                  objectives_only=objectives_only,)
+    elif plot_type == 'radar':
+        graph = generate_radar(moop,
+                               db=db,
+                               height=height,
+                               width=width,
+                               verbose=verbose,
+                               font=font,
+                               objectives_only=objectives_only,)
+    else:
+        warn("invalid plot_type")
+
+    return graph

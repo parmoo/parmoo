@@ -1,5 +1,5 @@
-from .dashboard import buildDashApp
-from .utilities import exportFile, setPlotName
+from .dashboard import build_dash_app
+from .utilities import export_file, set_plot_name
 from .graph import (generate_scatter,
                     generate_parallel,
                     generate_radar,)
@@ -56,30 +56,32 @@ def scatter(moop,
             height='auto',
             width='auto',
             verbose=True,
+            font='auto',
             hot_reload=False,
             pop_up=True,
             port='http://127.0.0.1:8050/',):
     if output == 'dash':
-        buildDashApp(moop=moop,
-                     plotType='scatter',
-                     db=db,
-                     height='auto',
-                     width='auto',
-                     verbose=verbose,
-                     hot_reload=hot_reload,
-                     pop_up=pop_up,
-                     port=port,)
-    # elif output == 'no_dash':
-    #     graph.scatter(config=config)
+        build_dash_app(plot_type='scatter',
+                       moop=moop,
+                       db=db,
+                       height='auto',
+                       width='auto',
+                       verbose=verbose,
+                       font=font,
+                       hot_reload=hot_reload,
+                       pop_up=pop_up,
+                       port=port,)
     else:
-        plotName = setPlotName(db=db)
-        exportFile(fig=generate_scatter(moop,
-                                        db=db,
-                                        height=height,
-                                        width=width,
-                                        verbose=verbose,),
-                   plotName=plotName,
-                   fileType=output)
+        plot_name = set_plot_name(db=db)
+        export_file(
+            fig=generate_scatter(moop,
+                                 db=db,
+                                 height=height,
+                                 width=width,
+                                 verbose=verbose,
+                                 font=font,),
+            plot_name=plot_name,
+            file_type=output)
 
 
 """ Display MOOP results as parallel coordinates plot.
@@ -127,6 +129,7 @@ def parallel_coordinates(moop,
                          output='dash',
                          height='auto',
                          width='auto',
+                         font='auto',
                          objectives_only=True,
                          verbose=True,
                          hot_reload=False,
@@ -134,26 +137,26 @@ def parallel_coordinates(moop,
                          port='http://127.0.0.1:8050/',):
 
     if output == 'dash':
-        buildDashApp(moop=moop,
-                     plotType='parallel_coordinates',
-                     db=db,
-                     height=height,
-                     width=width,
-                     verbose=verbose,
-                     hot_reload=hot_reload,
-                     pop_up=pop_up,
-                     port=port,)
-    # elif output == 'no_dash':
-    #     graph.scatter(config=config)
+        build_dash_app(plot_type='parallel',
+                       moop=moop,
+                       db=db,
+                       height=height,
+                       width=width,
+                       verbose=verbose,
+                       font=font,
+                       hot_reload=hot_reload,
+                       pop_up=pop_up,
+                       port=port,)
     else:
-        plotName = setPlotName(db=db)
-        exportFile(fig=generate_parallel(moop=moop,
-                                         db=db,
-                                         height=height,
-                                         width=width,
-                                         verbose=verbose,),
-                   plotName=plotName,
-                   fileType=output)
+        plot_name = set_plot_name(db=db)
+        export_file(fig=generate_parallel(moop=moop,
+                                          db=db,
+                                          height=height,
+                                          width=width,
+                                          verbose=verbose,
+                                          font=font,),
+                    plot_name=plot_name,
+                    file_type=output)
 
 
 """ Display MOOP results as radar plot.
@@ -196,28 +199,29 @@ def radar(moop,
           height='auto',
           width='auto',
           verbose=True,
+          font='auto',
           hot_reload=False,
           pop_up=True,
           port='http://127.0.0.1:8050/',):
 
     if output == 'dash':
-        buildDashApp(moop=moop,
-                     plotType='radar',
-                     db=db,
-                     height=height,
-                     width=width,
-                     verbose=verbose,
-                     hot_reload=hot_reload,
-                     pop_up=pop_up,
-                     port=port,)
-    # elif output == 'no_dash':
-    #     graph.scatter(config=config)
+        build_dash_app(plot_type='radar',
+                       moop=moop,
+                       db=db,
+                       height=height,
+                       width=width,
+                       verbose=verbose,
+                       font=font,
+                       hot_reload=hot_reload,
+                       pop_up=pop_up,
+                       port=port,)
     else:
-        plotName = setPlotName(db=db)
-        exportFile(fig=generate_radar(moop,
-                                      db=db,
-                                      height=height,
-                                      width=width,
-                                      verbose=verbose,),
-                   plotName=plotName,
-                   fileType=output)
+        plot_name = set_plot_name(db=db)
+        export_file(fig=generate_radar(moop,
+                                       db=db,
+                                       height=height,
+                                       width=width,
+                                       verbose=verbose,
+                                       font=font,),
+                    plot_name=plot_name,
+                    file_type=output)

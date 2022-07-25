@@ -1,14 +1,14 @@
 import pandas as pd
 
 
-def exportFile(fig, plotName, fileType):
+def export_file(fig, plot_name, file_type):
     """ Display MOOP plot.
 
     Export plot.
 
     Args:
         fig (Plotly figure): figure to export.
-        plotName (String): Used for naming export files
+        plot_name (String): Used for naming export files
         export (String): Indicate export type
                      'none' (default) don't export image file
                      'html' export plot as html
@@ -22,20 +22,20 @@ def exportFile(fig, plotName, fileType):
         None
 
     """
-    if fileType == 'html':
-        fig.write_html(plotName + ".html")
-    elif fileType == 'pdf':
-        fig.write_image(plotName + ".pdf")
-    elif fileType == 'svg':
-        fig.write_image(plotName + ".svg")
-    elif fileType == 'webp':
-        fig.write_image(plotName + ".webp")
-    elif fileType == 'jpeg':
-        fig.write_image(plotName + ".jpeg")
-    elif fileType == 'png':
-        fig.write_image(plotName + ".png")
+    if file_type == 'html':
+        fig.write_html(plot_name + ".html")
+    elif file_type == 'pdf':
+        fig.write_image(plot_name + ".pdf")
+    elif file_type == 'svg':
+        fig.write_image(plot_name + ".svg")
+    elif file_type == 'webp':
+        fig.write_image(plot_name + ".webp")
+    elif file_type == 'jpeg':
+        fig.write_image(plot_name + ".jpeg")
+    elif file_type == 'png':
+        fig.write_image(plot_name + ".png")
     else:
-        message = "ParMOO does not support outputting to '" + fileType + "'.\n"
+        message = "ParMOO does not support '" + file_type + "'.\n"
         message += "Supported outputs:\n"
         message += "'dash'\n"
         message += "'no_dash'\n"
@@ -48,7 +48,7 @@ def exportFile(fig, plotName, fileType):
         raise ValueError(message)
 
 
-def configure(height, width, plotName):
+def configure(height, width, plot_name):
 
     # # * set screenshot type based on export type
     # if export == 'png':
@@ -68,7 +68,7 @@ def configure(height, width, plotName):
             'displayModeBar': True,
             'toImageButtonOptions': {
                 'format': screenshot,  # one of png, svg, jpeg, webp
-                'filename': str(plotName),
+                'filename': str(plot_name),
                 'height': int(height),
                 'width': int(width),
                 'scale': 1  # Multiply title/legend/axis/canvas sizes by factor
@@ -80,40 +80,32 @@ def configure(height, width, plotName):
             'displayModeBar': True,
             'toImageButtonOptions': {
                 'format': screenshot,  # one of png, svg, jpeg, webp
-                'filename': str(plotName),
+                'filename': str(plot_name),
             }
         }
     return config
 
-# def output()
-#     if output == 'dash':
-#         buildDashApp(moop=moop,
-#                      db=db,
-#                      fig=fig,
-#                      config=config,
-#                      verbose=verbose,
-#                      hot_reload=hot_reload,
-#                      pop_up=pop_up,
-#                      port=port,)
-#     elif output == 'no_dash':
-#         fig.show(config=config)
-#     else:
-#         exportFile(fig=fig,
-#                    plotName=plotName,
-#                    fileType=output)
+
+def customize(fig,
+              font,):
+    if font != 'auto':
+        fig.update_layout(
+            font_family=font
+        )
+    return fig
 
 
-def setPlotName(db):
+def set_plot_name(db):
     if db == 'pf':
-        plotName = "Pareto Front"
+        plot_name = "Pareto Front"
     elif db == 'obj':
-        plotName = "Objective Data"
+        plot_name = "Objective Data"
     else:
         raise ValueError(str(db) + "is invalid argument for 'db'")
-    return plotName
+    return plot_name
 
 
-def setDatabase(moop, db):
+def set_database(moop, db):
     if db == 'pf':
         database = pd.DataFrame(moop.getPF())
     elif db == 'obj':
@@ -123,13 +115,13 @@ def setDatabase(moop, db):
     return database
 
 
-def setHoverInfo(database, i):
-    hoverInfo = ""
+def set_hover_info(database, i):
+    hover_info = ""
     for key in database.columns:
-        hoverInfo += str(key)
-        hoverInfo += ": "
-        hoverInfo += str(database[key][i])
-        hoverInfo += "<br>"
+        hover_info += str(key)
+        hover_info += ": "
+        hover_info += str(database[key][i])
+        hover_info += "<br>"
         # since plotly is JavaScript-based
         # it uses HTML string formatting
-    return hoverInfo
+    return hover_info
