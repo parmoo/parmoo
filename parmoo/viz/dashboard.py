@@ -51,7 +51,7 @@ class Dash_App:
         fontsize,
         background_color,
         margins,
-        dummy1,
+        screenshot,
         dummy2,
         dummy3,
         dummy4,
@@ -74,7 +74,7 @@ class Dash_App:
         self.fontsize = fontsize
         self.background_color = background_color
         self.margins = margins
-        self.dummy1 = dummy1
+        self.screenshot = screenshot
         self.dummy2 = dummy2
         self.dummy3 = dummy3
         self.dummy4 = dummy4
@@ -85,8 +85,6 @@ class Dash_App:
         self.pop_up = pop_up
         self.port = port
 
-        self.monke = self.plot_type
-        print(self.plot_type)
         # * define dependent state
         self.selection_indexes = []
         self.plot_name = set_plot_name(db=self.db)
@@ -238,21 +236,29 @@ class Dash_App:
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'font_selection_downdown.value' == triggered_id:
-                return update_font(font_value)
+                self.font = font_value
+                return update_font()
             elif 'font_size_dropdown.value' == triggered_id:
-                return update_font_size(size_value)
+                self.fontsize = size_value
+                return update_font_size()
 
         # * functionality of select font button
-        def update_font(value):
-            self.font = value
-            graph = self.generate_graph()
-            return graph
+        def update_font():
+            self.graph.update_layout(
+                font=dict(
+                    family=self.font
+                )
+            )
+            return self.graph
 
         # * functionality of select font size button
-        def update_font_size(value):
-            self.fontsize = value
-            graph = self.generate_graph()
-            return graph
+        def update_font_size():
+            self.graph.update_layout(
+                font=dict(
+                    size=int(self.fontsize)
+                )
+            )
+            return self.graph
 
         # * pop_up
         if pop_up:
@@ -271,8 +277,8 @@ class Dash_App:
                 dev_tools_hot_reload=False,
             )
         else:
-            message = str(hot_reload) + " is an invalid value for 'hot_reload'. "
-            message += "\nInstead, use on of the boolean values 'True' and 'False'"
+            message = str(hot_reload) + " is an invalid value for 'hot_reload'"
+            message += "\n'hot_reload' accepts boolean values only"
             raise ValueError(message)
 
     def generate_graph(self):
@@ -288,7 +294,7 @@ class Dash_App:
                 fontsize=self.fontsize,
                 background_color=self.background_color,
                 margins=self.margins,
-                dummy1=self.dummy1,
+                screenshot=self.screenshot,
                 dummy2=self.dummy2,
                 dummy3=self.dummy3,
                 dummy4=self.dummy4,
@@ -308,7 +314,7 @@ class Dash_App:
                 fontsize=self.fontsize,
                 background_color=self.background_color,
                 margins=self.margins,
-                dummy1=self.dummy1,
+                screenshot=self.screenshot,
                 dummy2=self.dummy2,
                 dummy3=self.dummy3,
                 dummy4=self.dummy4,
@@ -328,7 +334,7 @@ class Dash_App:
                 fontsize=self.fontsize,
                 background_color=self.background_color,
                 margins=self.margins,
-                dummy1=self.dummy1,
+                screenshot=self.screenshot,
                 dummy2=self.dummy2,
                 dummy3=self.dummy3,
                 dummy4=self.dummy4,
