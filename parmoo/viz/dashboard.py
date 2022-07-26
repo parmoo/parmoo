@@ -130,13 +130,18 @@ class Dash_App:
                 placeholder='Select font',
                 type='text',
                 value='',
+                size='1',
                 id='font_selection_input',
+                debounce=True,
             ),
             dcc.Input(
                 placeholder='Select font size',
                 type='number',
                 value='',
+                min=1,
+                max=100,
                 id='font_size_input',
+                debounce=True,
             ),
             dcc.Input(
                 placeholder='Select graph width',
@@ -349,12 +354,16 @@ class Dash_App:
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'font_selection_input.value' == triggered_id:
-                if font_value != "":
+                if font_value != '':
                     self.font = font_value
-                    return update_font()
+                    self.graph = self.update_font()
+                    return self.graph
+                else:
+                    return self.graph
             elif 'font_size_input.value' == triggered_id:
                 self.fontsize = size_value
-                return update_font_size()
+                self.graph = self.update_font_size()
+                return self.graph
             elif 'graph_margins_input.value' == triggered_id:
                 self.margins = margins_value
                 return update_margins()
@@ -372,24 +381,6 @@ class Dash_App:
             elif 'database_dropdown.value' == triggered_id:
                 self.database = database_value
                 return update_database()
-
-        # * functionality of select font input
-        def update_font():
-            self.graph.update_layout(
-                font=dict(
-                    family=self.font
-                )
-            )
-            return self.graph
-
-        # * functionality of select font size input
-        def update_font_size():
-            self.graph.update_layout(
-                font=dict(
-                    size=int(self.fontsize)
-                )
-            )
-            return self.graph
 
         # * functionality of graph margins input
         def update_margins():
@@ -492,6 +483,9 @@ class Dash_App:
         else:
             warn("invalid plot_type")
 
+        self.graph = self.update_font()
+        self.graph = self.update_font_size()
+
         return self.graph
 
     def configure(self):
@@ -518,3 +512,23 @@ class Dash_App:
             }
 
         return self.config
+
+     # * functionality of select font input
+    def update_font(self):
+        if self.font != 'auto':
+            self.graph.update_layout(
+                font=dict(
+                    family=self.font
+                )
+            )
+        return self.graph
+
+    # * functionality of select font size input
+    def update_font_size(self):
+        if self.fontsize != 'auto':
+            self.graph.update_layout(
+                font=dict(
+                    size=int(self.fontsize)
+                )
+            )
+        return self.graph
