@@ -196,10 +196,10 @@ def generate_radar(
             hovertext=hover_info,))
 
     # * improve aesthetics
-    fig.update_traces(
-        hover_info='text',
-        selector=dict(
-            type='scatterpolar'))
+    # fig.update_traces(
+    #     hover_info='text',
+    #     selector=dict(
+    #         type='scatterpolar'))
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
