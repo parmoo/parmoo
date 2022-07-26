@@ -184,7 +184,7 @@ class Dash_App:
             ),
             dcc.Dropdown(
                 options=['Pareto Front',
-                         'Objective data'],
+                         'Objective Data'],
                 placeholder='Select database',
                 id='database_dropdown',
             ),
@@ -379,7 +379,10 @@ class Dash_App:
                     self.plot_type = 'radar'
                 return update_plot_type()
             elif 'database_dropdown.value' == triggered_id:
-                self.database = database_value
+                if database_value == 'Pareto Front':
+                    self.db = 'pf'
+                elif database_value == 'Objective Data':
+                    self.db = 'obj'
                 return update_database()
 
         # * functionality of graph margins input
@@ -396,6 +399,7 @@ class Dash_App:
 
         # * functionality of database dropdown
         def update_database():
+            self.database = set_database(moop, db=self.db)
             return self.generate_graph()
 
         # * pop_up
@@ -513,7 +517,7 @@ class Dash_App:
 
         return self.config
 
-     # * functionality of select font input
+    # * functionality of select font input
     def update_font(self):
         if self.font != 'auto':
             self.graph.update_layout(
