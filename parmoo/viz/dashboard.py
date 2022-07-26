@@ -162,10 +162,11 @@ class Dash_App:
                 id='graph_margins_input',
             ),
             dcc.Input(
-                placeholder='Select graph title',
+                placeholder='Select plot name',
                 type='text',
                 value='',
                 id='plot_name_input',
+                debounce=True,
             ),
             dcc.Dropdown(
                 options=['svg',
@@ -192,6 +193,7 @@ class Dash_App:
                 options=['White',
                          'Grey',
                          'Black',
+                         'Transparent',
                          'Red',
                          'Yellow',
                          'Blue',
@@ -286,17 +288,12 @@ class Dash_App:
             Input(
                 component_id='screenshot_dropdown',
                 component_property='value',),
-            # title
-            Input(
-                component_id='plot_name_input',
-                component_property='value',),
             prevent_initial_call=True
         )
         def update_config(
             height_value,
             width_value,
             screenshot_value,
-            plot_name_value,
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'graph_height_input.value' == triggered_id:
@@ -304,9 +301,6 @@ class Dash_App:
                 return self.configure()
             elif 'graph_width_input.value' == triggered_id:
                 self.width = width_value
-                return self.configure()
-            elif 'plot_name_input.value' == triggered_id:
-                self.plot_name = plot_name_value
                 return self.configure()
             elif 'screenshot_dropdown.value' == triggered_id:
                 self.screenshot = screenshot_value
@@ -334,6 +328,10 @@ class Dash_App:
             Input(
                 component_id='background_color_dropdown',
                 component_property='value',),
+            # plot name - update
+            Input(
+                component_id='plot_name_input',
+                component_property='value',),
             # plot type - regenerate
             Input(
                 component_id='plot_type_dropdown',
@@ -349,6 +347,7 @@ class Dash_App:
             size_value,
             margins_value,
             background_color_value,
+            plot_name_value,
             plot_type_value,
             database_value,
         ):
@@ -370,6 +369,13 @@ class Dash_App:
             elif 'background_color_dropdown.value' == triggered_id:
                 self.background_color = background_color_value
                 return update_background_color()
+            elif 'plot_name_input.value' == triggered_id:
+                if plot_name_value != '':
+                    self.plot_name = plot_name_value
+                    self.graph = self.update_plot_name()
+                    return self.graph
+                else:
+                    return self.graph
             elif 'plot_type_dropdown.value' == triggered_id:
                 if plot_type_value == 'Scatterplot':
                     self.plot_type = 'scatter'
@@ -489,6 +495,7 @@ class Dash_App:
 
         self.graph = self.update_font()
         self.graph = self.update_font_size()
+        self.graph = self.update_plot_name()
 
         return self.graph
 
@@ -535,4 +542,11 @@ class Dash_App:
                     size=int(self.fontsize)
                 )
             )
+        return self.graph
+
+    # * functionality of plot name input
+    def update_plot_name(self):
+        self.graph.update_layout(
+            title_text=self.plot_name
+        )
         return self.graph
