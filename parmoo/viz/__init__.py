@@ -4,8 +4,7 @@ from .plot import (
     radar,
 )
 from .dashboard import (
-    build_dash_app,
-    generate_graph,
+    Dash_App
 )
 from .graph import (
     generate_scatter,

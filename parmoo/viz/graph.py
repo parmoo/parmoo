@@ -23,14 +23,21 @@ from .utilities import (
 def generate_scatter(
     moop,
     db,
+    axes,
+    specificaxes,
     height,
     width,
-    verbose,
     font,
     fontsize,
     background_color,
     margins,
-    objectives_only,
+    dummy1,
+    dummy2,
+    dummy3,
+    dummy4,
+    dummy5,
+    dummy6,
+    verbose,
 ):
 
     # * get info
@@ -74,14 +81,21 @@ def generate_scatter(
 def generate_parallel(
     moop,
     db,
+    axes,
+    specificaxes,
     height,
     width,
-    verbose,
     font,
     fontsize,
     background_color,
     margins,
-    objectives_only,
+    dummy1,
+    dummy2,
+    dummy3,
+    dummy4,
+    dummy5,
+    dummy6,
+    verbose,
 ):
 
     # * setup axes
@@ -96,7 +110,7 @@ def generate_parallel(
     plot_name = set_plot_name(db=db)
 
     # * create plot
-    if objectives_only:
+    if axes == 'objectives':
         fig = px.parallel_coordinates(
             database,
             dimensions=objectives,
@@ -125,14 +139,21 @@ def generate_parallel(
 def generate_radar(
     moop,
     db,
+    axes,
+    specificaxes,
     height,
     width,
-    verbose,
     font,
     fontsize,
     background_color,
     margins,
-    objectives_only,
+    dummy1,
+    dummy2,
+    dummy3,
+    dummy4,
+    dummy5,
+    dummy6,
+    verbose,
 ):
 
     # * setup axes
