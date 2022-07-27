@@ -101,9 +101,9 @@ class Dash_App:
             # ),
             # * main plot
             dcc.Graph(
-                id='parmoo_graph',
                 figure=self.graph,
                 config=self.config,
+                id='parmoo_graph',
             ),
             dcc.Store(
                 id='selection',
@@ -128,8 +128,8 @@ class Dash_App:
                 placeholder='Select font',
                 type='text',
                 value='',
-                id='font_selection_input',
                 debounce=True,
+                id='font_selection_input',
             ),
             dcc.Input(
                 placeholder='Select font size',
@@ -137,36 +137,38 @@ class Dash_App:
                 value='',
                 min=1,
                 max=100,
-                id='font_size_input',
                 debounce=True,
+                id='font_size_input',
             ),
             dcc.Input(
                 placeholder='Select graph width',
                 type='number',
                 value='',
+                min=10,
+                step=1,
                 id='graph_width_input',
-                disabled=True,
             ),
             dcc.Input(
                 placeholder='Select graph height',
                 type='number',
                 value='',
+                min=10,
+                step=1,
                 id='graph_height_input',
-                disabled=True,
             ),
             dcc.Input(
                 placeholder='Select margin size',
                 type='number',
                 value='',
-                id='graph_margins_input',
                 disabled=True,
+                id='graph_margins_input',
             ),
             dcc.Input(
                 placeholder='Select plot name',
                 type='text',
                 value='',
-                id='plot_name_input',
                 debounce=True,
+                id='plot_name_input',
             ),
             dcc.Dropdown(
                 options=[
@@ -176,8 +178,8 @@ class Dash_App:
                     'webp'
                 ],
                 placeholder='Select screenshot format',
-                id='screenshot_dropdown',
                 disabled=True,
+                id='screenshot_dropdown',
             ),
             dcc.Dropdown(
                 options=['Scatterplot',
@@ -316,14 +318,6 @@ class Dash_App:
             Output(
                 component_id='parmoo_graph',
                 component_property='config',),
-            # height
-            Input(
-                component_id='graph_height_input',
-                component_property='value',),
-            # width
-            Input(
-                component_id='graph_width_input',
-                component_property='value',),
             # screenshot
             Input(
                 component_id='screenshot_dropdown',
@@ -352,6 +346,14 @@ class Dash_App:
             Output(
                 component_id='parmoo_graph',
                 component_property='figure',),
+            # height - update
+            Input(
+                component_id='graph_height_input',
+                component_property='value',),
+            # width - update
+            Input(
+                component_id='graph_width_input',
+                component_property='value',),
             # font - update
             Input(
                 component_id='font_selection_input',
@@ -391,6 +393,8 @@ class Dash_App:
             prevent_initial_call=True
         )
         def update_graph(
+            height_value,
+            width_value,
             font_value,
             size_value,
             margins_value,
@@ -402,7 +406,13 @@ class Dash_App:
             database_value,
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
-            if 'font_selection_input.value' == triggered_id:
+            if 'graph_height_input.value' == triggered_id:
+                self.height = height_value
+                return self.update_height()
+            elif 'graph_width_input.value' == triggered_id:
+                self.width = width_value
+                return self.update_width()
+            elif 'font_selection_input.value' == triggered_id:
                 if font_value != '':
                     self.font = font_value
                     self.graph = self.update_font()
@@ -555,6 +565,8 @@ class Dash_App:
         else:
             warn("invalid plot_type")
 
+        self.graph = self.update_height()
+        self.graph = self.update_width()
         self.graph = self.update_font()
         self.graph = self.update_font_size()
         self.graph = self.update_plot_name()
@@ -588,6 +600,20 @@ class Dash_App:
             }
 
         return self.config
+
+    # * functionality of select height input
+    def update_height(self):
+        if self.height != 'auto':
+            self.graph.update_layout(
+                height=int(self.height))
+        return self.graph
+
+    # * functionality of select width input
+    def update_width(self):
+        if self.width != 'auto':
+            self.graph.update_layout(
+                width=int(self.width))
+        return self.graph
 
     # * functionality of select font input
     def update_font(self):
