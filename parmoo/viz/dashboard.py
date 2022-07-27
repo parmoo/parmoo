@@ -53,14 +53,17 @@ class Dash_App:
         screenshot,
         graph_background_color,
         theme,
-        dummy4,
-        dummy5,
+        export_image_format,
+        export_data_format,
         dummy6,
         verbose,
         hot_reload,
         pop_up,
         port,
     ):
+
+    # ! STATE
+
         # * define independent state
         self.moop = moop
         self.plot_type = plot_type
@@ -76,8 +79,8 @@ class Dash_App:
         self.screenshot = screenshot
         self.graph_background_color = graph_background_color
         self.theme = theme
-        self.dummy4 = dummy4
-        self.dummy5 = dummy5
+        self.export_image_format = export_image_format
+        self.export_data_format = export_data_format
         self.dummy6 = dummy6
         self.verbose = verbose
         self.hot_reload = hot_reload
@@ -91,6 +94,8 @@ class Dash_App:
         self.graph = self.generate_graph()
         self.config = self.configure()
 
+    # ! LAYOUT
+
         # * initialize app
         app = Dash(__name__)
         # * lay out app
@@ -101,14 +106,13 @@ class Dash_App:
             # ),
             # * main plot
             dcc.Graph(
+                id='parmoo_graph',
                 figure=self.graph,
                 config=self.config,
-                id='parmoo_graph',
             ),
             dcc.Store(
                 id='selection',
             ),
-            # * download dataset button
             html.Button(
                 children='Download dataset as CSV',
                 id='download_dataset_button',
@@ -116,7 +120,6 @@ class Dash_App:
             dcc.Download(
                 id='dataset_download_csv',
             ),
-            # * download selection button
             html.Button(
                 children='Download selection as CSV',
                 id='download_selection_button',
@@ -125,52 +128,53 @@ class Dash_App:
                 id='selection_download_csv',
             ),
             dcc.Input(
+                id='font_selection_input',
                 placeholder='Select font',
                 type='text',
                 value='',
                 debounce=True,
-                id='font_selection_input',
             ),
             dcc.Input(
+                id='font_size_input',
                 placeholder='Select font size',
                 type='number',
                 value='',
                 min=1,
                 max=100,
                 debounce=True,
-                id='font_size_input',
             ),
             dcc.Input(
+                id='graph_width_input',
                 placeholder='Select graph width',
                 type='number',
                 value='',
                 min=10,
                 step=1,
-                id='graph_width_input',
             ),
             dcc.Input(
+                id='graph_height_input',
                 placeholder='Select graph height',
                 type='number',
                 value='',
                 min=10,
                 step=1,
-                id='graph_height_input',
             ),
             dcc.Input(
+                id='graph_margins_input',
                 placeholder='Select margin size',
                 type='number',
                 value='',
                 disabled=True,
-                id='graph_margins_input',
             ),
             dcc.Input(
+                id='plot_name_input',
                 placeholder='Select plot name',
                 type='text',
                 value='',
                 debounce=True,
-                id='plot_name_input',
             ),
             dcc.Dropdown(
+                id='screenshot_dropdown',
                 options=[
                     'svg',
                     'png',
@@ -179,24 +183,24 @@ class Dash_App:
                 ],
                 placeholder='Select screenshot format',
                 disabled=True,
-                id='screenshot_dropdown',
             ),
             dcc.Dropdown(
+                id='plot_type_dropdown',
                 options=['Scatterplot',
                          'Parallel Coordinates plot',
                          'Radar plot'],
                 placeholder='Select plot type',
-                id='plot_type_dropdown',
             ),
             dcc.Dropdown(
+                id='database_dropdown',
                 options=[
                     'Pareto Front',
                     'Objective Data'
                 ],
                 placeholder='Select database',
-                id='database_dropdown',
             ),
             dcc.Dropdown(
+                id='paper_background_color_dropdown',
                 options=[
                     'White',
                     'Grey',
@@ -210,9 +214,9 @@ class Dash_App:
                     'Purple'
                 ],
                 placeholder='Select paper background color',
-                id='paper_background_color_dropdown',
             ),
             dcc.Dropdown(
+                id='graph_background_color_dropdown',
                 options=[
                     'White',
                     'Grey',
@@ -226,9 +230,9 @@ class Dash_App:
                     'Purple'
                 ],
                 placeholder='Select graph background color',
-                id='graph_background_color_dropdown',
             ),
             dcc.Dropdown(
+                id='theme_dropdown',
                 options=[
                     'ggplot2',
                     'seaborn',
@@ -243,102 +247,39 @@ class Dash_App:
                     'none'
                 ],
                 placeholder='Select theme',
-                id='theme_dropdown',
+            ),
+            dcc.Dropdown(
+                id='image_export_format_dropdown',
+                options=[
+                    'PNG',
+                    'JPEG',
+                    'PDF',
+                    'SVG',
+                    'EPS',
+                    'HTML',
+                    'WebP'
+                ],
+                placeholder='Select image export format',
+            ),
+            dcc.Store(
+                id='image_export_format_store',
+                storage_type='local',
+            ),
+            dcc.Dropdown(
+                id='data_export_format_dropdown',
+                options=[
+                    'CSV',
+                    'JSON',
+                ],
+                placeholder='Select data export format',
+            ),
+            dcc.Store(
+                id='data_export_format_store',
+                storage_type='local',
             )
         ])
 
-        # * functionality of dataset download button
-        @app.callback(
-            Output(
-                component_id='dataset_download_csv',
-                component_property='data'),
-            Input(
-                component_id='download_dataset_button',
-                component_property='n_clicks'),
-        )
-        def download_dataset(n_clicks):
-            if n_clicks is None:
-                raise exceptions.PreventUpdate
-            else:
-                self.database.index.name = 'index'
-                return dict(
-                    filename=str(self.plot_name) + ".csv",
-                    content=self.database.to_csv(),
-                )
-
-        # * create object holding selected data
-        @app.callback(
-            Output(
-                component_id='selection',
-                component_property='data'),
-            Input(
-                component_id='parmoo_graph',
-                component_property='selectedData'),
-        )
-        def store_selection(selectedData):
-            if selectedData is None:
-                raise exceptions.PreventUpdate
-            else:
-                pointskey = selectedData['points']
-                for index in range(len(pointskey)):
-                    level1 = pointskey[index]
-                    point_index = level1['pointIndex']
-                    self.selection_indexes.append(point_index)
-
-        # * functionality of selection download button
-        @app.callback(
-            Output(
-                component_id='selection_download_csv',
-                component_property='data'),
-            Input(
-                component_id='download_selection_button',
-                component_property='n_clicks'),
-        )
-        def download_selection(n_clicks):
-            if n_clicks is None:
-                raise exceptions.PreventUpdate
-            else:
-                selection_db = self.database.iloc[:0, :].copy()
-                for i in self.selection_indexes:
-                    selection_db = pd.concat(
-                        [selection_db,
-                         self.database.iloc[[i]]]
-                    )
-                    selection_db.index.name = 'index'
-                selection_db.drop_duplicates(inplace=True)
-                selection_db.sort_index(inplace=True)
-                return dict(
-                    filename="selected_data.csv",
-                    content=selection_db.to_csv(),
-                )
-
-        # * configure graph
-        # TODO whenever possible, configure instead of updating or regenerating
-        @app.callback(
-            Output(
-                component_id='parmoo_graph',
-                component_property='config',),
-            # screenshot
-            Input(
-                component_id='screenshot_dropdown',
-                component_property='value',),
-            prevent_initial_call=True
-        )
-        def update_config(
-            height_value,
-            width_value,
-            screenshot_value,
-        ):
-            triggered_id = callback_context.triggered[0]['prop_id']
-            if 'graph_height_input.value' == triggered_id:
-                self.height = height_value
-                return self.configure()
-            elif 'graph_width_input.value' == triggered_id:
-                self.width = width_value
-                return self.configure()
-            elif 'screenshot_dropdown.value' == triggered_id:
-                self.screenshot = screenshot_value
-                return self.configure()
+    # ! CALLBACKS
 
         # * regenerate or update graph
         # TODO whenever possible, update instead of regenerating
@@ -396,7 +337,7 @@ class Dash_App:
             height_value,
             width_value,
             font_value,
-            size_value,
+            font_size_value,
             margins_value,
             paper_background_color_value,
             graph_background_color_value,
@@ -407,78 +348,87 @@ class Dash_App:
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'graph_height_input.value' == triggered_id:
-                self.height = height_value
-                return self.update_height()
+                return self.evaluate_height(height_value)
             elif 'graph_width_input.value' == triggered_id:
-                self.width = width_value
-                return self.update_width()
+                return self.evaluate_width(width_value)
             elif 'font_selection_input.value' == triggered_id:
-                if font_value != '':
-                    self.font = font_value
-                    self.graph = self.update_font()
-                    return self.graph
-                else:
-                    return self.graph
+                return self.evaluate_font(font_value)
             elif 'font_size_input.value' == triggered_id:
-                self.fontsize = size_value
-                self.graph = self.update_font_size()
-                return self.graph
+                return self.evaluate_font_size(font_size_value)
             elif 'graph_margins_input.value' == triggered_id:
-                self.margins = margins_value
-                return update_margins()
+                return self.evaluate_margins(margins_value)
             elif 'paper_background_color_dropdown.value' == triggered_id:
-                if paper_background_color_value == 'Transparent':
-                    self.paper_background_color = 'rgb(0,0,0,0)'
-                else:
-                    self.paper_background_color = paper_background_color_value
-                return self.update_paper_background_color()
+                return self.evaluate_paper_color(paper_background_color_value)
             elif 'graph_background_color_dropdown.value' == triggered_id:
-                if graph_background_color_value == 'Transparent':
-                    self.graph_background_color = 'rgb(0,0,0,0)'
-                else:
-                    self.graph_background_color = graph_background_color_value
-                return self.update_graph_background_color()
+                return self.evaluate_graph_color(graph_background_color_value)
             elif 'theme_dropdown.value' == triggered_id:
-                self.theme = theme_value
-                return self.update_theme()
+                return self.evaluate_theme(theme_value)
             elif 'plot_name_input.value' == triggered_id:
-                if plot_name_value != '':
-                    self.plot_name = plot_name_value
-                    self.graph = self.update_plot_name()
-                    return self.graph
-                else:
-                    return self.graph
+                return self.evaluate_plot_name(plot_name_value)
             elif 'plot_type_dropdown.value' == triggered_id:
-                if plot_type_value == 'Scatterplot':
-                    self.plot_type = 'scatter'
-                elif plot_type_value == 'Parallel Coordinates plot':
-                    self.plot_type = 'parallel'
-                elif plot_type_value == 'Radar plot':
-                    self.plot_type = 'radar'
-                return update_plot_type()
+                return self.evaluate_plot_type(plot_type_value)
             elif 'database_dropdown.value' == triggered_id:
-                if database_value == 'Pareto Front':
-                    self.db = 'pf'
-                elif database_value == 'Objective Data':
-                    self.db = 'obj'
-                return update_database()
+                return self.evaluate_database(database_value)
 
-        # * functionality of graph margins input
-        def update_margins():
-            pass
+        # * download dataset
+        @app.callback(
+            Output(
+                component_id='dataset_download_csv',
+                component_property='data'),
+            Input(
+                component_id='download_dataset_button',
+                component_property='n_clicks'),
+        )
+        def download_dataset(n_clicks):
+            return self.evaluate_dataset_download(n_clicks)
 
-        # * functionality of plot type dropdown
-        def update_plot_type():
-            return self.generate_graph()
+        # * create object holding selected data
+        @app.callback(
+            Output(
+                component_id='selection',
+                component_property='data'),
+            Input(
+                component_id='parmoo_graph',
+                component_property='selectedData'),
+        )
+        def store_selection(selectedData):
+            self.evaluate_selected_data(selectedData)
 
-        # * functionality of database dropdown
-        def update_database():
-            self.database = set_database(moop, db=self.db)
-            if self.plot_name == 'Pareto Front':
-                self.plot_name = set_plot_name(db=self.db)
-            elif self.plot_name == 'Objective Data':
-                self.plot_name = set_plot_name(db=self.db)
-            return self.generate_graph()
+        # * download selection
+        @app.callback(
+            Output(
+                component_id='selection_download_csv',
+                component_property='data'),
+            Input(
+                component_id='download_selection_button',
+                component_property='n_clicks'),
+        )
+        def download_selection(n_clicks):
+            return self.evaluate_selection_download(n_clicks)
+
+        @app.callback(
+            Output(
+                component_id='image_export_format_store',
+                component_property='data'),
+            Input(
+                component_id='image_export_format_dropdown',
+                component_property='value'),
+        )
+        def update_image_export_format(value):
+            self.evaluate_image_export_format(value)
+
+        @app.callback(
+            Output(
+                component_id='data_export_format_store',
+                component_property='data'),
+            Input(
+                component_id='data_export_format_dropdown',
+                component_property='value'),
+        )
+        def update_data_export_format(value):
+            self.evaluate_image_export_format(value)
+
+    # ! EXECUTION
 
         # * pop_up
         if pop_up:
@@ -501,6 +451,8 @@ class Dash_App:
             message += "\n'hot_reload' accepts boolean values only"
             raise ValueError(message)
 
+    # ! INITIALIZATION HELPERS
+
     def generate_graph(self):
         if self.plot_type == 'scatter':
             self.graph = generate_scatter(
@@ -517,8 +469,8 @@ class Dash_App:
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
                 theme=self.theme,
-                dummy4=self.dummy4,
-                dummy5=self.dummy5,
+                export_image_format=self.export_image_format,
+                export_data_format=self.export_data_format,
                 dummy6=self.dummy6,
                 verbose=self.verbose,
             )
@@ -537,8 +489,8 @@ class Dash_App:
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
                 theme=self.theme,
-                dummy4=self.dummy4,
-                dummy5=self.dummy5,
+                export_image_format=self.export_image_format,
+                export_data_format=self.export_data_format,
                 dummy6=self.dummy6,
                 verbose=self.verbose,
             )
@@ -557,8 +509,8 @@ class Dash_App:
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
                 theme=self.theme,
-                dummy4=self.dummy4,
-                dummy5=self.dummy5,
+                export_image_format=self.export_image_format,
+                export_data_format=self.export_data_format,
                 dummy6=self.dummy6,
                 verbose=self.verbose,
             )
@@ -600,6 +552,8 @@ class Dash_App:
             }
 
         return self.config
+
+    # ! UPDATE HELPERS
 
     # * functionality of select height input
     def update_height(self):
@@ -675,3 +629,139 @@ class Dash_App:
                 template=self.theme,
             )
         return self.graph
+
+    # * functionality of graph margins input
+    def update_margins(self):
+        pass
+
+    # * functionality of plot type dropdown
+    def update_plot_type(self):
+        return self.generate_graph()
+
+    # * functionality of database dropdown
+    def update_database(self):
+        self.database = set_database(moop=self.moop, db=self.db)
+        if self.plot_name == 'Pareto Front':
+            self.plot_name = set_plot_name(db=self.db)
+        elif self.plot_name == 'Objective Data':
+            self.plot_name = set_plot_name(db=self.db)
+        return self.generate_graph()
+
+    # ! CALLBACK HELPERS
+
+    def evaluate_height(self, height_value):
+        if height_value is not None:
+            self.height = height_value
+            return self.update_height()
+        else:
+            return self.graph
+
+    def evaluate_width(self, width_value):
+        if width_value is not None:
+            self.width = width_value
+            return self.update_width()
+        else:
+            return self.graph
+
+    def evaluate_font(self, font_value):
+        if font_value != '':
+            self.font = font_value
+            self.graph = self.update_font()
+            return self.graph
+        else:
+            return self.graph
+
+    def evaluate_font_size(self, font_size_value):
+        self.fontsize = font_size_value
+        self.graph = self.update_font_size()
+        return self.graph
+
+    def evaluate_margins(self, margins_value):
+        self.margins = margins_value
+        return self.update_margins()
+
+    def evaluate_paper_color(self, paper_background_color_value):
+        if paper_background_color_value == 'Transparent':
+            self.paper_background_color = 'rgb(0,0,0,0)'
+        else:
+            self.paper_background_color = paper_background_color_value
+        return self.update_paper_background_color()
+
+    def evaluate_graph_color(self, graph_background_color_value):
+        if graph_background_color_value == 'Transparent':
+            self.graph_background_color = 'rgb(0,0,0,0)'
+        else:
+            self.graph_background_color = graph_background_color_value
+        return self.update_graph_background_color()
+
+    def evaluate_theme(self, theme_value):
+        self.theme = theme_value
+        return self.update_theme()
+
+    def evaluate_plot_name(self, plot_name_value):
+        if plot_name_value != '':
+            self.plot_name = plot_name_value
+            self.graph = self.update_plot_name()
+            return self.graph
+        else:
+            return self.graph
+
+    def evaluate_plot_type(self, plot_type_value):
+        if plot_type_value == 'Scatterplot':
+            self.plot_type = 'scatter'
+        elif plot_type_value == 'Parallel Coordinates plot':
+            self.plot_type = 'parallel'
+        elif plot_type_value == 'Radar plot':
+            self.plot_type = 'radar'
+        return self.update_plot_type()
+
+    def evaluate_database(self, database_value):
+        if database_value == 'Pareto Front':
+            self.db = 'pf'
+        elif database_value == 'Objective Data':
+            self.db = 'obj'
+        return self.update_database()
+
+    def evaluate_dataset_download(self, n_clicks):
+        if n_clicks is None:
+            raise exceptions.PreventUpdate
+        else:
+            self.database.index.name = 'index'
+            return dict(
+                filename=str(self.plot_name) + ".csv",
+                content=self.database.to_csv(),
+            )
+
+    def evaluate_selected_data(self, selectedData):
+        if selectedData is None:
+            raise exceptions.PreventUpdate
+        else:
+            pointskey = selectedData['points']
+            for index in range(len(pointskey)):
+                level1 = pointskey[index]
+                point_index = level1['pointIndex']
+                self.selection_indexes.append(point_index)
+
+    def evaluate_selection_download(self, n_clicks):
+        if n_clicks is None:
+            raise exceptions.PreventUpdate
+        else:
+            selection_db = self.database.iloc[:0, :].copy()
+            for i in self.selection_indexes:
+                selection_db = pd.concat(
+                    [selection_db,
+                        self.database.iloc[[i]]]
+                )
+                selection_db.index.name = 'index'
+            selection_db.drop_duplicates(inplace=True)
+            selection_db.sort_index(inplace=True)
+            return dict(
+                filename="selected_data.csv",
+                content=selection_db.to_csv(),
+            )
+
+    def evaluate_image_export_format(self, value):
+        pass
+
+    def evaluate_data_export_format(self, value):
+        pass
