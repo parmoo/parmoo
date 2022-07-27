@@ -5,7 +5,7 @@ def customize(
     fig,
     font,
     fontsize,
-    background_color,
+    paper_background_color,
     margins,
 ):
     if font != 'auto':
@@ -20,7 +20,7 @@ def customize(
                 size=int(fontsize)
             )
         )
-    if background_color != 'auto':
+    if paper_background_color != 'auto':
         pass
     if margins != 'auto':
         pass

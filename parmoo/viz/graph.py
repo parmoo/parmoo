@@ -29,10 +29,10 @@ def generate_scatter(
     width,
     font,
     fontsize,
-    background_color,
+    paper_background_color,
     margins,
     screenshot,
-    dummy2,
+    graph_background_color,
     dummy3,
     dummy4,
     dummy5,
@@ -70,7 +70,7 @@ def generate_scatter(
         fig,
         font=font,
         fontsize=fontsize,
-        background_color=background_color,
+        paper_background_color=paper_background_color,
         margins=margins,
     )
 
@@ -87,10 +87,10 @@ def generate_parallel(
     width,
     font,
     fontsize,
-    background_color,
+    paper_background_color,
     margins,
     screenshot,
-    dummy2,
+    graph_background_color,
     dummy3,
     dummy4,
     dummy5,
@@ -128,7 +128,7 @@ def generate_parallel(
         fig,
         font=font,
         fontsize=fontsize,
-        background_color=background_color,
+        paper_background_color=paper_background_color,
         margins=margins,
     )
 
@@ -145,10 +145,10 @@ def generate_radar(
     width,
     font,
     fontsize,
-    background_color,
+    paper_background_color,
     margins,
     screenshot,
-    dummy2,
+    graph_background_color,
     dummy3,
     dummy4,
     dummy5,
@@ -196,10 +196,6 @@ def generate_radar(
             hovertext=hover_info,))
 
     # * improve aesthetics
-    # fig.update_traces(
-    #     hover_info='text',
-    #     selector=dict(
-    #         type='scatterpolar'))
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
@@ -210,12 +206,11 @@ def generate_radar(
             text=plot_name))
     fig.update_layout(
         autosize=True,)
-
     fig = customize(
         fig,
         font=font,
         fontsize=fontsize,
-        background_color=background_color,
+        paper_background_color=paper_background_color,
         margins=margins,
     )
 

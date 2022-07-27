@@ -48,10 +48,10 @@ class Dash_App:
         width,
         font,
         fontsize,
-        background_color,
+        paper_background_color,
         margins,
         screenshot,
-        dummy2,
+        graph_background_color,
         dummy3,
         dummy4,
         dummy5,
@@ -71,10 +71,10 @@ class Dash_App:
         self.width = width
         self.font = font
         self.fontsize = fontsize
-        self.background_color = background_color
+        self.paper_background_color = paper_background_color
         self.margins = margins
         self.screenshot = screenshot
-        self.dummy2 = dummy2
+        self.graph_background_color = graph_background_color
         self.dummy3 = dummy3
         self.dummy4 = dummy4
         self.dummy5 = dummy5
@@ -206,8 +206,24 @@ class Dash_App:
                     'Orange',
                     'Purple'
                 ],
-                placeholder='Select background color',
-                id='background_color_dropdown',
+                placeholder='Select paper background color',
+                id='paper_background_color_dropdown',
+            ),
+            dcc.Dropdown(
+                options=[
+                    'White',
+                    'Grey',
+                    'Black',
+                    'Transparent',
+                    'Red',
+                    'Yellow',
+                    'Blue',
+                    'Green',
+                    'Orange',
+                    'Purple'
+                ],
+                placeholder='Select graph background color',
+                id='graph_background_color_dropdown',
             )
         ])
 
@@ -330,9 +346,13 @@ class Dash_App:
             Input(
                 component_id='graph_margins_input',
                 component_property='value',),
-            # background color - update
+            # paper background color - update
             Input(
-                component_id='background_color_dropdown',
+                component_id='paper_background_color_dropdown',
+                component_property='value',),
+            # graph background color - update
+            Input(
+                component_id='graph_background_color_dropdown',
                 component_property='value',),
             # plot name - update
             Input(
@@ -352,7 +372,8 @@ class Dash_App:
             font_value,
             size_value,
             margins_value,
-            background_color_value,
+            paper_background_color_value,
+            graph_background_color_value,
             plot_name_value,
             plot_type_value,
             database_value,
@@ -372,12 +393,18 @@ class Dash_App:
             elif 'graph_margins_input.value' == triggered_id:
                 self.margins = margins_value
                 return update_margins()
-            elif 'background_color_dropdown.value' == triggered_id:
-                if background_color_value == 'Transparent':
-                    self.background_color = 'rgb(0,0,0,0)'
+            elif 'paper_background_color_dropdown.value' == triggered_id:
+                if paper_background_color_value == 'Transparent':
+                    self.paper_background_color = 'rgb(0,0,0,0)'
                 else:
-                    self.background_color = background_color_value
-                return self.update_background_color()
+                    self.paper_background_color = paper_background_color_value
+                return self.update_paper_background_color()
+            elif 'graph_background_color_dropdown.value' == triggered_id:
+                if graph_background_color_value == 'Transparent':
+                    self.graph_background_color = 'rgb(0,0,0,0)'
+                else:
+                    self.graph_background_color = graph_background_color_value
+                return self.update_graph_background_color()
             elif 'plot_name_input.value' == triggered_id:
                 if plot_name_value != '':
                     self.plot_name = plot_name_value
@@ -445,10 +472,10 @@ class Dash_App:
                 width=self.width,
                 font=self.font,
                 fontsize=self.fontsize,
-                background_color=self.background_color,
+                paper_background_color=self.paper_background_color,
                 margins=self.margins,
                 screenshot=self.screenshot,
-                dummy2=self.dummy2,
+                graph_background_color=self.graph_background_color,
                 dummy3=self.dummy3,
                 dummy4=self.dummy4,
                 dummy5=self.dummy5,
@@ -465,10 +492,10 @@ class Dash_App:
                 width=self.width,
                 font=self.font,
                 fontsize=self.fontsize,
-                background_color=self.background_color,
+                paper_background_color=self.paper_background_color,
                 margins=self.margins,
                 screenshot=self.screenshot,
-                dummy2=self.dummy2,
+                graph_background_color=self.graph_background_color,
                 dummy3=self.dummy3,
                 dummy4=self.dummy4,
                 dummy5=self.dummy5,
@@ -485,10 +512,10 @@ class Dash_App:
                 width=self.width,
                 font=self.font,
                 fontsize=self.fontsize,
-                background_color=self.background_color,
+                paper_background_color=self.paper_background_color,
                 margins=self.margins,
                 screenshot=self.screenshot,
-                dummy2=self.dummy2,
+                graph_background_color=self.graph_background_color,
                 dummy3=self.dummy3,
                 dummy4=self.dummy4,
                 dummy5=self.dummy5,
@@ -501,7 +528,8 @@ class Dash_App:
         self.graph = self.update_font()
         self.graph = self.update_font_size()
         self.graph = self.update_plot_name()
-        self.graph = self.update_background_color()
+        self.graph = self.update_paper_background_color()
+        self.graph = self.update_graph_background_color()
 
         return self.graph
 
@@ -557,10 +585,29 @@ class Dash_App:
         )
         return self.graph
 
-    # * functionality of background color dropdown
-    def update_background_color(self):
-        if self.background_color != 'auto':
+    # * functionality of paper background color dropdown
+    def update_paper_background_color(self):
+        if self.paper_background_color != 'auto':
             self.graph.update_layout(
-                paper_bgcolor=self.background_color
-            )
+                    paper_bgcolor=self.paper_background_color,
+                )
+        return self.graph
+
+    # * functionality of graph background color dropdown
+    def update_graph_background_color(self):
+        if self.graph_background_color != 'auto':
+            if self.plot_type == 'scatter':
+                self.graph.update_layout(
+                    plot_bgcolor=self.graph_background_color,
+                )
+            elif self.plot_type == 'parallel':
+                self.graph.update_layout(
+                    paper_bgcolor=self.paper_background_color,
+                )
+            elif self.plot_type == 'radar':
+                self.graph.update_polars(
+                    bgcolor=self.graph_background_color,
+                )
+            else:
+                raise ValueError('invalid plot_type')
         return self.graph
