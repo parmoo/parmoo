@@ -145,18 +145,21 @@ class Dash_App:
                 type='number',
                 value='',
                 id='graph_width_input',
+                disabled=True,
             ),
             dcc.Input(
                 placeholder='Select graph height',
                 type='number',
                 value='',
                 id='graph_height_input',
+                disabled=True,
             ),
             dcc.Input(
                 placeholder='Select margin size',
                 type='number',
                 value='',
                 id='graph_margins_input',
+                disabled=True,
             ),
             dcc.Input(
                 placeholder='Select plot name',
@@ -174,6 +177,7 @@ class Dash_App:
                 ],
                 placeholder='Select screenshot format',
                 id='screenshot_dropdown',
+                disabled=True,
             ),
             dcc.Dropdown(
                 options=['Scatterplot',
@@ -460,6 +464,10 @@ class Dash_App:
         # * functionality of database dropdown
         def update_database():
             self.database = set_database(moop, db=self.db)
+            if self.plot_name == 'Pareto Front':
+                self.plot_name = set_plot_name(db=self.db)
+            elif self.plot_name == 'Objective Data':
+                self.plot_name = set_plot_name(db=self.db)
             return self.generate_graph()
 
         # * pop_up
