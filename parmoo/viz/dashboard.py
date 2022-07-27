@@ -169,10 +169,12 @@ class Dash_App:
                 debounce=True,
             ),
             dcc.Dropdown(
-                options=['svg',
-                         'png',
-                         'jpeg',
-                         'webp'],
+                options=[
+                    'svg',
+                    'png',
+                    'jpeg',
+                    'webp'
+                ],
                 placeholder='Select screenshot format',
                 id='screenshot_dropdown',
             ),
@@ -184,22 +186,26 @@ class Dash_App:
                 id='plot_type_dropdown',
             ),
             dcc.Dropdown(
-                options=['Pareto Front',
-                         'Objective Data'],
+                options=[
+                    'Pareto Front',
+                    'Objective Data'
+                ],
                 placeholder='Select database',
                 id='database_dropdown',
             ),
             dcc.Dropdown(
-                options=['White',
-                         'Grey',
-                         'Black',
-                         'Transparent',
-                         'Red',
-                         'Yellow',
-                         'Blue',
-                         'Green',
-                         'Orange',
-                         'Purple'],
+                options=[
+                    'White',
+                    'Grey',
+                    'Black',
+                    'Transparent',
+                    'Red',
+                    'Yellow',
+                    'Blue',
+                    'Green',
+                    'Orange',
+                    'Purple'
+                ],
                 placeholder='Select background color',
                 id='background_color_dropdown',
             )
@@ -367,8 +373,11 @@ class Dash_App:
                 self.margins = margins_value
                 return update_margins()
             elif 'background_color_dropdown.value' == triggered_id:
-                self.background_color = background_color_value
-                return update_background_color()
+                if background_color_value == 'Transparent':
+                    self.background_color = 'rgb(0,0,0,0)'
+                else:
+                    self.background_color = background_color_value
+                return self.update_background_color()
             elif 'plot_name_input.value' == triggered_id:
                 if plot_name_value != '':
                     self.plot_name = plot_name_value
@@ -393,10 +402,6 @@ class Dash_App:
 
         # * functionality of graph margins input
         def update_margins():
-            pass
-
-        # * functionality of background color dropdown
-        def update_background_color():
             pass
 
         # * functionality of plot type dropdown
@@ -496,6 +501,7 @@ class Dash_App:
         self.graph = self.update_font()
         self.graph = self.update_font_size()
         self.graph = self.update_plot_name()
+        self.graph = self.update_background_color()
 
         return self.graph
 
@@ -549,4 +555,12 @@ class Dash_App:
         self.graph.update_layout(
             title_text=self.plot_name
         )
+        return self.graph
+
+    # * functionality of background color dropdown
+    def update_background_color(self):
+        if self.background_color != 'auto':
+            self.graph.update_layout(
+                paper_bgcolor=self.background_color
+            )
         return self.graph
