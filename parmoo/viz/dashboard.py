@@ -396,7 +396,7 @@ class Dash_App:
                 component_property='value'),
         )
         def update_data_export_format(value):
-            self.evaluate_image_export_format(value)
+            self.evaluate_data_export_format(value)
 
         # * export image
         @app.callback(
@@ -683,10 +683,16 @@ class Dash_App:
             raise exceptions.PreventUpdate
         else:
             self.database.index.name = 'index'
-            return dict(
-                filename=str(self.plot_name) + ".csv",
-                content=self.database.to_csv(),
-            )
+            if self.data_export_format == 'CSV':
+                return dict(
+                    filename=str(self.plot_name) + ".csv",
+                    content=self.database.to_csv(),
+                )
+            else:
+                return dict(
+                    filename=str(self.plot_name) + ".json",
+                    content=self.database.to_json(),
+                )
 
     def evaluate_selected_data(self, selectedData):
         if selectedData is None:
@@ -711,10 +717,16 @@ class Dash_App:
                 selection_db.index.name = 'index'
             selection_db.drop_duplicates(inplace=True)
             selection_db.sort_index(inplace=True)
-            return dict(
-                filename="selected_data.csv",
-                content=selection_db.to_csv(),
-            )
+            if self.data_export_format == 'CSV':
+                return dict(
+                    filename="selected_data.csv",
+                    content=selection_db.to_csv(),
+                )
+            else:
+                return dict(
+                    filename="selected_data.json",
+                    content=selection_db.to_json(),
+                )
 
     def evaluate_image_export_format(self, image_export_format_value):
         if image_export_format_value is not None:
