@@ -193,6 +193,8 @@ def generate_radar(
             text=plot_name))
     fig.update_layout(
         autosize=True,)
+    fig.update_layout(
+        showlegend=False)
     fig = customize(
         fig,
         font=font,
