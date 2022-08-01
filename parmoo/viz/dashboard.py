@@ -52,7 +52,6 @@ class Dash_App:
         margins,
         screenshot,
         graph_background_color,
-        theme,
         export_image_format,
         export_data_format,
         dummy6,
@@ -78,7 +77,6 @@ class Dash_App:
         self.margins = margins
         self.screenshot = screenshot
         self.graph_background_color = graph_background_color
-        self.theme = theme
         self.export_image_format = export_image_format
         self.export_data_format = export_data_format
         self.dummy6 = dummy6
@@ -114,18 +112,25 @@ class Dash_App:
                 id='selection',
             ),
             html.Button(
-                children='Download dataset as CSV',
+                children='Download dataset',
                 id='download_dataset_button',
             ),
             dcc.Download(
-                id='dataset_download_csv',
+                id='download_dataset_dcc',
             ),
             html.Button(
-                children='Download selection as CSV',
+                children='Download selection',
                 id='download_selection_button',
             ),
             dcc.Download(
-                id='selection_download_csv',
+                id='download_selection_dcc',
+            ),
+            html.Button(
+                children='Download image',
+                id='download_image_button',
+            ),
+            dcc.Download(
+                id='image_download_button',
             ),
             dcc.Input(
                 id='font_selection_input',
@@ -232,23 +237,6 @@ class Dash_App:
                 placeholder='Select graph background color',
             ),
             dcc.Dropdown(
-                id='theme_dropdown',
-                options=[
-                    'ggplot2',
-                    'seaborn',
-                    'simple_white',
-                    'plotly',
-                    'plotly_white',
-                    'plotly_dark',
-                    'presentation',
-                    'xgridoff',
-                    'ygridoff',
-                    'gridon',
-                    'none'
-                ],
-                placeholder='Select theme',
-            ),
-            dcc.Dropdown(
                 id='image_export_format_dropdown',
                 options=[
                     'PNG',
@@ -315,10 +303,6 @@ class Dash_App:
             Input(
                 component_id='graph_background_color_dropdown',
                 component_property='value',),
-            # theme - update
-            Input(
-                component_id='theme_dropdown',
-                component_property='value',),
             # plot name - update
             Input(
                 component_id='plot_name_input',
@@ -341,7 +325,6 @@ class Dash_App:
             margins_value,
             paper_background_color_value,
             graph_background_color_value,
-            theme_value,
             plot_name_value,
             plot_type_value,
             database_value,
@@ -361,8 +344,6 @@ class Dash_App:
                 return self.evaluate_paper_color(paper_background_color_value)
             elif 'graph_background_color_dropdown.value' == triggered_id:
                 return self.evaluate_graph_color(graph_background_color_value)
-            elif 'theme_dropdown.value' == triggered_id:
-                return self.evaluate_theme(theme_value)
             elif 'plot_name_input.value' == triggered_id:
                 return self.evaluate_plot_name(plot_name_value)
             elif 'plot_type_dropdown.value' == triggered_id:
@@ -373,7 +354,7 @@ class Dash_App:
         # * download dataset
         @app.callback(
             Output(
-                component_id='dataset_download_csv',
+                component_id='download_dataset_dcc',
                 component_property='data'),
             Input(
                 component_id='download_dataset_button',
@@ -397,7 +378,7 @@ class Dash_App:
         # * download selection
         @app.callback(
             Output(
-                component_id='selection_download_csv',
+                component_id='download_selection_dcc',
                 component_property='data'),
             Input(
                 component_id='download_selection_button',
@@ -406,6 +387,7 @@ class Dash_App:
         def download_selection(n_clicks):
             return self.evaluate_selection_download(n_clicks)
 
+        # * update image export format
         @app.callback(
             Output(
                 component_id='image_export_format_store',
@@ -417,6 +399,7 @@ class Dash_App:
         def update_image_export_format(value):
             self.evaluate_image_export_format(value)
 
+        # * update data export format
         @app.callback(
             Output(
                 component_id='data_export_format_store',
@@ -468,7 +451,6 @@ class Dash_App:
                 margins=self.margins,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
-                theme=self.theme,
                 export_image_format=self.export_image_format,
                 export_data_format=self.export_data_format,
                 dummy6=self.dummy6,
@@ -488,7 +470,6 @@ class Dash_App:
                 margins=self.margins,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
-                theme=self.theme,
                 export_image_format=self.export_image_format,
                 export_data_format=self.export_data_format,
                 dummy6=self.dummy6,
@@ -508,7 +489,6 @@ class Dash_App:
                 margins=self.margins,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
-                theme=self.theme,
                 export_image_format=self.export_image_format,
                 export_data_format=self.export_data_format,
                 dummy6=self.dummy6,
@@ -524,7 +504,6 @@ class Dash_App:
         self.graph = self.update_plot_name()
         self.graph = self.update_paper_background_color()
         self.graph = self.update_graph_background_color()
-        self.graph = self.update_theme()
 
         return self.graph
 
@@ -623,13 +602,6 @@ class Dash_App:
                 raise ValueError('invalid plot_type')
         return self.graph
 
-    def update_theme(self):
-        if self.theme != 'auto':
-            self.graph.update_layout(
-                template=self.theme,
-            )
-        return self.graph
-
     # * functionality of graph margins input
     def update_margins(self):
         pass
@@ -694,10 +666,6 @@ class Dash_App:
             self.graph_background_color = graph_background_color_value
         return self.update_graph_background_color()
 
-    def evaluate_theme(self, theme_value):
-        self.theme = theme_value
-        return self.update_theme()
-
     def evaluate_plot_name(self, plot_name_value):
         if plot_name_value != '':
             self.plot_name = plot_name_value
@@ -760,8 +728,8 @@ class Dash_App:
                 content=selection_db.to_csv(),
             )
 
-    def evaluate_image_export_format(self, value):
-        pass
+    def evaluate_image_export_format(self, image_export_format_value):
+        self.image_export_format = image_export_format_value
 
-    def evaluate_data_export_format(self, value):
-        pass
+    def evaluate_data_export_format(self, data_export_format_value):
+        self.data_export_format = data_export_format_value
