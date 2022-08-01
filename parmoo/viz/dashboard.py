@@ -50,9 +50,8 @@ class Dash_App:
         width,
         font,
         fontsize,
-        paper_background_color,
+        background_color,
         screenshot,
-        graph_background_color,
         image_export_format,
         data_export_format,
         dummy6,
@@ -74,9 +73,8 @@ class Dash_App:
         self.width = width
         self.font = font
         self.fontsize = fontsize
-        self.paper_background_color = paper_background_color
+        self.background_color = background_color
         self.screenshot = screenshot
-        self.graph_background_color = graph_background_color
         self.image_export_format = image_export_format
         self.data_export_format = data_export_format
         self.dummy6 = dummy6
@@ -211,7 +209,7 @@ class Dash_App:
                 style=dict(display='none'),
             ),
             dcc.Dropdown(
-                id='paper_background_color_dropdown',
+                id='background_color_dropdown',
                 options=[
                     'White',
                     'Grey',
@@ -224,24 +222,7 @@ class Dash_App:
                     'Orange',
                     'Purple'
                 ],
-                placeholder='Set paper background color',
-                style=dict(display='none'),
-            ),
-            dcc.Dropdown(
-                id='graph_background_color_dropdown',
-                options=[
-                    'White',
-                    'Grey',
-                    'Black',
-                    'Transparent',
-                    'Red',
-                    'Yellow',
-                    'Blue',
-                    'Green',
-                    'Orange',
-                    'Purple'
-                ],
-                placeholder='Set graph background color',
+                placeholder='Set background color',
                 style=dict(display='none'),
             ),
             dcc.Dropdown(
@@ -303,10 +284,7 @@ class Dash_App:
                 component_id='plot_name_input',
                 component_property='style',),
             Output(
-                component_id='paper_background_color_dropdown',
-                component_property='style',),
-            Output(
-                component_id='graph_background_color_dropdown',
+                component_id='background_color_dropdown',
                 component_property='style',),
             Input(
                 component_id='show_customization_options',
@@ -381,13 +359,9 @@ class Dash_App:
             Input(
                 component_id='font_size_input',
                 component_property='value',),
-            # paper background color - update
+            # background color - update
             Input(
-                component_id='paper_background_color_dropdown',
-                component_property='value',),
-            # graph background color - update
-            Input(
-                component_id='graph_background_color_dropdown',
+                component_id='background_color_dropdown',
                 component_property='value',),
             # plot name - update
             Input(
@@ -408,8 +382,7 @@ class Dash_App:
             width_value,
             font_value,
             font_size_value,
-            paper_background_color_value,
-            graph_background_color_value,
+            background_color_value,
             plot_name_value,
             plot_type_value,
             database_value,
@@ -423,10 +396,8 @@ class Dash_App:
                 return self.evaluate_font(font_value)
             elif 'font_size_input.value' == triggered_id:
                 return self.evaluate_font_size(font_size_value)
-            elif 'paper_background_color_dropdown.value' == triggered_id:
-                return self.evaluate_paper_color(paper_background_color_value)
-            elif 'graph_background_color_dropdown.value' == triggered_id:
-                return self.evaluate_graph_color(graph_background_color_value)
+            elif 'background_color_dropdown.value' == triggered_id:
+                return self.evaluate_background_color(background_color_value)
             elif 'plot_name_input.value' == triggered_id:
                 return self.evaluate_plot_name(plot_name_value)
             elif 'plot_type_dropdown.value' == triggered_id:
@@ -543,8 +514,7 @@ class Dash_App:
                 font=self.font,
                 fontsize=self.fontsize,
                 screenshot=self.screenshot,
-                paper_background_color=self.paper_background_color,
-                graph_background_color=self.graph_background_color,
+                background_color=self.background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
                 dummy6=self.dummy6,
@@ -560,8 +530,8 @@ class Dash_App:
                 width=self.width,
                 font=self.font,
                 fontsize=self.fontsize,
-                paper_background_color=self.paper_background_color,
-                graph_background_color=self.graph_background_color,
+                screenshot=self.screenshot,
+                background_color=self.background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
                 dummy6=self.dummy6,
@@ -577,8 +547,8 @@ class Dash_App:
                 width=self.width,
                 font=self.font,
                 fontsize=self.fontsize,
-                paper_background_color=self.paper_background_color,
-                graph_background_color=self.graph_background_color,
+                screenshot=self.screenshot,
+                background_color=self.background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
                 dummy6=self.dummy6,
@@ -592,8 +562,7 @@ class Dash_App:
         self.graph = self.update_font()
         self.graph = self.update_font_size()
         self.graph = self.update_plot_name()
-        self.graph = self.update_paper_background_color()
-        self.graph = self.update_graph_background_color()
+        self.graph = self.update_background_color()
 
         return self.graph
 
@@ -665,28 +634,24 @@ class Dash_App:
         )
         return self.graph
 
-    # * functionality of paper background color dropdown
-    def update_paper_background_color(self):
-        if self.paper_background_color != 'auto':
-            self.graph.update_layout(
-                    paper_bgcolor=self.paper_background_color,
-            )
-        return self.graph
-
-    # * functionality of graph background color dropdown
-    def update_graph_background_color(self):
-        if self.graph_background_color != 'auto':
+    # * functionality of background color dropdown
+    def update_background_color(self):
+        if self.background_color != 'auto':
             if self.plot_type == 'scatter':
                 self.graph.update_layout(
-                    plot_bgcolor=self.graph_background_color,
+                    plot_bgcolor=self.background_color,
+                    paper_bgcolor=self.background_color,
                 )
             elif self.plot_type == 'parallel':
                 self.graph.update_layout(
-                    paper_bgcolor=self.graph_background_color,
+                    paper_bgcolor=self.background_color,
                 )
             elif self.plot_type == 'radar':
                 self.graph.update_polars(
-                    bgcolor=self.graph_background_color,
+                    bgcolor=self.background_color,
+                )
+                self.graph.update_layout(
+                    paper_bgcolor=self.background_color,
                 )
             else:
                 raise ValueError('invalid plot_type')
@@ -734,19 +699,12 @@ class Dash_App:
         self.graph = self.update_font_size()
         return self.graph
 
-    def evaluate_paper_color(self, paper_background_color_value):
-        if paper_background_color_value == 'Transparent':
-            self.paper_background_color = 'rgb(0,0,0,0)'
+    def evaluate_background_color(self, background_color_value):
+        if background_color_value == 'Transparent':
+            self.background_color = 'rgb(0,0,0,0)'
         else:
-            self.paper_background_color = paper_background_color_value
-        return self.update_paper_background_color()
-
-    def evaluate_graph_color(self, graph_background_color_value):
-        if graph_background_color_value == 'Transparent':
-            self.graph_background_color = 'rgb(0,0,0,0)'
-        else:
-            self.graph_background_color = graph_background_color_value
-        return self.update_graph_background_color()
+            self.background_color = background_color_value
+        return self.update_background_color()
 
     def evaluate_plot_name(self, plot_name_value):
         if plot_name_value != '':
@@ -860,9 +818,9 @@ class Dash_App:
             showr = dict()
             hider = dict(display='none')
             if action == 'show':
-                return hider, showr, showr, showr, showr, showr, showr, showr, showr
+                return hider, showr, showr, showr, showr, showr, showr, showr
             else:
-                return showr, hider, hider, hider, hider, hider, hider, hider, hider
+                return showr, hider, hider, hider, hider, hider, hider, hider
 
     def evaluate_export_options(self, action, n_clicks):
         if n_clicks is None:
