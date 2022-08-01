@@ -1,4 +1,5 @@
 import pandas as pd
+import plotly.io as pio
 from os import environ
 from webbrowser import open_new
 from warnings import warn
@@ -51,8 +52,8 @@ class Dash_App:
         paper_background_color,
         screenshot,
         graph_background_color,
-        export_image_format,
-        export_data_format,
+        image_export_format,
+        data_export_format,
         dummy6,
         verbose,
         hot_reload,
@@ -75,8 +76,8 @@ class Dash_App:
         self.paper_background_color = paper_background_color
         self.screenshot = screenshot
         self.graph_background_color = graph_background_color
-        self.export_image_format = export_image_format
-        self.export_data_format = export_data_format
+        self.image_export_format = image_export_format
+        self.data_export_format = data_export_format
         self.dummy6 = dummy6
         self.verbose = verbose
         self.hot_reload = hot_reload
@@ -90,6 +91,8 @@ class Dash_App:
         self.graph = self.generate_graph()
         self.config = self.configure()
 
+        print(image_export_format)
+        print(self.image_export_format)
     # ! LAYOUT
 
         # * initialize app
@@ -124,11 +127,11 @@ class Dash_App:
                 id='download_selection_dcc',
             ),
             html.Button(
-                children='Download image',
+                children='Export image to working directory',
                 id='download_image_button',
             ),
-            dcc.Download(
-                id='image_download_button',
+            dcc.Store(
+                id='image'
             ),
             dcc.Input(
                 id='font_selection_input',
@@ -395,6 +398,18 @@ class Dash_App:
         def update_data_export_format(value):
             self.evaluate_image_export_format(value)
 
+        # * export image
+        @app.callback(
+            Output(
+                component_id='image',
+                component_property='data'),
+            Input(
+                component_id='download_image_button',
+                component_property='n_clicks'),
+        )
+        def download_image(n_clicks):
+            return self.evaluate_image_download(n_clicks)
+
     # ! EXECUTION
 
         # * pop_up
@@ -434,8 +449,8 @@ class Dash_App:
                 paper_background_color=self.paper_background_color,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
-                export_image_format=self.export_image_format,
-                export_data_format=self.export_data_format,
+                image_export_format=self.image_export_format,
+                data_export_format=self.data_export_format,
                 dummy6=self.dummy6,
                 verbose=self.verbose,
             )
@@ -452,8 +467,8 @@ class Dash_App:
                 paper_background_color=self.paper_background_color,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
-                export_image_format=self.export_image_format,
-                export_data_format=self.export_data_format,
+                image_export_format=self.image_export_format,
+                data_export_format=self.data_export_format,
                 dummy6=self.dummy6,
                 verbose=self.verbose,
             )
@@ -470,8 +485,8 @@ class Dash_App:
                 paper_background_color=self.paper_background_color,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
-                export_image_format=self.export_image_format,
-                export_data_format=self.export_data_format,
+                image_export_format=self.image_export_format,
+                data_export_format=self.data_export_format,
                 dummy6=self.dummy6,
                 verbose=self.verbose,
             )
@@ -702,7 +717,32 @@ class Dash_App:
             )
 
     def evaluate_image_export_format(self, image_export_format_value):
-        self.image_export_format = image_export_format_value
+        if image_export_format_value is not None:
+            self.image_export_format = image_export_format_value
 
     def evaluate_data_export_format(self, data_export_format_value):
-        self.data_export_format = data_export_format_value
+        if data_export_format_value is not None:
+            self.data_export_format = data_export_format_value
+
+    def evaluate_image_download(self, n_clicks):
+        if n_clicks is None:
+            raise exceptions.PreventUpdate
+        else:
+            file_name = str(self.plot_name)
+            file_name += '.' + str(self.image_export_format)
+            if (str(self.image_export_format) == 'HTML' or
+               str(self.image_export_format) == 'html'):
+                con_tent = pio.write_html(
+                        fig=self.graph,
+                        file=str(file_name)
+                )
+            else:
+                con_tent = pio.write_image(
+                        fig=self.graph,
+                        file=str(file_name)
+                )
+
+            return dict(
+                filename=file_name,
+                content=con_tent,
+            )

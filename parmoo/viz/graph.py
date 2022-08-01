@@ -32,8 +32,8 @@ def generate_scatter(
     paper_background_color,
     screenshot,
     graph_background_color,
-    export_image_format,
-    export_data_format,
+    image_export_format,
+    data_export_format,
     dummy6,
     verbose,
 ):
@@ -86,8 +86,8 @@ def generate_parallel(
     paper_background_color,
     screenshot,
     graph_background_color,
-    export_image_format,
-    export_data_format,
+    image_export_format,
+    data_export_format,
     dummy6,
     verbose,
 ):
@@ -140,8 +140,8 @@ def generate_radar(
     paper_background_color,
     screenshot,
     graph_background_color,
-    export_image_format,
-    export_data_format,
+    image_export_format,
+    data_export_format,
     dummy6,
     verbose,
 ):
