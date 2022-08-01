@@ -1846,7 +1846,7 @@ class MOOP:
             # Add acquisition functions
             for i, acquisition in enumerate(self.acquisitions):
                 x0[i, :] = acquisition.setTarget(self.data,
-                                                 self.evaluateConstraints,
+                                                 self.evaluateLagrangian,
                                                  self.history)
             # Set up the surrogate problem
             opt = self.optimizer(self.o, self.scaled_lb, self.scaled_ub,
