@@ -33,7 +33,7 @@ def generate_scatter(
     screenshot,
     image_export_format,
     data_export_format,
-    dummy6,
+    points,
     verbose,
 ):
 
@@ -41,8 +41,9 @@ def generate_scatter(
     objectives = moop.getObjectiveType().names
 
     # * choose database
-    database = set_database(moop, db=db)
+    database = set_database(moop, db=db, points=points)
     plot_name = set_plot_name(db=db)
+
     # * create plot
     if (len(objectives) == 2):
         fig = px.scatter(
@@ -86,7 +87,7 @@ def generate_parallel(
     screenshot,
     image_export_format,
     data_export_format,
-    dummy6,
+    points,
     verbose,
 ):
 
@@ -98,7 +99,7 @@ def generate_parallel(
         constraints = ()
 
     # * choose database
-    database = set_database(moop, db=db)
+    database = set_database(moop, db=db, points=points)
     plot_name = set_plot_name(db=db)
 
     # * create plot
@@ -139,7 +140,7 @@ def generate_radar(
     screenshot,
     image_export_format,
     data_export_format,
-    dummy6,
+    points,
     verbose,
 ):
 
@@ -151,7 +152,7 @@ def generate_radar(
     axes = tuple(temp_variable)
 
     # * choose database
-    database = set_database(moop, db=db)
+    database = set_database(moop, db=db, points=points)
     plot_name = set_plot_name(db=db)
 
     # * create scaled database

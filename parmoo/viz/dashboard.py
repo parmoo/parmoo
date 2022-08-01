@@ -5,12 +5,12 @@ from webbrowser import open_new
 from warnings import warn
 from dash import (
     Dash,
-    callback_context,
     Input,
     Output,
     html,
     dcc,
     exceptions,
+    callback_context,
     no_update,
 )
 from .graph import (
@@ -20,7 +20,7 @@ from .graph import (
 )
 from .utilities import (
     set_plot_name,
-    set_database
+    set_database,
 )
 # import base64
 
@@ -54,7 +54,7 @@ class Dash_App:
         screenshot,
         image_export_format,
         data_export_format,
-        dummy6,
+        points,
         verbose,
         hot_reload,
         pop_up,
@@ -77,7 +77,7 @@ class Dash_App:
         self.screenshot = screenshot
         self.image_export_format = image_export_format
         self.data_export_format = data_export_format
-        self.dummy6 = dummy6
+        self.points = points
         self.verbose = verbose
         self.hot_reload = hot_reload
         self.pop_up = pop_up
@@ -86,7 +86,7 @@ class Dash_App:
         # * define dependent state
         self.selection_indexes = []
         self.plot_name = set_plot_name(db=self.db)
-        self.database = set_database(moop, db=self.db)
+        self.database = set_database(moop, db=self.db, points=self.points)
         self.graph = self.generate_graph()
         self.config = self.configure()
 
@@ -105,7 +105,7 @@ class Dash_App:
                 options=['Scatterplot',
                          'Parallel Coordinates plot',
                          'Radar plot'],
-                placeholder='Select plot type',
+                placeholder='Change plot type',
             ),
             dcc.Dropdown(
                 id='database_dropdown',
@@ -113,10 +113,10 @@ class Dash_App:
                     'Pareto Front',
                     'Objective Data'
                 ],
-                placeholder='Select database',
+                placeholder='Change dataset',
             ),
             html.Button(
-                children='Export dataset',
+                children='Export all data',
                 id='download_dataset_button',
             ),
             dcc.Download(
@@ -136,6 +136,17 @@ class Dash_App:
             dcc.Store(
                 id='image'
             ),
+            dcc.Checklist(
+                id='constraint_checkboxes',
+                options=[
+                    {'label': 'show constraint-satisfying points',
+                     'value': 'satisfied'},
+                    {'label': 'show constraint-violating points',
+                     'value': 'violated'},
+                ],
+                value=['satisfied'],
+                inline=True,
+            ),
             html.Br(),
             # * main plot
             dcc.Graph(
@@ -143,6 +154,7 @@ class Dash_App:
                 figure=self.graph,
                 config=self.config,
             ),
+            html.Br(),
             html.Button(
                 children='Show graph customization options',
                 id='show_customization_options',
@@ -375,6 +387,10 @@ class Dash_App:
             Input(
                 component_id='database_dropdown',
                 component_property='value',),
+            # constraint showr - regenerate
+            Input(
+                component_id='constraint_checkboxes',
+                component_property='value'),
             prevent_initial_call=True
         )
         def update_graph(
@@ -386,6 +402,7 @@ class Dash_App:
             plot_name_value,
             plot_type_value,
             database_value,
+            constraint_showr_value,
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'graph_height_input.value' == triggered_id:
@@ -404,6 +421,8 @@ class Dash_App:
                 return self.evaluate_plot_type(plot_type_value)
             elif 'database_dropdown.value' == triggered_id:
                 return self.evaluate_database(database_value)
+            elif 'constraint_checkboxes.value' == triggered_id:
+                return self.evaluate_constraint_showr(constraint_showr_value)
 
         # * download dataset
         @app.callback(
@@ -517,7 +536,7 @@ class Dash_App:
                 background_color=self.background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
-                dummy6=self.dummy6,
+                points=self.points,
                 verbose=self.verbose,
             )
         elif self.plot_type == 'parallel':
@@ -534,7 +553,7 @@ class Dash_App:
                 background_color=self.background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
-                dummy6=self.dummy6,
+                points=self.points,
                 verbose=self.verbose,
             )
         elif self.plot_type == 'radar':
@@ -551,7 +570,7 @@ class Dash_App:
                 background_color=self.background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
-                dummy6=self.dummy6,
+                points=self.points,
                 verbose=self.verbose,
             )
         else:
@@ -663,7 +682,11 @@ class Dash_App:
 
     # * functionality of database dropdown
     def update_database(self):
-        self.database = set_database(moop=self.moop, db=self.db)
+        self.database = set_database(
+            moop=self.moop,
+            db=self.db,
+            points=self.points
+        )
         if self.plot_name == 'Pareto Front':
             self.plot_name = set_plot_name(db=self.db)
         elif self.plot_name == 'Objective Data':
@@ -832,3 +855,24 @@ class Dash_App:
                 return hider, showr, showr, showr
             else:
                 return showr, hider, hider, hider
+
+    def evaluate_constraint_showr(self, value):
+        if value is None:
+            raise exceptions.PreventUpdate
+        else:
+            if value == ['satisfied']:
+                self.points = 'satisfied'
+            elif value == ['violated']:
+                self.points = 'violated'
+            elif value == ['satisfied', 'violated']:
+                self.points = 'all'
+            elif value == ['violated', 'satisfied']:
+                self.points = 'all'
+            else:
+                self.points = 'none'
+        self.database = set_database(
+            moop=self.moop,
+            db=self.db,
+            points=self.points,
+        )
+        return self.generate_graph()

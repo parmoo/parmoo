@@ -112,18 +112,45 @@ def set_plot_name(db):
     elif db == 'obj':
         plot_name = "Objective Data"
     else:
-        raise ValueError(str(db) + "is invalid argument for 'db'")
+        raise ValueError(str(db) + "is invalid value for 'db'")
     return plot_name
 
 
-def set_database(moop, db):
+def set_database(moop, db, points):
     if db == 'pf':
         database = pd.DataFrame(moop.getPF())
     elif db == 'obj':
         database = pd.DataFrame(moop.getObjectiveData())
     else:
-        raise ValueError(str(db) + "is invalid argument for 'db'")
-    return database
+        raise ValueError(str(db) + "is invalid value for 'db'")
+    if moop.getConstraintType().names is None:
+        df = database
+    else:
+        if points == 'satisfied':
+            constraints = moop.getConstraintType().names
+            df = database.copy(deep=True)
+            for constraint in constraints:
+                indices = df[df[constraint] > 0].index
+                print(indices)
+                df.drop(indices, inplace=True)
+                df.reset_index(inplace=True)
+                print(df)
+        elif points == 'violated':
+            constraints = moop.getConstraintType().names
+            df = database.copy(deep=True)
+            for constraint in constraints:
+                indices = df[df[constraint] <= 0].index
+                print(indices)
+                df.drop(indices, inplace=True)
+                df.reset_index(inplace=True)
+                print(df)
+        elif points == 'all':
+            df = database
+        elif points == 'none':
+            df = database[0:0]
+        else:
+            raise ValueError(str(points) + "is invalid value for 'db'")
+    return df
 
 
 def set_hover_info(database, i):
