@@ -5,8 +5,6 @@ def customize(
     fig,
     font,
     fontsize,
-    paper_background_color,
-    margins,
 ):
     if font != 'auto':
         fig.update_layout(
@@ -20,10 +18,6 @@ def customize(
                 size=int(fontsize)
             )
         )
-    if paper_background_color != 'auto':
-        pass
-    if margins != 'auto':
-        pass
     return fig
 
 

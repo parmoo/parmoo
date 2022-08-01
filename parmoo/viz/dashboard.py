@@ -49,7 +49,6 @@ class Dash_App:
         font,
         fontsize,
         paper_background_color,
-        margins,
         screenshot,
         graph_background_color,
         export_image_format,
@@ -74,7 +73,6 @@ class Dash_App:
         self.font = font
         self.fontsize = fontsize
         self.paper_background_color = paper_background_color
-        self.margins = margins
         self.screenshot = screenshot
         self.graph_background_color = graph_background_color
         self.export_image_format = export_image_format
@@ -163,13 +161,6 @@ class Dash_App:
                 value='',
                 min=10,
                 step=1,
-            ),
-            dcc.Input(
-                id='graph_margins_input',
-                placeholder='Select margin size',
-                type='number',
-                value='',
-                disabled=True,
             ),
             dcc.Input(
                 id='plot_name_input',
@@ -291,10 +282,6 @@ class Dash_App:
             Input(
                 component_id='font_size_input',
                 component_property='value',),
-            # margins
-            Input(
-                component_id='graph_margins_input',
-                component_property='value',),
             # paper background color - update
             Input(
                 component_id='paper_background_color_dropdown',
@@ -322,7 +309,6 @@ class Dash_App:
             width_value,
             font_value,
             font_size_value,
-            margins_value,
             paper_background_color_value,
             graph_background_color_value,
             plot_name_value,
@@ -338,8 +324,6 @@ class Dash_App:
                 return self.evaluate_font(font_value)
             elif 'font_size_input.value' == triggered_id:
                 return self.evaluate_font_size(font_size_value)
-            elif 'graph_margins_input.value' == triggered_id:
-                return self.evaluate_margins(margins_value)
             elif 'paper_background_color_dropdown.value' == triggered_id:
                 return self.evaluate_paper_color(paper_background_color_value)
             elif 'graph_background_color_dropdown.value' == triggered_id:
@@ -448,7 +432,6 @@ class Dash_App:
                 font=self.font,
                 fontsize=self.fontsize,
                 paper_background_color=self.paper_background_color,
-                margins=self.margins,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
                 export_image_format=self.export_image_format,
@@ -467,7 +450,6 @@ class Dash_App:
                 font=self.font,
                 fontsize=self.fontsize,
                 paper_background_color=self.paper_background_color,
-                margins=self.margins,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
                 export_image_format=self.export_image_format,
@@ -486,7 +468,6 @@ class Dash_App:
                 font=self.font,
                 fontsize=self.fontsize,
                 paper_background_color=self.paper_background_color,
-                margins=self.margins,
                 screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
                 export_image_format=self.export_image_format,
@@ -602,10 +583,6 @@ class Dash_App:
                 raise ValueError('invalid plot_type')
         return self.graph
 
-    # * functionality of graph margins input
-    def update_margins(self):
-        pass
-
     # * functionality of plot type dropdown
     def update_plot_type(self):
         return self.generate_graph()
@@ -647,10 +624,6 @@ class Dash_App:
         self.fontsize = font_size_value
         self.graph = self.update_font_size()
         return self.graph
-
-    def evaluate_margins(self, margins_value):
-        self.margins = margins_value
-        return self.update_margins()
 
     def evaluate_paper_color(self, paper_background_color_value):
         if paper_background_color_value == 'Transparent':

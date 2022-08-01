@@ -30,7 +30,6 @@ def generate_scatter(
     font,
     fontsize,
     paper_background_color,
-    margins,
     screenshot,
     graph_background_color,
     export_image_format,
@@ -69,8 +68,6 @@ def generate_scatter(
         fig,
         font=font,
         fontsize=fontsize,
-        paper_background_color=paper_background_color,
-        margins=margins,
     )
 
     # * return figure
@@ -87,7 +84,6 @@ def generate_parallel(
     font,
     fontsize,
     paper_background_color,
-    margins,
     screenshot,
     graph_background_color,
     export_image_format,
@@ -126,8 +122,6 @@ def generate_parallel(
         fig,
         font=font,
         fontsize=fontsize,
-        paper_background_color=paper_background_color,
-        margins=margins,
     )
 
     # * return figure
@@ -144,7 +138,6 @@ def generate_radar(
     font,
     fontsize,
     paper_background_color,
-    margins,
     screenshot,
     graph_background_color,
     export_image_format,
@@ -207,8 +200,6 @@ def generate_radar(
         fig,
         font=font,
         fontsize=fontsize,
-        paper_background_color=paper_background_color,
-        margins=margins,
     )
 
     # * return figure
