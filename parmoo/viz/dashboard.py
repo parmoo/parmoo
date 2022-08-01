@@ -11,6 +11,7 @@ from dash import (
     html,
     dcc,
     exceptions,
+    no_update,
 )
 from .graph import (
     generate_scatter,
@@ -91,8 +92,6 @@ class Dash_App:
         self.graph = self.generate_graph()
         self.config = self.configure()
 
-        print(image_export_format)
-        print(self.image_export_format)
     # ! LAYOUT
 
         # * initialize app
@@ -103,86 +102,6 @@ class Dash_App:
             # html.Img(
             #     src='data:image/png;base64,{}'.format(parmoo_logo_encoded)
             # ),
-            # * main plot
-            dcc.Graph(
-                id='parmoo_graph',
-                figure=self.graph,
-                config=self.config,
-            ),
-            dcc.Store(
-                id='selection',
-            ),
-            html.Button(
-                children='Download dataset',
-                id='download_dataset_button',
-            ),
-            dcc.Download(
-                id='download_dataset_dcc',
-            ),
-            html.Button(
-                children='Download selection',
-                id='download_selection_button',
-            ),
-            dcc.Download(
-                id='download_selection_dcc',
-            ),
-            html.Button(
-                children='Export image to working directory',
-                id='download_image_button',
-            ),
-            dcc.Store(
-                id='image'
-            ),
-            dcc.Input(
-                id='font_selection_input',
-                placeholder='Select font',
-                type='text',
-                value='',
-                debounce=True,
-            ),
-            dcc.Input(
-                id='font_size_input',
-                placeholder='Select font size',
-                type='number',
-                value='',
-                min=1,
-                max=100,
-                debounce=True,
-            ),
-            dcc.Input(
-                id='graph_width_input',
-                placeholder='Select graph width',
-                type='number',
-                value='',
-                min=10,
-                step=1,
-            ),
-            dcc.Input(
-                id='graph_height_input',
-                placeholder='Select graph height',
-                type='number',
-                value='',
-                min=10,
-                step=1,
-            ),
-            dcc.Input(
-                id='plot_name_input',
-                placeholder='Select plot name',
-                type='text',
-                value='',
-                debounce=True,
-            ),
-            dcc.Dropdown(
-                id='screenshot_dropdown',
-                options=[
-                    'svg',
-                    'png',
-                    'jpeg',
-                    'webp'
-                ],
-                placeholder='Select screenshot format',
-                disabled=True,
-            ),
             dcc.Dropdown(
                 id='plot_type_dropdown',
                 options=['Scatterplot',
@@ -198,6 +117,99 @@ class Dash_App:
                 ],
                 placeholder='Select database',
             ),
+            html.Button(
+                children='Export dataset',
+                id='download_dataset_button',
+            ),
+            dcc.Download(
+                id='download_dataset_dcc',
+            ),
+            html.Button(
+                children='Export selected data',
+                id='download_selection_button',
+            ),
+            dcc.Download(
+                id='download_selection_dcc',
+            ),
+            html.Button(
+                children='Export image to working directory',
+                id='download_image_button',
+            ),
+            dcc.Store(
+                id='image'
+            ),
+            html.Br(),
+            # * main plot
+            dcc.Graph(
+                id='parmoo_graph',
+                figure=self.graph,
+                config=self.config,
+            ),
+            html.Button(
+                children='Show graph customization options',
+                id='show_customization_options',
+            ),
+            html.Button(
+                children='Hide graph customization options',
+                id='hide_customization_options',
+                style=dict(display='none'),
+            ),
+            html.Button(
+                children='Show export options',
+                id='show_export_options',
+            ),
+            html.Button(
+                children='Hide export options',
+                id='hide_export_options',
+                style=dict(display='none'),
+            ),
+            dcc.Store(
+                id='selection',
+            ),
+            dcc.Input(
+                id='font_selection_input',
+                placeholder='Set font',
+                type='text',
+                value='',
+                debounce=True,
+                style=dict(display='none'),
+            ),
+            dcc.Input(
+                id='font_size_input',
+                placeholder='Set font size',
+                type='number',
+                value='',
+                min=1,
+                max=100,
+                debounce=True,
+                style=dict(display='none'),
+            ),
+            dcc.Input(
+                id='graph_width_input',
+                placeholder='Set graph width',
+                type='number',
+                value='',
+                min=10,
+                step=1,
+                style=dict(display='none'),
+            ),
+            dcc.Input(
+                id='graph_height_input',
+                placeholder='Set graph height',
+                type='number',
+                value='',
+                min=10,
+                step=1,
+                style=dict(display='none'),
+            ),
+            dcc.Input(
+                id='plot_name_input',
+                placeholder='Set plot name',
+                type='text',
+                value='',
+                debounce=True,
+                style=dict(display='none'),
+            ),
             dcc.Dropdown(
                 id='paper_background_color_dropdown',
                 options=[
@@ -212,7 +224,8 @@ class Dash_App:
                     'Orange',
                     'Purple'
                 ],
-                placeholder='Select paper background color',
+                placeholder='Set paper background color',
+                style=dict(display='none'),
             ),
             dcc.Dropdown(
                 id='graph_background_color_dropdown',
@@ -228,7 +241,8 @@ class Dash_App:
                     'Orange',
                     'Purple'
                 ],
-                placeholder='Select graph background color',
+                placeholder='Set graph background color',
+                style=dict(display='none'),
             ),
             dcc.Dropdown(
                 id='image_export_format_dropdown',
@@ -241,7 +255,8 @@ class Dash_App:
                     'HTML',
                     'WebP'
                 ],
-                placeholder='Select image export format',
+                placeholder='Set image export format',
+                style=dict(display='none'),
             ),
             dcc.Store(
                 id='image_export_format_store',
@@ -253,7 +268,8 @@ class Dash_App:
                     'CSV',
                     'JSON',
                 ],
-                placeholder='Select data export format',
+                placeholder='Set data export format',
+                style=dict(display='none'),
             ),
             dcc.Store(
                 id='data_export_format_store',
@@ -262,6 +278,86 @@ class Dash_App:
         ])
 
     # ! CALLBACKS
+
+        # * show customization options
+        @app.callback(
+            Output(
+                component_id='show_customization_options',
+                component_property='style',),
+            Output(
+                component_id='hide_customization_options',
+                component_property='style',),
+            Output(
+                component_id='font_selection_input',
+                component_property='style',),
+            Output(
+                component_id='font_size_input',
+                component_property='style',),
+            Output(
+                component_id='graph_width_input',
+                component_property='style',),
+            Output(
+                component_id='graph_height_input',
+                component_property='style',),
+            Output(
+                component_id='plot_name_input',
+                component_property='style',),
+            Output(
+                component_id='paper_background_color_dropdown',
+                component_property='style',),
+            Output(
+                component_id='graph_background_color_dropdown',
+                component_property='style',),
+            Input(
+                component_id='show_customization_options',
+                component_property='n_clicks',),
+            Input(
+                component_id='hide_customization_options',
+                component_property='n_clicks',),
+            prevent_initial_call=True
+        )
+        def update_customization_components(
+            s_clicks,
+            h_clicks,
+        ):
+            triggered_id = callback_context.triggered[0]['prop_id']
+            if triggered_id == 'show_customization_options.n_clicks':
+                return self.evaluate_customization_options('show', s_clicks)
+            elif triggered_id == 'hide_customization_options.n_clicks':
+                return self.evaluate_customization_options('hide', h_clicks)
+
+        # * show export options
+        @app.callback(
+            Output(
+                component_id='show_export_options',
+                component_property='style',),
+            Output(
+                component_id='hide_export_options',
+                component_property='style',),
+            Output(
+                component_id='image_export_format_dropdown',
+                component_property='style',),
+            Output(
+                component_id='data_export_format_dropdown',
+                component_property='style',),
+            Input(
+                component_id='show_export_options',
+                component_property='n_clicks',),
+            Input(
+                component_id='hide_export_options',
+                component_property='n_clicks',),
+            prevent_initial_call=True
+        )
+        def update_export_components(
+            s_clicks,
+            h_clicks,
+        ):
+            triggered_id = callback_context.triggered[0]['prop_id']
+            if triggered_id == 'show_export_options.n_clicks':
+                return self.evaluate_export_options('show', s_clicks)
+            elif triggered_id == 'hide_export_options.n_clicks':
+                return self.evaluate_export_options('hide', h_clicks)
+
 
         # * regenerate or update graph
         # TODO whenever possible, update instead of regenerating
@@ -446,8 +542,8 @@ class Dash_App:
                 width=self.width,
                 font=self.font,
                 fontsize=self.fontsize,
-                paper_background_color=self.paper_background_color,
                 screenshot=self.screenshot,
+                paper_background_color=self.paper_background_color,
                 graph_background_color=self.graph_background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
@@ -465,7 +561,6 @@ class Dash_App:
                 font=self.font,
                 fontsize=self.fontsize,
                 paper_background_color=self.paper_background_color,
-                screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
@@ -483,7 +578,6 @@ class Dash_App:
                 font=self.font,
                 fontsize=self.fontsize,
                 paper_background_color=self.paper_background_color,
-                screenshot=self.screenshot,
                 graph_background_color=self.graph_background_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
@@ -758,3 +852,25 @@ class Dash_App:
                 filename=file_name,
                 content=con_tent,
             )
+
+    def evaluate_customization_options(self, action, n_clicks):
+        if n_clicks is None:
+            return no_update, no_update
+        else:
+            showr = dict()
+            hider = dict(display='none')
+            if action == 'show':
+                return hider, showr, showr, showr, showr, showr, showr, showr, showr
+            else:
+                return showr, hider, hider, hider, hider, hider, hider, hider, hider
+
+    def evaluate_export_options(self, action, n_clicks):
+        if n_clicks is None:
+            return no_update, no_update
+        else:
+            showr = dict()
+            hider = dict(display='none')
+            if action == 'show':
+                return hider, showr, showr, showr
+            else:
+                return showr, hider, hider, hider
