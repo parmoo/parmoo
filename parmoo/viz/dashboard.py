@@ -3,6 +3,7 @@ import plotly.io as pio
 from os import environ
 from webbrowser import open_new
 from warnings import warn
+import logging
 from dash import (
     Dash,
     Input,
@@ -56,10 +57,11 @@ class Dash_App:
         data_export_format,
         points,
         verbose,
-        hot_reload,
+        dev_mode,
         pop_up,
         port,
     ):
+        logging.info('initializing dashboard')
 
         # ! STATE
 
@@ -79,7 +81,7 @@ class Dash_App:
         self.data_export_format = data_export_format
         self.points = points
         self.verbose = verbose
-        self.hot_reload = hot_reload
+        self.dev_mode = dev_mode
         self.pop_up = pop_up
         self.port = port
         # * define dependent state
@@ -312,8 +314,10 @@ class Dash_App:
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if triggered_id == 'show_customization_options.n_clicks':
+                logging.info("'show_customization_options.n_clicks' triggered")
                 return self.evaluate_customization_options('show', s_clicks)
             elif triggered_id == 'hide_customization_options.n_clicks':
+                logging.info("'hide_customization_options.n_clicks' triggered")
                 return self.evaluate_customization_options('hide', h_clicks)
 
         # * show export options
@@ -344,8 +348,10 @@ class Dash_App:
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if triggered_id == 'show_export_options.n_clicks':
+                logging.info("'show_export_options.n_clicks' triggered")
                 return self.evaluate_export_options('show', s_clicks)
             elif triggered_id == 'hide_export_options.n_clicks':
+                logging.info("'hide_export_options.n_clicks' triggered")
                 return self.evaluate_export_options('hide', h_clicks)
 
         # * regenerate or update graph
@@ -405,22 +411,31 @@ class Dash_App:
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'graph_height_input.value' == triggered_id:
+                logging.info("'graph_height_input.value' triggered")
                 return self.evaluate_height(height_value)
             elif 'graph_width_input.value' == triggered_id:
+                logging.info("'graph_width_input.value' triggered")
                 return self.evaluate_width(width_value)
             elif 'font_selection_input.value' == triggered_id:
+                logging.info("'font_selection_input.value' triggered")
                 return self.evaluate_font(font_value)
             elif 'font_size_input.value' == triggered_id:
+                logging.info("'font_size_input.value' triggered")
                 return self.evaluate_font_size(font_size_value)
             elif 'background_color_dropdown.value' == triggered_id:
+                logging.info("'background_color_dropdown.value' triggered")
                 return self.evaluate_background_color(background_color_value)
             elif 'plot_name_input.value' == triggered_id:
+                logging.info("'plot_name_input.value' triggered")
                 return self.evaluate_plot_name(plot_name_value)
             elif 'plot_type_dropdown.value' == triggered_id:
+                logging.info("'plot_type_dropdown.value' triggered")
                 return self.evaluate_plot_type(plot_type_value)
             elif 'database_dropdown.value' == triggered_id:
+                logging.info("'database_dropdown.value' triggered")
                 return self.evaluate_database(database_value)
             elif 'constraint_checkboxes.value' == triggered_id:
+                logging.info("'constraint_checkboxes.value' triggered")
                 return self.evaluate_constraint_showr(constraint_showr_value)
 
         # * download dataset
@@ -433,6 +448,7 @@ class Dash_App:
                 component_property='n_clicks'),
         )
         def download_dataset(n_clicks):
+            logging.info("'download_dataset_button.n_clicks' triggered")
             return self.evaluate_dataset_download(n_clicks)
 
         # * create object holding selected data
@@ -453,8 +469,10 @@ class Dash_App:
         ):
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'parmoo_graph.selectedData' == triggered_id:
+                logging.info("'parmoo_graph.selectedData' triggered")
                 self.evaluate_selected_data(selectedData, 'selectedData')
             elif 'parmoo_graph.restyleData' == triggered_id:
+                logging.info("'parmoo_graph.restyleData' triggered")
                 if self.plot_type == 'parallel':
                     self.evaluate_selected_data(restyleData, 'restyleData')
 
@@ -468,6 +486,7 @@ class Dash_App:
                 component_property='n_clicks'),
         )
         def download_selection(n_clicks):
+            logging.info("'download_selection_button.n_clicks' triggered")
             return self.evaluate_selection_download(n_clicks)
 
         # * update image export format
@@ -480,6 +499,7 @@ class Dash_App:
                 component_property='value'),
         )
         def update_image_export_format(value):
+            logging.info("'image_export_format_dropdown.value' triggered")
             self.evaluate_image_export_format(value)
 
         # * update data export format
@@ -492,6 +512,7 @@ class Dash_App:
                 component_property='value'),
         )
         def update_data_export_format(value):
+            logging.info("'data_export_format_dropdown.value' triggered")
             self.evaluate_data_export_format(value)
 
         # * export image
@@ -504,9 +525,12 @@ class Dash_App:
                 component_property='n_clicks'),
         )
         def download_image(n_clicks):
+            logging.info("'download_image_button.n_clicks' triggered")
             return self.evaluate_image_download(n_clicks)
 
     # ! EXECUTION
+
+        logging.info('initialized dashboard')
 
         # * pop_up
         if pop_up:
@@ -514,19 +538,20 @@ class Dash_App:
                 open_new(port)
 
         # * run application
-        if hot_reload:
+        logging.info('opening dashboard in browser. this might take a while')
+        if dev_mode:
             app.run(
                 debug=True,
                 dev_tools_hot_reload=True,
             )
-        elif not hot_reload:
+        elif not dev_mode:
             app.run(
-                debug=True,
+                debug=False,
                 dev_tools_hot_reload=False,
             )
         else:
-            message = str(hot_reload) + " is an invalid value for 'hot_reload'"
-            message += "\n'hot_reload' accepts boolean values only"
+            message = str(dev_mode) + " is an invalid value for 'dev_mode'"
+            message += "\n'dev_mode' accepts boolean values only"
             raise ValueError(message)
 
     # ! INITIALIZATION HELPERS

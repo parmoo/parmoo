@@ -1,4 +1,5 @@
 import pandas as pd
+import logging
 
 
 def customize(
@@ -44,16 +45,22 @@ def export_file(fig, plot_name, file_type):
     """
     if file_type == 'html':
         fig.write_html(plot_name + ".html")
+        logging.info("exported graph as .html")
     elif file_type == 'pdf':
         fig.write_image(plot_name + ".pdf")
+        logging.info("exported graph as .pdf")
     elif file_type == 'svg':
         fig.write_image(plot_name + ".svg")
+        logging.info("exported graph as .svg")
     elif file_type == 'webp':
         fig.write_image(plot_name + ".webp")
+        logging.info("exported graph as .webp")
     elif file_type == 'jpeg':
         fig.write_image(plot_name + ".jpeg")
+        logging.info("exported graph as .jpeg")
     elif file_type == 'png':
         fig.write_image(plot_name + ".png")
+        logging.info("exported graph as .png")
     else:
         message = "ParMOO does not support '" + file_type + "'.\n"
         message += "Supported outputs:\n"
@@ -70,15 +77,7 @@ def export_file(fig, plot_name, file_type):
 
 def configure(height, width, plot_name):
 
-    # # * set screenshot type based on export type
-    # if export == 'png':
-    #     screenshot = export
-    # elif export == 'webp':
-    #     screenshot = export
-    # elif export == 'jpeg':
-    #     screenshot = export
-    # elif export
-    #     screenshot = 'svg'
+    # * set screenshot type
     screenshot = 'svg'
 
     # * set config based on scale

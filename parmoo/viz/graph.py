@@ -12,6 +12,7 @@ The functions are:
 import plotly.express as px
 import plotly.graph_objects as go
 from warnings import warn
+import logging
 from .utilities import (
     set_plot_name,
     set_database,
@@ -36,6 +37,8 @@ def generate_scatter(
     points,
     verbose,
 ):
+    # * intro log
+    logging.info('generating scatterplot. this might take a while')
 
     # * get info
     objectives = moop.getObjectiveType().names
@@ -72,6 +75,9 @@ def generate_scatter(
         fontsize=fontsize,
     )
 
+    # * logging outro
+    logging.info('generated scatterplot')
+
     # * return figure
     return fig
 
@@ -92,6 +98,10 @@ def generate_parallel(
     points,
     verbose,
 ):
+    # * intro log
+    message = 'generating parallel coordinates plot. '
+    message += 'this might take a while'
+    logging.info(message)
 
     # * setup axes
     objectives = moop.getObjectiveType().names
@@ -114,6 +124,9 @@ def generate_parallel(
         fontsize=fontsize,
     )
 
+    # * logging outro
+    logging.info('generated parallel coordinates plot')
+
     # * return figure
     return fig
 
@@ -134,6 +147,8 @@ def generate_radar(
     points,
     verbose,
 ):
+    # * intro log
+    logging.info('generating radar plot. this might take awhile')
 
     # * setup axes
     objectives = moop.getObjectiveType().names
@@ -195,6 +210,9 @@ def generate_radar(
         font=font,
         fontsize=fontsize,
     )
+
+    # * logging outro
+    logging.info('generated radar plot')
 
     # * return figure
     return fig

@@ -1,3 +1,4 @@
+import logging
 from .dashboard import (
     Dash_App
 )
@@ -73,10 +74,11 @@ def scatter(
     data_export_format='csv',
     points='satisfied',
     verbose=True,
-    hot_reload=False,
+    dev_mode=False,
     pop_up=True,
     port='http://127.0.0.1:8050/',
 ):
+    logging.info('initialized scatter() wrapper')
     if output == 'dash':
         Dash_App(
             plot_type='scatter',
@@ -94,7 +96,7 @@ def scatter(
             data_export_format=data_export_format,
             points=points,
             verbose=verbose,
-            hot_reload=hot_reload,
+            dev_mode=dev_mode,
             pop_up=pop_up,
             port=port,
         )
@@ -178,11 +180,11 @@ def parallel_coordinates(
     data_export_format='csv',
     points='satisfied',
     verbose=True,
-    hot_reload=False,
+    dev_mode=False,
     pop_up=True,
     port='http://127.0.0.1:8050/',
 ):
-
+    logging.info('initialized parallel_coordinates() wrapper')
     if output == 'dash':
         Dash_App(
             plot_type='parallel',
@@ -200,7 +202,7 @@ def parallel_coordinates(
             data_export_format=data_export_format,
             points=points,
             verbose=verbose,
-            hot_reload=hot_reload,
+            dev_mode=dev_mode,
             pop_up=pop_up,
             port=port,
         )
@@ -278,10 +280,11 @@ def radar(
     data_export_format='csv',
     points='satisfied',
     verbose=True,
-    hot_reload=False,
+    dev_mode=False,
     pop_up=True,
     port='http://127.0.0.1:8050/',
 ):
+    logging.info('initialized radar() wrapper')
     if output == 'dash':
         Dash_App(
             plot_type='radar',
@@ -299,7 +302,7 @@ def radar(
             data_export_format=data_export_format,
             points=points,
             verbose=verbose,
-            hot_reload=hot_reload,
+            dev_mode=dev_mode,
             pop_up=pop_up,
             port=port,
         )
