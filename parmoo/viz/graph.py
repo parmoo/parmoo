@@ -95,31 +95,18 @@ def generate_parallel(
 
     # * setup axes
     objectives = moop.getObjectiveType().names
-    if moop.getConstraintType() is not None:
-        constraints = moop.getConstraintType().names
-    else:
-        constraints = ()
 
     # * choose database
     database = set_database(moop, db=db, points=points)
     plot_name = set_plot_name(db=db)
 
     # * create plot
-    if axes == 'objectives':
-        fig = px.parallel_coordinates(
-            database,
-            dimensions=objectives,
-            title=plot_name,
-            template='none',
-        )
-    else:
-        axes = objectives + constraints
-        fig = px.parallel_coordinates(
-            database,
-            labels=axes,
-            title=plot_name,
-            template='none',
-        )
+    fig = px.parallel_coordinates(
+        database,
+        dimensions=objectives,
+        title=plot_name,
+        template='none',
+    )
 
     fig = customize(
         fig,

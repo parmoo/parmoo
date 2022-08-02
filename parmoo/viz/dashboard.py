@@ -84,6 +84,7 @@ class Dash_App:
         self.port = port
         # * define dependent state
         self.selection_indexes = []
+        self.constraint_range = self.set_constraint_range(None)
         self.plot_name = set_plot_name(db=self.db)
         self.database = set_database(moop, db=self.db, points=self.points)
         self.graph = self.generate_graph()
@@ -442,9 +443,20 @@ class Dash_App:
             Input(
                 component_id='parmoo_graph',
                 component_property='selectedData'),
+            Input(
+                component_id='parmoo_graph',
+                component_property='restyleData'),
         )
-        def store_selection(selectedData):
-            self.evaluate_selected_data(selectedData)
+        def store_selection(
+            selectedData,
+            restyleData,
+        ):
+            triggered_id = callback_context.triggered[0]['prop_id']
+            if 'parmoo_graph.selectedData' == triggered_id:
+                self.evaluate_selected_data(selectedData, 'selectedData')
+            elif 'parmoo_graph.restyleData' == triggered_id:
+                if self.plot_type == 'parallel':
+                    self.evaluate_selected_data(restyleData, 'restyleData')
 
         # * download selection
         @app.callback(
@@ -767,15 +779,70 @@ class Dash_App:
                     content=self.database.to_json(),
                 )
 
-    def evaluate_selected_data(self, selectedData):
-        if selectedData is None:
+    def evaluate_selected_data(self, data, type):
+        if data is None:
             raise exceptions.PreventUpdate
         else:
-            pointskey = selectedData['points']
-            for index in range(len(pointskey)):
-                level1 = pointskey[index]
-                point_index = level1['pointIndex']
-                self.selection_indexes.append(point_index)
+            self.selection_indexes = []
+            if type == 'selectedData':
+                selectedData = data
+                pointskey = selectedData['points']
+                for index in range(len(pointskey)):
+                    level1 = pointskey[index]
+                    point_index = level1['pointIndex']
+                    self.selection_indexes.append(point_index)
+            elif type == 'restyleData':
+                self.update_constraint_range(data)
+                objectives = self.moop.getObjectiveType().names
+                for i, row in self.database.iterrows():
+                    row_selected = True
+                    for objective in objectives:
+                        if row_selected:
+                            row_obj_value = row[objective]
+                            entry_dict = self.constraint_range[objectives.index(objective)]
+                            ranges = entry_dict[list(entry_dict.keys())[0]]
+                            if ranges is not None:
+                                if row_selected:
+                                    for range in ranges:
+                                        try:
+                                            for rang in range:
+                                                for ran in rang:
+                                                    pass
+                                            row_selected_yet=False
+                                            for rang in range:
+                                                if row_selected_yet == False:
+                                                    if row_obj_value >= rang[0] and row_obj_value <= rang[1]:
+                                                        row_selected_yet = True
+                                                    else:
+                                                        row_selected_yet = False
+                                            row_selected = row_selected_yet
+                                        except:
+                                            if row_obj_value >= range[0] and row_obj_value <= range[1]:
+                                                row_selected = True
+                                            else:
+                                                row_selected = False
+                    if row_selected:
+                        self.selection_indexes.append(i)
+
+    def set_constraint_range(self, restyleData):
+        if restyleData is None:
+            objectives = self.moop.getObjectiveType().names
+            self.constraint_range = [None] * len(objectives)
+            count = 0
+            for objective in objectives:
+                self.constraint_range[count] = dict({objective: None})
+                count += 1
+            return self.constraint_range
+        else:
+            return self.update_constraint_range(self, restyleData)
+
+    def update_constraint_range(self, restyleData):
+        key_list = restyleData[0]
+        for key in key_list:
+            location = int(key[11])
+            entry_dict = self.constraint_range[location]
+            entry_dict[list(entry_dict.keys())[0]] = key_list[key]
+        return self.constraint_range
 
     def evaluate_selection_download(self, n_clicks):
         if n_clicks is None:

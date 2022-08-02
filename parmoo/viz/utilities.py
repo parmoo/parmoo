@@ -131,19 +131,15 @@ def set_database(moop, db, points):
             df = database.copy(deep=True)
             for constraint in constraints:
                 indices = df[df[constraint] > 0].index
-                print(indices)
                 df.drop(indices, inplace=True)
                 df.reset_index(inplace=True)
-                print(df)
         elif points == 'violated':
             constraints = moop.getConstraintType().names
             df = database.copy(deep=True)
             for constraint in constraints:
                 indices = df[df[constraint] <= 0].index
-                print(indices)
                 df.drop(indices, inplace=True)
                 df.reset_index(inplace=True)
-                print(df)
         elif points == 'all':
             df = database
         elif points == 'none':
