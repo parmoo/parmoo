@@ -46,7 +46,7 @@ class Dash_App:
         plot_type,
         db,
         axes,
-        specificaxes,
+        points,
         height,
         width,
         font,
@@ -55,7 +55,6 @@ class Dash_App:
         screenshot,
         image_export_format,
         data_export_format,
-        points,
         verbose,
         dev_mode,
         pop_up,
@@ -70,7 +69,7 @@ class Dash_App:
         self.plot_type = plot_type
         self.db = db
         self.axes = axes
-        self.specificaxes = specificaxes
+        self.points = points
         self.height = height
         self.width = width
         self.font = font
@@ -79,7 +78,6 @@ class Dash_App:
         self.screenshot = screenshot
         self.image_export_format = image_export_format
         self.data_export_format = data_export_format
-        self.points = points
         self.verbose = verbose
         self.dev_mode = dev_mode
         self.pop_up = pop_up
@@ -549,10 +547,6 @@ class Dash_App:
                 debug=False,
                 dev_tools_hot_reload=False,
             )
-        else:
-            message = str(dev_mode) + " is an invalid value for 'dev_mode'"
-            message += "\n'dev_mode' accepts boolean values only"
-            raise ValueError(message)
 
     # ! INITIALIZATION HELPERS
 
@@ -562,51 +556,27 @@ class Dash_App:
                 moop=self.moop,
                 db=self.db,
                 axes=self.axes,
-                specificaxes=self.specificaxes,
-                height=self.height,
-                width=self.width,
+                points=self.points,
                 font=self.font,
                 fontsize=self.fontsize,
-                screenshot=self.screenshot,
-                background_color=self.background_color,
-                image_export_format=self.image_export_format,
-                data_export_format=self.data_export_format,
-                points=self.points,
-                verbose=self.verbose,
             )
         elif self.plot_type == 'parallel':
             self.graph = generate_parallel(
                 moop=self.moop,
                 db=self.db,
                 axes=self.axes,
-                specificaxes=self.specificaxes,
-                height=self.height,
-                width=self.width,
+                points=self.points,
                 font=self.font,
                 fontsize=self.fontsize,
-                screenshot=self.screenshot,
-                background_color=self.background_color,
-                image_export_format=self.image_export_format,
-                data_export_format=self.data_export_format,
-                points=self.points,
-                verbose=self.verbose,
             )
         elif self.plot_type == 'radar':
             self.graph = generate_radar(
                 moop=self.moop,
                 db=self.db,
                 axes=self.axes,
-                specificaxes=self.specificaxes,
-                height=self.height,
-                width=self.width,
+                points=self.points,
                 font=self.font,
                 fontsize=self.fontsize,
-                screenshot=self.screenshot,
-                background_color=self.background_color,
-                image_export_format=self.image_export_format,
-                data_export_format=self.data_export_format,
-                points=self.points,
-                verbose=self.verbose,
             )
         else:
             warn("invalid plot_type")
@@ -707,8 +677,6 @@ class Dash_App:
                 self.graph.update_layout(
                     paper_bgcolor=self.background_color,
                 )
-            else:
-                raise ValueError('invalid plot_type')
         return self.graph
 
     # * functionality of plot type dropdown

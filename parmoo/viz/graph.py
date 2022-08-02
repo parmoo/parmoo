@@ -17,25 +17,15 @@ from .utilities import (
     set_plot_name,
     set_database,
     set_hover_info,
-    customize,
 )
 
 
 def generate_scatter(
     moop,
     db,
-    axes,
-    specificaxes,
-    height,
-    width,
+    points,
     font,
     fontsize,
-    background_color,
-    screenshot,
-    image_export_format,
-    data_export_format,
-    points,
-    verbose,
 ):
     # * intro log
     logging.info('generating scatterplot. this might take a while')
@@ -69,12 +59,6 @@ def generate_scatter(
         )
         fig.update_traces(diagonal_visible=False)
 
-    fig = customize(
-        fig,
-        font=font,
-        fontsize=fontsize,
-    )
-
     # * logging outro
     logging.info('generated scatterplot')
 
@@ -85,18 +69,9 @@ def generate_scatter(
 def generate_parallel(
     moop,
     db,
-    axes,
-    specificaxes,
-    height,
-    width,
+    points,
     font,
     fontsize,
-    background_color,
-    screenshot,
-    image_export_format,
-    data_export_format,
-    points,
-    verbose,
 ):
     # * intro log
     message = 'generating parallel coordinates plot. '
@@ -118,12 +93,6 @@ def generate_parallel(
         template='none',
     )
 
-    fig = customize(
-        fig,
-        font=font,
-        fontsize=fontsize,
-    )
-
     # * logging outro
     logging.info('generated parallel coordinates plot')
 
@@ -135,17 +104,9 @@ def generate_radar(
     moop,
     db,
     axes,
-    specificaxes,
-    height,
-    width,
+    points,
     font,
     fontsize,
-    background_color,
-    screenshot,
-    image_export_format,
-    data_export_format,
-    points,
-    verbose,
 ):
     # * intro log
     logging.info('generating radar plot. this might take awhile')
@@ -205,11 +166,6 @@ def generate_radar(
         autosize=True,)
     fig.update_layout(
         showlegend=False)
-    fig = customize(
-        fig,
-        font=font,
-        fontsize=fontsize,
-    )
 
     # * logging outro
     logging.info('generated radar plot')

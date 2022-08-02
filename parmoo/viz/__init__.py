@@ -13,7 +13,6 @@ from .graph import (
 )
 from .utilities import (
     export_file,
-    customize,
     configure,
     set_plot_name,
     set_database,
