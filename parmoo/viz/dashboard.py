@@ -51,7 +51,6 @@ class Dash_App:
         font,
         fontsize,
         background_color,
-        axis_color,
         screenshot,
         image_export_format,
         data_export_format,
@@ -61,6 +60,7 @@ class Dash_App:
         pop_up,
         port,
     ):
+
     # ! STATE
 
         # * define independent state
@@ -74,7 +74,6 @@ class Dash_App:
         self.font = font
         self.fontsize = fontsize
         self.background_color = background_color
-        self.axis_color = axis_color
         self.screenshot = screenshot
         self.image_export_format = image_export_format
         self.data_export_format = data_export_format
@@ -238,23 +237,6 @@ class Dash_App:
                 style=dict(display='none'),
             ),
             dcc.Dropdown(
-                id='axis_color_dropdown',
-                options=[
-                    'White',
-                    'Grey',
-                    'Black',
-                    'Transparent',
-                    'Red',
-                    'Yellow',
-                    'Blue',
-                    'Green',
-                    'Orange',
-                    'Purple'
-                ],
-                placeholder='Set axis color',
-                style=dict(display='none'),
-            ),
-            dcc.Dropdown(
                 id='image_export_format_dropdown',
                 options=[
                     'PNG',
@@ -315,9 +297,6 @@ class Dash_App:
             Output(
                 component_id='background_color_dropdown',
                 component_property='style',),
-            Output(
-                component_id='axis_color_dropdown',
-                component_property='style',),
             Input(
                 component_id='show_customization_options',
                 component_property='n_clicks',),
@@ -368,7 +347,6 @@ class Dash_App:
             elif triggered_id == 'hide_export_options.n_clicks':
                 return self.evaluate_export_options('hide', h_clicks)
 
-
         # * regenerate or update graph
         # TODO whenever possible, update instead of regenerating
         @app.callback(
@@ -395,10 +373,6 @@ class Dash_App:
             Input(
                 component_id='background_color_dropdown',
                 component_property='value',),
-            # axis color - update
-            Input(
-                component_id='axis_color_dropdown',
-                component_property='value',),
             # plot name - update
             Input(
                 component_id='plot_name_input',
@@ -423,7 +397,6 @@ class Dash_App:
             font_value,
             font_size_value,
             background_color_value,
-            axis_color_value,
             plot_name_value,
             plot_type_value,
             database_value,
@@ -440,8 +413,6 @@ class Dash_App:
                 return self.evaluate_font_size(font_size_value)
             elif 'background_color_dropdown.value' == triggered_id:
                 return self.evaluate_background_color(background_color_value)
-            elif 'axis_color_dropdown.value' == triggered_id:
-                return self.evaluate_axis_color(axis_color_value)
             elif 'plot_name_input.value' == triggered_id:
                 return self.evaluate_plot_name(plot_name_value)
             elif 'plot_type_dropdown.value' == triggered_id:
@@ -561,7 +532,6 @@ class Dash_App:
                 fontsize=self.fontsize,
                 screenshot=self.screenshot,
                 background_color=self.background_color,
-                axis_color=self.axis_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
                 points=self.points,
@@ -579,7 +549,6 @@ class Dash_App:
                 fontsize=self.fontsize,
                 screenshot=self.screenshot,
                 background_color=self.background_color,
-                axis_color=self.axis_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
                 points=self.points,
@@ -597,7 +566,6 @@ class Dash_App:
                 fontsize=self.fontsize,
                 screenshot=self.screenshot,
                 background_color=self.background_color,
-                axis_color=self.axis_color,
                 image_export_format=self.image_export_format,
                 data_export_format=self.data_export_format,
                 points=self.points,
@@ -612,7 +580,6 @@ class Dash_App:
         self.graph = self.update_font_size()
         self.graph = self.update_plot_name()
         self.graph = self.update_background_color()
-        self.graph = self.update_axis_color()
 
         return self.graph
 
@@ -707,22 +674,6 @@ class Dash_App:
                 raise ValueError('invalid plot_type')
         return self.graph
 
-    # * functionality of axis color dropdown
-    def update_axis_color(self):
-        if self.axis_color != 'auto':
-            if self.plot_type == 'scatter':
-                pass
-            elif self.plot_type == 'parallel':
-                pass
-            elif self.plot_type == 'radar':
-                self.graph.update_polars(
-                    angularaxis_linecolor=self.axis_color,
-                    radialaxis_gridcolor=self.axis_color,
-                )
-            else:
-                raise ValueError('invalid plot_type')
-        return self.graph
-
     # * functionality of plot type dropdown
     def update_plot_type(self):
         return self.generate_graph()
@@ -775,13 +726,6 @@ class Dash_App:
         else:
             self.background_color = background_color_value
         return self.update_background_color()
-
-    def evaluate_axis_color(self, axis_color_value):
-        if axis_color_value == 'Transparent':
-            self.axis_color = 'rgb(0,0,0,0)'
-        else:
-            self.axis_color = axis_color_value
-        return self.update_axis_color()
 
     def evaluate_plot_name(self, plot_name_value):
         if plot_name_value != '':
@@ -895,9 +839,9 @@ class Dash_App:
             showr = dict()
             hider = dict(display='none')
             if action == 'show':
-                return hider, showr, showr, showr, showr, showr, showr, showr, showr
+                return hider, showr, showr, showr, showr, showr, showr, showr
             else:
-                return showr, hider, hider, hider, hider, hider, hider, hider, hider
+                return showr, hider, hider, hider, hider, hider, hider, hider
 
     def evaluate_export_options(self, action, n_clicks):
         if n_clicks is None:
