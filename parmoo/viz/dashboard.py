@@ -61,7 +61,7 @@ class Dash_App:
         port,
     ):
 
-    # ! STATE
+        # ! STATE
 
         # * define independent state
         self.moop = moop
@@ -799,7 +799,8 @@ class Dash_App:
                     for objective in objectives:
                         if row_selected:
                             row_obj_value = row[objective]
-                            entry_dict = self.constraint_range[objectives.index(objective)]
+                            location = objectives.index(objective)
+                            entry_dict = self.constraint_range[location]
                             ranges = entry_dict[list(entry_dict.keys())[0]]
                             if ranges is not None:
                                 if row_selected:
@@ -808,16 +809,20 @@ class Dash_App:
                                             for rang in range:
                                                 for ran in rang:
                                                     pass
-                                            row_selected_yet=False
+                                            row_selected_yet = False
                                             for rang in range:
-                                                if row_selected_yet == False:
-                                                    if row_obj_value >= rang[0] and row_obj_value <= rang[1]:
+                                                if not row_selected_yet:
+                                                    if (row_obj_value >=
+                                                       rang[0] and
+                                                       row_obj_value <=
+                                                       rang[1]):
                                                         row_selected_yet = True
                                                     else:
-                                                        row_selected_yet = False
+                                                        row_selected_yet =False
                                             row_selected = row_selected_yet
                                         except:
-                                            if row_obj_value >= range[0] and row_obj_value <= range[1]:
+                                            if (row_obj_value >= range[0] and
+                                               row_obj_value <= range[1]):
                                                 row_selected = True
                                             else:
                                                 row_selected = False
