@@ -123,7 +123,7 @@ def set_database(moop, db, points):
         database = pd.DataFrame(moop.getObjectiveData())
     else:
         raise ValueError(str(db) + "is invalid value for 'db'")
-    if moop.getConstraintType().names is None:
+    if moop.getConstraintType() is None:
         df = database
     else:
         if points == 'satisfied':

@@ -30,6 +30,7 @@ def generate_scatter(
     font,
     fontsize,
     background_color,
+    axis_color,
     screenshot,
     image_export_format,
     data_export_format,
@@ -51,7 +52,8 @@ def generate_scatter(
             x=objectives[0],
             y=objectives[1],
             title=plot_name,
-            hover_data=database.columns
+            hover_data=database.columns,
+            template='none',
         )
         # fig.update_xaxes(showticklabels=False)
         # fig.update_yaxes(showticklabels=False)
@@ -60,7 +62,8 @@ def generate_scatter(
             database,
             dimensions=objectives,
             title=plot_name,
-            hover_data=database.columns
+            hover_data=database.columns,
+            template='none',
         )
         fig.update_traces(diagonal_visible=False)
 
@@ -84,6 +87,7 @@ def generate_parallel(
     font,
     fontsize,
     background_color,
+    axis_color,
     screenshot,
     image_export_format,
     data_export_format,
@@ -108,6 +112,7 @@ def generate_parallel(
             database,
             dimensions=objectives,
             title=plot_name,
+            template='none',
         )
     else:
         axes = objectives + constraints
@@ -115,6 +120,7 @@ def generate_parallel(
             database,
             labels=axes,
             title=plot_name,
+            template='none',
         )
 
     fig = customize(
@@ -137,6 +143,7 @@ def generate_radar(
     font,
     fontsize,
     background_color,
+    axis_color,
     screenshot,
     image_export_format,
     data_export_format,
@@ -184,6 +191,9 @@ def generate_radar(
             hovertext=hover_info,))
 
     # * improve aesthetics
+    fig.update_layout(
+        template='none',
+    )
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
