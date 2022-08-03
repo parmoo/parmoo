@@ -46,34 +46,34 @@ def export_file(fig, plot_name, file_type):
         logging.info("exported graph as .eps")
 
 
-def configure(height, width, plot_name, screenshot):
+# def configure(height, width, plot_name, screenshot):
 
-    # * set screenshot type
-    screenshot = screenshot
+#     # * set screenshot type
+#     screenshot = screenshot
 
-    # * set config based on scale
-    if height != 'auto' and width != 'auto':
-        config = {
-            'displaylogo': False,
-            'displayModeBar': True,
-            'toImageButtonOptions': {
-                'format': screenshot,  # one of png, svg, jpeg, webp
-                'filename': str(plot_name),
-                'height': int(height),
-                'width': int(width),
-                'scale': 1  # Multiply title/legend/axis/canvas sizes by factor
-            }
-        }
-    else:
-        config = {
-            'displaylogo': False,
-            'displayModeBar': True,
-            'toImageButtonOptions': {
-                'format': screenshot,  # one of png, svg, jpeg, webp
-                'filename': str(plot_name),
-            }
-        }
-    return config
+#     # * set config based on scale
+#     if height != 'auto' and width != 'auto':
+#         config = {
+#             'displaylogo': False,
+#             'displayModeBar': True,
+#             'toImageButtonOptions': {
+#                 'format': screenshot,  # one of png, svg, jpeg, webp
+#                 'filename': str(plot_name),
+#                 'height': int(height),
+#                 'width': int(width),
+#                 'scale': 1  # Multiply title/legend/axis/canvas sizes by factor
+#             }
+#         }
+#     else:
+#         config = {
+#             'displaylogo': False,
+#             'displayModeBar': True,
+#             'toImageButtonOptions': {
+#                 'format': screenshot,  # one of png, svg, jpeg, webp
+#                 'filename': str(plot_name),
+#             }
+#         }
+#     return config
 
 
 def set_plot_name(db):

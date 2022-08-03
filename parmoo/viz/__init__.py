@@ -3,18 +3,30 @@ from .plot import (
     parallel_coordinates,
     radar,
 )
+from .graph import (
+    generate_scatter,
+    generate_parallel,
+    generate_radar,
+)
+from .utilities import (
+    export_file,
+    set_plot_name,
+    set_database,
+    set_hover_info,
+    check_inputs,
+)
 from .dashboard import (
     Dash_App,
     # __init__,
-    # update_customization_components,
-    # update_export_components,
-    # update_graph,
-    # download_dataset,
-    # store_selection,
-    # download_selection,
-    # update_image_export_format,
-    # update_data_export_format,
-    # download_image,
+        # update_customization_components,
+        # update_export_components,
+        # update_graph,
+        # download_dataset,
+        # store_selection,
+        # download_selection,
+        # update_image_export_format,
+        # update_data_export_format,
+        # download_image,
     # generate_graph,
     # configure,
     # update_height,
@@ -44,17 +56,4 @@ from .dashboard import (
     # evaluate_customization_options,
     # evaluate_export_options,
     # evaluate_constraint_showr,
-)
-from .graph import (
-    generate_scatter,
-    generate_parallel,
-    generate_radar,
-)
-from .utilities import (
-    export_file,
-    configure,
-    set_plot_name,
-    set_database,
-    set_hover_info,
-    check_inputs,
 )
