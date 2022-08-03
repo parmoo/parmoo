@@ -13,12 +13,12 @@ To exploit structure, ParMOO models *simulations* separately from
  * a **design variable** is an input to the problem, which we can directly
    control;
  * a **simulation** is an expensive or time-consuming process, including
-   real-world experimentation, which must be treated as a blackbox function
+   real-world experimentation, which is treated as a blackbox function
    of the design variables and evaluated sparingly;
  * an **objective** is an algebraic function of the design variables
    and/or simulation outputs, which we would like to optimize; and
  * a **constraint** is an algebraic function of the design variables
-   and/or simulation outputs, which cannot exceed some bound.
+   and/or simulation outputs, which cannot exceed a specified bound.
 
 .. figure:: img/des-sim-obj-space.png
     :alt: Designs, simulations, and objectives
@@ -26,9 +26,9 @@ To exploit structure, ParMOO models *simulations* separately from
 
 |
 
-To solve a multiobjective optimization problem (MOOP), we use surrogate models
-of the simulation outputs, together with the algebraic definition of the
-objectives and constraints.
+To solve a multiobjective optimization problem (MOOP), we use surrogate
+models of the simulation outputs, together with the algebraic definition of
+the objectives and constraints.
 
 .. only:: html
 
@@ -54,7 +54,7 @@ ParMOO's base has the following dependencies:
  * pyDOE_ -- for generating experimental designs
 
 Additional dependencies are needed to use the additional features in
-``parmoo.extras``.
+``parmoo.extras``:
 
  * libEnsemble_ -- for managing parallel simulation evaluations
 
@@ -102,8 +102,8 @@ These tests are run regularly using GitHub Actions_.
 Basic Usage
 -----------
 
-ParMOO uses numpy_ in an object oriented design,
-based around the :mod:`MOOP <moop.MOOP>` class.
+ParMOO uses numpy_ in an object-oriented design, based around the
+:mod:`MOOP <moop.MOOP>` class.
 To get started, create a :mod:`MOOP <moop.MOOP>` object, using the
 :meth:`constructor <moop.MOOP.__init__>`.
 
@@ -117,11 +117,13 @@ To get started, create a :mod:`MOOP <moop.MOOP>` object, using the
 In the above example,
 :mod:`optimizers.LocalGPS <optimizers.gps_search.LocalGPS>`
 is the class of optimizers
-that the ``my_moop`` will use to solve scalarized surrogate problems.
+that the ``my_moop`` will use to solve scalarized surrogate problem.
 
 Next, add design variables to the problem as follows using the
 :meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>` method.
 In this example, we define one continuous and one categorical design variable.
+Other options include integer, custom, and raw (using raw variables is not
+recommended except for expert users).
 
 .. code-block:: python
 
@@ -135,7 +137,7 @@ In this example, we define one continuous and one categorical design variable.
    # Add a second categorical design variable with 3 levels
    my_moop.addDesign({'name': "x2", # optional, name
                       'des_type': "categorical", # required, type of variable
-                      'levels': 3 # required, number of categories
+                      'levels': ["good", "bad"] # required, category names
                      })
 
 Next, add simulations to the problem as follows using the
@@ -144,12 +146,13 @@ In this example, we define a toy simulation ``sim_func(x)``.
 
 .. code-block:: python
 
+   import numpy as np
    from parmoo.searches import LatinHypercube
    from parmoo.surrogates import GaussRBF
 
    # Define a toy simulation for the problem, whose outputs are quadratic
    def sim_func(x):
-      if x["x2"] == 0:
+      if x["x2"] == "good":
          return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
       else:
          return np.array([99.9, 99.9])

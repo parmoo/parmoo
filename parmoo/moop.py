@@ -89,17 +89,20 @@ class MOOP:
     """
 
     # Slots for the MOOP class
-    __slots__ = ['n', 'm', 'm_total', 'o', 'p', 's', 'n_dat', 'lb', 'ub',
-                 'n_cat_d', 'cat_lb', 'cat_scale', 'RSVT', 'mean', 'n_cat',
-                 'n_cont', 'n_lvls', 'des_order', 'cat_names',
-                 'sim_names', 'des_names', 'obj_names', 'const_names',
-                 'lam', 'objectives', 'data', 'sim_funcs', 'sim_db',
-                 'des_tols', 'searches', 'surrogates', 'optimizer',
+    __slots__ = ['n', 'm', 'm_total', 'o', 'p', 's', 'n_dat',
+                 'cont_lb', 'cont_ub', 'int_lb', 'int_ub',
+                 'n_cat_d', 'n_custom_d', 'cat_lb', 'cat_scale', 'RSVT',
+                 'mean', 'custom_embedders', 'custom_extracters',
+                 'n_cat', 'n_cont', 'n_int', 'n_custom', 'n_raw', 'n_lvls',
+                 'des_order', 'cat_names', 'sim_names',
+                 'des_names', 'obj_names', 'const_names',
+                 'lam', 'epsilon', 'objectives', 'data', 'sim_funcs',
+                 'sim_db', 'des_tols', 'searches', 'surrogates', 'optimizer',
                  'constraints', 'hyperparams', 'acquisitions', 'history',
                  'scale', 'scaled_lb', 'scaled_ub', 'scaled_des_tols',
-                 'cat_des_tols', 'use_names', 'iteration', 'checkpoint',
-                 'checkpointfile', 'checkpoint_data', 'new_checkpoint',
-                 'new_data']
+                 'cat_des_tols', 'custom_des_tols', 'use_names', 'iteration',
+                 'checkpoint', 'checkpointfile', 'checkpoint_data',
+                 'new_checkpoint', 'new_data']
 
     def __embed__(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
@@ -118,40 +121,56 @@ class MOOP:
         """
 
         # Unpack x into an ordered unstructured array
-        x_tmp = np.zeros(self.n_cont + self.n_cat)
+        x_tmp = np.zeros(self.n_cont + self.n_cat + self.n_int + self.n_custom
+                         + self.n_raw)
         if self.use_names:
             x_labels = []
             for d_name in self.des_names:
                 x_labels.append(x[d_name[0]])
             for i, j in enumerate(self.des_order):
-                if (j >= self.n_cont) and (len(self.cat_names[j - self.n_cont])
-                                           > 0):
-                    x_tmp[i] = float(self.cat_names[j - self.n_cont].index(
-                                                                x_labels[j]))
+                if ((j in range(self.n_cont+self.n_int,
+                                self.n_cont+self.n_int+self.n_cat))
+                    and (len(self.cat_names[j - self.n_cont - self.n_int])
+                         > 0)):
+                    x_tmp[j] = float(self.cat_names[j - self.n_cont -
+                                                    self.n_int].index(
+                                                                x_labels[i]))
+                elif (j in range(self.n_cont+self.n_int+self.n_cat,
+                                 self.n_cont+self.n_int+self.n_cat +
+                                 self.n_custom)):
+                    x_tmp[j] = i
                 else:
-                    x_tmp[i] = x_labels[j]
+                    x_tmp[j] = x_labels[i]
         else:
-            x_tmp = x[self.des_order]
+            x_tmp[self.des_order] = x[:]
         # Create the output array
         xx = np.zeros(self.n)
-        # Rescale the continuous variables
+        # Rescale the continuous and integer variables
         start = 0
         end = self.n_cont
-        xx[start:end] = ((x_tmp[start:end] - self.lb[start:end]) /
+        xx[start:end] = ((x_tmp[start:end] - self.cont_lb[:]) /
+                         self.scale[start:end] + self.scaled_lb[start:end])
+        # Pull inside bounding box, in case perturbed outside
+        xx[start:end] = np.maximum(xx[start:end], self.scaled_lb[start:end])
+        xx[start:end] = np.minimum(xx[start:end], self.scaled_ub[start:end])
+        # Rescale the continuous and integer variables
+        start = end
+        end = start + self.n_int
+        xx[start:end] = ((x_tmp[start:end] - self.int_lb[:]) /
                          self.scale[start:end] + self.scaled_lb[start:end])
         # Pull inside bounding box, in case perturbed outside
         xx[start:end] = np.maximum(xx[start:end], self.scaled_lb[start:end])
         xx[start:end] = np.minimum(xx[start:end], self.scaled_ub[start:end])
         # Embed the categorical variables
         if self.n_cat_d > 0:
+            start = end
+            end = start + self.n_cat_d
             bvec = np.zeros(sum(self.n_lvls))
             count = 0
             for i, n_lvl in enumerate(self.n_lvls):
-                bvec[count + int(x_tmp[self.n_cont + i])] = 1.0
+                bvec[count + int(x_tmp[start + i])] = 1.0
                 count += n_lvl
             bvec -= self.mean
-            start = self.n_cont
-            end = self.n_cont + self.n_cat_d
             xx[start:end] = ((np.matmul(self.RSVT, bvec) - self.cat_lb[:])
                              / self.scale[start:end]
                              + self.scaled_lb[start:end])
@@ -160,6 +179,29 @@ class MOOP:
                                        self.scaled_lb[start:end])
             xx[start:end] = np.minimum(xx[start:end],
                                        self.scaled_ub[start:end])
+        # Embed the custom variables
+        for i, embed_i in enumerate(self.custom_embedders):
+            start = end
+            end = start + self.n_custom_d[i]
+            if self.use_names:
+                if end - start > 1:
+                    xx[start:end] = embed_i(x_labels[int(x_tmp[self.n_cont +
+                                                               self.n_cat +
+                                                               self.n_int +
+                                                               i])])
+                # Special rule for self.n_custom_d = 1
+                else:
+                    xx[start] = embed_i(x_labels[int(x_tmp[self.n_cont +
+                                                           self.n_cat +
+                                                           self.n_int + i])])
+            else:
+                xx[start:end] = embed_i(x_tmp[self.n_cont + self.n_cat +
+                                              self.n_int + i])
+        # Embed the raw variables
+        start = end
+        end = start + self.n_raw
+        xx[start:end] = x_tmp[self.n_cont + self.n_cat + self.n_int +
+                              self.n_custom:]
         return xx
 
     def __extract__(self, x):
@@ -180,36 +222,81 @@ class MOOP:
         """
 
         # Create the output array
-        xx = np.zeros(self.n_cont + self.n_cat)
+        xx = np.zeros(self.n_cont + self.n_cat + self.n_int + self.n_custom
+                      + self.n_raw)
         # Descale the continuous variables
         start = 0
         end = self.n_cont
         xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
-                         * self.scale[start:end] + self.lb[start:end])
+                         * self.scale[start:end] + self.cont_lb[:])
         # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.lb[start:end])
-        xx[start:end] = np.minimum(xx[start:end], self.ub[start:end])
+        xx[start:end] = np.maximum(xx[start:end], self.cont_lb[:])
+        xx[start:end] = np.minimum(xx[start:end], self.cont_ub[:])
+        # Descale the integer variables
+        start = end
+        end = start + self.n_int
+        xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
+                         * self.scale[start:end] + self.int_lb[:])
+        # Pull inside bounding box, in case perturbed outside
+        xx[start:end] = np.maximum(xx[start:end], self.int_lb[:])
+        xx[start:end] = np.minimum(xx[start:end], self.int_ub[:])
+        # Bin the integer variables
+        for i in range(self.n_cont, self.n_cont + self.n_int):
+            xx[i] = int(xx[i])
         # Extract categorical variables
         if self.n_cat_d > 0:
-            start = self.n_cont
-            end = self.n_cont + self.n_cat_d
+            start = end
+            end = start + self.n_cat_d
             bvec = (np.matmul(np.transpose(self.RSVT),
-                              (x[start:end] - self.scaled_lb[start:end])
-                              * self.scale[start:end] + self.cat_lb[:])
+                              (x[start:end]
+                               - self.scaled_lb[start:end])
+                              * self.scale[start:end]
+                              + self.cat_lb[:])
                     + self.mean)
             count = 0
             for i, n_lvl in enumerate(self.n_lvls):
                 xx[start+i] = np.argmax(bvec[count:count+n_lvl])
                 count += n_lvl
+        # Extract custom variables
+        for i, ex_i in enumerate(self.custom_extracters):
+            start = end
+            end = start + self.n_custom_d[i]
+            if not self.use_names:
+                xx[self.n_cont + self.n_cat + self.n_int + i] = \
+                    ex_i(x[start:end])
+        # Extract the raw variables
+        start = end
+        end = start + self.n_raw
+        xx[self.n_cont + self.n_cat + self.n_int + self.n_custom:] = \
+            x[start:end]
         # Unshuffle xx and pack into a numpy structured array
         if self.use_names:
             out = np.zeros(1, dtype=np.dtype(self.des_names))
+            n_customs = 0
             for i, j in enumerate(self.des_order):
-                if (i >= self.n_cont) and (len(self.cat_names[i - self.n_cont])
-                                           > 0):
-                    out[self.des_names[i][0]] = (self.cat_names[i -
-                                                                self.n_cont]
+                # Unpack categorical variables when cat_names given
+                if ((j in range(self.n_cont+self.n_int,
+                                self.n_cont+self.n_int+self.n_cat))
+                    and (len(self.cat_names[j - self.n_cont - self.n_int])
+                         > 0)):
+                    out[self.des_names[i][0]] = (self.cat_names[j -
+                                                                self.n_cont -
+                                                                self.n_int]
                                                                [int(xx[j])])
+                # Unpack custom variables
+                elif (j in range(self.n_cont + self.n_int + self.n_cat,
+                                 self.n_cont + self.n_int + self.n_cat +
+                                 self.n_custom)):
+                    start = (self.n_cont + self.n_cat_d + self.n_int +
+                             sum(self.n_custom_d[:n_customs]))
+                    end = start + self.n_custom_d[n_customs]
+                    exi = self.custom_extracters[n_customs]
+                    if end - start > 1:
+                        out[self.des_names[i][0]] = exi(x[start:end])
+                    # Special rule for self.n_custom_d = 1
+                    else:
+                        out[self.des_names[i][0]] = exi(x[start])
+                    n_customs += 1  # increment counter
                 else:
                     out[self.des_names[i][0]] = xx[j]
             return out[0]
@@ -351,12 +438,18 @@ class MOOP:
         self.des_names = []
         self.des_order = []
         self.des_tols = []
-        self.n_cont = 0
-        self.lb = []
-        self.ub = []
+        self.cont_lb = []
+        self.cont_ub = []
+        self.int_lb = []
+        self.int_ub = []
         self.n_cat = 0
+        self.n_cont = 0
+        self.n_int = 0
+        self.n_custom = 0
+        self.n_raw = 0
         self.cat_names = []
         self.n_cat_d = 0
+        self.n_custom_d = []
         self.n_lvls = []
         # Initialize the scale
         self.scale = []
@@ -364,11 +457,15 @@ class MOOP:
         self.scaled_ub = []
         self.scaled_des_tols = []
         self.cat_des_tols = []
+        self.custom_des_tols = []
         self.cat_lb = []
         self.cat_scale = []
+        self.epsilon = 1.0e-8
         # Initialize the embedding transformation
         self.RSVT = []
         self.mean = []
+        self.custom_embedders = []
+        self.custom_extracters = []
         # Initialize lists for storing simulation information
         self.s = 0
         self.m = []
@@ -434,23 +531,41 @@ class MOOP:
                    unspecified.
                  * 'des_type' (str): The type for this design variable.
                    Currently supported options are:
-                    * 'continuous'
-                    * 'categorical'
-                 * 'lb' (float): When des_type is 'continuous', this specifies
-                   the lower bound for the design variable. This value must
-                   be specified, and must be strictly less than 'ub'
-                   (below) up to the tolerance (below).
-                 * 'ub' (float): When des_type is 'continuous', this specifies
-                   the upper bound for the design variable. This value
-                   must be specified, and must be strictly greater than
-                   'lb' (above) up to the tolerance (below).
-                 * 'tol' (float): When des_type is 'continuous', this specifies
-                   the tolerance, i.e., the minimum spacing along this
-                   dimension, before two design values are considered to
+                    * 'continuous' (or 'cont' or 'real')
+                    * 'categorical' (or 'cat')
+                    * 'integer' (or 'int')
+                    * 'custom'
+                    * 'raw' -- for advanced use only, not recommended
+                 * 'lb' (float): When des_type is 'continuous' or 'integer',
+                   this specifies the lower bound for the design variable.
+                   This value must be specified, and must be strictly less
+                   than 'ub' (below) up to the tolerance (below).
+                 * 'ub' (float): When des_type is 'continuous' or 'integer',
+                   this specifies the upper bound for the design variable.
+                   This value must be specified, and must be strictly greater
+                   than 'lb' (above) up to the tolerance (below).
+                 * 'des_tol' (float): When des_type is 'continuous', this
+                   specifies the tolerance, i.e., the minimum spacing along
+                   this dimension, before two design values are considered to
                    have equal values in this dimension. If not specified, the
                    default value is 1.0e-8.
-                 * 'levels' (int): When des_type is 'categorical', this
-                   specifies the number of levels for the variable.
+                 * 'levels' (int or list): When des_type is 'categorical', this
+                   specifies the number of levels for the variable (when int)
+                   or the names of each valid category (when a list).
+                 * 'embedding_size' (int): When des_type is 'custom', this
+                   specifies the dimension of the custom embedding.
+                 * 'dtype' (str): When des_type is 'custom', this contains
+                   a string specifying the numpy dtype of the custom input.
+                   Only used when operating with named variables, otherwise
+                   it must be numeric. When using named variables, defaults
+                   to 'U25'.
+                 * 'embedder': When des_type is 'custom', this is a custom
+                   embedding function, which maps the input to a point in the
+                   unit hypercube of dimension 'embedding_size'.
+                 * 'extracter': When des_type is 'custom', this is a custom
+                   extracting function, which maps a point in the unit
+                   hypercube of dimension 'embedding_size' to a legal input
+                   value of type 'dtype'.
 
         """
 
@@ -468,110 +583,18 @@ class MOOP:
             if 'des_type' in arg.keys():
                 if not isinstance(arg['des_type'], str):
                     raise TypeError("args['des_type'] must be a str")
-                # Append a new continous design variable to the list
-                if arg['des_type'] == "continuous":
-                    if 'des_tol' in arg.keys():
-                        if isinstance(arg['des_tol'], float):
-                            if arg['des_tol'] > 0.0:
-                                des_tol = arg['des_tol']
-                            else:
-                                raise ValueError("args['des_tol'] must be "
-                                                 + "positive")
-                        else:
-                            raise TypeError("args['des_tol'] must be a float")
-                    else:
-                        des_tol = 1.0e-8
-                    if 'lb' in arg.keys() and 'ub' in arg.keys():
-                        if not (isinstance(arg['lb'], float) and
-                                isinstance(arg['ub'], float)):
-                            raise TypeError("args['lb'] and args['ub'] must "
-                                            + "be float types")
-                        if arg['lb'] + des_tol > arg['ub']:
-                            raise ValueError("args['lb'] must be less than "
-                                             + "args['ub'] up to the design "
-                                             + "space tolerance")
-                    else:
-                        raise AttributeError("'lb' and 'ub' keys must be "
-                                             + "present when 'des_type' is "
-                                             + "'continuous'")
-                    if 'name' in arg.keys():
-                        if isinstance(arg['name'], str):
-                            if any([arg['name'] == dname[0]
-                                    for dname in self.des_names]):
-                                raise ValueError("arg['name'] must be unique")
-                            self.des_names.append((arg['name'], 'f8'))
-                        else:
-                            raise TypeError("When present, 'name' must be a "
-                                            + "str type")
-                    else:
-                        self.use_names = False
-                        name = "x" + str(self.n_cont + self.n_cat + 1)
-                        self.des_names.append((name, 'f8', ))
-                    # Keep track of design variable indices for bookkeeping
-                    for i in range(len(self.des_order)):
-                        # Add 1 to all categorical variable indices
-                        if self.des_order[i] >= self.n_cont:
-                            self.des_order[i] += 1
-                    self.des_order.append(self.n_cont)
-                    self.n_cont += 1
-                    self.des_tols.append(des_tol)
-                    self.lb.append(arg['lb'])
-                    self.ub.append(arg['ub'])
-                # Append a new categorical design variable to the list
-                elif arg['des_type'] == "categorical":
-                    if 'levels' in arg.keys():
-                        if isinstance(arg['levels'], int):
-                            if arg['levels'] < 2:
-                                raise ValueError("args['levels'] must be at "
-                                                 + "least 2")
-                        elif isinstance(arg['levels'], list):
-                            if len(arg['levels']) < 2:
-                                raise ValueError("args['levels'] must contain "
-                                                 + "at least 2 categories")
-                            if any([not isinstance(lvl, str)
-                                    for lvl in arg['levels']]):
-                                raise TypeError("args['levels'] must contain "
-                                                + "strings, if a list")
-                        else:
-                            raise TypeError("args['levels'] must be an int")
-                    else:
-                        raise AttributeError("'levels' must be present when "
-                                             + "'des_type' is 'categorical'")
-                    if 'name' in arg.keys():
-                        if not isinstance(arg['name'], str):
-                            raise TypeError("When present, 'name' must be a "
-                                            + "str type")
-                    else:
-                        self.use_names = False
-                        name = "x" + str(self.n_cont + self.n_cat + 1)
-                        self.des_names.append((name, 'i4', ))
-                    # Keep track of design variable indices for bookkeeping
-                    self.des_order.append(self.n_cont + self.n_cat)
-                    self.n_cat += 1
-                    self.des_tols.append(0.5)
-                    if isinstance(arg['levels'], int):
-                        self.n_lvls.append(arg['levels'])
-                        self.cat_names.append([])
-                        if 'name' in arg.keys():
-                            self.des_names.append((arg['name'], 'i4'))
-                    else:
-                        self.n_lvls.append(len(arg['levels']))
-                        self.cat_names.append(arg['levels'])
-                        if 'name' in arg.keys():
-                            self.des_names.append((arg['name'], 'U25'))
-                    self.__generate_encoding__()
-                else:
-                    raise(ValueError("des_type=" + arg['des_type'] +
-                                     " is not a recognized value"))
-            else:
-                # The default des_type is continuous
+            # Append a new continuous design variable (default) to the list
+            if 'des_type' not in arg.keys() or \
+               arg['des_type'] in ["continuous", "cont", "real"]:
                 if 'des_tol' in arg.keys():
-                    if not isinstance(arg['des_tol'], float):
-                        raise TypeError("args['des_tol'] must be a float")
-                    if arg['des_tol'] > 0.0:
-                        des_tol = arg['des_tol']
+                    if isinstance(arg['des_tol'], float):
+                        if arg['des_tol'] > 0.0:
+                            des_tol = arg['des_tol']
+                        else:
+                            raise ValueError("args['des_tol'] must be "
+                                             + "positive")
                     else:
-                        raise ValueError("args['des_tol'] must be positive")
+                        raise TypeError("args['des_tol'] must be a float")
                 else:
                     des_tol = 1.0e-8
                 if 'lb' in arg.keys() and 'ub' in arg.keys():
@@ -589,40 +612,246 @@ class MOOP:
                                          + "'continuous'")
                 if 'name' in arg.keys():
                     if isinstance(arg['name'], str):
+                        if any([arg['name'] == dname[0]
+                                for dname in self.des_names]):
+                            raise ValueError("arg['name'] must be unique")
                         self.des_names.append((arg['name'], 'f8'))
                     else:
                         raise TypeError("When present, 'name' must be a "
                                         + "str type")
                 else:
                     self.use_names = False
-                    name = "x" + str(self.n_cont + self.n_cat + 1)
+                    name = "x" + str(self.n_cont + self.n_cat + self.n_int
+                                     + self.n_custom + self.n_raw + 1)
                     self.des_names.append((name, 'f8', ))
                 # Keep track of design variable indices for bookkeeping
                 for i in range(len(self.des_order)):
-                    # Add 1 to all categorical variable indices
+                    # Add 1 to all integer variable indices
                     if self.des_order[i] >= self.n_cont:
                         self.des_order[i] += 1
                 self.des_order.append(self.n_cont)
                 self.n_cont += 1
                 self.des_tols.append(des_tol)
-                self.lb.append(arg['lb'])
-                self.ub.append(arg['ub'])
+                self.cont_lb.append(arg['lb'])
+                self.cont_ub.append(arg['ub'])
+            # Append a new categorical design variable to the list
+            elif arg['des_type'] in ["categorical", "cat"]:
+                if 'levels' in arg.keys():
+                    if isinstance(arg['levels'], int):
+                        if arg['levels'] < 2:
+                            raise ValueError("args['levels'] must be at "
+                                             + "least 2")
+                    elif isinstance(arg['levels'], list):
+                        if len(arg['levels']) < 2:
+                            raise ValueError("args['levels'] must contain "
+                                             + "at least 2 categories")
+                        if any([not isinstance(lvl, str)
+                                for lvl in arg['levels']]):
+                            raise TypeError("args['levels'] must contain "
+                                            + "strings, if a list")
+                    else:
+                        raise TypeError("args['levels'] must be a list or "
+                                        + "int")
+                else:
+                    raise AttributeError("'levels' must be present when "
+                                         + "'des_type' is 'categorical'")
+                if 'name' in arg.keys():
+                    if not isinstance(arg['name'], str):
+                        raise TypeError("When present, 'name' must be a "
+                                        + "str type")
+                else:
+                    self.use_names = False
+                    name = "x" + str(self.n_cont + self.n_cat + self.n_int
+                                     + self.n_custom + self.n_raw + 1)
+                    self.des_names.append((name, 'i4', ))
+                # Keep track of design variable indices for bookkeeping
+                for i in range(len(self.des_order)):
+                    # Add 1 to all custom variable indices
+                    if self.des_order[i] >= (self.n_cont + self.n_int +
+                                             self.n_cat):
+                        self.des_order[i] += 1
+                self.des_order.append(self.n_cont + self.n_int
+                                      + self.n_cat)
+                self.n_cat += 1
+                self.des_tols.append(0.5)
+                if isinstance(arg['levels'], int):
+                    self.n_lvls.append(arg['levels'])
+                    self.cat_names.append([])
+                    if 'name' in arg.keys():
+                        self.des_names.append((arg['name'], 'i4'))
+                else:
+                    self.n_lvls.append(len(arg['levels']))
+                    self.cat_names.append(arg['levels'])
+                    if 'name' in arg.keys():
+                        self.des_names.append((arg['name'], 'U25'))
+                self.__generate_encoding__()
+            # Add an integer design variable
+            elif arg['des_type'] in ["integer", "int"]:
+                # Relax to a continuous design variable with des_tol = 0.5
+                des_tol = 0.5
+                if 'lb' in arg.keys() and 'ub' in arg.keys():
+                    if not (isinstance(arg['lb'], int) and
+                            isinstance(arg['ub'], int)):
+                        raise TypeError("args['lb'] and args['ub'] must "
+                                        + "be int types")
+                    if arg['lb'] + des_tol >= arg['ub']:
+                        raise ValueError("args['lb'] must be less than "
+                                         + "or equal to args['ub'] up to "
+                                         + "the design space tolerance")
+                else:
+                    raise AttributeError("'lb' and 'ub' keys must be "
+                                         + "present when 'des_type' is "
+                                         + "'integer'")
+                if 'name' in arg.keys():
+                    if isinstance(arg['name'], str):
+                        if any([arg['name'] == dname[0]
+                                for dname in self.des_names]):
+                            raise ValueError("arg['name'] must be unique")
+                        self.des_names.append((arg['name'], 'f8'))
+                    else:
+                        raise TypeError("When present, 'name' must be a "
+                                        + "str type")
+                else:
+                    self.use_names = False
+                    name = "x" + str(self.n_cont + self.n_cat + self.n_int
+                                     + self.n_custom + self.n_raw + 1)
+                    self.des_names.append((name, 'i4', ))
+                # Keep track of design variable indices for bookkeeping
+                for i in range(len(self.des_order)):
+                    # Add 1 to all categorical variable indices
+                    if self.des_order[i] >= self.n_cont + self.n_int:
+                        self.des_order[i] += 1
+                self.des_order.append(self.n_cont + self.n_int)
+                self.n_int += 1
+                self.des_tols.append(des_tol)
+                self.int_lb.append(arg['lb'])
+                self.int_ub.append(arg['ub'])
+            # Append a new custom design variable to the list
+            elif arg['des_type'] in ["custom"]:
+                if 'embedding_size' in arg.keys():
+                    if isinstance(arg['embedding_size'], int):
+                        if arg['embedding_size'] < 1:
+                            raise ValueError("args['embedding_size'] must"
+                                             + " be at least 1")
+                    else:
+                        raise TypeError("args['embedding_size'] must be a "
+                                        + "int")
+                else:
+                    raise AttributeError("'embedding_size' must be present"
+                                         + " when 'des_type' is 'custom'")
+                if 'dtype' in arg.keys():
+                    if not isinstance(arg['dtype'], str):
+                        raise TypeError("When present, 'dtype' must be a " +
+                                        "str type")
+                    else:
+                        # Make sure this is a legal numpy dtype
+                        np.dtype(arg['dtype'])
+                if 'name' in arg.keys():
+                    if not isinstance(arg['name'], str):
+                        raise TypeError("When present, 'name' must be a "
+                                        + "str type")
+                    if 'dtype' in arg.keys():
+                        self.des_names.append((arg['name'], arg['dtype']))
+                    else:
+                        self.des_names.append((arg['name'], 'U25'))
+                else:
+                    self.use_names = False
+                    name = "x" + str(self.n_cont + self.n_cat + self.n_int
+                                     + self.n_custom + self.n_raw + 1)
+                    self.des_names.append((name, 'f8', ))
+                # Load the custom embedder/extracter
+                if 'embedder' in arg.keys():
+                    if not callable(arg['embedder']):
+                        raise TypeError("'embedder' must be a "
+                                        + "callable object")
+                else:
+                    raise AttributeError("'embedder' must be present"
+                                         + " when 'des_type' is 'custom'")
+                if 'extracter' in arg.keys():
+                    if not callable(arg['extracter']):
+                        raise TypeError("'extracter' must be a "
+                                        + "callable object")
+                else:
+                    raise AttributeError("'extracter' must be present"
+                                         + " when 'des_type' is 'custom'")
+                self.custom_embedders.append(arg['embedder'])
+                self.custom_extracters.append(arg['extracter'])
+                # Keep track of design variable indices for bookkeeping
+                for i in range(len(self.des_order)):
+                    # Add 1 to all raw variable indices
+                    if self.des_order[i] >= (self.n_cont + self.n_int +
+                                             self.n_cat + self.n_custom):
+                        self.des_order[i] += 1
+                self.des_order.append(self.n_cont + self.n_int +
+                                      self.n_cat + self.n_custom)
+                self.n_custom += 1
+                self.n_custom_d.append(arg["embedding_size"])
+                self.des_tols.append(1.0e-8)
+                for i in range(arg["embedding_size"]):
+                    self.custom_des_tols.append(1.0e-8)
+            # Append a new raw design variable to the list
+            elif arg['des_type'] in ["raw"]:
+                if 'name' in arg.keys():
+                    if not isinstance(arg['name'], str):
+                        raise TypeError("When present, 'name' must be a "
+                                        + "str type")
+                    self.des_names.append((arg['name'], 'f8'))
+                else:
+                    self.use_names = False
+                    name = "x" + str(self.n_cont + self.n_cat + self.n_int
+                                     + self.n_custom + self.n_raw + 1)
+                    self.des_names.append((name, 'f8', ))
+                # Keep track of design variable indices for bookkeeping
+                for i in range(len(self.des_order)):
+                    # Add 1 to all later variable indices (should be none)
+                    if self.des_order[i] >= (self.n_cont + self.n_int +
+                                             self.n_cat + self.n_custom +
+                                             self.n_raw):
+                        self.des_order[i] += 1
+                self.des_order.append(self.n_cont + self.n_int +
+                                      self.n_cat + self.n_custom + self.n_raw)
+                self.n_raw += 1
+                self.des_tols.append(1.0e-8)
+            else:
+                raise(ValueError("des_type=" + arg['des_type'] +
+                                 " is not a recognized value"))
         # Set the effective design dimension
-        self.n = self.n_cat_d + self.n_cont
+        self.n = (self.n_cat_d + self.n_cont + self.n_int +
+                  sum(self.n_custom_d) + self.n_raw)
         # Set the problem scaling
         self.scaled_lb = np.zeros(self.n)
         self.scaled_ub = np.ones(self.n)
         self.scale = np.ones(self.n)
-        for i in range(self.n_cont):
-            self.scale[i] = self.ub[i] - self.lb[i]
         self.scaled_des_tols = np.zeros(self.n)
-        self.scaled_des_tols[:self.n_cont] = (self.des_tols[:self.n_cont] /
-                                              self.scale[:self.n_cont])
-        if self.n_cat_d > 0:
-            self.scaled_des_tols[self.n_cont:self.n_cont+self.n_cat_d] = \
-                self.cat_des_tols[:]
-            self.scale[self.n_cont:self.n_cont+self.n_cat_d] = \
-                self.cat_scale[:]
+        n_total = 0
+        # Calculate scaling for continuous variables
+        for i in range(self.n_cont):
+            self.scale[i] = self.cont_ub[i] - self.cont_lb[i]
+            self.scaled_des_tols[i] = (self.des_tols[self.des_order.index(i)] /
+                                       self.scale[i])
+        n_total = n_total + self.n_cont
+        # Calculate scaling for continuous variables
+        for i in range(self.n_int):
+            self.scale[n_total + i] = self.int_ub[i] - self.int_lb[i]
+            self.scaled_des_tols[n_total + i] = \
+                self.des_tols[self.des_order.index(i)] / self.scale[i]
+        n_total = n_total + self.n_int
+        # Calculate scaling for categorical variables
+        self.scale[n_total:n_total+self.n_cat_d] = self.cat_scale[:]
+        self.scaled_des_tols[n_total:n_total+self.n_cat_d] = \
+            self.cat_des_tols[:]
+        n_total += self.n_cat_d
+        # Calculate scaling for custom variables
+        self.scale[n_total:n_total+sum(self.n_custom_d)] = 1.0
+        self.scaled_des_tols[n_total:n_total+sum(self.n_custom_d)] = \
+            self.custom_des_tols[:]
+        n_total += sum(self.n_custom_d)
+        # Calculate scaling for raw variables
+        self.scale[n_total:n_total+self.n_raw] = 1.0
+        self.scaled_des_tols[n_total:n_total+self.n_raw] = 1.0e-8
+        self.scaled_lb[n_total:n_total+self.n_raw] = -np.inf
+        self.scaled_ub[n_total:n_total+self.n_raw] = np.inf
+        n_total += self.n_raw
         # Reset the database
         self.n_dat = 0
         self.data = {}
@@ -659,7 +888,8 @@ class MOOP:
         from parmoo.util import check_sims
 
         # Iterate through args to add each sim
-        check_sims(self.n_cont + self.n_cat, *args)
+        check_sims(self.n_cont + self.n_cat + self.n_int + self.n_custom +
+                   self.n_raw, *args)
         for arg in args:
             # Use the number of sims
             m = arg['m']
@@ -968,12 +1198,14 @@ class MOOP:
 
         """
 
-        if self.n_cont + self.n_cat < 1:
+        if self.n_cont + self.n_cat + self.n_int + self.n_custom + \
+           self.n_raw < 1:
             return None
         elif self.use_names:
             return np.dtype(self.des_names)
         else:
-            return np.dtype(('f8', (self.n_cont + self.n_cat,)))
+            return np.dtype(('f8', (self.n_cont + self.n_cat + self.n_int +
+                                    self.n_custom + self.n_raw,)))
 
     def getSimulationType(self):
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
@@ -1804,6 +2036,9 @@ class MOOP:
         logging.info(f"   {self.n} design dimensions")
         logging.info(f"     continuous design variables: {self.n_cont}")
         logging.info(f"     categorical design variables: {self.n_cat}")
+        logging.info(f"     integer design variables: {self.n_int}")
+        logging.info(f"     custom design variables: {self.n_custom}")
+        logging.info(f"     raw design variables: {self.n_raw}")
         logging.info(f"   {self.m_total} simulation outputs")
         logging.info(f"   {self.s} simulations")
         for i in range(self.s):
@@ -2090,11 +2325,17 @@ class MOOP:
                         'p': self.p,
                         's': self.s,
                         'n_dat': self.n_dat,
-                        'lb': self.lb,
-                        'ub': self.ub,
+                        'cont_lb': self.cont_lb,
+                        'cont_ub': self.cont_ub,
+                        'int_lb': self.int_lb,
+                        'int_ub': self.int_ub,
                         'n_cat_d': self.n_cat_d,
+                        'n_custom_d': self.n_custom_d,
                         'n_cat': self.n_cat,
                         'n_cont': self.n_cont,
+                        'n_int': self.n_int,
+                        'n_custom': self.n_custom,
+                        'n_raw': self.n_raw,
                         'n_lvls': self.n_lvls,
                         'des_order': self.des_order,
                         'cat_names': self.cat_names,
@@ -2104,6 +2345,7 @@ class MOOP:
                         'const_names': self.const_names,
                         'lam': self.lam,
                         'des_tols': self.des_tols,
+                        'epsilon': self.epsilon,
                         'hyperparams': self.hyperparams,
                         'history': self.history,
                         'use_names': self.use_names,
@@ -2132,6 +2374,10 @@ class MOOP:
             parmoo_state['cat_des_tols'] = self.cat_des_tols.tolist()
         else:
             parmoo_state['cat_des_tols'] = self.cat_des_tols
+        if isinstance(self.custom_des_tols, np.ndarray):
+            parmoo_state['custom_des_tols'] = self.custom_des_tols.tolist()
+        else:
+            parmoo_state['custom_des_tols'] = self.custom_des_tols
         if isinstance(self.cat_lb, np.ndarray):
             parmoo_state['cat_lb'] = self.cat_lb.tolist()
         else:
@@ -2197,6 +2443,12 @@ class MOOP:
                                                     ci.__class__.__module__))
                 parmoo_state['constraints_info'].append(
                         codecs.encode(pickle.dumps(ci), "base64").decode())
+        # Store names/modules of custom embedders
+        parmoo_state['custom_embedders'] = [(ei.__name__, ei.__module__)
+                                            for ei in self.custom_embedders]
+        # Store names/modules of custom extracters
+        parmoo_state['custom_extracters'] = [(ei.__name__, ei.__module__)
+                                             for ei in self.custom_extracters]
         # Store names/modules of object classes
         parmoo_state['optimizer'] = (self.optimizer.__name__,
                                      self.optimizer.__module__)
@@ -2281,11 +2533,17 @@ class MOOP:
         self.p = parmoo_state['p']
         self.s = parmoo_state['s']
         self.n_dat = parmoo_state['n_dat']
-        self.lb = parmoo_state['lb']
-        self.ub = parmoo_state['ub']
+        self.cont_lb = parmoo_state['cont_lb']
+        self.cont_ub = parmoo_state['cont_ub']
+        self.int_lb = parmoo_state['int_lb']
+        self.int_ub = parmoo_state['int_ub']
         self.n_cat_d = parmoo_state['n_cat_d']
+        self.n_custom_d = parmoo_state['n_custom_d']
         self.n_cat = parmoo_state['n_cat']
         self.n_cont = parmoo_state['n_cont']
+        self.n_int = parmoo_state['n_int']
+        self.n_custom = parmoo_state['n_custom']
+        self.n_raw = parmoo_state['n_raw']
         self.n_lvls = parmoo_state['n_lvls']
         self.des_order = parmoo_state['des_order']
         self.cat_names = parmoo_state['cat_names']
@@ -2296,6 +2554,7 @@ class MOOP:
                             for item in parmoo_state['const_names']]
         self.lam = parmoo_state['lam']
         self.des_tols = parmoo_state['des_tols']
+        self.epsilon = parmoo_state['epsilon']
         self.hyperparams = parmoo_state['hyperparams']
         self.history = parmoo_state['history']
         self.use_names = parmoo_state['use_names']
@@ -2309,6 +2568,7 @@ class MOOP:
         self.scaled_ub = np.array(parmoo_state['scaled_ub'])
         self.scaled_des_tols = np.array(parmoo_state['scaled_des_tols'])
         self.cat_des_tols = np.array(parmoo_state['cat_des_tols'])
+        self.custom_des_tols = np.array(parmoo_state['custom_des_tols'])
         self.cat_lb = np.array(parmoo_state['cat_lb'])
         self.cat_scale = np.array(parmoo_state['cat_scale'])
         self.RSVT = np.array(parmoo_state['RSVT'])
@@ -2407,6 +2667,18 @@ class MOOP:
             else:
                 toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
             self.constraints.append(toadd)
+        # Recover custom embedders
+        self.custom_embedders = []
+        for i, (e_name, e_mod) in enumerate(parmoo_state['custom_embedders']):
+            mod = import_module(e_mod)
+            new_em = getattr(mod, e_name)
+            self.custom_embedders.append(new_em)
+        # Recover custom extracters
+        self.custom_extracters = []
+        for i, (e_name, e_mod) in enumerate(parmoo_state['custom_extracters']):
+            mod = import_module(e_mod)
+            new_em = getattr(mod, e_name)
+            self.custom_extracters.append(new_em)
         # Recover object classes
         mod = import_module(parmoo_state['optimizer'][1])
         self.optimizer = getattr(mod, parmoo_state['optimizer'][0])
