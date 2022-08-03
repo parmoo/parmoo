@@ -45,7 +45,6 @@ class Dash_App:
         moop,
         plot_type,
         db,
-        axes,
         points,
         height,
         width,
@@ -68,7 +67,6 @@ class Dash_App:
         self.moop = moop
         self.plot_type = plot_type
         self.db = db
-        self.axes = axes
         self.points = points
         self.height = height
         self.width = width
@@ -555,28 +553,19 @@ class Dash_App:
             self.graph = generate_scatter(
                 moop=self.moop,
                 db=self.db,
-                axes=self.axes,
                 points=self.points,
-                font=self.font,
-                fontsize=self.fontsize,
             )
         elif self.plot_type == 'parallel':
             self.graph = generate_parallel(
                 moop=self.moop,
                 db=self.db,
-                axes=self.axes,
                 points=self.points,
-                font=self.font,
-                fontsize=self.fontsize,
             )
         elif self.plot_type == 'radar':
             self.graph = generate_radar(
                 moop=self.moop,
                 db=self.db,
-                axes=self.axes,
                 points=self.points,
-                font=self.font,
-                fontsize=self.fontsize,
             )
         else:
             warn("invalid plot_type")

@@ -24,8 +24,6 @@ def generate_scatter(
     moop,
     db,
     points,
-    font,
-    fontsize,
 ):
     # * intro log
     logging.info('generating scatterplot. this might take a while')
@@ -70,8 +68,6 @@ def generate_parallel(
     moop,
     db,
     points,
-    font,
-    fontsize,
 ):
     # * intro log
     message = 'generating parallel coordinates plot. '
@@ -103,10 +99,7 @@ def generate_parallel(
 def generate_radar(
     moop,
     db,
-    axes,
     points,
-    font,
-    fontsize,
 ):
     # * intro log
     logging.info('generating radar plot. this might take awhile')

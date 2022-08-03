@@ -128,7 +128,6 @@ def set_hover_info(database, i):
 def check_inputs(
     db,
     output,
-    axes,
     points,
     height,
     width,
@@ -166,14 +165,6 @@ def check_inputs(
             raise ValueError(str(output) + " is an invalid value for 'output'")
     except:
         raise ValueError(str(output) + " is an invalid value for 'output'")
-
-    try:
-        if (axes == 'objectives'):
-            pass
-        else:
-            raise ValueError(str(axes) + " is an invalid value for 'axes'")
-    except:
-        raise ValueError(str(axes) + " is an invalid value for 'axes'")
 
     try:
         if (points == 'satisfied' or
