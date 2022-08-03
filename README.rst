@@ -130,6 +130,8 @@ In the above example, ``LocalGPS`` is the class of optimizers that the
 Next, add design variables to the problem as follows using the
 ``MOOP.addDesign(*args)`` method. In this example, we define one continuous
 and one categorical design variable.
+Other options include integer, custom, and raw (using raw variables is not
+recommended except for expert users).
 
 .. code-block:: python
 
@@ -143,7 +145,7 @@ and one categorical design variable.
    # Add a second categorical design variable with 3 levels
    my_moop.addDesign({'name': "x2", # optional, name
                       'des_type': "categorical", # required, type of variable
-                      'levels': 3 # required, number of categories
+                      'levels': ["good", "bad"] # required, category names
                      })
 
 Next, add simulations to the problem as follows using the
@@ -158,7 +160,7 @@ Next, add simulations to the problem as follows using the
 
    # Define a toy simulation for the problem, whose outputs are quadratic
    def sim_func(x):
-      if x["x2"] == 0:
+      if x["x2"] == "good":
          return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
       else:
          return np.array([99.9, 99.9])
