@@ -7,9 +7,8 @@ def test_parallel_coordinates_static():
     parallel_coordinates(run_quickstart(), output='png')
     parallel_coordinates(run_quickstart(), output='png')
     parallel_coordinates(run_quickstart(), output='png')
-    print('these finished running')
-
-
+    assert(os.path.exists("Pareto front.png"))
+    os.remove("Pareto front.png")
 
 
 def run_quickstart():
