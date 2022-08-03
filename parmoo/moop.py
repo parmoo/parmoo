@@ -2151,7 +2151,7 @@ class MOOP:
         elif format == 'ndarray':
             return result
         else:
-            raise ValueError(str(format) + "is not a valid value for 'format'")
+            raise ValueError(str(format) + " is an invalid value for 'format'")
 
     def getSimulationData(self, format='ndarray'):
         """ Extract all computed simulation outputs from the MOOP's database.
@@ -2207,7 +2207,8 @@ class MOOP:
             elif format == 'ndarray':
                 return result
             else:
-                raise ValueError(str(format) + "is invalid value for 'format'")
+                raise ValueError(str(format) + "is an invalid value for "
+                                 + "'format'")
         else:
             # Initialize result list
             result = []
@@ -2227,7 +2228,8 @@ class MOOP:
             elif format == 'ndarray':
                 return result
             else:
-                raise ValueError(str(format) + "is invalid value for 'format'")
+                raise ValueError(str(format) + " is an invalid value for "
+                                 + "'format'")
 
     def getObjectiveData(self, format='ndarray'):
         """ Extract all computed objective scores from this MOOP's database.
@@ -2287,7 +2289,7 @@ class MOOP:
         elif format == 'ndarray':
             return result
         else:
-            raise ValueError(str(format) + "is invalid value for 'format'")
+            raise ValueError(str(format) + " is an invalid value for 'format'")
 
     def save(self, filename="parmoo"):
         """ Serialize and save the MOOP object and all of its dependencies.

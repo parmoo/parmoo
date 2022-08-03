@@ -514,11 +514,7 @@ def test_database_options():
 def test_inputs_to_dash():
     """ Stress-test the dash app's error handling. """
 
-    from parmoo.viz.plot import (
-        scatter,
-        parallel_coordinates,
-        radar,
-    )
+    from parmoo.viz.plot import scatter
     import os
     import pytest
 
