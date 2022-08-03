@@ -54,7 +54,6 @@ class Dash_App:
         screenshot,
         image_export_format,
         data_export_format,
-        verbose,
         dev_mode,
         pop_up,
         port,
@@ -76,7 +75,6 @@ class Dash_App:
         self.screenshot = screenshot
         self.image_export_format = image_export_format
         self.data_export_format = data_export_format
-        self.verbose = verbose
         self.dev_mode = dev_mode
         self.pop_up = pop_up
         self.port = port
@@ -138,11 +136,11 @@ class Dash_App:
                 id='constraint_checkboxes',
                 options=[
                     {'label': 'show constraint-satisfying points',
-                     'value': 'satisfied'},
+                     'value': 'constraint_satisfying'},
                     {'label': 'show constraint-violating points',
-                     'value': 'violated'},
+                     'value': 'constraint_violating'},
                 ],
-                value=['satisfied'],
+                value=['constraint_satisfying'],
                 inline=True,
             ),
             html.Br(),
@@ -225,12 +223,6 @@ class Dash_App:
                     'Grey',
                     'Black',
                     'Transparent',
-                    'Red',
-                    'Yellow',
-                    'Blue',
-                    'Green',
-                    'Orange',
-                    'Purple'
                 ],
                 placeholder='Set background color',
                 style=dict(display='none'),
@@ -912,13 +904,13 @@ class Dash_App:
         if value is None:
             raise exceptions.PreventUpdate
         else:
-            if value == ['satisfied']:
-                self.points = 'satisfied'
-            elif value == ['violated']:
-                self.points = 'violated'
-            elif value == ['satisfied', 'violated']:
+            if value == ['constraint_satisfying']:
+                self.points = 'constraint_satisfying'
+            elif value == ['constraint_violating']:
+                self.points = 'constraint_violating'
+            elif value == ['constraint_satisfying', 'constraint_violating']:
                 self.points = 'all'
-            elif value == ['violated', 'satisfied']:
+            elif value == ['constraint_violating', 'constraint_satisfying']:
                 self.points = 'all'
             else:
                 self.points = 'none'

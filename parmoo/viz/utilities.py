@@ -92,14 +92,14 @@ def set_database(moop, db, points):
     if moop.getConstraintType() is None:
         df = database
     else:
-        if points == 'satisfied':
+        if points == 'constraint_satisfying':
             constraints = moop.getConstraintType().names
             df = database.copy(deep=True)
             for constraint in constraints:
                 indices = df[df[constraint] > 0].index
                 df.drop(indices, inplace=True)
                 df.reset_index(inplace=True)
-        elif points == 'violated':
+        elif points == 'constraint_violating':
             constraints = moop.getConstraintType().names
             df = database.copy(deep=True)
             for constraint in constraints:
@@ -137,7 +137,6 @@ def check_inputs(
     screenshot,
     image_export_format,
     data_export_format,
-    verbose,
     dev_mode,
     pop_up,
     port,
@@ -167,8 +166,8 @@ def check_inputs(
         raise ValueError(str(output) + " is an invalid value for 'output'")
 
     try:
-        if (points == 'satisfied' or
-            points == 'violated' or
+        if (points == 'constraint_satisfying' or
+            points == 'constraint_violating' or
             points == 'all' or
             points == 'none'):
             pass
@@ -206,17 +205,25 @@ def check_inputs(
             int(fontsize) <= 100)):
             pass
         else:
-            raise ValueError(str(fontsize) + " is an invalid value for 'fontsize'")
+            message = str(fontsize)
+            message += " is an invalid value for 'fontsize'"
+            raise ValueError(message)
     except:
-        raise ValueError(str(fontsize) + " is an invalid value for 'fontsize'")
+        message = str(fontsize)
+        message += " is an invalid value for 'fontsize'"
+        raise ValueError(message)
 
     try:
         if (str(type(str(background_color))) == "<class 'str'>"):
             pass
         else:
-            raise ValueError(str(background_color) + " is an invalid value for 'background_color'")
+            message = str(background_color)
+            message += " is an invalid value for 'background_color'"
+            raise ValueError(message)
     except:
-        raise ValueError(str(background_color) + " is an invalid value for 'background_color'")
+        message = str(background_color)
+        message += " is an invalid value for 'background_color'"
+        raise ValueError(message)
 
     try:
         if (screenshot == 'png' or
@@ -265,20 +272,16 @@ def check_inputs(
         raise ValueError(message)
 
     try:
-        if (verbose or not verbose):
-            pass
-        else:
-            raise ValueError(str(verbose) + " is an invalid value for 'verbose'")
-    except:
-        raise ValueError(str(verbose) + " is an invalid value for 'verbose'")
-
-    try:
         if (dev_mode or not dev_mode):
             pass
         else:
-            raise ValueError(str(dev_mode) + " is an invalid value for 'dev_mode'")
+            message = str(dev_mode)
+            message += " is an invalid value for 'dev_mode'"
+            raise ValueError(message)
     except:
-        raise ValueError(str(dev_mode) + " is an invalid value for 'dev_mode'")
+        message = str(dev_mode)
+        message += " is an invalid value for 'dev_mode'"
+        raise ValueError(message)
 
     try:
         if (pop_up or not pop_up):
