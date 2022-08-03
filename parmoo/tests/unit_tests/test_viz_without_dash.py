@@ -1,7 +1,10 @@
 def test_static_export():
+    """ Create a MOOP object and export various plot types.
 
-    # tests all export formats except eps
-    # (because eps may not be supported on all machines)
+    Tests all export formats except eps
+    (because eps may not be supported on all machines).
+
+    """
 
     from parmoo.viz.plot import (
         scatter,
@@ -10,38 +13,42 @@ def test_static_export():
     )
     import os
 
+    # Pre-calculate a moop object
+    moop1 = run_quickstart()
+
     # * html output
-    scatter(moop=run_quickstart(), output='html')
+    scatter(moop1, output='html')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # * svg output
-    parallel_coordinates(moop=run_quickstart(), output='svg')
+    parallel_coordinates(moop1, output='svg')
     assert(os.path.exists("Pareto front.svg"))
     os.remove("Pareto front.svg")
 
     # * pdf output
-    radar(moop=run_quickstart(), output='pdf')
+    radar(moop1, output='pdf')
     assert(os.path.exists("Pareto front.pdf"))
     os.remove("Pareto front.pdf")
 
     # * jpeg output
-    scatter(moop=run_quickstart(), output='jpeg')
+    scatter(moop1, output='jpeg')
     assert(os.path.exists("Pareto front.jpeg"))
     os.remove("Pareto front.jpeg")
 
     # * png output
-    parallel_coordinates(moop=run_quickstart(), output='png')
+    parallel_coordinates(moop1, output='png')
     assert(os.path.exists("Pareto front.png"))
     os.remove("Pareto front.png")
 
     # * webp output
-    radar(moop=run_quickstart(), output='webp')
+    radar(moop1, output='webp')
     assert(os.path.exists("Pareto front.webp"))
     os.remove("Pareto front.webp")
 
 
 def test_quantity_constraints_objectives():
+    """ Create a MOOP object and plot PF with and w/o constraint data. """
 
     from parmoo.viz.plot import (
         scatter,
@@ -50,40 +57,47 @@ def test_quantity_constraints_objectives():
     )
     import os
 
+    # Pre-calculate two moop objects
+    moop1 = run_quickstart()
+    moop2 = run_dtlz2()
+
     # * 2 objective scatter with constraint
-    scatter(moop=run_quickstart(), output='html')
+    scatter(moop1, output='html')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # * 2 objective parallel with constraint
-    parallel_coordinates(moop=run_quickstart(), output='html')
+    parallel_coordinates(moop1, output='html')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # * 2 objective radar with constraint
-    radar(moop=run_quickstart(), output='html')
+    radar(moop1, output='html')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # * 5 objective scatter without constraint
-    scatter(moop=run_dtlz2(), output='html')
+    scatter(moop2, output='html')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # * 5 objective parallel without constraint
-    parallel_coordinates(moop=run_dtlz2(), output='html')
+    parallel_coordinates(moop2, output='html')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # * 5 objective radar without constraint
-    radar(moop=run_dtlz2(), output='html')
+    radar(moop2, output='html')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
 
 def test_database_options():
+    """ Create a MOOP object and plot the full database.
 
-    # test all database-plotting options for all plots
+    Generates plots with and without constraint violations.
+
+    """
 
     from parmoo.viz.plot import (
         scatter,
@@ -92,9 +106,13 @@ def test_database_options():
     )
     import os
 
+    # Pre-calculate two moop objects
+    moop1 = run_quickstart()
+    moop2 = run_dtlz2()
+
     # * pf x constraint_satisfying x constraints in MOOP
     scatter(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='constraint_satisfying',
         output='html')
@@ -102,7 +120,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     parallel_coordinates(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='constraint_satisfying',
         output='html')
@@ -110,7 +128,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     radar(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='constraint_satisfying',
         output='html')
@@ -119,7 +137,7 @@ def test_database_options():
 
     # * obj x constraint_satisfying x constraints in MOOP
     scatter(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='constraint_satisfying',
         output='html')
@@ -127,7 +145,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     parallel_coordinates(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='constraint_satisfying',
         output='html')
@@ -135,7 +153,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     radar(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='constraint_satisfying',
         output='html')
@@ -144,7 +162,7 @@ def test_database_options():
 
     # * pf x constraint_violating x constraints in MOOP
     scatter(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='constraint_violating',
         output='html')
@@ -152,7 +170,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     parallel_coordinates(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='constraint_violating',
         output='html')
@@ -160,7 +178,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     radar(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='constraint_violating',
         output='html')
@@ -169,7 +187,7 @@ def test_database_options():
 
     # * obj x constraint_violating x constraints in MOOP
     scatter(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='constraint_violating',
         output='html')
@@ -177,7 +195,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     parallel_coordinates(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='constraint_violating',
         output='html')
@@ -185,7 +203,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     radar(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='constraint_violating',
         output='html')
@@ -194,7 +212,7 @@ def test_database_options():
 
     # * pf x all x constraints in MOOP
     scatter(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='all',
         output='html')
@@ -202,7 +220,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     parallel_coordinates(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='all',
         output='html')
@@ -210,7 +228,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     radar(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='all',
         output='html')
@@ -219,7 +237,7 @@ def test_database_options():
 
     # * obj x all x constraints in MOOP
     scatter(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='all',
         output='html')
@@ -227,7 +245,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     parallel_coordinates(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='all',
         output='html')
@@ -235,7 +253,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     radar(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='all',
         output='html')
@@ -244,7 +262,7 @@ def test_database_options():
 
     # * pf x none x constraints in MOOP
     scatter(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='none',
         output='html')
@@ -252,7 +270,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     parallel_coordinates(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='none',
         output='html')
@@ -260,7 +278,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     radar(
-        moop=run_quickstart(),
+        moop1,
         db='pf',
         points='none',
         output='html')
@@ -269,7 +287,7 @@ def test_database_options():
 
     # * obj x none x constraints in MOOP
     scatter(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='none',
         output='html')
@@ -277,7 +295,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     parallel_coordinates(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='none',
         output='html')
@@ -285,7 +303,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     radar(
-        moop=run_quickstart(),
+        moop1,
         db='obj',
         points='none',
         output='html')
@@ -294,7 +312,7 @@ def test_database_options():
 
     # * pf x constraint_satisfying x no constraints in MOOP
     scatter(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='constraint_satisfying',
         output='html')
@@ -302,7 +320,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     parallel_coordinates(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='constraint_satisfying',
         output='html')
@@ -310,7 +328,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     radar(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='constraint_satisfying',
         output='html')
@@ -319,7 +337,7 @@ def test_database_options():
 
     # * obj x constraint_satisfying x no constraints in MOOP
     scatter(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='constraint_satisfying',
         output='html')
@@ -327,7 +345,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     parallel_coordinates(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='constraint_satisfying',
         output='html')
@@ -335,7 +353,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     radar(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='constraint_satisfying',
         output='html')
@@ -344,7 +362,7 @@ def test_database_options():
 
     # * pf x constraint_violating x no constraints in MOOP
     scatter(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='constraint_violating',
         output='html')
@@ -352,7 +370,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     parallel_coordinates(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='constraint_violating',
         output='html')
@@ -360,7 +378,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     radar(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='constraint_violating',
         output='html')
@@ -369,7 +387,7 @@ def test_database_options():
 
     # * obj x constraint_violating x no constraints in MOOP
     scatter(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='constraint_violating',
         output='html')
@@ -377,7 +395,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     parallel_coordinates(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='constraint_violating',
         output='html')
@@ -385,7 +403,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     radar(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='constraint_violating',
         output='html')
@@ -394,7 +412,7 @@ def test_database_options():
 
     # * pf x all x no constraints in MOOP
     scatter(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='all',
         output='html')
@@ -402,7 +420,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     parallel_coordinates(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='all',
         output='html')
@@ -410,7 +428,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     radar(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='all',
         output='html')
@@ -419,7 +437,7 @@ def test_database_options():
 
     # * obj x all x no constraints in MOOP
     scatter(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='all',
         output='html')
@@ -427,7 +445,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     parallel_coordinates(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='all',
         output='html')
@@ -435,7 +453,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     radar(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='all',
         output='html')
@@ -444,7 +462,7 @@ def test_database_options():
 
     # * pf x none x no constraints in MOOP
     scatter(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='none',
         output='html')
@@ -452,7 +470,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     parallel_coordinates(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='none',
         output='html')
@@ -460,7 +478,7 @@ def test_database_options():
     os.remove("Pareto front.html")
 
     radar(
-        moop=run_dtlz2(),
+        moop2,
         db='pf',
         points='none',
         output='html')
@@ -469,7 +487,7 @@ def test_database_options():
 
     # * obj x none x no constraints in MOOP
     scatter(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='none',
         output='html')
@@ -477,7 +495,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     parallel_coordinates(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='none',
         output='html')
@@ -485,7 +503,7 @@ def test_database_options():
     os.remove("Objective data.html")
 
     radar(
-        moop=run_dtlz2(),
+        moop2,
         db='obj',
         points='none',
         output='html')
@@ -494,6 +512,7 @@ def test_database_options():
 
 
 def test_inputs_to_dash():
+    """ Stress-test the dash app's error handling. """
 
     from parmoo.viz.plot import (
         scatter,
@@ -503,84 +522,87 @@ def test_inputs_to_dash():
     import os
     import pytest
 
+    # Pre-calculate a moop object
+    moop1 = run_quickstart()
+
     # * db
     # valid db values tested in test_database_options()
     # test invalid db values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', db='asdf')
+        scatter(moop1, output='html', db='asdf')
 
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', db=1234)
+        scatter(moop1, output='html', db=1234)
 
     # * output
     # valid output values tested in test_static_export()
     # test invalid output values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='asdf')
+        scatter(moop1, output='asdf')
 
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output=1234)
+        scatter(moop1, output=1234)
 
     # * points
     # valid points values tested in test_database_options()
     # test invalid points values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', points='asdf')
+        scatter(moop1, output='html', points='asdf')
 
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', points=1234)
+        scatter(moop1, output='html', points=1234)
 
     # * height
     # test valid height values
-    scatter(moop=run_quickstart(), output='html', height=1)
+    scatter(moop1, output='html', height=1)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', height=50)
+    scatter(moop1, output='html', height=50)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', height=92.2678)
+    scatter(moop1, output='html', height=92.2678)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', height=7789)
+    scatter(moop1, output='html', height=7789)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # test invalid height values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', height='asdf')
+        scatter(moop1, output='html', height='asdf')
 
     # * width
     # test valid width values
-    scatter(moop=run_quickstart(), output='html', width=1)
+    scatter(moop1, output='html', width=1)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', width=50)
+    scatter(moop1, output='html', width=50)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', width=92.2678)
+    scatter(moop1, output='html', width=92.2678)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', width=7789)
+    scatter(moop1, output='html', width=7789)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # test invalid width values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', width='asdf')
+        scatter(moop1, output='html', width='asdf')
 
     # * font
     # test valid font values
-    scatter(moop=run_quickstart(), output='html', font='Verdana')
+    scatter(moop1, output='html', font='Verdana')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', font='Times New Roman')
+    scatter(moop1, output='html', font='Times New Roman')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
@@ -590,52 +612,52 @@ def test_inputs_to_dash():
 
     # * fontsize
     # test valid fontsize values
-    scatter(moop=run_quickstart(), output='html', fontsize=1)
+    scatter(moop1, output='html', fontsize=1)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', fontsize=50)
+    scatter(moop1, output='html', fontsize=50)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', fontsize=55.71)
+    scatter(moop1, output='html', fontsize=55.71)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', fontsize=100)
+    scatter(moop1, output='html', fontsize=100)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # test invalid fontsize values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', fontsize=-1)
+        scatter(moop1, output='html', fontsize=-1)
 
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', fontsize=101)
+        scatter(moop1, output='html', fontsize=101)
 
     # * background_color
     # test valid background_color values
-    scatter(moop=run_quickstart(), output='html', background_color='white')
+    scatter(moop1, output='html', background_color='white')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', background_color='black')
+    scatter(moop1, output='html', background_color='black')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     scatter(
-        moop=run_quickstart(),
+        moop1,
         output='html',
         background_color='transparent'
     )
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', background_color='white')
+    scatter(moop1, output='html', background_color='white')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', background_color='grey')
+    scatter(moop1, output='html', background_color='grey')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
@@ -646,86 +668,86 @@ def test_inputs_to_dash():
 
     # * screenshot
     # test valid screenshot values
-    scatter(moop=run_quickstart(), output='html', screenshot='png')
+    scatter(moop1, output='html', screenshot='png')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', screenshot='jpeg')
+    scatter(moop1, output='html', screenshot='jpeg')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', screenshot='svg')
+    scatter(moop1, output='html', screenshot='svg')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', screenshot='webp')
+    scatter(moop1, output='html', screenshot='webp')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # test invalid screenshot values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', screenshot='asdf')
+        scatter(moop1, output='html', screenshot='asdf')
 
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', screenshot=1234)
+        scatter(moop1, output='html', screenshot=1234)
 
     # * image_export_format
     # test valid image_export_format values (except eps)
-    scatter(moop=run_quickstart(), output='html', image_export_format='html')
+    scatter(moop1, output='html', image_export_format='html')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', image_export_format='svg')
+    scatter(moop1, output='html', image_export_format='svg')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', image_export_format='pdf')
+    scatter(moop1, output='html', image_export_format='pdf')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', image_export_format='png')
+    scatter(moop1, output='html', image_export_format='png')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', image_export_format='jpeg')
+    scatter(moop1, output='html', image_export_format='jpeg')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', image_export_format='webp')
+    scatter(moop1, output='html', image_export_format='webp')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # test invalid image_export_format values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', image_export_format='asdf')
+        scatter(moop1, output='html', image_export_format='asdf')
 
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', image_export_format=1234)
+        scatter(moop1, output='html', image_export_format=1234)
 
     # * data_export_format
     # test valid data_export_format values
-    scatter(moop=run_quickstart(), output='html', data_export_format='csv')
+    scatter(moop1, output='html', data_export_format='csv')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', data_export_format='json')
+    scatter(moop1, output='html', data_export_format='json')
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
     # test invalid data_export_format values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', data_export_format='asdf')
+        scatter(moop1, output='html', data_export_format='asdf')
 
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', data_export_format=1234)
+        scatter(moop1, output='html', data_export_format=1234)
 
     # * dev_mode
     # test valid dev_mode values
-    scatter(moop=run_quickstart(), output='html', dev_mode=True)
+    scatter(moop1, output='html', dev_mode=True)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', dev_mode=False)
+    scatter(moop1, output='html', dev_mode=False)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
@@ -735,11 +757,11 @@ def test_inputs_to_dash():
 
     # * pop_up
     # test valid pop_up values
-    scatter(moop=run_quickstart(), output='html', pop_up=True)
+    scatter(moop1, output='html', pop_up=True)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
-    scatter(moop=run_quickstart(), output='html', pop_up=False)
+    scatter(moop1, output='html', pop_up=False)
     assert(os.path.exists("Pareto front.html"))
     os.remove("Pareto front.html")
 
@@ -750,7 +772,7 @@ def test_inputs_to_dash():
     # * port
     # test valid port values
     scatter(
-        moop=run_quickstart(),
+        moop1,
         output='html',
         port='http://127.0.0.1:8050/'
     )
@@ -759,13 +781,14 @@ def test_inputs_to_dash():
 
     # test invalid port values
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', port='asdf')
+        scatter(moop1, output='html', port='asdf')
 
     with pytest.raises(ValueError):
-        scatter(moop=run_quickstart(), output='html', port=1234)
+        scatter(moop1, output='html', port=1234)
 
 
 def run_quickstart():
+    """ Auxiliary function that creates a MOOP by running the quickstart. """
 
     import numpy as np
     from parmoo import MOOP
@@ -828,6 +851,8 @@ def run_quickstart():
 
 
 def run_dtlz2():
+    """ Auxiliary function that creates a MOOP by running DTLZ2. """
+
     from parmoo import MOOP
     from parmoo.acquisitions import RandomConstraint
     from parmoo.searches import LatinHypercube
