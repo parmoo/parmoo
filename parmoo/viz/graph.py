@@ -121,14 +121,6 @@ def generate_radar(
         j[i] = (j[i] - j[i].min()) / (j[i].max() - j[i].min())
     scaled_db = j
 
-    # * raise warnings
-    if len(objectives) < 3:
-        message = """
-        Radar plots are best suited for MOOPs with at least 3 objectives.
-        Consider using a scatterplot or parallel coordinates plot instead.
-        """
-        warn(message)
-
     # * create plot
     fig = go.Figure()
     for i in range(len(database)):
