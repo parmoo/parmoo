@@ -3,26 +3,25 @@ import logging
 
 
 def export_file(fig, plot_name, file_type):
-    """ Display MOOP plot.
 
-    Export plot.
+    """ Export image of figure to working directory.
 
-    Args:
-        fig (Plotly figure): figure to export.
-        plot_name (String): Used for naming export files
-        export (String): Indicate export type
-                     'none' (default) don't export image file
-                     'html' export plot as html
-                     'pdf' export plot as pdf
-                     'svg' export plot as svg
-                     'webp' export plot as webp
-                     'jpeg' export plot as jpeg
-                     'png' export plot as png
+        Args:
+            fig (plotly.graph_objects.Figure): The figure to export.
 
-    Returns:
-        None
+            plot_name (string): Set the filename of the image file.
 
+            file_type (string): Set the image file type.
+                'html' - Export as .html file.
+                'pdf' - Export as .pdf file.
+                'svg' - Export as .svg file.
+                'eps' - Export as .eps file
+                    if the poppler dependency is installed.
+                'jpeg' - Export as .jpeg file.
+                'png' - Export as .png file.
+                'webp' - Export as .webp file.
     """
+
     if file_type == 'html':
         fig.write_html(plot_name + ".html")
         logging.info("exported graph as .html")
@@ -32,51 +31,33 @@ def export_file(fig, plot_name, file_type):
     elif file_type == 'svg':
         fig.write_image(plot_name + ".svg")
         logging.info("exported graph as .svg")
-    elif file_type == 'webp':
-        fig.write_image(plot_name + ".webp")
-        logging.info("exported graph as .webp")
+    elif file_type == 'eps':
+        fig.write_image(plot_name + ".eps")
+        logging.info("exported graph as .eps")
     elif file_type == 'jpeg':
         fig.write_image(plot_name + ".jpeg")
         logging.info("exported graph as .jpeg")
     elif file_type == 'png':
         fig.write_image(plot_name + ".png")
         logging.info("exported graph as .png")
-    elif file_type == 'eps':
-        fig.write_image(plot_name + ".eps")
-        logging.info("exported graph as .eps")
-
-
-# def configure(height, width, plot_name, screenshot):
-
-#     # * set screenshot type
-#     screenshot = screenshot
-
-#     # * set config based on scale
-#     if height != 'auto' and width != 'auto':
-#         config = {
-#             'displaylogo': False,
-#             'displayModeBar': True,
-#             'toImageButtonOptions': {
-#                 'format': screenshot,  # one of png, svg, jpeg, webp
-#                 'filename': str(plot_name),
-#                 'height': int(height),
-#                 'width': int(width),
-#                 'scale': 1  # Multiply title/legend/axis/canvas sizes by factor
-#             }
-#         }
-#     else:
-#         config = {
-#             'displaylogo': False,
-#             'displayModeBar': True,
-#             'toImageButtonOptions': {
-#                 'format': screenshot,  # one of png, svg, jpeg, webp
-#                 'filename': str(plot_name),
-#             }
-#         }
-#     return config
+    elif file_type == 'webp':
+        fig.write_image(plot_name + ".webp")
+        logging.info("exported graph as .webp")
 
 
 def set_plot_name(db):
+
+    """ Provide a default graph title.
+
+        Args:
+            db (string): Graph contents inform title.
+                'pf' - Set plot name to "Pareto Front"
+                'obj' - Set plot name to "Objective Data"
+
+        Returns:
+            plot_name (string): The default plot name.
+    """
+
     if db == 'pf':
         plot_name = "Pareto Front"
     elif db == 'obj':
@@ -85,6 +66,27 @@ def set_plot_name(db):
 
 
 def set_database(moop, db, points):
+
+    """ Choose which points from MOOP object to plot.
+
+        Args:
+            db (string): Set dataset.
+                'pf' - Set Pareto Front as dataset.
+                'obj' - Set objective data as dataset.
+
+            points (string): Filter traces from dataset by constraint score.
+                'constraint_satisfying' - Include only points that
+                    satisfy every constraint.
+                'constraint_violating' - Include only points that
+                    violate any constraint.
+                'all' - Include all points in dataset.
+                'none' - Include no points in dataset.
+
+        Returns:
+            df (Pandas dataframe): A 2D dataframe containing post-filter
+                data from the MOOP.
+    """
+
     if db == 'pf':
         database = pd.DataFrame(moop.getPF())
     elif db == 'obj':
@@ -114,6 +116,27 @@ def set_database(moop, db, points):
 
 
 def set_hover_info(database, i):
+
+    """ Customize information in hover label for trace i.
+
+        Args:
+            database (Pandas dataframe):
+            i (int): An index indicating the row where the trace
+                we're labeling is located.
+
+            points (string): Filter traces from dataset by constraint score.
+                'constraint_satisfying' - Include only points that
+                    satisfy every constraint.
+                'constraint_violating' - Include only points that
+                    violate any constraint.
+                'all' - Include all points in dataset.
+                'none' - Include no points in dataset.
+
+        Returns:
+            df (Pandas dataframe): A 2D dataframe containing post-filter
+                data from the MOOP.
+    """
+
     hover_info = ""
     for key in database.columns:
         hover_info += str(key)
