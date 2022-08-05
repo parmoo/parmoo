@@ -11,7 +11,6 @@ The functions are:
 
 import plotly.express as px
 import plotly.graph_objects as go
-from warnings import warn
 import logging
 from .utilities import (
     set_plot_name,
