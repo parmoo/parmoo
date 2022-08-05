@@ -12,10 +12,10 @@ my_moop.addDesign({'name': "x1",
                    'des_type': "continuous",
                    'lb': 0.0, 'ub': 1.0})
 my_moop.addDesign({'name': "x2", 'des_type': "categorical",
-                   'levels': ["good", "bad"]})
+                   'levels': 3})
 
 def sim_func(x):
-   if x["x2"] == "good":
+   if x["x2"] == 0:
       return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
    else:
       return np.array([99.9, 99.9])

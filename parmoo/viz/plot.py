@@ -93,6 +93,99 @@ def scatter(
         port=port,
     )
     logging.info('initialized scatter() wrapper')
+    """ Display MOOP results as matrix of 2D scatterplots.
+
+    Create an interactive plot that displays in the browser.
+
+    For ``n`` objectives, generate an ``n x n`` matrix of 2D scatterplots.
+
+    Users can hover above an output point to see input information pop up.
+
+    Args:
+        moop (MOOP): A ParMOO MOOP containing the MOOP results to plot.
+        db (String): Choose database to plot
+                     'pf' (default) plot Pareto Front
+                     'obj' plot objective data
+        output (String):
+                     'dash' (default) display plot in dash app
+                     'no_dash' display plot in browser without dash
+                     'html' export plot as html to working directory
+                     'pdf' export plot as pdf to working directory
+                     'svg' export plot as svg to working directory
+                     'webp' export plot as webp to working directory
+                     'jpeg' export plot as jpeg to working directory
+                     'png' export plot as png to working directory
+        browser (boolean): Display interactive plot in browser window.
+                    True: (default) display interactive plot in browser window
+                    False: don't display interactive plot in browser window
+                    It is recommended that this setting be left on True
+                    The 'browser' and 'export' keywords will not
+                    interfere with each other. If you choose to export an image
+                    of the plot by using the 'export' keyword, and leave
+                    'browser' to True, you will BOTH export an image file to
+                    the current working directory AND open an interactive
+                    figure in the browser
+
+    Returns:
+        None
+
+    """
+
+    # * get info
+    obj_type = moop.getObjectiveType()
+
+    # * choose axes
+    axes = []  # each axis relates to an objective
+    axCount = 0
+    for obj_key in obj_type.names:
+        axes.append(obj_key)
+        axCount += 1
+
+    # * choose database
+    if (db == 'pf'):
+        database = pd.DataFrame(moop.getPF())
+        plotName = "Pareto Front"
+    elif db == 'obj':
+        database = pd.DataFrame(moop.getObjectiveData())
+        plotName = "Objective Data"
+    else:
+        message = "'" + str(db) + "' is not an acceptible value for 'db'\n"
+        message += "Consider using 'pf' or 'obj' instead."
+        raise ValueError(message)
+
+    # * set up hoverinfo
+    hoverInfo = []
+    for key in database.columns:
+        redundant = False
+        for ax in axes:
+            if ax == key:
+                redundant = True
+        if redundant is False:
+            hoverInfo.append(key)
+
+    # * create plot
+    if (axCount == 2):
+        fig = px.scatter(database,
+                         x=axes[0],
+                         y=axes[1],
+                         title=plotName,
+                         hover_data=hoverInfo,
+                         )
+    else:
+        fig = px.scatter_matrix(database,
+                                dimensions=axes,
+                                title=plotName,
+                                hover_data=hoverInfo,
+                                )
+        fig.update_traces(diagonal_visible=False)
+
+    # * configure plot
+    config = configure(export=output,
+                       height=height,
+                       width=width,
+                       plotName=plotName,)
+
+    # * output
     if output == 'dash':
         Dash_App(
             plot_type='scatter',
