@@ -168,10 +168,13 @@ Adding Design Variables
 Design variables are added to your :mod:`MOOP <moop.MOOP>` object
 using the :meth:`addDesign(*args) <moop.MOOP.addDesign>` method.
 ParMOO currently supports
-two types of design variables:
+several types of design variables:
 
- * ``continuous`` and
- * ``categorical``.
+ * ``continuous`` (or ``real`` or ``cont``),
+ * ``integer`` (or ``int``),
+ * ``categorical`` (or ``cat``),
+ * ``custom``,
+ * ``raw`` -- not recommended, for advanced users only.
 
 To add a continuous variable, use the following format.
 
@@ -197,6 +200,21 @@ To add a continuous variable, use the following format.
    For this design variable, any two values that are closer than ``des_tol``
    will be treated as exactly equal.
 
+To add an integer design variable, use the following format.
+
+.. code-block:: python
+
+    # Add an integer design variable
+    moop.addDesign({'name': "MyIntVar", # optional
+                    'des_type': "integer",
+                    'lb': 0,
+                    'ub': 100})
+
+|
+
+ * The ``lb`` and ``ub`` keys must be integer-valued, and serve
+   the same purpose as with continuous design variables.
+
 To add a categorical design variable, use the following format.
 
 .. code-block:: python
@@ -208,9 +226,61 @@ To add a categorical design variable, use the following format.
 
 |
 
- * The ``levels`` key is is an integer specifying the
-   number of categories taken on by this design variable.
-   ParMOO will index these levels by :math:`0, 1, \ldots, \text{levels}-1`.
+ * The ``levels`` key is either an integer specifying the
+   number of categories taken on by this design variable
+   (ParMOO will index these levels by :math:`0, 1, \ldots, \text{levels}-1`)
+   or a list of strings specifying the name for each category
+   (ParMOO will use these names for the levels, e.g.,
+   ``["first cat", "second cat", ... ]``).
+
+Note that because a numpy ndarray cannot contain string entries, when
+operating with unnamed variables, the ``levels`` key may only contain
+the integer number of levels, and named categories cannot be used with
+unnamed design variables.
+
+To add a custom design variable, use the following format.
+
+.. code-block:: python
+
+    # Add a custom design variable
+    moop.addDesign({'name': "MyCustomVar", # optional
+                    'des_type': "custom",
+                    'embedding_size': 1,
+                    'embedder': my_embedding_func,
+                    'extracter': my_extracting_func,
+                    'dtype': "U25" # optional
+                    })
+
+|
+
+ * The ``embedding_size`` key tells ParMOO how many dimensions the embedding
+   for this variable will be.
+ * The ``embedder`` key should be a function that maps the input type
+   to to a point in the ``embedding_size``-dimensional unit hypercube.
+ * The ``extracter`` key should be a function that maps an arbitrary point
+   in the ``embedding_size``-dimensional unit hypercube back to the input
+   type (such that ``extracter(embedder(x)) = x``).
+ * Optionally, the ``dtype`` key is a Python ``str`` specifying the numpy
+   dtype of the input (defaults to ``U25``, i.e., a maximum 25-character
+   string).
+
+Note that because a numpy ndarray cannot contain string entries, when
+operating with unnamed variables, the ``dtype`` key is ignored, and the
+input must have a numeric type.
+
+To add a raw design variable, use the following format. Please note that
+raw design variables are not recommended, and one will typically need to
+write custom ``search``, ``surrogate``, ``optimizer``, and ``acquisition``
+functions/classes to accomodate a raw variable.
+This feature is only included to allow flexibility for expert users.
+
+.. code-block:: python
+
+    # Add a raw design variable
+    moop.addDesign({'name': "MyRawVar", # optional
+                    'des_type': "raw"})
+
+|
 
 Note that for every MOOP, at least one design variable is required
 before solving.

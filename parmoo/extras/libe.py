@@ -639,6 +639,36 @@ class libE_MOOP(MOOP):
 
         return self.moop.updateAll(k, batch)
 
+    def moop_sim(self, H, persis_info, sim_specs, _):
+        """ Evaluates the sim function for a collection of points given in
+        ``H['x']``.
+
+        """
+
+        batch = len(H)
+        sim_names = H['sim_name']
+        H_o = np.zeros(batch, dtype=sim_specs['out'])
+        for i in range(batch):
+            namei = sim_names[i]
+            if self.moop.use_names:
+                j = -1
+                for jj, jname in enumerate(self.moop.sim_names):
+                    if jname[0] == sim_names[i]:
+                        j = jj
+                        break
+            else:
+                j = namei
+            if self.moop.use_names:
+                xx = np.zeros(1, dtype=self.moop.des_names)[0]
+                for name in self.moop.des_names:
+                    xx[name[0]] = H[name[0]][i]
+                H_o[self.moop.sim_names[j][0]][i] = \
+                    self.moop.sim_funcs[j](xx)
+            else:
+                H_o['f'][i, :self.moop.m[j]] = \
+                    self.moop.sim_funcs[j](H['x'][i])
+        return H_o, persis_info
+
     def solve(self, sim_max=200, wt_max=3600, profile=False):
         """ Solve a MOOP using ParMOO + libEnsemble.
 
@@ -666,36 +696,6 @@ class libE_MOOP(MOOP):
         from libensemble.alloc_funcs.start_only_persistent \
             import only_persistent_gens as alloc_f
         from libensemble.tools import parse_args
-
-        def moop_sim(H, persis_info, sim_specs, _):
-            """ Evaluates the sim function for a collection of points given in
-            ``H['x']``.
-
-            """
-
-            batch = len(H)
-            sim_names = H['sim_name']
-            H_o = np.zeros(batch, dtype=sim_specs['out'])
-            for i in range(batch):
-                namei = sim_names[i]
-                if self.moop.use_names:
-                    j = -1
-                    for jj, jname in enumerate(self.moop.sim_names):
-                        if jname[0] == sim_names[i]:
-                            j = jj
-                            break
-                else:
-                    j = namei
-                if self.moop.use_names:
-                    xx = np.zeros(1, dtype=self.moop.des_names)[0]
-                    for name in self.moop.des_names:
-                        xx[name[0]] = H[name[0]][i]
-                    H_o[self.moop.sim_names[j][0]][i] = \
-                        self.moop.sim_funcs[j](xx)
-                else:
-                    H_o['f'][i, :self.moop.m[j]] = \
-                        self.moop.sim_funcs[j](H['x'][i])
-            return H_o, persis_info
 
         # Create libEnsemble dictionaries
         nworkers, is_manager, libE_specs, _ = parse_args()
@@ -726,7 +726,7 @@ class libE_MOOP(MOOP):
             all_types = x_type.copy()
             for name in f_type:
                 all_types.append(name)
-            sim_specs = {'sim_f': moop_sim,
+            sim_specs = {'sim_f': self.moop_sim,
                          'in': [name[0] for name in x_type],
                          'out': f_type}
 
@@ -735,7 +735,7 @@ class libE_MOOP(MOOP):
                          'out': x_type,
                          'user': {}}
         else:
-            sim_specs = {'sim_f': moop_sim,
+            sim_specs = {'sim_f': self.moop_sim,
                          'in': ['x', 'sim_name'],
                          'out': [('f', float, max_m)]}
 
