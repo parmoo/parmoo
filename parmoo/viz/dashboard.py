@@ -23,20 +23,7 @@ from .utilities import (
     set_plot_name,
     set_database,
 )
-# import base64
 
-# parmoo_logo = '/Users/hyrumdickinson/parmoo/parmoo/viz/logo-ParMOO.png'
-# parmoo_logo_encoded = base64.b64encode(open(parmoo_logo, 'rb').read())
-
-
-# all dash docs examples build the dash app in an independent script
-# by making dash app construction a function dependent
-# on calls from a plotting function, we choose a different
-# structure than what's used by most apps. This is because
-# the purpose of our dash app is not to build an analytics
-# dashboard (and put information inside). The purpose is to
-# make various kinds of plots and have a consistent functionality
-# wrapper around them
 
 class Dash_App:
 
@@ -78,6 +65,7 @@ class Dash_App:
         self.dev_mode = dev_mode
         self.pop_up = pop_up
         self.port = port
+
         # * define dependent state
         self.selection_indexes = []
         self.constraint_range = self.set_constraint_range(None)
@@ -92,10 +80,6 @@ class Dash_App:
         app = Dash(__name__)
         # * lay out app
         app.layout = html.Div(children=[
-            # * parmoo logo
-            # html.Img(
-            #     src='data:image/png;base64,{}'.format(parmoo_logo_encoded)
-            # ),
             dcc.Dropdown(
                 id='plot_type_dropdown',
                 options=['Scatterplot',
@@ -901,6 +885,26 @@ class Dash_App:
                 return showr, hider, hider, hider
 
     def evaluate_constraint_showr(self, value):
+        """ Evaluate constraint toggles and update graph accordingly.
+
+        Args:
+            value (string): A string representing the state of the constraint
+                toggles.
+                'constraint_satisfying' - 'Show constraint-satisfying points'
+                    is the only toggle selected. Update graph to show only
+                    points that satisfy every constraint.
+                'constraint_violating' - 'Show constraint-violating points is
+                    the only toggle selected. Update graph to show only points
+                    that violate any constraint.
+                'all' - Both constraint toggles are selected. Update graph to
+                    include all points.
+                'none' - No constraint toggles are selected. Update graph to
+                    include no points.
+
+        Returns:
+            (plotly.graph_objects.Figure): A graph containing the points
+            selected by the constraint toggles.
+        """
         if value is None:
             raise exceptions.PreventUpdate
         else:
