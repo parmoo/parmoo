@@ -4,7 +4,7 @@ References
 Additional Resources
 --------------------
 
-For questions, please e-mail:
+To seek support or report issues, e-mail:
 
  * ``parmoo@mcs.anl.gov``
 

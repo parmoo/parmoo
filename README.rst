@@ -80,13 +80,16 @@ The easiest way to install ParMOO is via the Python package index, PyPI
 
 .. code-block:: bash
 
-    pip install [--user] parmoo
+    pip install < --user > parmoo
+
+where the braces around ``< --user >`` indicates that the ``--user`` flag is
+optional.
 
 To install *all* dependencies (including libEnsemble) use:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo[extras]
+    pip install < --user > "parmoo[extras]"
 
 You can also clone this project from our GitHub_ and ``pip`` install it
 in-place, so that you can easily pull the latest version or checkout
@@ -124,8 +127,12 @@ class. To get started, create a ``MOOP`` object.
 
    my_moop = MOOP(LocalGPS)
 
+To summarize the framework, in each iteration ParMOO models each simulation
+using a computationally cheap surrogate, then solves one or more scalarizations
+of the objectives, which are specified by acquisition functions.
+Read more about this framework at our ReadTheDocs_ page.
 In the above example, ``LocalGPS`` is the class of optimizers that the
-``my_moop`` will use to solve scalarized surrogate problems.
+``my_moop`` will use to solve the scalarized surrogate problems.
 
 Next, add design variables to the problem as follows using the
 ``MOOP.addDesign(*args)`` method. In this example, we define one continuous
@@ -228,7 +235,7 @@ Next steps:
 Resources
 ---------
 
-For more information, e-mail questions to:
+To seek support or report issues, e-mail:
 
  * ``parmoo@mcs.anl.gov``
 

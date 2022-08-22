@@ -30,7 +30,10 @@ To install the latest release:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo
+    pip install < --user > parmoo
+
+where the braces around ``< --user >`` indicates that the ``--user`` flag is
+optional.
 
 Note that the default install will not install the extra dependencies,
 such as libEnsemble_.
@@ -39,7 +42,7 @@ To install *all* dependencies, use:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo[extras]
+    pip install < --user > parmoo[extras]
 
 To check the installation by running the full test suite, use:
 
@@ -102,7 +105,7 @@ After installation, you can run the tests using either:
 
 .. code-block:: bash
 
-    parmoo/tests/run-tests.sh -cu[rl]
+    parmoo/tests/run-tests.sh -cu<rl>
 
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
