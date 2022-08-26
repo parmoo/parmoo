@@ -37,8 +37,14 @@ derived from the outputs of one or more computationally expensive simulations.
 Such problems are ubiquitous in science and engineering.
 
 ParMOO is a Python framework for solving multiobjective simulation
-optimization problems in parallel and at scale, while exploiting the
-simulation-based structure in these problems.
+optimization problems in parallel and at scale, while exploiting structure
+in how the simulation outputs are used to formulate the optimization problem.
+In the *Example Problems* section, we will see two examples of such structure.
+First, a case where the objectives are formed by taking the sum-of-squared
+simulation outputs, and another where two objectives are obtained through an
+expensive real-world experiment, but the third objective is just an algebraic
+equation.
+
 Additionally, ParMOO is:
 
  - an open-source project on [GitHub](https://github.com/parmoo/parmoo),
@@ -47,9 +53,28 @@ Additionally, ParMOO is:
 
 # Multiobjective Simulation Optimization Software
 
-Scientific software packages for solving
-multiobjective simulation optimization problems include
-@pymoo, @modir, @vtmop, @pymoso, @dragonfly, @edbo, and @boostdfo.
+Existing open source, actively maintained Python packages for solving
+generic multiobjective simulation optimization problems include
+``pymoo`` @pymoo,
+``pymoso`` @pymoso,
+``Dragonfly`` @dragonfly,
+``Playtpus``,
+``jMetalPy``,
+``pygmo``.
+Non multi-objective optimization specific Python packages, that are
+often used for implementing multiobjective optimization solvers include
+``BoTorch``,
+``DEAP``.
+Other non-Python packages include
+``PlatEMO``,
+``jMetal``,
+``MODIR`` @modir,
+``VTMOP`` @vtmop, and
+``BoostDFO`` @boostdfo.
+And two older packages, that are still worth mentioning include:
+``ParEGO`` and
+``SPEA2``.
+
 The above-listed software packages:
 
  a) are not restricted to a particular MOOP application,
