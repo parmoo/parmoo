@@ -73,13 +73,13 @@ setup(
               "parmoo.tests.libe_tests",
               "parmoo.tests.regression_tests"],
 
-    install_requires=["numpy", "scipy", "pyDOE"],
+    install_requires=["numpy", "scipy", "pyDOE", "pandas"],
 
     # If run tests through setup.py - downloads these but does not install
     tests_require=["pytest", "pytest-cov", "flake8"],
 
     extras_require={
-        'extras': ["libensemble"],
+        'extras': ["libensemble", "plotly", "dash"],
         'docs': ["sphinx", "sphinxcontrib.bibtex", "sphinx_rtd_theme"]},
 
     classifiers=[
