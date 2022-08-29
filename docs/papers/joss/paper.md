@@ -36,20 +36,22 @@ In a multiobjective *simulation* optimization problem, the objectives are
 derived from the outputs of one or more computationally expensive simulations.
 Such problems are ubiquitous in science and engineering.
 
-ParMOO is a Python framework for solving multiobjective simulation
-optimization problems in parallel and at scale, while exploiting structure
-in how the simulation outputs are used to formulate the optimization problem.
-In the *Example Problems* section, we will see two examples of such structure.
-First, a case where the objectives are formed by taking the sum-of-squared
-simulation outputs, and another where two objectives are obtained through an
-expensive real-world experiment, but the third objective is just an algebraic
-equation.
-
+ParMOO is a Python framework and library of solver components for building
+and deploying highly customized multiobjective simulation optimization solvers.
+ParMOO is designed to help engineers, practitioners, and optimization experts
+to easily exploit available structure in how the simulation outputs are used
+to formulate the objectives for the optimization problem.
+We will elaborate on these structures, and provide two examples in future
+sections.
 Additionally, ParMOO is:
 
  - an open-source project on [GitHub](https://github.com/parmoo/parmoo),
  - ``pip``-installable via [PyPI](https://pypi.org/project/parmoo), and
  - fully [documented](https://parmoo.readthedocs.io).
+
+# Target Audience
+
+For this paper, the target audience includes 
 
 # Multiobjective Simulation Optimization Software
 
@@ -58,22 +60,18 @@ generic multiobjective simulation optimization problems include
 ``pymoo`` @pymoo,
 ``pymoso`` @pymoso,
 ``Dragonfly`` @dragonfly,
-``Playtpus``,
-``jMetalPy``,
-``pygmo``.
-Non multi-objective optimization specific Python packages, that are
+``Playtpus`` @platypus,
+``jMetalPy`` @jMetalPy, and
+``pygmo`` @pygmo.
+Non multiobjective optimization specific Python packages, that are
 often used for implementing multiobjective optimization solvers include
-``BoTorch``,
-``DEAP``.
-Other non-Python packages include
-``PlatEMO``,
-``jMetal``,
-``MODIR`` @modir,
+``BoTorch`` @botorch and
+``DEAP`` @deap.
+Other non Python packages include
+the Fortran solvers ``MODIR`` @modir and
 ``VTMOP`` @vtmop, and
+the Matlab toolboxes ``PlatEMO`` @platemo and
 ``BoostDFO`` @boostdfo.
-And two older packages, that are still worth mentioning include:
-``ParEGO`` and
-``SPEA2``.
 
 The above-listed software packages:
 
