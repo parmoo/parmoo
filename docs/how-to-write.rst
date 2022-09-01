@@ -827,7 +827,7 @@ hosted locally on your computer.
 There are known issues when using the Chrome browser.
 
 For more information, view the complete
-:mod:`docs page <viz.plot>`.
+:mod:`viz API page <viz.plot>`.
 
 Built-in and Custom Components
 ------------------------------

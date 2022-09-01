@@ -7,6 +7,8 @@ results.
 The public interface can be accessed by importing viz module, which contains
 three functions for creating graphically interactive visualizations of the
 Pareto front and objective data, which run on the browser in a Dash app.
+*There is a known issue when using parmoo.viz in the Chrome browser,
+Firefox or Safari is recommended.*
 
 .. code-block:: python
 
