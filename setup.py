@@ -79,7 +79,7 @@ setup(
     tests_require=["pytest", "pytest-cov", "flake8"],
 
     extras_require={
-        'extras': ["libensemble", "plotly", "dash"],
+        'extras': ["libensemble", "plotly", "dash", "kaleido"],
         'docs': ["sphinx", "sphinxcontrib.bibtex", "sphinx_rtd_theme"]},
 
     classifiers=[
