@@ -4,9 +4,10 @@ The Interactive Visualization (viz) Library
 Easily generate a locally-hosted GUI for interactively visualizing your MOOP
 results.
 
-The public interface can be accessed by importing viz module, which contains
-three functions for creating graphically interactive visualizations of the
-Pareto front and objective data, which run on the browser in a Dash app.
+The public interface can be accessed by importing the viz module, which contains
+three functions for creating interactive visualizations of the approximate
+Pareto front and objective data; these visualizations run on the browser in a
+Dash app.
 *There is a known issue when using parmoo.viz in the Chrome browser,
 Firefox or Safari is recommended.*
 
@@ -28,7 +29,7 @@ Other Private Classes and Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are several other private submodules, classes, and functions contained
-in the viz module, that are used for creating and hosting the dashboard.
+in the viz module that are used for creating and hosting the dashboard.
 These do not need to be referenced by the user, but are detailed below
 for developers.
 
