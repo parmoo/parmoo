@@ -62,6 +62,7 @@ setup(
     packages=["parmoo",
               "parmoo.acquisitions",
               "parmoo.extras",
+              "parmoo.viz",
               "parmoo.optimizers",
               "parmoo.searches",
               "parmoo.surrogates",
