@@ -5,9 +5,9 @@ To generate a plot, generate create a MOOP object and use it to solve a problem.
 Then call one of the following function, passing the MOOP object as the
 first argument:
 
- - ``viz.scatter(moop)``
- - ``viz.parallel_coordinates(moop)``
- - ``viz.radar(moop)``
+ * ``viz.scatter(moop)``
+ * ``viz.parallel_coordinates(moop)``
+ * ``viz.radar(moop)``
 
 Please take note of the following:
 

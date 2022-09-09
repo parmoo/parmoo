@@ -31,20 +31,20 @@ def generate_scatter(
             moop (MOOP): An object containing the data to be visualized.
 
             db (string): Filter traces by dataset.
-                'pf' - Plot the Pareto Front.
-                'obj' - Plot objective data.
+             * 'pf' - Plot the Pareto Front.
+             * 'obj' - Plot objective data.
 
             points (string): Filter traces by constraint score.
-                'constraint_satisfying' - Show only points that
-                    satisfy every constraint.
-                'constraint_violating' - Show only points that
-                    violate any constraint.
-                'all' - Plot all points.
-                'none' - Plot no points.
+             * 'constraint_satisfying' - Show only points that
+               satisfy every constraint.
+             * 'constraint_violating' - Show only points that
+               violate any constraint.
+             * 'all' - Plot all points.
+             * 'none' - Plot no points.
 
         Returns:
             plotly.graph_objects.Figure: A scatterplot or scatterplot matrix
-                displaying traces that fit the filtering criteria.
+            displaying traces that fit the filtering criteria.
     """
 
     # * intro log
@@ -98,20 +98,21 @@ def generate_parallel(
             moop (MOOP): An object containing the data to be visualized.
 
             db (string): Filter traces by dataset.
-                'pf' - Plot the Pareto Front.
-                'obj' - Plot objective data.
+             * 'pf' - Plot the Pareto Front.
+             * 'obj' - Plot objective data.
 
             points (string): Filter traces by constraint score.
-                'constraint_satisfying' - Show only points that
-                    satisfy every constraint.
-                'constraint_violating' - Show only points that
-                    violate any constraint.
-                'all' - Plot all points.
-                'none' - Plot no points.
+             * 'constraint_satisfying' - Show only points that
+               satisfy every constraint.
+             * 'constraint_violating' - Show only points that
+               violate any constraint.
+             * 'all' - Plot all points.
+             * 'none' - Plot no points.
 
         Returns:
             plotly.graph_objects.Figure: A parallel coordinates plot
-                displaying traces that fit the filtering criteria.
+            displaying traces that fit the filtering criteria.
+
     """
 
     # * intro log
@@ -153,20 +154,21 @@ def generate_radar(
             moop (MOOP): An object containing the data to be visualized.
 
             db (string): Filter traces by dataset.
-                'pf' - Plot the Pareto Front.
-                'obj' - Plot objective data.
+             * 'pf' - Plot the Pareto Front.
+             * 'obj' - Plot objective data.
 
             points (string): Filter traces by constraint score.
-                'constraint_satisfying' - Show only points that
-                    satisfy every constraint.
-                'constraint_violating' - Show only points that
-                    violate any constraint.
-                'all' - Plot all points.
-                'none' - Plot no points.
+             * 'constraint_satisfying' - Show only points that
+               satisfy every constraint.
+             * 'constraint_violating' - Show only points that
+               violate any constraint.
+             * 'all' - Plot all points.
+             * 'none' - Plot no points.
 
         Returns:
             plotly.graph_objects.Figure: A radar plot
-                displaying traces that fit the filtering criteria.
+            displaying traces that fit the filtering criteria.
+
     """
 
     # * intro log
