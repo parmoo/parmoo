@@ -183,8 +183,8 @@ class LBFGSB(SurrogateOptimizer):
         """ Solve the surrogate problem using L-BFGS-B.
 
         Args:
-            x (np.ndarray): A 2d array containing a list of feasible
-                design points used to warm start the search.
+            x (np.ndarray): A 2d array containing a list of design points
+                used to warm start the search.
 
         Returns:
             np.ndarray: A 2d numpy.ndarray of potentially efficient design
@@ -409,8 +409,8 @@ class TR_LBFGSB(SurrogateOptimizer):
         """ Solve the surrogate problem using L-BFGS-B.
 
         Args:
-            x (np.ndarray): A 2d array containing a list of feasible
-                design points used to warm start the search.
+            x (np.ndarray): A 2d array containing a list of design points
+                used to warm start the search.
 
         Returns:
             np.ndarray: A 2d numpy.ndarray of potentially efficient design

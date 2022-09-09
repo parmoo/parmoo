@@ -81,8 +81,10 @@ class RandomConstraint(AcquisitionFunction):
                 between iterations; also unused by this scheme.
 
         Returns:
-            numpy.ndarray: A 1d array containing a feasible starting point
-            for the scalarized problem.
+            numpy.ndarray: A 1d array containing the 'best' feasible starting
+            point for the scalarized problem (if any previous evaluations
+            were feasible) or the point in the existing database that is
+            most nearly feasible.
 
         """
 
