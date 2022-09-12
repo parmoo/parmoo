@@ -104,11 +104,11 @@ class RandomSearch(SurrogateOptimizer):
 
         return
 
-    def setLagrangian(self, lagrangian, grad_func):
+    def setPenalty(self, penalty_func, grad_func):
         """ Add a matrix-valued gradient function for obj_func.
 
         Args:
-            lagrangian (function): A vector-valued augmented Lagrangian
+            penalty_func (function): A vector-valued penalized objective
                 that incorporates a penalty for violating constraints.
 
             grad_func (function): A matrix-valued function that can be

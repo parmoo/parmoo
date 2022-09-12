@@ -68,7 +68,7 @@ def test_RandomSearch():
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
-    opt.setLagrangian(L, g)
+    opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)
     # Try to solve with invalid inputs to test error handling

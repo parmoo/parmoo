@@ -83,7 +83,7 @@ class MOOP:
      * ``MOOP.evaluateSurrogates(x)``
      * ``MOOP.resetSurrogates(center)``
      * ``MOOP.evaluateConstraints(x)``
-     * ``MOOP.evaluateLagrangian(x)``
+     * ``MOOP.evaluatePenalty(x)``
      * ``MOOP.evaluateGradients(x)``
 
     """
@@ -486,7 +486,7 @@ class MOOP:
         self.acquisitions = []
         # Initialize empty history dict
         self.history = {}
-        # Initialize the augmented Lagrange multiplier
+        # Initialize the penalty / Lagrange multiplier
         self.lam = 1.0
         # Reset the database
         self.n_dat = 0
@@ -1535,8 +1535,8 @@ class MOOP:
             # Return the constraint violations
             return cx
 
-    def evaluateLagrangian(self, x):
-        """ Evaluate the augmented Lagrangian using the surrogates as needed.
+    def evaluatePenalty(self, x):
+        """ Evaluate the penalized objective using the surrogates as needed.
 
         Warning: Not recommended for external usage!
 
@@ -1574,13 +1574,13 @@ class MOOP:
                                      self.__unpack_sim__(sim))
                 if cx > 0.0:
                     Lx[:] = Lx[:] + cx
-        # Compute the augmented Lagrangian
+        # Compute the penalized objective score
         Lx[:] = self.lam * Lx[:] + fx[:]
         # Return the result
         return Lx
 
     def evaluateGradients(self, x):
-        """ Evaluate the gradient of the augmented Lagrangian using surrogates.
+        """ Evaluate the gradient of the penalized objective using surrogates.
 
         Warning: Not recommended for external usage!
 
@@ -1706,7 +1706,7 @@ class MOOP:
                     dcx[:] = dcx[:] + dc_dx[i, :]
                     if self.m_total > 0:
                         dcx[:] = dcx[:] + np.dot(dc_dsim[i, :], dsim_dx[:, :])
-        # Construct the Jacobian of the augmented Lagrangian
+        # Construct the Jacobian of the penalized objective function
         dLx = np.zeros((self.o, self.n))
         for i in range(self.o):
             dLx[i, :] = dfx[i, :] + self.lam * dcx[:]
@@ -1847,13 +1847,13 @@ class MOOP:
             # Add acquisition functions
             for i, acquisition in enumerate(self.acquisitions):
                 x0[i, :] = acquisition.setTarget(self.data,
-                                                 self.evaluateLagrangian,
+                                                 self.evaluatePenalty,
                                                  self.history)
             # Set up the surrogate problem
             opt = self.optimizer(self.o, self.scaled_lb, self.scaled_ub,
                                  self.hyperparams)
             opt.setObjective(self.evaluateSurrogates)
-            opt.setLagrangian(self.evaluateLagrangian, self.evaluateGradients)
+            opt.setPenalty(self.evaluatePenalty, self.evaluateGradients)
             opt.setConstraints(self.evaluateConstraints)
             opt.addAcquisition(*self.acquisitions)
             opt.setReset(self.resetSurrogates)
