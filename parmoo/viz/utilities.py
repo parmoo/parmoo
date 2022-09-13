@@ -1,6 +1,10 @@
+""" This module contains utilities (helper functions) that are used throughout
+the viz tool.
+
+"""
+
 import pandas as pd
 import logging
-
 
 def export_file(fig, plot_name, file_type):
 
@@ -12,14 +16,15 @@ def export_file(fig, plot_name, file_type):
             plot_name (string): Set the filename of the image file.
 
             file_type (string): Set the image file type.
-                'html' - Export as .html file.
-                'pdf' - Export as .pdf file.
-                'svg' - Export as .svg file.
-                'eps' - Export as .eps file
-                    if the poppler dependency is installed.
-                'jpeg' - Export as .jpeg file.
-                'png' - Export as .png file.
-                'webp' - Export as .webp file.
+             - 'html' - Export as .html file.
+             - 'pdf' - Export as .pdf file.
+             - 'svg' - Export as .svg file.
+             - 'eps' - Export as .eps file
+               if the poppler dependency is installed.
+             - 'jpeg' - Export as .jpeg file.
+             - 'png' - Export as .png file.
+             - 'webp' - Export as .webp file.
+
     """
 
     if file_type == 'html':
@@ -51,11 +56,12 @@ def set_plot_name(db):
 
         Args:
             db (string): Graph contents inform title.
-                'pf' - Set plot name to "Pareto Front"
-                'obj' - Set plot name to "Objective Data"
+             - 'pf' - Set plot name to "Pareto Front"
+             - 'obj' - Set plot name to "Objective Data"
 
         Returns:
             plot_name (string): The default plot name.
+
     """
 
     if db == 'pf':
@@ -71,20 +77,21 @@ def set_database(moop, db, points):
 
         Args:
             db (string): Set dataset.
-                'pf' - Set Pareto Front as dataset.
-                'obj' - Set objective data as dataset.
+             - 'pf' - Set Pareto Front as dataset.
+             - 'obj' - Set objective data as dataset.
 
             points (string): Filter traces from dataset by constraint score.
-                'constraint_satisfying' - Include only points that
-                    satisfy every constraint.
-                'constraint_violating' - Include only points that
-                    violate any constraint.
-                'all' - Include all points in dataset.
-                'none' - Include no points in dataset.
+             - 'constraint_satisfying' - Include only points that
+               satisfy every constraint.
+             - 'constraint_violating' - Include only points that
+               violate any constraint.
+             - 'all' - Include all points in dataset.
+             - 'none' - Include no points in dataset.
 
         Returns:
             df (Pandas dataframe): A 2D dataframe containing post-filter
-                data from the MOOP.
+            data from the MOOP.
+
     """
 
     if db == 'pf':
@@ -122,12 +129,14 @@ def set_hover_info(database, i):
         Args:
             database (Pandas dataframe): A 2D dataframe containing the
                 traces to be graphed.
+
             i (int): An index indicating the row where the trace
                 we're labeling is located.
 
         Returns:
-        hover_info (string): An HTML-format string to display when
-        users hover over trace i.
+            hover_info (string): An HTML-format string to display when
+            users hover over trace i.
+
     """
 
     hover_info = ""
@@ -164,64 +173,78 @@ def check_inputs(
             db: The item passed to the 'db' keyword in a user-facing function.
                 If db cannot be cast to a string valued 'pf' or 'obj',
                 a ValueError is raised.
+
             output: The item passed to the 'output' keyword in a
                 user-facing function.
                 If output cannot be cast to a string corresponding to one of
                 the supported output filetypes, a ValueError is raised.
+
             points: The item passed to the 'points' keyword in a
                 user-facing function.
                 If points cannot be cast to a string corresponding to one of
                 the supported contraint filters, a ValueError is raised.
+
             height: The item passed to the 'height' keyword in a user-facing
                 function.
                 If height is not the default string 'auto' or cannot be cast
                 to an int
                 of value greater than one, a ValueError is raised.
+
             width: The item passed to the 'width' keyword in a user-facing
                 function.
                 If width is not the default string 'auto' or cannot be cast
                 to an int
                 of value greater than one, a ValueError is raised.
+
             font: The item passed to the 'font' keyword in a user-facing
                 function.
                 If font cannot be cast to a string, a ValueError is raised.
+
             fontsize: The item passed to the 'fontsize' keyword in a
                 user-facing function.
                 If fontsize is not the default value 'auto' or cannot be cast
                 to an int
                 of value between 1 and 100 inclusive, a ValueError is raised.
+
             background_color: The item passed to the 'background_color'
                 keyword in a user-facing function.
                 If background_color cannot be cast to a string, a ValueError
                 is raised.
+
             screenshot: The item passed to the 'screenshot' keyword in a
                 user-facing function.
                 If screenshot cannot be cast to a string corresponding to one
                 of the supported
                 screenshot filetypes, a ValueError is raised.
+
             image_export_format: The item passed to the 'image_export_format'
                 keyword in a user-facing function.
                 If image_export_format cannot be cast to a string
                 corresponding to one of the supported
                 image_export_format filetypes, a ValueError is raised.
+
             data_export_format: The item passed to the 'data_export_format'
                 keyword in a user-facing function.
                 If data_export_format cannot be cast to a string corresponding
                 to one of the supported
                 data_export_format filetypes, a ValueError is raised.
+
             data_export_format: The item passed to the 'data_export_format'
                 keyword in a user-facing function.
                 If data_export_format cannot be cast to a string corresponding
                 to one of the supported
                 data_export_format filetypes, a ValueError is raised.
+
             dev_mode: The item passed to the 'dev_mode' keyword in a
                 user-facing function.
                 If dev_mode cannot be cast to one of the boolean values True
                 and False, a ValueError is raised.
+
             pop_up: The item passed to the 'pop_up' keyword in a user-facing
                 function.
                 If pop_up cannot be cast to one of the boolean values True and
                 False, a ValueError is raised.
+
             port: The item passed to the 'port' keyword in a user-facing
                 function.
                 If port cannot be cast to a string beginning with 'http', a

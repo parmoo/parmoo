@@ -30,7 +30,7 @@ def test_LBFGSB():
     lb = np.zeros(n)
     ub = np.ones(n)
 
-    # Create the biobjective function and its augmented Lagrangian
+    # Create the biobjective function and its penalty function
     def f(z):
         return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
 
@@ -52,16 +52,16 @@ def test_LBFGSB():
 
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
-    acqu1.setTarget({}, lambda x: np.zeros(1), {})
+    acqu1.setTarget({}, lambda x: np.zeros(2), {})
     acqu1.weights[:] = 0.0
     acqu1.weights[0] = 1.0
     acqu2 = UniformWeights(o, lb, ub, {})
-    acqu2.setTarget({}, lambda x: np.zeros(1), {})
+    acqu2.setTarget({}, lambda x: np.zeros(2), {})
     acqu2.weights[:] = 0.0
     acqu2.weights[1] = 1.0
     # Create a third acquisition function targeting a random tradeoff solution
     acqu3 = UniformWeights(o, lb, ub, {})
-    acqu3.setTarget({}, lambda x: np.zeros(1), {})
+    acqu3.setTarget({}, lambda x: np.zeros(2), {})
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -81,19 +81,19 @@ def test_LBFGSB():
     with pytest.raises(ValueError):
         opt.setConstraints(lambda z1, z2: np.zeros(1))
     with pytest.raises(ValueError):
-        opt.setLagrangian(5, lambda z: np.zeros(1))
+        opt.setPenalty(5, lambda z: np.zeros(1))
     with pytest.raises(ValueError):
-        opt.setLagrangian(lambda z1, z2: np.zeros(1), lambda z: np.zeros(1))
+        opt.setPenalty(lambda z1, z2: np.zeros(1), lambda z: np.zeros(1))
     with pytest.raises(ValueError):
-        opt.setLagrangian(lambda z: np.zeros(1), 5)
+        opt.setPenalty(lambda z: np.zeros(1), 5)
     with pytest.raises(ValueError):
-        opt.setLagrangian(lambda z: np.zeros(1), lambda z1, z2: np.zeros(1))
+        opt.setPenalty(lambda z: np.zeros(1), lambda z1, z2: np.zeros(1))
     with pytest.raises(ValueError):
         opt.addAcquisition(5)
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
-    opt.setLagrangian(L, g)
+    opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)
     # Try to solve with invalid inputs to test error handling
@@ -154,7 +154,7 @@ def test_TR_LBFGSB():
     lb = np.zeros(n)
     ub = np.ones(n)
 
-    # Create the biobjective function and its augmented Lagrangian
+    # Create the biobjective function and its penalty function
     def f(z):
         return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
 
@@ -176,16 +176,16 @@ def test_TR_LBFGSB():
 
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
-    acqu1.setTarget({}, lambda x: np.zeros(1), {})
+    acqu1.setTarget({}, lambda x: np.zeros(2), {})
     acqu1.weights[:] = 0.0
     acqu1.weights[0] = 1.0
     acqu2 = UniformWeights(o, lb, ub, {})
-    acqu2.setTarget({}, lambda x: np.zeros(1), {})
+    acqu2.setTarget({}, lambda x: np.zeros(2), {})
     acqu2.weights[:] = 0.0
     acqu2.weights[1] = 1.0
     # Create a third acquisition function targeting a random tradeoff solution
     acqu3 = UniformWeights(o, lb, ub, {})
-    acqu3.setTarget({}, lambda x: np.zeros(1), {})
+    acqu3.setTarget({}, lambda x: np.zeros(2), {})
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -205,13 +205,13 @@ def test_TR_LBFGSB():
     with pytest.raises(ValueError):
         opt.setConstraints(lambda z1, z2: np.zeros(1))
     with pytest.raises(ValueError):
-        opt.setLagrangian(5, lambda z: np.zeros(1))
+        opt.setPenalty(5, lambda z: np.zeros(1))
     with pytest.raises(ValueError):
-        opt.setLagrangian(lambda z1, z2: np.zeros(1), lambda z: np.zeros(1))
+        opt.setPenalty(lambda z1, z2: np.zeros(1), lambda z: np.zeros(1))
     with pytest.raises(ValueError):
-        opt.setLagrangian(lambda z: np.zeros(1), 5)
+        opt.setPenalty(lambda z: np.zeros(1), 5)
     with pytest.raises(ValueError):
-        opt.setLagrangian(lambda z: np.zeros(1), lambda z1, z2: np.zeros(1))
+        opt.setPenalty(lambda z: np.zeros(1), lambda z1, z2: np.zeros(1))
     with pytest.raises(ValueError):
         opt.addAcquisition(5)
     with pytest.raises(ValueError):
@@ -221,7 +221,7 @@ def test_TR_LBFGSB():
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
-    opt.setLagrangian(L, g)
+    opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)
     # Try to solve with invalid inputs to test error handling

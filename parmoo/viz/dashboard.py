@@ -1,3 +1,10 @@
+""" This module contains private methods for hosting and receiving callbacks
+from an interactiv dashboard. This module is intended only for developer use.
+
+Note that some docstrings may be incomplete.
+
+"""
+
 import pandas as pd
 import plotly.io as pio
 from os import environ
@@ -26,6 +33,7 @@ from .utilities import (
 
 
 class Dash_App:
+    """ A class for hosting the dashboard app. """
 
     def __init__(
         self,
@@ -45,6 +53,8 @@ class Dash_App:
         pop_up,
         port,
     ):
+        """ Constructor for dashboard app. """
+
         logging.info('initializing dashboard')
 
         # ! STATE
@@ -284,6 +294,8 @@ class Dash_App:
             s_clicks,
             h_clicks,
         ):
+            """ Documentation incomplete. """
+
             triggered_id = callback_context.triggered[0]['prop_id']
             if triggered_id == 'show_customization_options.n_clicks':
                 logging.info("'show_customization_options.n_clicks' triggered")
@@ -318,6 +330,8 @@ class Dash_App:
             s_clicks,
             h_clicks,
         ):
+            """ Documentation incomplete. """
+
             triggered_id = callback_context.triggered[0]['prop_id']
             if triggered_id == 'show_export_options.n_clicks':
                 logging.info("'show_export_options.n_clicks' triggered")
@@ -381,6 +395,8 @@ class Dash_App:
             database_value,
             constraint_showr_value,
         ):
+            """ Documentation incomplete. """
+
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'graph_height_input.value' == triggered_id:
                 logging.info("'graph_height_input.value' triggered")
@@ -420,6 +436,8 @@ class Dash_App:
                 component_property='n_clicks'),
         )
         def download_dataset(n_clicks):
+            """ Documentation incomplete. """
+
             logging.info("'download_dataset_button.n_clicks' triggered")
             return self.evaluate_dataset_download(n_clicks)
 
@@ -439,6 +457,8 @@ class Dash_App:
             selectedData,
             restyleData,
         ):
+            """ Documentation incomplete. """
+
             triggered_id = callback_context.triggered[0]['prop_id']
             if 'parmoo_graph.selectedData' == triggered_id:
                 logging.info("'parmoo_graph.selectedData' triggered")
@@ -458,6 +478,8 @@ class Dash_App:
                 component_property='n_clicks'),
         )
         def download_selection(n_clicks):
+            """ Documentation incomplete. """
+
             logging.info("'download_selection_button.n_clicks' triggered")
             return self.evaluate_selection_download(n_clicks)
 
@@ -471,6 +493,8 @@ class Dash_App:
                 component_property='value'),
         )
         def update_image_export_format(value):
+            """ Documentation incomplete. """
+
             logging.info("'image_export_format_dropdown.value' triggered")
             self.evaluate_image_export_format(value)
 
@@ -484,6 +508,8 @@ class Dash_App:
                 component_property='value'),
         )
         def update_data_export_format(value):
+            """ Documentation incomplete. """
+
             logging.info("'data_export_format_dropdown.value' triggered")
             self.evaluate_data_export_format(value)
 
@@ -497,6 +523,8 @@ class Dash_App:
                 component_property='n_clicks'),
         )
         def download_image(n_clicks):
+            """ Documentation incomplete. """
+
             logging.info("'download_image_button.n_clicks' triggered")
             return self.evaluate_image_download(n_clicks)
 
@@ -525,6 +553,8 @@ class Dash_App:
     # ! INITIALIZATION HELPERS
 
     def generate_graph(self):
+        """ Documentation incomplete. """
+
         if self.plot_type == 'scatter':
             self.graph = generate_scatter(
                 moop=self.moop,
@@ -556,6 +586,8 @@ class Dash_App:
         return self.graph
 
     def configure(self):
+        """ Documentation incomplete. """
+
         if self.height != 'auto' and self.width != 'auto':
             self.config = {
                 'displaylogo': False,
@@ -584,6 +616,8 @@ class Dash_App:
 
     # * functionality of select height input
     def update_height(self):
+        """ Documentation incomplete. """
+
         if self.height != 'auto':
             self.graph.update_layout(
                 height=int(self.height))
@@ -591,6 +625,8 @@ class Dash_App:
 
     # * functionality of select width input
     def update_width(self):
+        """ Documentation incomplete. """
+
         if self.width != 'auto':
             self.graph.update_layout(
                 width=int(self.width))
@@ -598,6 +634,8 @@ class Dash_App:
 
     # * functionality of select font input
     def update_font(self):
+        """ Documentation incomplete. """
+
         if self.font != 'auto':
             self.graph.update_layout(
                 font=dict(
@@ -608,6 +646,8 @@ class Dash_App:
 
     # * functionality of select font size input
     def update_font_size(self):
+        """ Documentation incomplete. """
+
         if self.fontsize != 'auto':
             self.graph.update_layout(
                 font=dict(
@@ -618,6 +658,8 @@ class Dash_App:
 
     # * functionality of plot name input
     def update_plot_name(self):
+        """ Documentation incomplete. """
+
         self.graph.update_layout(
             title_text=self.plot_name
         )
@@ -625,6 +667,8 @@ class Dash_App:
 
     # * functionality of background color dropdown
     def update_background_color(self):
+        """ Documentation incomplete. """
+
         if self.background_color != 'auto':
             if self.plot_type == 'scatter':
                 self.graph.update_layout(
@@ -646,10 +690,14 @@ class Dash_App:
 
     # * functionality of plot type dropdown
     def update_plot_type(self):
+        """ Documentation incomplete. """
+
         return self.generate_graph()
 
     # * functionality of database dropdown
     def update_database(self):
+        """ Documentation incomplete. """
+
         self.database = set_database(
             moop=self.moop,
             db=self.db,
@@ -664,6 +712,8 @@ class Dash_App:
     # ! CALLBACK HELPERS
 
     def evaluate_height(self, height_value):
+        """ Documentation incomplete. """
+
         if height_value is not None:
             self.height = height_value
             return self.update_height()
@@ -671,6 +721,8 @@ class Dash_App:
             return self.graph
 
     def evaluate_width(self, width_value):
+        """ Documentation incomplete. """
+
         if width_value is not None:
             self.width = width_value
             return self.update_width()
@@ -678,6 +730,8 @@ class Dash_App:
             return self.graph
 
     def evaluate_font(self, font_value):
+        """ Documentation incomplete. """
+
         if font_value != '':
             self.font = font_value
             self.graph = self.update_font()
@@ -686,11 +740,15 @@ class Dash_App:
             return self.graph
 
     def evaluate_font_size(self, font_size_value):
+        """ Documentation incomplete. """
+
         self.fontsize = font_size_value
         self.graph = self.update_font_size()
         return self.graph
 
     def evaluate_background_color(self, background_color_value):
+        """ Documentation incomplete. """
+
         if background_color_value == 'Transparent':
             self.background_color = 'rgb(0,0,0,0)'
         else:
@@ -698,6 +756,8 @@ class Dash_App:
         return self.update_background_color()
 
     def evaluate_plot_name(self, plot_name_value):
+        """ Documentation incomplete. """
+
         if plot_name_value != '':
             self.plot_name = plot_name_value
             self.graph = self.update_plot_name()
@@ -706,6 +766,8 @@ class Dash_App:
             return self.graph
 
     def evaluate_plot_type(self, plot_type_value):
+        """ Documentation incomplete. """
+
         if plot_type_value == 'Scatterplot':
             self.plot_type = 'scatter'
         elif plot_type_value == 'Parallel Coordinates plot':
@@ -715,6 +777,8 @@ class Dash_App:
         return self.update_plot_type()
 
     def evaluate_database(self, database_value):
+        """ Documentation incomplete. """
+
         if database_value == 'Pareto Front':
             self.db = 'pf'
         elif database_value == 'Objective Data':
@@ -722,6 +786,8 @@ class Dash_App:
         return self.update_database()
 
     def evaluate_dataset_download(self, n_clicks):
+        """ Documentation incomplete. """
+
         if n_clicks is None:
             raise exceptions.PreventUpdate
         else:
@@ -738,6 +804,8 @@ class Dash_App:
                 )
 
     def evaluate_selected_data(self, data, type):
+        """ Documentation incomplete. """
+
         if data is None:
             raise exceptions.PreventUpdate
         else:
@@ -788,6 +856,8 @@ class Dash_App:
                         self.selection_indexes.append(i)
 
     def set_constraint_range(self, restyleData):
+        """ Documentation incomplete. """
+
         if restyleData is None:
             objectives = self.moop.getObjectiveType().names
             self.constraint_range = [None] * len(objectives)
@@ -800,6 +870,8 @@ class Dash_App:
             return self.update_constraint_range(self, restyleData)
 
     def update_constraint_range(self, restyleData):
+        """ Documentation incomplete. """
+
         key_list = restyleData[0]
         for key in key_list:
             location = int(key[11])
@@ -808,6 +880,8 @@ class Dash_App:
         return self.constraint_range
 
     def evaluate_selection_download(self, n_clicks):
+        """ Documentation incomplete. """
+
         if n_clicks is None:
             raise exceptions.PreventUpdate
         else:
@@ -832,14 +906,20 @@ class Dash_App:
                 )
 
     def evaluate_image_export_format(self, image_export_format_value):
+        """ Documentation incomplete. """
+
         if image_export_format_value is not None:
             self.image_export_format = image_export_format_value
 
     def evaluate_data_export_format(self, data_export_format_value):
+        """ Documentation incomplete. """
+
         if data_export_format_value is not None:
             self.data_export_format = data_export_format_value
 
     def evaluate_image_download(self, n_clicks):
+        """ Documentation incomplete. """
+
         if n_clicks is None:
             raise exceptions.PreventUpdate
         else:
@@ -863,6 +943,8 @@ class Dash_App:
             )
 
     def evaluate_customization_options(self, action, n_clicks):
+        """ Documentation incomplete. """
+
         if n_clicks is None:
             raise exceptions.PreventUpdate
         else:
@@ -874,6 +956,8 @@ class Dash_App:
                 return showr, hider, hider, hider, hider, hider, hider, hider
 
     def evaluate_export_options(self, action, n_clicks):
+        """ Documentation incomplete. """
+
         if n_clicks is None:
             return no_update, no_update
         else:
@@ -885,26 +969,30 @@ class Dash_App:
                 return showr, hider, hider, hider
 
     def evaluate_constraint_showr(self, value):
+        """ Documentation incomplete. """
+
         """ Evaluate constraint toggles and update graph accordingly.
 
         Args:
             value (string): A string representing the state of the constraint
-                toggles.
-                'constraint_satisfying' - 'Show constraint-satisfying points'
-                    is the only toggle selected. Update graph to show only
-                    points that satisfy every constraint.
-                'constraint_violating' - 'Show constraint-violating points is
-                    the only toggle selected. Update graph to show only points
-                    that violate any constraint.
-                'all' - Both constraint toggles are selected. Update graph to
-                    include all points.
-                'none' - No constraint toggles are selected. Update graph to
-                    include no points.
+                toggles:
+                 * 'constraint_satisfying' - 'Show constraint-satisfying
+                   points' is the only toggle selected. Update graph to show
+                   only points that satisfy every constraint.
+                 * 'constraint_violating' - 'Show constraint-violating points'
+                   is the only toggle selected. Update graph to show only
+                   points that violate any constraint.
+                 * 'all' - Both constraint toggles are selected. Update graph
+                   to include all points.
+                 * 'none' - No constraint toggles are selected. Update graph
+                   to include no points.
 
         Returns:
             (plotly.graph_objects.Figure): A graph containing the points
             selected by the constraint toggles.
+
         """
+
         if value is None:
             raise exceptions.PreventUpdate
         else:

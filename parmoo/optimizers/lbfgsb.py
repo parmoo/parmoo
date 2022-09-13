@@ -29,7 +29,7 @@ class LBFGSB(SurrogateOptimizer):
 
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'gradients', 'lagrangian']
+                 'objectives', 'gradients', 'penalty_func']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalGPS class.
@@ -106,36 +106,36 @@ class LBFGSB(SurrogateOptimizer):
 
         return
 
-    def setLagrangian(self, lagrangian, grad_func):
+    def setPenalty(self, penalty_func, grad_func):
         """ Add a matrix-valued gradient function for obj_func.
 
         Args:
-            lagrangian (function): A vector-valued augmented Lagrangian
+            penalty_func (function): A vector-valued penalized objective
                 that incorporates a penalty for violating constraints.
 
             grad_func (function): A matrix-valued function that can be
-                evaluated to obtain the Jacobian matrix for the Lagrangian.
+                evaluated to obtain the Jacobian matrix for obj_func.
 
         """
 
         # Check whether grad_func() has an appropriate signature
         if callable(grad_func):
             if len(inspect.signature(grad_func).parameters) != 1:
-                raise ValueError("grad_func() must accept exactly one input")
+                raise ValueError("grad_func must accept exactly one input")
             else:
                 # Add grad_func to the problem
                 self.gradients = grad_func
         else:
             raise ValueError("grad_func() must be callable")
-        # Check whether lagrangian() has an appropriate signature
-        if callable(lagrangian):
-            if len(inspect.signature(lagrangian).parameters) != 1:
-                raise ValueError("lagrangian() must accept exactly one input")
+        # Check whether penalty_func() has an appropriate signature
+        if callable(penalty_func):
+            if len(inspect.signature(penalty_func).parameters) != 1:
+                raise ValueError("penalty_func must accept exactly one input")
             else:
                 # Add Lagrangian to the problem
-                self.lagrangian = lagrangian
+                self.penalty_func = penalty_func
         else:
-            raise ValueError("lagrangian() must be callable")
+            raise ValueError("penalty_func must be callable")
         return
 
     def setConstraints(self, constraint_func):
@@ -183,8 +183,8 @@ class LBFGSB(SurrogateOptimizer):
         """ Solve the surrogate problem using L-BFGS-B.
 
         Args:
-            x (np.ndarray): A 2d array containing a list of feasible
-                design points used to warm start the search.
+            x (np.ndarray): A 2d array containing a list of design points
+                used to warm start the search.
 
         Returns:
             np.ndarray: A 2d numpy.ndarray of potentially efficient design
@@ -217,10 +217,10 @@ class LBFGSB(SurrogateOptimizer):
 
             # Define the scalarized wrapper functions
             def scalar_f(x, *args):
-                return acquisition.scalarize(self.lagrangian(x))
+                return acquisition.scalarize(self.penalty_func(x))
 
             def scalar_g(x, *args):
-                return acquisition.scalarizeGrad(self.lagrangian(x),
+                return acquisition.scalarizeGrad(self.penalty_func(x),
                                                  self.gradients(x))
 
             # Get the solution
@@ -243,7 +243,7 @@ class TR_LBFGSB(SurrogateOptimizer):
 
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'gradients', 'lagrangian', 'resetObjectives']
+                 'objectives', 'gradients', 'penalty_func', 'resetObjectives']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalGPS class.
@@ -332,15 +332,15 @@ class TR_LBFGSB(SurrogateOptimizer):
             raise ValueError("reset() must be callable")
         return
 
-    def setLagrangian(self, lagrangian, grad_func):
+    def setPenalty(self, penalty_func, grad_func):
         """ Add a matrix-valued gradient function for obj_func.
 
         Args:
-            lagrangian (function): A vector-valued augmented Lagrangian
+            penalty_func (function): A vector-valued penalized objective
                 that incorporates a penalty for violating constraints.
 
             grad_func (function): A matrix-valued function that can be
-                evaluated to obtain the Jacobian matrix for the Lagrangian.
+                evaluated to obtain the Jacobian matrix for obj_func.
 
         """
 
@@ -353,15 +353,15 @@ class TR_LBFGSB(SurrogateOptimizer):
                 self.gradients = grad_func
         else:
             raise ValueError("grad_func() must be callable")
-        # Check whether lagrangian() has an appropriate signature
-        if callable(lagrangian):
-            if len(inspect.signature(lagrangian).parameters) != 1:
-                raise ValueError("lagrangian() must accept exactly one input")
+        # Check whether penalty_func() has an appropriate signature
+        if callable(penalty_func):
+            if len(inspect.signature(penalty_func).parameters) != 1:
+                raise ValueError("penalty_func must accept exactly one input")
             else:
                 # Add Lagrangian to the problem
-                self.lagrangian = lagrangian
+                self.penalty_func = penalty_func
         else:
-            raise ValueError("lagrangian() must be callable")
+            raise ValueError("penalty_func must be callable")
         return
 
     def setConstraints(self, constraint_func):
@@ -409,8 +409,8 @@ class TR_LBFGSB(SurrogateOptimizer):
         """ Solve the surrogate problem using L-BFGS-B.
 
         Args:
-            x (np.ndarray): A 2d array containing a list of feasible
-                design points used to warm start the search.
+            x (np.ndarray): A 2d array containing a list of design points
+                used to warm start the search.
 
         Returns:
             np.ndarray: A 2d numpy.ndarray of potentially efficient design
@@ -443,10 +443,10 @@ class TR_LBFGSB(SurrogateOptimizer):
 
             # Define the scalarized wrapper functions
             def scalar_f(x, *args):
-                return acquisition.scalarize(self.lagrangian(x))
+                return acquisition.scalarize(self.penalty_func(x))
 
             def scalar_g(x, *args):
-                return acquisition.scalarizeGrad(self.lagrangian(x),
+                return acquisition.scalarizeGrad(self.penalty_func(x),
                                                  self.gradients(x))
 
             # Create a new trust region
