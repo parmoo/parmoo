@@ -99,5 +99,3 @@ class const_func(ABC):
             float: The constraint violation for the input x.
 
         """
-
-        raise NotImplementedError("This method has not yet been implemented")

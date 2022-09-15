@@ -49,8 +49,6 @@ class AcquisitionFunction(ABC):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
-
     @abstractmethod
     def setTarget(self, data, constraint_func, history):
         """ Set a new target value or region for the AcquisitionFunction.
@@ -84,8 +82,6 @@ class AcquisitionFunction(ABC):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
-
     @abstractmethod
     def scalarize(self, f_vals):
         """ Scalarize a vector-valued function using the AcquisitionFunction.
@@ -98,8 +94,6 @@ class AcquisitionFunction(ABC):
             float: The scalarized value.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     def scalarizeGrad(self, f_vals, g_vals):
         """ Scalarize a Jacobian of gradients using the current weights.
@@ -182,8 +176,6 @@ class GlobalSearch(ABC):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
-
     @abstractmethod
     def startSearch(self, lb, ub):
         """ Begin a new global search.
@@ -200,8 +192,6 @@ class GlobalSearch(ABC):
             to be evaluated.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     def resumeSearch(self):
         """ Resume a global search.
@@ -287,8 +277,6 @@ class SurrogateFunction(ABC):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
-
     @abstractmethod
     def fit(self, x, f):
         """ Fit a new surrogate to the given data.
@@ -301,8 +289,6 @@ class SurrogateFunction(ABC):
                  of objective values.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     @abstractmethod
     def update(self, x, f):
@@ -318,8 +304,6 @@ class SurrogateFunction(ABC):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
-
     @abstractmethod
     def setCenter(self, center):
         """ Set the center for the fit, if this is a local method.
@@ -329,8 +313,6 @@ class SurrogateFunction(ABC):
                 this local fit.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     @abstractmethod
     def evaluate(self, x):
@@ -345,8 +327,6 @@ class SurrogateFunction(ABC):
             at x.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     def gradient(self, x):
         """ Evaluate the gradient of the surrogate at a design point.
@@ -379,8 +359,6 @@ class SurrogateFunction(ABC):
             that should be evaluated to improve the surrogate.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.
@@ -449,8 +427,6 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
-
     @abstractmethod
     def setObjective(self, obj_func):
         """ Add a vector-valued objective function that will be solved.
@@ -460,8 +436,6 @@ class SurrogateOptimizer(ABC):
                 to solve the surrogate optimization problem.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     def setGradient(self, grad_func):
         """ Add a matrix-valued gradient function for obj_func.
@@ -486,8 +460,6 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
-
     @abstractmethod
     def addAcquisition(self, *args):
         """ Add an acquisition function for the surrogate optimizer.
@@ -499,8 +471,6 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
-
     @abstractmethod
     def setReset(self, reset):
         """ Add a reset function for resetting surrogate updates.
@@ -511,8 +481,6 @@ class SurrogateOptimizer(ABC):
                 problem with each acquisition function.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     @abstractmethod
     def solve(self, x):
@@ -527,8 +495,6 @@ class SurrogateOptimizer(ABC):
             that were found by the surrogate optimizer.
 
         """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.

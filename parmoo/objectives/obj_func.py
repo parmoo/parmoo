@@ -99,5 +99,3 @@ class obj_func(ABC):
             float: The output of this objective for the input x.
 
         """
-
-        raise NotImplementedError("This method has not yet been implemented")

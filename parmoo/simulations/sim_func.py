@@ -65,5 +65,3 @@ class sim_func(ABC):
             numpy.ndarray: The output of this simulation for the input x.
 
         """
-
-        raise NotImplementedError("This method has not yet been implemented")
