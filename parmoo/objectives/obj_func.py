@@ -5,7 +5,7 @@ Defines an ABC for the callable ``obj_func`` class.
 """
 
 import numpy as np
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class obj_func(ABC):
@@ -87,6 +87,7 @@ class obj_func(ABC):
             raise ValueError("An illegal sim_type was given")
         return
 
+    @abstractmethod
     def __call__(self, x, sx, der=0):
         """ Make obj_func objects callable.
 
