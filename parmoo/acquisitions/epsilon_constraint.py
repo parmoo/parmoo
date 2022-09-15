@@ -62,7 +62,7 @@ class RandomConstraint(AcquisitionFunction):
         self.lb = lb
         return
 
-    def setTarget(self, data, constraint_func, history):
+    def setTarget(self, data, lagrange_func, history):
         """ Randomly generate a target based on current nondominated points.
 
         Args:
@@ -73,16 +73,18 @@ class RandomConstraint(AcquisitionFunction):
                  * 'f_vals' (numpy.ndarray): A 2d array containing the
                    corresponding list of objective values.
 
-            constraint_func (function): A function whose components evaluate
-                to zero if an only if no constraint is violated.
+            lagrange_func (function): A function whose components correspond
+                to constraint violation amounts.
 
             history (dict): A persistent dictionary that could be used by
                 the implementation of the AcquisitionFunction to pass data
                 between iterations; also unused by this scheme.
 
         Returns:
-            numpy.ndarray: A 1d array containing a feasible starting point
-            for the scalarized problem.
+            numpy.ndarray: A 1d array containing the 'best' feasible starting
+            point for the scalarized problem (if any previous evaluations
+            were feasible) or the point in the existing database that is
+            most nearly feasible.
 
         """
 
@@ -112,13 +114,13 @@ class RandomConstraint(AcquisitionFunction):
                     no_data = True
             else:
                 no_data = True
-        # Check whether constraint_func() has an appropriate signature
-        if callable(constraint_func):
-            if len(inspect.signature(constraint_func).parameters) != 1:
-                raise ValueError("constraint_func() must accept exactly one"
+        # Check whether lagrange_func() has an appropriate signature
+        if callable(lagrange_func):
+            if len(inspect.signature(lagrange_func).parameters) != 1:
+                raise ValueError("lagrange_func() must accept exactly one"
                                  + " input")
         else:
-            raise ValueError("constraint_func() must be callable")
+            raise ValueError("lagrange_func() must be callable")
         if no_data:
             # If data is empty, then the Pareto front is empty
             pf = {'x_vals': np.zeros((0, self.n)),
@@ -133,15 +135,15 @@ class RandomConstraint(AcquisitionFunction):
             self.weights = -np.log(1.0 - np.random.random_sample(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
             # Randomly select a feasible starting point
-            x = np.random.random_sample(self.n) * (self.ub - self.lb) + self.lb
-            count = 0
-            while np.any(constraint_func(x) > 0.0):
+            x_min = np.random.random_sample(self.n) * (self.ub - self.lb) \
+                    + self.lb
+            for count in range(1000):
                 x = np.random.random_sample(self.n) * (self.ub - self.lb) \
                     + self.lb
-                count += 1
-                if count == 1000:
-                    raise ValueError("constraint_func has no feasible points")
-            return x
+                if np.dot(self.weights, lagrange_func(x)) \
+                   < np.dot(self.weights, lagrange_func(x_min)):
+                    x_min[:] = x[:]
+            return x_min
         else:
             # Randomly select pts in the convex hull of the nondominate pts
             ipts = np.random.randint(0, pf['f_vals'].shape[0], size=self.o)

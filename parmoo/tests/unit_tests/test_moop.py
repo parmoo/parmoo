@@ -770,10 +770,10 @@ def test_MOOP_evaluateConstraints():
                           moop2.evaluateConstraints(xx)) < 0.00000001)
 
 
-def test_MOOP_evaluateLagrangian():
-    """ Check that the MOOP class handles evaluating Lagrangian properly.
+def test_MOOP_evaluatePenalty():
+    """ Check that the MOOP class handles evaluating penalty function properly.
 
-    Initialize a MOOP object and check that the evaluateLagrangian() function
+    Initialize a MOOP object and check that the evaluatePenalty() function
     works correctly.
 
     """
@@ -837,11 +837,11 @@ def test_MOOP_evaluateLagrangian():
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addObjective({'obj_func': f1})
-    assert(np.all(moop1.evaluateLagrangian(np.zeros(3)) == np.zeros(1)))
-    assert(np.all(moop1.evaluateLagrangian(np.ones(3)) == 3.0 * np.ones(1)))
+    assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
+    assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.0 * np.ones(1)))
     moop1.addConstraint({'constraint': c1})
-    assert(np.all(moop1.evaluateLagrangian(np.zeros(3)) == np.zeros(1)))
-    assert(np.all(moop1.evaluateLagrangian(np.ones(3)) == 3.75 * np.ones(1)))
+    assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
+    assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
     moop1 = MOOP(LocalGPS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
@@ -851,16 +851,16 @@ def test_MOOP_evaluateLagrangian():
     moop1.fitSurrogates()
     moop1.addObjective({'obj_func': f1})
     moop1.addObjective({'obj_func': f1})
-    assert(np.all(moop1.evaluateLagrangian(np.zeros(3)) == np.zeros(1)))
-    assert(np.all(moop1.evaluateLagrangian(np.ones(3)) == 3.0 * np.ones(1)))
+    assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
+    assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.0 * np.ones(1)))
     moop1.addConstraint({'constraint': c1})
-    assert(np.all(moop1.evaluateLagrangian(np.zeros(3)) == np.zeros(1)))
-    assert(np.all(moop1.evaluateLagrangian(np.ones(3)) == 3.75 * np.ones(1)))
+    assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
+    assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
     # Now try some bad evaluations
     with pytest.raises(ValueError):
-        moop1.evaluateLagrangian(10.0)
+        moop1.evaluatePenalty(10.0)
     with pytest.raises(ValueError):
-        moop1.evaluateLagrangian(np.zeros(1))
+        moop1.evaluatePenalty(np.zeros(1))
     # Adjust the scaling and compare
     moop2 = MOOP(LocalGPS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
@@ -875,8 +875,8 @@ def test_MOOP_evaluateLagrangian():
     moop2.addConstraint({'constraint': c1})
     x = moop1.__embed__(np.ones(3))
     xx = moop2.__embed__(np.ones(3))
-    assert(np.linalg.norm(moop1.evaluateLagrangian(x) -
-                          moop2.evaluateLagrangian(xx)) < 0.00000001)
+    assert(np.linalg.norm(moop1.evaluatePenalty(x) -
+                          moop2.evaluatePenalty(xx)) < 0.00000001)
 
 
 def test_MOOP_evaluateGradients():
@@ -996,8 +996,8 @@ def test_MOOP_evaluateGradients():
     moop2.addConstraint({'constraint': c2})
     x = moop1.__embed__(np.ones(3))
     xx = moop2.__embed__(np.ones(3))
-    assert(np.linalg.norm(moop1.evaluateLagrangian(x) -
-                          moop2.evaluateLagrangian(xx)) < 0.00000001)
+    assert(np.linalg.norm(moop1.evaluatePenalty(x) -
+                          moop2.evaluatePenalty(xx)) < 0.00000001)
 
     # Initialize a MOOP with 2 SimGroups and 3 objectives with named designs
     g3 = {'n': 3,
@@ -1121,8 +1121,8 @@ def test_MOOP_evaluateGradients():
                                           ("x3", float)]))
     xx = moop4.__embed__(np.ones(1, dtype=[("x1", float), ("x2", float),
                                            ("x3", float)]))
-    assert(np.linalg.norm(moop3.evaluateLagrangian(x) -
-                          moop4.evaluateLagrangian(xx)) < 0.00000001)
+    assert(np.linalg.norm(moop3.evaluatePenalty(x) -
+                          moop4.evaluatePenalty(xx)) < 0.00000001)
 
 
 def test_MOOP_addData():
@@ -2341,7 +2341,7 @@ if __name__ == "__main__":
     test_MOOP_evaluateSimulation()
     test_MOOP_evaluateSurrogates()
     test_MOOP_evaluateConstraints()
-    test_MOOP_evaluateLagrangian()
+    test_MOOP_evaluatePenalty()
     test_MOOP_evaluateGradients()
     test_MOOP_addData()
     test_MOOP_iterate()

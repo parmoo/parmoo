@@ -13,3 +13,4 @@ ParMOO API
    modules/libraries
    modules/dtlz
    modules/dev_tools
+   modules/viz

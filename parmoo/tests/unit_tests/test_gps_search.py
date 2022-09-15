@@ -35,16 +35,16 @@ def test_LocalGPS():
     def g(z): return np.ones((2, 3))
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
-    acqu1.setTarget({}, lambda x: np.zeros(1), {})
+    acqu1.setTarget({}, lambda x: np.zeros(2), {})
     acqu1.weights[:] = 0.0
     acqu1.weights[0] = 1.0
     acqu2 = UniformWeights(o, lb, ub, {})
-    acqu2.setTarget({}, lambda x: np.zeros(1), {})
+    acqu2.setTarget({}, lambda x: np.zeros(2), {})
     acqu2.weights[:] = 0.0
     acqu2.weights[1] = 1.0
     # Create a third acquisition function targeting a random tradeoff solution
     acqu3 = UniformWeights(o, lb, ub, {})
-    acqu3.setTarget({}, lambda x: np.zeros(1), {})
+    acqu3.setTarget({}, lambda x: np.zeros(2), {})
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -68,7 +68,7 @@ def test_LocalGPS():
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
-    opt.setLagrangian(L, g)
+    opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)
     # Try to solve with invalid inputs to test error handling
@@ -134,16 +134,16 @@ def test_GlobalGPS():
     def g(z): return np.ones((2, 3))
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
-    acqu1.setTarget({}, lambda x: np.zeros(1), {})
+    acqu1.setTarget({}, lambda x: np.zeros(2), {})
     acqu1.weights[:] = 0.0
     acqu1.weights[0] = 1.0
     acqu2 = UniformWeights(o, lb, ub, {})
-    acqu2.setTarget({}, lambda x: np.zeros(1), {})
+    acqu2.setTarget({}, lambda x: np.zeros(2), {})
     acqu2.weights[:] = 0.0
     acqu2.weights[1] = 1.0
     # Create a third acquisition function targeting a random tradeoff solution
     acqu3 = UniformWeights(o, lb, ub, {})
-    acqu3.setTarget({}, lambda x: np.zeros(1), {})
+    acqu3.setTarget({}, lambda x: np.zeros(2), {})
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -177,7 +177,7 @@ def test_GlobalGPS():
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
-    opt.setLagrangian(L, g)
+    opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)
     # Try to solve with invalid inputs to test error handling

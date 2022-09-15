@@ -52,11 +52,18 @@ ParMOO's base has the following dependencies:
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
  * pyDOE_ -- for generating experimental designs
+ * pandas_ -- for exporting the resulting databases
 
 Additional dependencies are needed to use the additional features in
 ``parmoo.extras``:
 
  * libEnsemble_ -- for managing parallel simulation evaluations
+
+And for using the Pareto front visualization library in ``parmoo.viz``:
+
+ * plotly_ -- for generating interactive plots
+ * dash_ -- for hosting interactive plots in your browser
+ * kaleido_ -- for exporting static plots post-interaction
 
 Installation
 ------------
@@ -260,11 +267,15 @@ Please read our LICENSE_ and CONTRIBUTING_ files.
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
 .. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
+.. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
+.. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
+.. _pandas: https://pandas.pydata.org
+.. _plotly: https://plotly.com/python
 .. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
 .. _pytest-cov: https://pytest-cov.readthedocs.io/en/latest

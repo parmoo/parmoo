@@ -809,6 +809,26 @@ and
 To understand the format of these outputs, please revisit the section on
 :ref:`The name Key and ParMOO Output Types <naming>`.
 
+Finally, if you have installed ParMOO with its extra dependencies
+(see the :ref:`Advanced Installation <install>`),
+then you can visualize your results using any of the
+:func:`viz.scatter() <viz.plot.scatter>`,
+:func:`viz.parallel_coordinates() <viz.plot.parallel_coordinates>`, or
+:func:`viz.radar() <viz.plot.radar>` functions.
+
+.. code-block:: python
+
+    from parmoo.viz import scatter
+
+    scatter(moop)
+
+Note that these plots are interactive and will render in a Dash app
+hosted locally on your computer.
+There are known issues when using the Chrome browser.
+
+For more information, view the complete
+:mod:`viz API page <viz.plot>`.
+
 Built-in and Custom Components
 ------------------------------
 
