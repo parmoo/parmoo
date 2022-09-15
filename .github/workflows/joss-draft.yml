@@ -2,7 +2,7 @@ name: JOSS Paper build
 
 on:
   push:
-    branches: [ joss ]
+    branches: [ joss, joss-rev ]
 
 jobs:
   paper:
