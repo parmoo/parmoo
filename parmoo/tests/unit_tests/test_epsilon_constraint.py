@@ -26,7 +26,7 @@ def test_RandomConstraint():
     # Initialize a good instance
     acqu = RandomConstraint(3, np.zeros(3), np.ones(3), {})
     # Try some bad targets to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         acqu.setTarget(5, lambda x: np.zeros(1), {})
     with pytest.raises(AttributeError):
         acqu.setTarget({'x_vals': []}, lambda x: np.zeros(0), {})
@@ -39,7 +39,7 @@ def test_RandomConstraint():
     with pytest.raises(ValueError):
         acqu.setTarget({'x_vals': np.ones((1, 3)), 'f_vals': np.ones((1, 1))},
                        lambda x: np.zeros(0), {})
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         acqu.setTarget(data, 5, {})
     with pytest.raises(ValueError):
         acqu.setTarget(data, lambda x, y: np.zeros(0), {})
@@ -58,7 +58,7 @@ def test_RandomConstraint():
                                  {}) < 1.0))
     assert(acqu.setTarget(data, lambda x: np.zeros(3), {}) in data['x_vals'])
     # Try some bad scalarizations to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         acqu.scalarize(5)
     with pytest.raises(ValueError):
         acqu.scalarize(np.ones(2))
@@ -74,11 +74,11 @@ def test_RandomConstraint():
         assert(acqu.scalarize(fi) <= np.sum(fi) or
                np.any(fi > acqu.f_ub))
     # Try some bad gradient scalarizations to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         acqu.scalarizeGrad(5, np.zeros((3, 4))[0])
     with pytest.raises(ValueError):
         acqu.scalarizeGrad(np.ones(2), np.zeros((3, 4)))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         acqu.scalarizeGrad(np.eye(3)[0], 5)
     with pytest.raises(ValueError):
         acqu.scalarizeGrad(np.eye(3)[0], np.zeros((2, 4)))

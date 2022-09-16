@@ -592,7 +592,7 @@ def test_MOOP_evaluateSurrogates():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Now try some bad evaluations
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         moop1.evaluateSurrogates(10.0)
     with pytest.raises(ValueError):
         moop1.evaluateSurrogates(np.zeros(1))
@@ -706,7 +706,7 @@ def test_MOOP_evaluateConstraints():
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
     # Now try some bad evaluations
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         moop1.evaluateConstraints(10.0)
     with pytest.raises(ValueError):
         moop1.evaluateConstraints(np.zeros(1))
@@ -857,7 +857,7 @@ def test_MOOP_evaluatePenalty():
     assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
     assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
     # Now try some bad evaluations
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         moop1.evaluatePenalty(10.0)
     with pytest.raises(ValueError):
         moop1.evaluatePenalty(np.zeros(1))
@@ -977,7 +977,7 @@ def test_MOOP_evaluateGradients():
     moop1.addConstraint({'constraint': c2})
     assert(np.all(moop1.evaluateGradients(np.ones(3)) == result))
     # Now try some bad evaluations
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         moop1.evaluateGradients(10.0)
     with pytest.raises(ValueError):
         moop1.evaluateGradients(np.zeros(1))
@@ -1568,7 +1568,7 @@ def test_MOOP_solve():
     # Try to solve several invalid problems/budgets to test error handling
     with pytest.raises(ValueError):
         moop1.solve(-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         moop1.solve(2.0)
     # Solve the MOOP with 6 iterations
     moop1.solve(6)

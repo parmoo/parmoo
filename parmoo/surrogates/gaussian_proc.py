@@ -55,7 +55,7 @@ class GaussRBF(SurrogateFunction):
         from parmoo.util import xerror
 
         # Check inputs
-        xerror(m, lb, ub, hyperparams)
+        xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
         # Initialize problem dimensions
         self.m = m
         self.lb = lb
@@ -67,7 +67,7 @@ class GaussRBF(SurrogateFunction):
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros((0, 0))
         # Check for the 'nugget' optional value in hyperparams
-        if 'nugget' in hyperparams.keys():
+        if 'nugget' in hyperparams:
             if isinstance(hyperparams['nugget'], float):
                 self.nugget = hyperparams['nugget']
                 if self.nugget < 0.0:
@@ -78,7 +78,7 @@ class GaussRBF(SurrogateFunction):
                                  + " value")
         else:
             self.nugget = 0.0
-        if 'des_tols' in hyperparams.keys():
+        if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
                     if np.all(hyperparams['des_tols'] > 0.0):
@@ -115,14 +115,14 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x and f values are legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         if isinstance(f, np.ndarray):
             if f.shape[0] == 0:
                 raise ValueError("no data provided")
             if self.m != np.size(f[0, :]):
                 raise ValueError("each row of f must have length m")
         else:
-            raise ValueError("f must be a numpy array")
+            raise TypeError("f must be a numpy array")
         if x.shape[0] != f.shape[0]:
             raise ValueError("x and f must have equal lengths")
         # Initialize the internal database with x and f
@@ -171,14 +171,14 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x and f values are legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         if isinstance(f, np.ndarray):
             if f.shape[0] == 0:
                 return    # No new data, do nothing
             if self.m != np.size(f[0, :]):
                 raise ValueError("each row of f must have length m")
         else:
-            raise ValueError("f must be a numpy array")
+            raise TypeError("f must be a numpy array")
         if x.shape[0] != f.shape[0]:
             raise ValueError("x and f must have equal lengths")
         # Update the internal database with x and f
@@ -238,7 +238,7 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -264,7 +264,7 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -296,7 +296,7 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -440,7 +440,7 @@ class LocalGaussRBF(SurrogateFunction):
         from parmoo.util import xerror
 
         # Check inputs
-        xerror(m, lb, ub, hyperparams)
+        xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
         # Initialize problem dimensions
         self.m = m
         self.lb = lb
@@ -455,7 +455,7 @@ class LocalGaussRBF(SurrogateFunction):
         self.tr_center = np.zeros(0)
         self.loc_inds = []
         # Check for the 'nugget' optional value in hyperparams
-        if 'nugget' in hyperparams.keys():
+        if 'nugget' in hyperparams:
             if isinstance(hyperparams['nugget'], float):
                 self.nugget = hyperparams['nugget']
                 if self.nugget < 0.0:
@@ -467,7 +467,7 @@ class LocalGaussRBF(SurrogateFunction):
         else:
             self.nugget = 0.0
         # Check for the 'n_loc' optional value in hyperparams
-        if 'n_loc' in hyperparams.keys():
+        if 'n_loc' in hyperparams:
             if isinstance(hyperparams['n_loc'], int):
                 self.n_loc = hyperparams['n_loc']
                 if self.n_loc < self.n + 1:
@@ -479,7 +479,7 @@ class LocalGaussRBF(SurrogateFunction):
         else:
             self.n_loc = self.n + 1
         # Check for 'des_tols' optional key in hyperparms
-        if 'des_tols' in hyperparams.keys():
+        if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
                     if np.all(hyperparams['des_tols'] > 0.0):
@@ -516,14 +516,14 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x and f values are legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         if isinstance(f, np.ndarray):
             if f.shape[0] == 0:
                 raise ValueError("no data provided")
             if self.m != np.size(f[0, :]):
                 raise ValueError("each row of f must have length m")
         else:
-            raise ValueError("f must be a numpy array")
+            raise TypeError("f must be a numpy array")
         if x.shape[0] != f.shape[0]:
             raise ValueError("x and f must have equal lengths")
         # Initialize the internal database with x and f
@@ -548,14 +548,14 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x and f values are legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         if isinstance(f, np.ndarray):
             if f.shape[0] == 0:
                 return    # No new data, do nothing
             if self.m != np.size(f[0, :]):
                 raise ValueError("each row of f must have length m")
         else:
-            raise ValueError("f must be a numpy array")
+            raise TypeError("f must be a numpy array")
         if x.shape[0] != f.shape[0]:
             raise ValueError("x and f must have equal lengths")
         # Update the internal database with x and f
@@ -581,7 +581,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the center is legal
         if not isinstance(center, np.ndarray):
-            raise ValueError("center must be a numpy array")
+            raise TypeError("center must be a numpy array")
         else:
             if center.size != self.n:
                 raise ValueError("center must have length n")
@@ -639,7 +639,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -666,7 +666,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -699,7 +699,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")

@@ -56,7 +56,7 @@ class LocalGPS(SurrogateOptimizer):
         from parmoo.util import xerror
 
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         self.lb = lb
         self.ub = ub
@@ -69,7 +69,7 @@ class LocalGPS(SurrogateOptimizer):
                 else:
                     self.budget = hyperparams['opt_budget']
             else:
-                raise ValueError("hyperparams['opt_budget'] "
+                raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
             self.budget = 10000
@@ -93,7 +93,7 @@ class LocalGPS(SurrogateOptimizer):
                 # Add obj_func to the problem
                 self.objectives = obj_func
         else:
-            raise ValueError("obj_func() must be callable")
+            raise TypeError("obj_func() must be callable")
         return
 
     def setReset(self, reset):
@@ -140,7 +140,7 @@ class LocalGPS(SurrogateOptimizer):
                 # Add constraint_func to the problem
                 self.constraints = constraint_func
         else:
-            raise ValueError("constraint_func() must be callable")
+            raise TypeError("constraint_func() must be callable")
         return
 
     def addAcquisition(self, *args):
@@ -155,7 +155,7 @@ class LocalGPS(SurrogateOptimizer):
 
         # Check for illegal inputs
         if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
-            raise ValueError("Args must be instances of AcquisitionFunction")
+            raise TypeError("Args must be instances of AcquisitionFunction")
         # Append all arguments to the acquisitions list
         for arg in args:
             self.acquisitions.append(arg)
@@ -182,7 +182,7 @@ class LocalGPS(SurrogateOptimizer):
                 raise ValueError("The rows of x must match the number " +
                                  "of acquisition functions")
         else:
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         # Check that x is feasible.
         for xj in x:
             if any(self.constraints(xj) > 0.00000001) or \
@@ -286,7 +286,7 @@ class GlobalGPS(SurrogateOptimizer):
         from parmoo.util import xerror
 
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         self.lb = lb
         self.ub = ub
@@ -299,7 +299,7 @@ class GlobalGPS(SurrogateOptimizer):
                 else:
                     budget = hyperparams['opt_budget']
             else:
-                raise ValueError("hyperparams['opt_budget'] "
+                raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
             budget = 10000
@@ -316,7 +316,7 @@ class GlobalGPS(SurrogateOptimizer):
                 else:
                     self.gps_budget = hyperparams['gps_budget']
             else:
-                raise ValueError("hyperparams['gps_budget'] "
+                raise TypeError("hyperparams['gps_budget'] "
                                  "must be an integer")
         else:
             self.gps_budget = int(budget / 2)
@@ -342,7 +342,7 @@ class GlobalGPS(SurrogateOptimizer):
                 # Add obj_func to the problem
                 self.objectives = obj_func
         else:
-            raise ValueError("obj_func() must be callable")
+            raise TypeError("obj_func() must be callable")
         return
 
     def setReset(self, reset):
@@ -389,7 +389,7 @@ class GlobalGPS(SurrogateOptimizer):
                 # Add constraint_func to the problem
                 self.constraints = constraint_func
         else:
-            raise ValueError("constraint_func() must be callable")
+            raise TypeError("constraint_func() must be callable")
         return
 
     def addAcquisition(self, *args):
@@ -404,7 +404,7 @@ class GlobalGPS(SurrogateOptimizer):
 
         # Check for illegal inputs
         if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
-            raise ValueError("Args must be instances of AcquisitionFunction")
+            raise TypeError("Args must be instances of AcquisitionFunction")
         # Append all arguments to the acquisitions list
         for arg in args:
             self.acquisitions.append(arg)
@@ -433,7 +433,7 @@ class GlobalGPS(SurrogateOptimizer):
                 raise ValueError("The rows of x must match the number " +
                                  "of acquisition functions")
         else:
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         # Check that x is feasible.
         for xj in x:
             if any(self.constraints(xj) > 0.00000001) or \

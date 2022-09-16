@@ -39,9 +39,9 @@ def test_GaussRBF():
     x_vals_full = np.concatenate((x_vals1, x_vals2), axis=0)
     y_vals_full = np.concatenate((y_vals1, y_vals2), axis=0)
     # Try to fit/update with illegal data to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.fit(0, y_vals1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.fit(x_vals1, 0)
     with pytest.raises(ValueError):
         rbf1.fit(np.zeros((0, 3)), np.zeros((0, 2)))
@@ -49,9 +49,9 @@ def test_GaussRBF():
         rbf1.fit(np.zeros((10, 3)), np.zeros((10, 3)))
     with pytest.raises(ValueError):
         rbf1.fit(np.zeros((10, 3)), np.zeros((9, 2)))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.update(0, y_vals1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.update(x_vals1, 0)
     with pytest.raises(ValueError):
         rbf1.update(np.zeros((10, 3)), np.zeros((10, 3)))
@@ -63,19 +63,19 @@ def test_GaussRBF():
     rbf1.update(np.zeros((0, 3)), np.zeros((0, 2)))    # Update with no data
     rbf2.fit(x_vals_full, y_vals_full)
     # Try a bad function/gradient evaluation to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.evaluate(5)
     with pytest.raises(ValueError):
         rbf1.evaluate(np.zeros(2))
     with pytest.raises(ValueError):
         rbf1.evaluate(-np.ones(3))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.gradient(5)
     with pytest.raises(ValueError):
         rbf1.gradient(np.zeros(2))
     with pytest.raises(ValueError):
         rbf1.gradient(-np.ones(3))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.improve(5, False)
     with pytest.raises(ValueError):
         rbf1.improve(np.zeros(2), False)
@@ -211,9 +211,9 @@ def test_LocalGaussRBF():
     x_vals_full = np.concatenate((x_vals1, x_vals2), axis=0)
     y_vals_full = np.concatenate((y_vals1, y_vals2), axis=0)
     # Try to fit/update with illegal data to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.fit(0, y_vals1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.fit(x_vals1, 0)
     with pytest.raises(ValueError):
         rbf1.fit(np.zeros((0, 3)), np.zeros((0, 2)))
@@ -221,9 +221,9 @@ def test_LocalGaussRBF():
         rbf1.fit(np.zeros((10, 3)), np.zeros((10, 3)))
     with pytest.raises(ValueError):
         rbf1.fit(np.zeros((10, 3)), np.zeros((9, 2)))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.update(0, y_vals1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.update(x_vals1, 0)
     with pytest.raises(ValueError):
         rbf1.update(np.zeros((10, 3)), np.zeros((10, 3)))
@@ -237,26 +237,26 @@ def test_LocalGaussRBF():
     rbf2.fit(x_vals_full, y_vals_full)
     rbf2.setCenter(0.5 * np.ones(3))
     # Try to set the center with illegal values to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.setCenter(5)
     with pytest.raises(ValueError):
         rbf1.setCenter(np.zeros(5))
     with pytest.raises(ValueError):
         rbf1.setCenter(-np.ones(3))
     # Try a bad function/gradient evaluation to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.evaluate(5)
     with pytest.raises(ValueError):
         rbf1.evaluate(np.zeros(2))
     with pytest.raises(ValueError):
         rbf1.evaluate(-np.ones(3))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.gradient(5)
     with pytest.raises(ValueError):
         rbf1.gradient(np.zeros(2))
     with pytest.raises(ValueError):
         rbf1.gradient(-np.ones(3))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rbf1.improve(5, False)
     with pytest.raises(ValueError):
         rbf1.improve(np.zeros(2), False)

@@ -51,7 +51,7 @@ class RandomConstraint(AcquisitionFunction):
         from parmoo.util import xerror
 
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.o = o
         # Set the design variable count
         self.n = np.size(lb)
@@ -94,12 +94,12 @@ class RandomConstraint(AcquisitionFunction):
         no_data = False
         # Check for illegal input from data
         if not isinstance(data, dict):
-            raise ValueError("data must be a dict")
+            raise TypeError("data must be a dict")
         else:
-            if ('x_vals' in data.keys()) != ('f_vals' in data.keys()):
+            if ('x_vals' in data) != ('f_vals' in data):
                 raise AttributeError("if x_vals is a key in data, then " +
                                      "f_vals must also appear")
-            elif 'x_vals' in data.keys():
+            elif 'x_vals' in data:
                 if data['x_vals'] is not None and data['f_vals'] is not None:
                     if data['x_vals'].shape[0] != data['f_vals'].shape[0]:
                         raise ValueError("x_vals and f_vals must be equal " +
@@ -120,7 +120,7 @@ class RandomConstraint(AcquisitionFunction):
                 raise ValueError("lagrange_func() must accept exactly one"
                                  + " input")
         else:
-            raise ValueError("lagrange_func() must be callable")
+            raise TypeError("lagrange_func() must be callable")
         if no_data:
             # If data is empty, then the Pareto front is empty
             pf = {'x_vals': np.zeros((0, self.n)),
@@ -183,7 +183,7 @@ class RandomConstraint(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Return the weighted sum of objectives, if the bounds are satisfied
         result = np.dot(f_vals, self.weights)
         for i in range(self.o):
@@ -212,13 +212,13 @@ class RandomConstraint(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Check that the gradient values are legal
         if isinstance(g_vals, np.ndarray):
             if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
                 raise ValueError("g_vals must have shape o-by-n")
         else:
-            raise ValueError("g_vals must be a numpy array")
+            raise TypeError("g_vals must be a numpy array")
         # Compute the dot product between the weights and the gradient values
         result = np.dot(np.transpose(g_vals), self.weights)
         # Add the gradient of the penalty for any bound violations

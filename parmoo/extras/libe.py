@@ -46,7 +46,7 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
     from libensemble.tools.persistent_support import PersistentSupport
 
     # Get moop from pers_info
-    if 'moop' in persis_info.keys():
+    if 'moop' in persis_info:
         moop = persis_info['moop']
         if not isinstance(moop, MOOP):
             raise TypeError("persis_info['moop'] must be an instance of " +
