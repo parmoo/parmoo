@@ -16,6 +16,7 @@ The classes include:
 import numpy as np
 import inspect
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
+from parmoo.util import xerror
 
 
 class LocalGPS(SurrogateOptimizer):
@@ -52,8 +53,6 @@ class LocalGPS(SurrogateOptimizer):
             SurrogateOptimizer: A new SurrogateOptimizer object.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
@@ -282,8 +281,6 @@ class GlobalGPS(SurrogateOptimizer):
             SurrogateOptimizer: A new SurrogateOptimizer object.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)

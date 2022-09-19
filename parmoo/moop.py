@@ -506,8 +506,10 @@ class MOOP:
         try:
             # Try initializing the optimizer, to check that it can be done
             opt = opt_func(1, np.zeros(1), np.ones(1), self.hyperparams)
-            assert(isinstance(opt, structs.SurrogateOptimizer))
         except BaseException:
+            raise TypeError("opt_func must be a derivative of the "
+                            + "SurrogateOptimizer abstract class")
+        if not isinstance(opt, structs.SurrogateOptimizer):
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")
         self.optimizer = opt_func
@@ -1141,8 +1143,10 @@ class MOOP:
                                                  self.scaled_lb,
                                                  self.scaled_ub,
                                                  hyperparams)
-                assert(isinstance(acquisition, structs.AcquisitionFunction))
             except BaseException:
+                raise TypeError("'acquisition' must specify a child of the"
+                                + " AcquisitionFunction class")
+            if not isinstance(acquisition, structs.AcquisitionFunction):
                 raise TypeError("'acquisition' must specify a child of the"
                                 + " AcquisitionFunction class")
             # If all checks passed, add the acquisition to the list

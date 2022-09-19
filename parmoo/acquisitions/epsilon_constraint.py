@@ -12,6 +12,7 @@ The classes include:
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
+from parmoo.util import xerror
 
 
 class RandomConstraint(AcquisitionFunction):
@@ -47,8 +48,6 @@ class RandomConstraint(AcquisitionFunction):
             RandomConstraint: A new RandomConstraint scalarizer.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)

@@ -12,6 +12,7 @@ The classes include:
 import numpy as np
 from parmoo.structs import GlobalSearch
 from pyDOE import lhs
+from parmoo.util import xerror
 
 
 class LatinHypercube(GlobalSearch):
@@ -46,8 +47,6 @@ class LatinHypercube(GlobalSearch):
             LatinHypercube: A new LatinHypercube object.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
@@ -85,8 +84,6 @@ class LatinHypercube(GlobalSearch):
             to be evaluated.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(lb=lb, ub=ub)

@@ -713,7 +713,10 @@ class libE_MOOP(MOOP):
 
         if nworkers < 2:
             raise ValueError("Cannot run ParMOO + libE with less than 2 " +
-                             "workers -- aborting...")
+                             "workers -- aborting...\n\n" +
+                             "Note: this error could be caused by a " +
+                             "failure to specify the communication mode " +
+                             " (e.g., local comms or MPI)")
 
         # Get the max m for all SimGroups
         max_m = max(self.moop.m)

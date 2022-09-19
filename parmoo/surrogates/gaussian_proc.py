@@ -13,6 +13,7 @@ The classes include:
 import numpy as np
 from parmoo.structs import SurrogateFunction
 from scipy.spatial.distance import cdist
+from parmoo.util import xerror
 
 
 class GaussRBF(SurrogateFunction):
@@ -51,8 +52,6 @@ class GaussRBF(SurrogateFunction):
             GaussRBF: A new GaussRBF object.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
@@ -436,8 +435,6 @@ class LocalGaussRBF(SurrogateFunction):
             LocalGaussRBF: A new LocalGaussRBF object.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)

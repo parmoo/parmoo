@@ -13,6 +13,7 @@ The classes include:
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
+from parmoo.util import xerror
 
 
 class UniformWeights(AcquisitionFunction):
@@ -46,8 +47,6 @@ class UniformWeights(AcquisitionFunction):
             UniformWeights: A new UniformWeights generator.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
@@ -230,8 +229,6 @@ class FixedWeights(AcquisitionFunction):
             FixedWeights: A new FixedWeights generator.
 
         """
-
-        from parmoo.util import xerror
 
         # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
