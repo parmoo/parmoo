@@ -54,21 +54,21 @@ Additionally, ParMOO is:
 
 Existing open source, actively maintained Python packages for solving
 generic multiobjective simulation optimization problems include
-``pymoo`` @pymoo,
-``pymoso`` @pymoso,
-``Dragonfly`` @dragonfly,
-``Playtpus`` @platypus,
-``jMetalPy`` @jMetalPy, and
-``pygmo`` @pygmo.
+``pymoo`` [@pymoo],
+``pymoso`` [@pymoso],
+``Dragonfly`` [@dragonfly],
+``Playtpus`` [@platypus],
+``jMetalPy`` [@jMetalPy], and
+``pygmo`` [@pygmo].
 Non multiobjective optimization specific Python packages, that are
 often used for implementing multiobjective optimization solvers include
-``BoTorch`` @botorch and
-``DEAP`` @deap.
+``BoTorch`` [@botorch] and
+``DEAP`` [@deap].
 Other non Python packages include
-the Fortran solvers ``MODIR`` @modir and
-``VTMOP`` @vtmop, and
-the Matlab toolboxes ``PlatEMO`` @platemo and
-``BoostDFO`` @boostdfo.
+the Fortran solvers ``MODIR`` [@modir] and
+``VTMOP`` [@vtmop], and
+the Matlab toolboxes ``PlatEMO`` [@platemo] and
+``BoostDFO`` [@boostdfo].
 
 The above-listed software packages:
 
@@ -172,9 +172,21 @@ property 7, we describe two current applications.
 First, ParMOO is currently being used to calibrate energy density functional
 (EDF) models, by minimizing the error between expensive simulation outputs and
 experimental data.
-In this context, the simulation-based structure comes from the known equation
-of the empirical loss function, such as the sum-of-squared errors for
-a particular class of simulation outputs.
+Let $S_1$, $\ldots$, $S_m$ denote the $m$ observable outputs of an EDF model
+$S$ (in our particular case $m=198$).
+Then we want to calibrate $S$ by solving the multiobjective problem
+$$
+\min_{x \in [0,1]^n} \big(\sum_{i\in C_1} S_i, \sum_{j\in C_2} S_j, \sum_{k\in C_3} S_k}\big)
+$$
+where $C_1$, $C_2$, and $C_3$ are a partitioning of the indices
+$1$, $\ldots$, $m$ into three observable classes, each with different but
+unknown observation and measurement errors; and $x$ is a set of $n=13$
+unknown modeling parameters for $S$, normalized to lie in the unit hypercube.
+In this context, the simulation-based structure comes from the known
+sum-of-squares equation of the empirical loss function.
+By modeling, the $m$ simulation outputs separately from the three objectives,
+ParMOO is able to exploit this sum-of-squares structure, similarly as
+in the single-objective software ``POUNDERS`` [@pounders].
 This example also illustrates ParMOO's ability to utilize
 parallel resources (property 4), since the expensive EDF simulations
 are being distributed over HPC resources using libEnsemble.
@@ -183,13 +195,19 @@ Second, ParMOO is being used to automate material design and manufacturing
 in a wet lab-based environment, where each "simulation evaluation"
 corresponds to the experimental synthesis and characterization of a
 particular material.
+In this example, the goal is to maximize the yield and minimize the byproduct
+of an experimental chemical synthesis, which is carried out in a
+continuous-flow reactor and characterized using nuclear magnetic resonance
+spectroscopy, while also maximizing the reaction temperature which is a
+directly controllable variable.
 The simulation-based structure in this problem comes from the known dependence
-between the computed objectives (such as the total material yield and
-byproduct) and the raw experimental data, which is typically a distribution
-of measurements.
+between the directly controllable objective (the reaction temperature),
+while still accounting for the two experimental "blackbox" objectives
+(the total material yield and byproduct).
 This example also demonstrates how ParMOO is able to easily integrate with
-the material scientists' tools and workflow (property 1), which could not
-be wrapped in a simple Python simulation function.
+the material scientists' tools and workflow (property 1), which had to be
+facilitated using third-party libraries since the interface to the physical
+experiment could not be wrapped in a simple callable Python function.
 
 # Acknowledgements
 
