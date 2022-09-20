@@ -41,3 +41,8 @@ results = my_moop.getPF()
 
 # Display solution
 print(results, "\n dtype=" + str(results.dtype))
+
+# Plot results -- must have extra viz dependencies installed
+from parmoo.viz import scatter
+# The optional arg `output` exports directly to jpg instead of interactive mode
+scatter(my_moop, output="jpeg")

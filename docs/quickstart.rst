@@ -224,6 +224,13 @@ results can be viewed using
    my_moop.solve(5) # Solve with 5 iterations of ParMOO algorithm
    results = my_moop.getPF() # Extract the results
 
+After executing the above block of code, the ``results`` variable points to
+a numpy structured array, each of whose entries corresponds to a
+nondominated objective value in the ``my_moop`` object's final database.
+You can reference individual fields in the ``results`` array by using the
+``name`` keys that were assigned during ``my_moop``'s construction, or
+plot the results by using the :doc:`viz <modules/viz>` library.
+
 Congratulations, you now know enough to get started solving MOOPs!
 
 Minimal Working Example
@@ -234,9 +241,19 @@ Putting it all together, we get the following minimal working example.
 .. literalinclude:: ../examples/quickstart.py
     :language: python
 
-The above code produces the output below.
+The above code saves all (approximate) Pareto optimal solutions in the
+``results`` variable, and prints the ``results`` variable to the standard
+output:
 
 .. literalinclude:: ../examples/quickstart.out
+
+And produces the following figure of the Pareto points:
+
+.. figure:: ../examples/Pareto\ Front.jpeg
+    :alt: Scatter plot of the Pareto front after solving demo problem
+    :align: center
+
+|
 
 Next Steps
 ----------
@@ -250,6 +267,8 @@ Next Steps
    :doc:`More Tutorials <tutorials/basic-tutorials>`.
  * To start solving MOOPs on parallel hardware, install libEnsemble_ and
    see the :doc:`libEnsemble tutorial <tutorials/libe-tutorial>`.
+ * To interactively explore your solutions, install its extra dependencies and
+   use our built-in :doc:`viz <modules/viz>` tool.
 
 Resources
 ---------

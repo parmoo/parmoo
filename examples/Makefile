@@ -1,8 +1,10 @@
 OUT_FILES = quickstart.out named_var_ex.out unnamed_var_ex.out \
 			precomputed_data.out checkpointing.out advanced_ex.out \
-			libe_basic_ex.out
+			libe_basic_ex.out Pareto\ Front.jpeg
 
 all: $(OUT_FILES)
+
+Pareto Front.jpeg: quickstart.out
 
 quickstart.out: quickstart.py
 	python3 quickstart.py > quickstart.out

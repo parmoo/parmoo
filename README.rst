@@ -227,6 +227,13 @@ results can be viewed using ``MOOP.getPF()`` method.
    my_moop.solve(5) # Solve with 5 iterations of ParMOO algorithm
    results = my_moop.getPF() # Extract the results
 
+After executing the above block of code, the ``results`` variable points to
+a numpy structured array, each of whose entries corresponds to a
+nondominated objective value in the ``my_moop`` object's final database.
+You can reference individual fields in the ``results`` array by using the
+``name`` keys that were assigned during ``my_moop``'s construction, or
+plot the results by using the viz_ library.
+
 Congratulations, you now know enough to get started solving MOOPs with
 ParMOO!
 
@@ -238,6 +245,8 @@ Next steps:
  * Explore the advanced examples (including a ``libEnsemble`` example)
    in the ``examples`` directory.
  * Install libEnsemble_ and get started solving MOOPs in parallel.
+ * To interactively explore your solutions, install its extra dependencies and
+   use our built-in viz_ tool.
 
 Resources
 ---------
@@ -285,3 +294,4 @@ Citing ParMOO:
 .. _Python: https://www.python.org/downloads
 .. _ReadTheDocs: https://parmoo.readthedocs.org
 .. _scipy: https://scipy.org
+.. _viz: https://parmoo.readthedocs.io/en/latest/modules/viz.html
