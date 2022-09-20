@@ -176,7 +176,7 @@ Let $S_1$, $\ldots$, $S_m$ denote the $m$ observable outputs of an EDF model
 $S$ (in our particular case $m=198$).
 Then we want to calibrate $S$ by solving the multiobjective problem
 $$
-\min_{x \in [0,1]^n} \big(\sum_{i\in C_1} S_i, \sum_{j\in C_2} S_j, \sum_{k\in C_3} S_k}\big)
+\min_{x \in [0,1]^n} \big(\sum_{i\in C_1} S_i, \sum_{j\in C_2} S_j, \sum_{k\in C_3} S_k\big)
 $$
 where $C_1$, $C_2$, and $C_3$ are a partitioning of the indices
 $1$, $\ldots$, $m$ into three observable classes, each with different but
