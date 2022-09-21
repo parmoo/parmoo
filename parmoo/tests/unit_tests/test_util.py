@@ -26,8 +26,9 @@ def test_xerror():
         xerror(3, np.ones(4), np.zeros(4), {})
     with pytest.raises(TypeError):
         xerror(3, np.zeros(4), np.ones(4), 5)
-    # Perform one good initialization, to confirm that it passes
-    xerror(3, np.zeros(4), np.ones(4), {})
+    # Perform two good initialization, to confirm that it passes
+    xerror(o=3, lb=np.zeros(4), ub=np.ones(4), hyperparams={})
+    xerror()
 
 
 def test_check_sims():

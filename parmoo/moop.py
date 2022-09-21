@@ -506,8 +506,10 @@ class MOOP:
         try:
             # Try initializing the optimizer, to check that it can be done
             opt = opt_func(1, np.zeros(1), np.ones(1), self.hyperparams)
-            assert(isinstance(opt, structs.SurrogateOptimizer))
         except BaseException:
+            raise TypeError("opt_func must be a derivative of the "
+                            + "SurrogateOptimizer abstract class")
+        if not isinstance(opt, structs.SurrogateOptimizer):
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")
         self.optimizer = opt_func
@@ -580,13 +582,13 @@ class MOOP:
             if not isinstance(arg, dict):
                 raise TypeError("Each argument must be a Python dict")
             # Check for design variable type
-            if 'des_type' in arg.keys():
+            if 'des_type' in arg:
                 if not isinstance(arg['des_type'], str):
                     raise TypeError("args['des_type'] must be a str")
             # Append a new continuous design variable (default) to the list
-            if 'des_type' not in arg.keys() or \
+            if 'des_type' not in arg or \
                arg['des_type'] in ["continuous", "cont", "real"]:
-                if 'des_tol' in arg.keys():
+                if 'des_tol' in arg:
                     if isinstance(arg['des_tol'], float):
                         if arg['des_tol'] > 0.0:
                             des_tol = arg['des_tol']
@@ -597,7 +599,7 @@ class MOOP:
                         raise TypeError("args['des_tol'] must be a float")
                 else:
                     des_tol = 1.0e-8
-                if 'lb' in arg.keys() and 'ub' in arg.keys():
+                if 'lb' in arg and 'ub' in arg:
                     if not (isinstance(arg['lb'], float) and
                             isinstance(arg['ub'], float)):
                         raise TypeError("args['lb'] and args['ub'] must "
@@ -610,7 +612,7 @@ class MOOP:
                     raise AttributeError("'lb' and 'ub' keys must be "
                                          + "present when 'des_type' is "
                                          + "'continuous'")
-                if 'name' in arg.keys():
+                if 'name' in arg:
                     if isinstance(arg['name'], str):
                         if any([arg['name'] == dname[0]
                                 for dname in self.des_names]):
@@ -636,7 +638,7 @@ class MOOP:
                 self.cont_ub.append(arg['ub'])
             # Append a new categorical design variable to the list
             elif arg['des_type'] in ["categorical", "cat"]:
-                if 'levels' in arg.keys():
+                if 'levels' in arg:
                     if isinstance(arg['levels'], int):
                         if arg['levels'] < 2:
                             raise ValueError("args['levels'] must be at "
@@ -655,7 +657,7 @@ class MOOP:
                 else:
                     raise AttributeError("'levels' must be present when "
                                          + "'des_type' is 'categorical'")
-                if 'name' in arg.keys():
+                if 'name' in arg:
                     if not isinstance(arg['name'], str):
                         raise TypeError("When present, 'name' must be a "
                                         + "str type")
@@ -677,19 +679,19 @@ class MOOP:
                 if isinstance(arg['levels'], int):
                     self.n_lvls.append(arg['levels'])
                     self.cat_names.append([])
-                    if 'name' in arg.keys():
+                    if 'name' in arg:
                         self.des_names.append((arg['name'], 'i4'))
                 else:
                     self.n_lvls.append(len(arg['levels']))
                     self.cat_names.append(arg['levels'])
-                    if 'name' in arg.keys():
+                    if 'name' in arg:
                         self.des_names.append((arg['name'], 'U25'))
                 self.__generate_encoding__()
             # Add an integer design variable
             elif arg['des_type'] in ["integer", "int"]:
                 # Relax to a continuous design variable with des_tol = 0.5
                 des_tol = 0.5
-                if 'lb' in arg.keys() and 'ub' in arg.keys():
+                if 'lb' in arg and 'ub' in arg:
                     if not (isinstance(arg['lb'], int) and
                             isinstance(arg['ub'], int)):
                         raise TypeError("args['lb'] and args['ub'] must "
@@ -702,7 +704,7 @@ class MOOP:
                     raise AttributeError("'lb' and 'ub' keys must be "
                                          + "present when 'des_type' is "
                                          + "'integer'")
-                if 'name' in arg.keys():
+                if 'name' in arg:
                     if isinstance(arg['name'], str):
                         if any([arg['name'] == dname[0]
                                 for dname in self.des_names]):
@@ -728,7 +730,7 @@ class MOOP:
                 self.int_ub.append(arg['ub'])
             # Append a new custom design variable to the list
             elif arg['des_type'] in ["custom"]:
-                if 'embedding_size' in arg.keys():
+                if 'embedding_size' in arg:
                     if isinstance(arg['embedding_size'], int):
                         if arg['embedding_size'] < 1:
                             raise ValueError("args['embedding_size'] must"
@@ -739,18 +741,18 @@ class MOOP:
                 else:
                     raise AttributeError("'embedding_size' must be present"
                                          + " when 'des_type' is 'custom'")
-                if 'dtype' in arg.keys():
+                if 'dtype' in arg:
                     if not isinstance(arg['dtype'], str):
                         raise TypeError("When present, 'dtype' must be a " +
                                         "str type")
                     else:
                         # Make sure this is a legal numpy dtype
                         np.dtype(arg['dtype'])
-                if 'name' in arg.keys():
+                if 'name' in arg:
                     if not isinstance(arg['name'], str):
                         raise TypeError("When present, 'name' must be a "
                                         + "str type")
-                    if 'dtype' in arg.keys():
+                    if 'dtype' in arg:
                         self.des_names.append((arg['name'], arg['dtype']))
                     else:
                         self.des_names.append((arg['name'], 'U25'))
@@ -760,14 +762,14 @@ class MOOP:
                                      + self.n_custom + self.n_raw + 1)
                     self.des_names.append((name, 'f8', ))
                 # Load the custom embedder/extracter
-                if 'embedder' in arg.keys():
+                if 'embedder' in arg:
                     if not callable(arg['embedder']):
                         raise TypeError("'embedder' must be a "
                                         + "callable object")
                 else:
                     raise AttributeError("'embedder' must be present"
                                          + " when 'des_type' is 'custom'")
-                if 'extracter' in arg.keys():
+                if 'extracter' in arg:
                     if not callable(arg['extracter']):
                         raise TypeError("'extracter' must be a "
                                         + "callable object")
@@ -791,7 +793,7 @@ class MOOP:
                     self.custom_des_tols.append(1.0e-8)
             # Append a new raw design variable to the list
             elif arg['des_type'] in ["raw"]:
-                if 'name' in arg.keys():
+                if 'name' in arg:
                     if not isinstance(arg['name'], str):
                         raise TypeError("When present, 'name' must be a "
                                         + "str type")
@@ -894,7 +896,7 @@ class MOOP:
             # Use the number of sims
             m = arg['m']
             # Keep track of simulation names
-            if 'name' in arg.keys():
+            if 'name' in arg:
                 if any([arg['name'] == dname[0] for dname in self.sim_names]):
                     raise ValueError("arg['name'] must be unique")
                 if m > 1:
@@ -911,7 +913,7 @@ class MOOP:
             self.m.append(m)
             self.m_total += m
             # Get the hyperparameter dictionary
-            if 'hyperparams' in arg.keys():
+            if 'hyperparams' in arg:
                 hyperparams = arg['hyperparams']
             else:
                 hyperparams = {}
@@ -929,7 +931,7 @@ class MOOP:
             # Get the simulation function
             self.sim_funcs.append(arg['sim_func'])
             # Get the starting database, if present
-            if 'sim_db' in arg.keys():
+            if 'sim_db' in arg:
                 if 'x_vals' in arg['sim_db'] and \
                    's_vals' in arg['sim_db']:
                     # If x_vals and s_vals are present, cast to np.ndarray
@@ -998,7 +1000,7 @@ class MOOP:
         for arg in args:
             if not isinstance(arg, dict):
                 raise TypeError("Each arg must be a Python dict")
-            if 'obj_func' in arg.keys():
+            if 'obj_func' in arg:
                 if callable(arg['obj_func']):
                     if not (len(inspect.signature(arg['obj_func']).parameters)
                             == 2 or
@@ -1013,7 +1015,7 @@ class MOOP:
                 raise AttributeError("The 'obj_func' field must be "
                                      + "present in each arg")
             # Add the objective name
-            if 'name' in arg.keys():
+            if 'name' in arg:
                 if not isinstance(arg['name'], str):
                     raise TypeError("When present, 'name' must be a string")
                 else:
@@ -1067,7 +1069,7 @@ class MOOP:
         for arg in args:
             if not isinstance(arg, dict):
                 raise TypeError("Each arg must be a Python dict")
-            if 'constraint' in arg.keys():
+            if 'constraint' in arg:
                 if callable(arg['constraint']):
                     if not (len(inspect.signature(arg['constraint']).
                                 parameters) == 2 or
@@ -1082,7 +1084,7 @@ class MOOP:
                 raise AttributeError("The 'constraint' field must be "
                                      + "present in each arg")
             # Add the constraint name
-            if 'name' in arg.keys():
+            if 'name' in arg:
                 if not isinstance(arg['name'], str):
                     raise TypeError("When present, 'name' must be a string")
                 else:
@@ -1126,10 +1128,10 @@ class MOOP:
                                  + "objectives")
             if not isinstance(arg, dict):
                 raise TypeError("Every arg must be a Python dict")
-            if 'acquisition' not in arg.keys():
+            if 'acquisition' not in arg:
                 raise AttributeError("'acquisition' field must be present in "
                                      + "every arg")
-            if 'hyperparams' in arg.keys():
+            if 'hyperparams' in arg:
                 if not isinstance(arg['hyperparams'], dict):
                     raise TypeError("When present, 'hyperparams' must be a "
                                     + "Python dict")
@@ -1141,8 +1143,10 @@ class MOOP:
                                                  self.scaled_lb,
                                                  self.scaled_ub,
                                                  hyperparams)
-                assert(isinstance(acquisition, structs.AcquisitionFunction))
             except BaseException:
+                raise TypeError("'acquisition' must specify a child of the"
+                                + " AcquisitionFunction class")
+            if not isinstance(acquisition, structs.AcquisitionFunction):
                 raise TypeError("'acquisition' must specify a child of the"
                                 + " AcquisitionFunction class")
             # If all checks passed, add the acquisition to the list
@@ -1481,7 +1485,7 @@ class MOOP:
             if x.shape[0] != self.n:
                 raise ValueError("x must have length n")
         else:
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         # Evaluate the surrogate models to approximate the simulation outputs
         sim = np.zeros(self.m_total)
         m_count = 0
@@ -1515,7 +1519,7 @@ class MOOP:
             if x.shape[0] != self.n:
                 raise ValueError("x must have length n")
         else:
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         # Special case if there are no constraints, just return [0]
         if self.p == 0:
             return np.zeros(1)
@@ -1555,7 +1559,7 @@ class MOOP:
             if x.shape[0] != self.n:
                 raise ValueError("x must have length n")
         else:
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         # Evaluate the surrogate models to approximate the simulation outputs
         sim = np.zeros(self.m_total)
         m_count = 0
@@ -1599,7 +1603,7 @@ class MOOP:
             if x.shape[0] != self.n:
                 raise ValueError("x must have length n")
         else:
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         # Evaluate the surrogate models to approximate the simulation outputs
         sim = np.zeros(self.m_total)
         m_count = 0
@@ -2028,7 +2032,7 @@ class MOOP:
             if budget < 0:
                 raise ValueError("budget must be nonnegative")
         else:
-            raise ValueError("budget must be an int type")
+            raise TypeError("budget must be an int type")
 
         # Print logging info summary of problem setup
         logging.info(" Beginning new run of ParMOO...")
@@ -2398,11 +2402,11 @@ class MOOP:
             parmoo_state['mean'] = self.mean
         # Serialize internal databases
         parmoo_state['data'] = {}
-        if 'x_vals' in self.data.keys():
+        if 'x_vals' in self.data:
             parmoo_state['data']['x_vals'] = self.data['x_vals'].tolist()
-        if 'f_vals' in self.data.keys():
+        if 'f_vals' in self.data:
             parmoo_state['data']['f_vals'] = self.data['f_vals'].tolist()
-        if 'c_vals' in self.data.keys():
+        if 'c_vals' in self.data:
             parmoo_state['data']['c_vals'] = self.data['c_vals'].tolist()
         parmoo_state['sim_db'] = []
         for dbi in self.sim_db:
@@ -2577,11 +2581,11 @@ class MOOP:
         self.mean = np.array(parmoo_state['mean'])
         # Reload serialized internal databases
         self.data = {}
-        if 'x_vals' in parmoo_state['data'].keys():
+        if 'x_vals' in parmoo_state['data']:
             self.data['x_vals'] = np.array(parmoo_state['data']['x_vals'])
-        if 'f_vals' in parmoo_state['data'].keys():
+        if 'f_vals' in parmoo_state['data']:
             self.data['f_vals'] = np.array(parmoo_state['data']['f_vals'])
-        if 'c_vals' in parmoo_state['data'].keys():
+        if 'c_vals' in parmoo_state['data']:
             self.data['c_vals'] = np.array(parmoo_state['data']['c_vals'])
         self.sim_db = []
         for dbi in parmoo_state['sim_db']:

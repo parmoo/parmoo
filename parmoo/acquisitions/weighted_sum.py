@@ -13,6 +13,7 @@ The classes include:
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
+from parmoo.util import xerror
 
 
 class UniformWeights(AcquisitionFunction):
@@ -47,10 +48,8 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         # Set the objective count
         self.o = o
         # Set the design variable count
@@ -89,12 +88,12 @@ class UniformWeights(AcquisitionFunction):
         no_data = False
         # Check for illegal input from data
         if not isinstance(data, dict):
-            raise ValueError("data must be a dict")
+            raise TypeError("data must be a dict")
         else:
-            if ('x_vals' in data.keys()) != ('f_vals' in data.keys()):
+            if ('x_vals' in data) != ('f_vals' in data):
                 raise AttributeError("if x_vals is a key in data, then " +
                                      "f_vals must also appear")
-            elif 'x_vals' in data.keys():
+            elif 'x_vals' in data:
                 if data['x_vals'] is not None and data['f_vals'] is not None:
                     if data['x_vals'].shape[0] != data['f_vals'].shape[0]:
                         raise ValueError("x_vals and f_vals must be equal " +
@@ -115,7 +114,7 @@ class UniformWeights(AcquisitionFunction):
                 raise ValueError("lagrange_func() must accept exactly one"
                                  + " input")
         else:
-            raise ValueError("lagrange_func() must be callable")
+            raise TypeError("lagrange_func() must be callable")
         if no_data:
             # If data is empty, then the Pareto front is empty
             pf = {'x_vals': np.zeros((0, self.n)),
@@ -162,7 +161,7 @@ class UniformWeights(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Compute the dot product between the weights and function values
         return np.dot(f_vals, self.weights)
 
@@ -186,13 +185,13 @@ class UniformWeights(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Check that the gradient values are legal
         if isinstance(g_vals, np.ndarray):
             if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
                 raise ValueError("g_vals must have shape o-by-n")
         else:
-            raise ValueError("g_vals must be a numpy array")
+            raise TypeError("g_vals must be a numpy array")
         # Compute the dot product between the weights and the gradient values
         return np.dot(np.transpose(g_vals), self.weights)
 
@@ -231,10 +230,8 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         # Set the objective count
         self.o = o
         # Set the design variable count
@@ -243,10 +240,10 @@ class FixedWeights(AcquisitionFunction):
         self.lb = lb
         self.ub = ub
         # Check the hyperparams dictionary for weights
-        if 'weights' in hyperparams.keys():
+        if 'weights' in hyperparams:
             # If weights are provided, check that they are legal
             if not isinstance(hyperparams['weights'], np.ndarray):
-                raise ValueError("when present, 'weights' must be a " +
+                raise TypeError("when present, 'weights' must be a " +
                                  "numpy array")
             else:
                 if hyperparams['weights'].size != self.o:
@@ -286,12 +283,12 @@ class FixedWeights(AcquisitionFunction):
         no_data = False
         # Check for illegal input from data
         if not isinstance(data, dict):
-            raise ValueError("data must be a dict")
+            raise TypeError("data must be a dict")
         else:
-            if ('x_vals' in data.keys()) != ('f_vals' in data.keys()):
+            if ('x_vals' in data) != ('f_vals' in data):
                 raise AttributeError("if x_vals is a key in data, then " +
                                      "f_vals must also appear")
-            elif 'x_vals' in data.keys():
+            elif 'x_vals' in data:
                 if data['x_vals'] is not None and data['f_vals'] is not None:
                     if data['x_vals'].shape[0] != data['f_vals'].shape[0]:
                         raise ValueError("x_vals and f_vals must be equal " +
@@ -312,7 +309,7 @@ class FixedWeights(AcquisitionFunction):
                 raise ValueError("lagrange_func() must accept exactly one"
                                  + " input")
         else:
-            raise ValueError("lagrange_func() must be callable")
+            raise TypeError("lagrange_func() must be callable")
         if no_data:
             # If data is empty, then the Pareto front is empty
             pf = {'x_vals': np.zeros((0, self.n)),
@@ -356,7 +353,7 @@ class FixedWeights(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Compute the dot product between the weights and function values
         return np.dot(f_vals, self.weights)
 
@@ -380,12 +377,12 @@ class FixedWeights(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Check that the gradient values are legal
         if isinstance(g_vals, np.ndarray):
             if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
                 raise ValueError("g_vals must have shape o-by-n")
         else:
-            raise ValueError("g_vals must be a numpy array")
+            raise TypeError("g_vals must be a numpy array")
         # Compute the dot product between the weights and the gradient values
         return np.dot(np.transpose(g_vals), self.weights)

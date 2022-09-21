@@ -47,7 +47,7 @@ def test_RandomSearch():
     acqu3.setTarget({}, lambda x: np.zeros(2), {})
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         RandomSearch(o, lb, ub, {'opt_budget': 2.0})
     with pytest.raises(ValueError):
         RandomSearch(o, lb, ub, {'opt_budget': 0})
@@ -55,15 +55,15 @@ def test_RandomSearch():
     RandomSearch(o, lb, ub, {})
     opt = RandomSearch(o, lb, ub, {'opt_budget': 10010})
     # Try to add some bad objectives, constraints, and acquisitions
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         opt.setObjective(5)
     with pytest.raises(ValueError):
         opt.setObjective(lambda z1, z2: np.zeros(1))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         opt.setConstraints(5)
     with pytest.raises(ValueError):
         opt.setConstraints(lambda z1, z2: np.zeros(1))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         opt.addAcquisition(5)
     # Add the correct objective and constraints
     opt.setObjective(f)
@@ -72,7 +72,7 @@ def test_RandomSearch():
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)
     # Try to solve with invalid inputs to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         opt.solve(5)
     with pytest.raises(ValueError):
         opt.solve(np.zeros((3, n-1)))

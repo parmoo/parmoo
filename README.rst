@@ -87,13 +87,16 @@ The easiest way to install ParMOO is via the Python package index, PyPI
 
 .. code-block:: bash
 
-    pip install [--user] parmoo
+    pip install < --user > parmoo
+
+where the braces around ``< --user >`` indicate that the ``--user`` flag is
+optional.
 
 To install *all* dependencies (including libEnsemble) use:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo[extras]
+    pip install < --user > "parmoo[extras]"
 
 You can also clone this project from our GitHub_ and ``pip`` install it
 in-place, so that you can easily pull the latest version or checkout
@@ -105,6 +108,20 @@ On Debian-based systems with a bash shell, this looks like:
    git clone https://github.com/parmoo/parmoo
    cd parmoo
    pip install -e .
+
+Alternatively, the latest release of ParMOO (including all required and
+optional dependencies) can be installed from the ``conda-forge`` channel using:
+
+.. code-block:: bash
+
+   conda install --channel=conda-forge parmoo
+
+Before doing so, it is recommended to create a new conda environment using:
+
+.. code-block:: bash
+
+   conda create --name channel-name
+   conda activate channel-name
 
 Testing
 -------
@@ -131,8 +148,12 @@ class. To get started, create a ``MOOP`` object.
 
    my_moop = MOOP(LocalGPS)
 
+To summarize the framework, in each iteration ParMOO models each simulation
+using a computationally cheap surrogate, then solves one or more scalarizations
+of the objectives, which are specified by acquisition functions.
+Read more about this framework at our ReadTheDocs_ page.
 In the above example, ``LocalGPS`` is the class of optimizers that the
-``my_moop`` will use to solve scalarized surrogate problems.
+``my_moop`` will use to solve the scalarized surrogate problems.
 
 Next, add design variables to the problem as follows using the
 ``MOOP.addDesign(*args)`` method. In this example, we define one continuous
@@ -220,6 +241,13 @@ results can be viewed using ``MOOP.getPF()`` method.
    my_moop.solve(5) # Solve with 5 iterations of ParMOO algorithm
    results = my_moop.getPF() # Extract the results
 
+After executing the above block of code, the ``results`` variable points to
+a numpy structured array, each of whose entries corresponds to a
+nondominated objective value in the ``my_moop`` object's final database.
+You can reference individual fields in the ``results`` array by using the
+``name`` keys that were assigned during ``my_moop``'s construction, or
+plot the results by using the viz_ library.
+
 Congratulations, you now know enough to get started solving MOOPs with
 ParMOO!
 
@@ -231,11 +259,13 @@ Next steps:
  * Explore the advanced examples (including a ``libEnsemble`` example)
    in the ``examples`` directory.
  * Install libEnsemble_ and get started solving MOOPs in parallel.
+ * To interactively explore your solutions, install its extra dependencies and
+   use our built-in viz_ tool.
 
 Resources
 ---------
 
-For more information, e-mail questions to:
+To seek support or report issues, e-mail:
 
  * ``parmoo@mcs.anl.gov``
 
@@ -278,3 +308,4 @@ Citing ParMOO:
 .. _Python: https://www.python.org/downloads
 .. _ReadTheDocs: https://parmoo.readthedocs.org
 .. _scipy: https://scipy.org
+.. _viz: https://parmoo.readthedocs.io/en/latest/modules/viz.html

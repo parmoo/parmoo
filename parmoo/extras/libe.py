@@ -46,7 +46,7 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
     from libensemble.tools.persistent_support import PersistentSupport
 
     # Get moop from pers_info
-    if 'moop' in persis_info.keys():
+    if 'moop' in persis_info:
         moop = persis_info['moop']
         if not isinstance(moop, MOOP):
             raise TypeError("persis_info['moop'] must be an instance of " +
@@ -713,7 +713,10 @@ class libE_MOOP(MOOP):
 
         if nworkers < 2:
             raise ValueError("Cannot run ParMOO + libE with less than 2 " +
-                             "workers -- aborting...")
+                             "workers -- aborting...\n\n" +
+                             "Note: this error could be caused by a " +
+                             "failure to specify the communication mode " +
+                             " (e.g., local comms or MPI)")
 
         # Get the max m for all SimGroups
         max_m = max(self.moop.m)

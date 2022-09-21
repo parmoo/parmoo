@@ -16,6 +16,7 @@ The classes include:
 import numpy as np
 import inspect
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
+from parmoo.util import xerror
 
 
 class LBFGSB(SurrogateOptimizer):
@@ -53,10 +54,8 @@ class LBFGSB(SurrogateOptimizer):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         self.bounds = np.zeros((self.n, 2))
         self.bounds[:, 0] = lb
@@ -70,7 +69,7 @@ class LBFGSB(SurrogateOptimizer):
                 else:
                     self.budget = hyperparams['opt_budget']
             else:
-                raise ValueError("hyperparams['opt_budget'] "
+                raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
             self.budget = 10000
@@ -94,7 +93,7 @@ class LBFGSB(SurrogateOptimizer):
                 # Add obj_func to the problem
                 self.objectives = obj_func
         else:
-            raise ValueError("obj_func() must be callable")
+            raise TypeError("obj_func() must be callable")
         return
 
     def setReset(self, reset):
@@ -126,7 +125,7 @@ class LBFGSB(SurrogateOptimizer):
                 # Add grad_func to the problem
                 self.gradients = grad_func
         else:
-            raise ValueError("grad_func() must be callable")
+            raise TypeError("grad_func() must be callable")
         # Check whether penalty_func() has an appropriate signature
         if callable(penalty_func):
             if len(inspect.signature(penalty_func).parameters) != 1:
@@ -135,7 +134,7 @@ class LBFGSB(SurrogateOptimizer):
                 # Add Lagrangian to the problem
                 self.penalty_func = penalty_func
         else:
-            raise ValueError("penalty_func must be callable")
+            raise TypeError("penalty_func must be callable")
         return
 
     def setConstraints(self, constraint_func):
@@ -158,7 +157,7 @@ class LBFGSB(SurrogateOptimizer):
                 # Add constraint_func to the problem
                 self.constraints = constraint_func
         else:
-            raise ValueError("constraint_func() must be callable")
+            raise TypeError("constraint_func() must be callable")
         return
 
     def addAcquisition(self, *args):
@@ -173,7 +172,7 @@ class LBFGSB(SurrogateOptimizer):
 
         # Check for illegal inputs
         if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
-            raise ValueError("Args must be instances of AcquisitionFunction")
+            raise TypeError("Args must be instances of AcquisitionFunction")
         # Append all arguments to the acquisitions list
         for arg in args:
             self.acquisitions.append(arg)
@@ -202,7 +201,7 @@ class LBFGSB(SurrogateOptimizer):
                 raise ValueError("The rows of x must match the number " +
                                  "of acquisition functions")
         else:
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         # Check that x is feasible.
         for xj in x:
             if np.any(xj[:] < self.bounds[:, 0]) or \
@@ -267,10 +266,8 @@ class TR_LBFGSB(SurrogateOptimizer):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         self.bounds = np.zeros((self.n, 2))
         self.bounds[:, 0] = lb
@@ -284,7 +281,7 @@ class TR_LBFGSB(SurrogateOptimizer):
                 else:
                     self.budget = hyperparams['opt_budget']
             else:
-                raise ValueError("hyperparams['opt_budget'] "
+                raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
             self.budget = 10000
@@ -308,7 +305,7 @@ class TR_LBFGSB(SurrogateOptimizer):
                 # Add obj_func to the problem
                 self.objectives = obj_func
         else:
-            raise ValueError("obj_func() must be callable")
+            raise TypeError("obj_func() must be callable")
         return
 
     def setReset(self, reset):
@@ -329,7 +326,7 @@ class TR_LBFGSB(SurrogateOptimizer):
                 # Add obj_func to the problem
                 self.resetObjectives = reset
         else:
-            raise ValueError("reset() must be callable")
+            raise TypeError("reset() must be callable")
         return
 
     def setPenalty(self, penalty_func, grad_func):
@@ -352,7 +349,7 @@ class TR_LBFGSB(SurrogateOptimizer):
                 # Add grad_func to the problem
                 self.gradients = grad_func
         else:
-            raise ValueError("grad_func() must be callable")
+            raise TypeError("grad_func() must be callable")
         # Check whether penalty_func() has an appropriate signature
         if callable(penalty_func):
             if len(inspect.signature(penalty_func).parameters) != 1:
@@ -361,7 +358,7 @@ class TR_LBFGSB(SurrogateOptimizer):
                 # Add Lagrangian to the problem
                 self.penalty_func = penalty_func
         else:
-            raise ValueError("penalty_func must be callable")
+            raise TypeError("penalty_func must be callable")
         return
 
     def setConstraints(self, constraint_func):
@@ -384,7 +381,7 @@ class TR_LBFGSB(SurrogateOptimizer):
                 # Add constraint_func to the problem
                 self.constraints = constraint_func
         else:
-            raise ValueError("constraint_func() must be callable")
+            raise TypeError("constraint_func() must be callable")
         return
 
     def addAcquisition(self, *args):
@@ -399,7 +396,7 @@ class TR_LBFGSB(SurrogateOptimizer):
 
         # Check for illegal inputs
         if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
-            raise ValueError("Args must be instances of AcquisitionFunction")
+            raise TypeError("Args must be instances of AcquisitionFunction")
         # Append all arguments to the acquisitions list
         for arg in args:
             self.acquisitions.append(arg)
@@ -428,7 +425,7 @@ class TR_LBFGSB(SurrogateOptimizer):
                 raise ValueError("The rows of x must match the number " +
                                  "of acquisition functions")
         else:
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         # Check that x is feasible.
         for xj in x:
             if np.any(xj[:] < self.bounds[:, 0]) or \

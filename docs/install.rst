@@ -37,7 +37,10 @@ To install the latest release:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo
+    pip install < --user > parmoo
+
+where the braces around ``< --user >`` indicate that the ``--user`` flag is
+optional.
 
 Note that the default install will not install the extra dependencies,
 such as libEnsemble_.
@@ -46,7 +49,7 @@ To install *all* dependencies, use:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo[extras]
+    pip install < --user > parmoo[extras]
 
 To check the installation by running the full test suite, use:
 
@@ -56,6 +59,36 @@ To check the installation by running the full test suite, use:
 
 which will also install the test dependencies (pytest_, pytest-cov_, and
 flake8_).
+
+Conda Forge
+-----------
+
+For some users (in particular, this is the recommended method for Windows
+users), the preferred method for obtaining the latest release of
+ParMOO may be through the ``conda`` package manager.
+The latest release of ParMOO is available through the ``conda-forge`` channel.
+Note that ``conda`` does not support optional dependencies, so the following
+command will automatically fetch all required and optional dependencies:
+
+.. code-block:: bash
+
+   conda install --channel=conda-forge parmoo
+
+Before running the above command, it is recommended to create a new conda
+environment to avoid conflicts.
+Do so using:
+
+.. code-block:: bash
+
+   conda create --name channel-name
+   conda activate channel-name
+
+After performing a ``conda-forge`` installation of ParMOO, you can run
+our unit tests to make sure your installation is working:
+
+.. code-block:: bash
+
+   py.test --pyargs parmoo.tests.unit_tests
 
 Install from GitHub source
 --------------------------
@@ -109,7 +142,7 @@ After installation, you can run the tests using either:
 
 .. code-block:: bash
 
-    parmoo/tests/run-tests.sh -cu[rl]
+    parmoo/tests/run-tests.sh -cu<rl>
 
 
 .. _Actions: https://github.com/parmoo/parmoo/actions

@@ -168,6 +168,17 @@ the abstract base classes defined in ``parmoo.structs``.
 Glossary
 --------
 
+ * **Acquisition function:**
+   An *acquisition function* is our language for a family of scalarizing
+   functions, which can be used to specify targets on the Pareto front.
+   Acquisition functions may use objective scores, gradient values, and/or
+   uncertainty information in order to guide ParMOO's search for an
+   approximation to the Pareto front.
+
+    * **Ex.--** common acquisition functions from the literature
+      include weighted sums (averages) of objective values, the epsilon
+      constraint method, and expected hypervolume improvement.
+
  * **Design variable:**
    A *design variable* is an input to your simulations, which can be controlled
    within some reasonable bounds.
