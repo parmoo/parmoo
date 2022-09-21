@@ -95,6 +95,20 @@ On Debian-based systems with a bash shell, this looks like:
    cd parmoo
    pip install -e .
 
+Alternatively, the latest release of ParMOO (including all required and
+optional dependencies) can be installed from the ``conda-forge`` channel using:
+
+.. code-block:: bash
+
+   conda install --channel=conda-forge parmoo
+
+Before doing so, it is recommended to create a new conda environment using:
+
+.. code-block:: bash
+
+   conda create --name channel-name
+   conda activate channel-name
+
 For detailed instructions, see :doc:`install`.
 
 Testing
