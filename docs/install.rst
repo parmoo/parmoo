@@ -75,7 +75,7 @@ command will automatically fetch all required and optional dependencies:
    conda install --channel=conda-forge parmoo
 
 Before running the above command, it is recommended to create a new conda
-environment using to avoid conflicts.
+environment to avoid conflicts.
 Do so using:
 
 .. code-block:: bash
