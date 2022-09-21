@@ -16,8 +16,8 @@ ParMOO stands for "parallel multiobjective optimization".
 ParMOO can be used to solve multiobjective optimization problems (MOOPs)
 or to generate batches of simulation inputs for parallel evaluation.
 
-ParMOO is intended for scientists, engineers, practitioners, and
-optimizers, who are looking to build or use custom solvers for
+ParMOO is intended for scientists, engineers, optimizers, and other
+practitioners, who are looking to build or use custom solvers for
 computationally expensive multiobjective problems.
 
 If you're new to ParMOO:

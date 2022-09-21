@@ -175,10 +175,9 @@ Glossary
    uncertainty information in order to guide ParMOO's search for an
    approximation to the Pareto front.
 
-    * **Ex.--** several common acquisition functions from the literature
+    * **Ex.--** common acquisition functions from the literature
       include weighted sums (averages) of objective values, the epsilon
-      constraint method, and expected hypervolume improvement, which is
-      used for multiobjective Bayesian optimization.
+      constraint method, and expected hypervolume improvement.
 
  * **Design variable:**
    A *design variable* is an input to your simulations, which can be controlled

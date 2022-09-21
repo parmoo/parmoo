@@ -89,7 +89,7 @@ The easiest way to install ParMOO is via the Python package index, PyPI
 
     pip install < --user > parmoo
 
-where the braces around ``< --user >`` indicates that the ``--user`` flag is
+where the braces around ``< --user >`` indicate that the ``--user`` flag is
 optional.
 
 To install *all* dependencies (including libEnsemble) use:
