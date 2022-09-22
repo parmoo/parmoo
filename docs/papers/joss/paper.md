@@ -28,8 +28,8 @@ bibliography: paper.bib
 A multiobjective optimization problem (MOOP) is an optimization problem
 in which multiple objectives are optimized simultaneously.
 The goal of a MOOP is to find solutions that describe the tradeoff
-curve between these (potentially conflicting) objectives.
-This tradeoff curve is called the Pareto front.
+between these (potentially conflicting) objectives.
+Such a tradeoff surface is called the Pareto front.
 Real-world MOOPs may also involve constraints -- additional hard rules
 that every solution must adhere to.
 In a multiobjective *simulation* optimization problem, the objectives are
@@ -41,7 +41,7 @@ and deploying highly customized multiobjective simulation optimization solvers.
 ParMOO is designed to help engineers, practitioners, and optimization experts
 exploit available structures in how simulation outputs are used to formulate
 the objectives for a MOOP.
-We will elaborate on these structures, and provide two examples in future
+We elaborate on these structures, and provide two examples, in future
 sections.
 
 Additionally, ParMOO is:
@@ -53,14 +53,14 @@ Additionally, ParMOO is:
 # Multiobjective Simulation Optimization Software
 
 Existing open source, actively maintained Python packages for solving
-generic multiobjective simulation optimization problems include
+multiobjective simulation optimization problems include
 ``pymoo`` [@pymoo],
 ``pymoso`` [@pymoso],
 ``Dragonfly`` [@dragonfly],
 ``Playtpus`` [@platypus],
 ``jMetalPy`` [@jMetalPy], and
 ``pygmo`` [@pygmo].
-Non multiobjective optimization specific Python packages, that are
+Non multiobjective optimization specific Python packages that are
 often used for implementing multiobjective optimization solvers include
 ``BoTorch`` [@botorch] and
 ``DEAP`` [@deap].
@@ -77,7 +77,7 @@ The above-listed software packages:
  c) are suitable for or contain sub-modules for solving a general form of the
     multiobjective simulation optimization problem, and
  d) provide sufficient documentation for a new user to get started
-    without requiring council from the authors.
+    without requiring counsel from the authors.
 
 # Statement of Need
 
@@ -96,7 +96,7 @@ However, ParMOO is distinct for the following reasons:
     over high performance computing (HPC) resources.
  5) ParMOO provides complete documentation, including instructions for
     potential contributors.
- 6) ParMOO is designed around extensibility and continuous-integration, with
+ 6) ParMOO is designed around extensibility and continuous integration, with
     the intention of adding support for new features, solvers, techniques,
     and problem types, some of which may be beyond what we originally
     envisioned.
@@ -109,8 +109,8 @@ While many existing solvers provide one or more of properties 1-5,
 at this time, no other solver has *all* of these properties at once.
 Additionally, to our knowledge, properties 6 and 7 are unique to ParMOO.
 
-The target audience for ParMOO includes scientists, engineers, practitioners,
-and optimizers, who are looking to build or use custom solvers for
+The target audience for ParMOO includes scientists, engineers, optimizers, and 
+other practitioners, who are looking to build or use custom solvers for
 simulation- or experimentation-based MOOPs.
 
 # Our Methodology
@@ -146,7 +146,7 @@ progressive barrier method.
 
 In order to achieve property 6, we use an object-oriented design, where
 our ``MOOP`` class references abstract base classes (ABCs) for each of the
-above components i-iv, in order to solve a MOOP via RSM.
+above components i--iv, in order to solve a MOOP via RSM.
 This allows us to quickly customize solver components in a modular fashion,
 by extending their existing interface.
 In unforeseen circumstances, we can even extend the ``MOOP`` class itself in
@@ -161,7 +161,7 @@ one or more objectives does not depend on the simulations at all.
 In these situations, the additional structure that is available in exactly
 how the simulation outputs are being used to formulate the problem is made
 available to ParMOO's solvers, and can be exploited to improve approximation
-bounds, convergence rates, and reduce the need for expensive simulation
+bounds and convergence rates, and to reduce the need for expensive simulation
 evaluations.
 
 # Example Problems
@@ -172,19 +172,20 @@ property 7, we describe two current applications.
 First, ParMOO is currently being used to calibrate energy density functional
 (EDF) models, by minimizing the error between expensive simulation outputs and
 experimental data.
-Let $S_1$, $\ldots$, $S_m$ denote the $m$ observable outputs of an EDF model
-$S$ (in our particular case $m=198$).
-Then we want to calibrate $S$ by solving the multiobjective problem
+Let $R_1$, $\ldots$, $R_m$ denote the $m$ deviations between $m$-dimensional 
+experimental data $D$ and $m$-dimensional outputs of an EDF model
+$S$.
+Then, we want to calibrate $S$ by solving the multiobjective problem
 $$
-\min_{x \in [0,1]^n} \big(\sum_{i\in C_1} S_i, \sum_{j\in C_2} S_j, \sum_{k\in C_3} S_k\big)
+\min_{x \in [0,1]^n} \big(\sum_{i\in C_1} R_i^2, \sum_{j\in C_2} R_j^2, \sum_{k\in C_3} R_k^2\big)
 $$
 where $C_1$, $C_2$, and $C_3$ are a partitioning of the indices
-$1$, $\ldots$, $m$ into three observable classes, each with different but
-unknown observation and measurement errors; and $x$ is a set of $n=13$
+$1$, $\ldots$, $m$ into three observable classes, each with different
+observation and measurement errors; and where $x$ is a set of $n$
 unknown modeling parameters for $S$, normalized to lie in the unit hypercube.
 In this context, the simulation-based structure comes from the known
 sum-of-squares equation of the empirical loss function.
-By modeling, the $m$ simulation outputs separately from the three objectives,
+By modeling, the $m$ simulation outputs in $S$ separately from the three objectives,
 ParMOO is able to exploit this sum-of-squares structure, similarly as
 in the single-objective software ``POUNDERS`` [@pounders].
 This example also illustrates ParMOO's ability to utilize
@@ -198,7 +199,7 @@ particular material.
 In this example, the goal is to maximize the yield and minimize the byproduct
 of an experimental chemical synthesis, which is carried out in a
 continuous-flow reactor and characterized using nuclear magnetic resonance
-spectroscopy, while also maximizing the reaction temperature which is a
+spectroscopy, while also maximizing the reaction temperature, which is a
 directly controllable variable.
 The simulation-based structure in this problem comes from the known dependence
 between the directly controllable objective (the reaction temperature),
