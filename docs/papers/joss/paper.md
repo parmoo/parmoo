@@ -47,7 +47,8 @@ sections.
 Additionally, ParMOO is:
 
  - an open-source project on [GitHub](https://github.com/parmoo/parmoo),
- - ``pip``-installable via [PyPI](https://pypi.org/project/parmoo), and
+ - ``pip``-installable via [PyPI](https://pypi.org/project/parmoo) or
+   ``conda``-installable via [conda-forge](https://anaconda.org/conda-forge/parmoo), and
  - fully [documented](https://parmoo.readthedocs.io).
 
 # Multiobjective Simulation Optimization Software
