@@ -242,7 +242,8 @@ class TR_LBFGSB(SurrogateOptimizer):
 
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'gradients', 'penalty_func', 'resetObjectives']
+                 'objectives', 'gradients', 'penalty_func', 'resetObjectives',
+                 'restarts']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalGPS class.
@@ -259,7 +260,9 @@ class TR_LBFGSB(SurrogateOptimizer):
 
             hyperparams (dict): A dictionary of hyperparameters for the
                 optimization procedure. It may contain the following:
-                 * opt_budget (int): The evaluation budget (default: 10,000).
+                 * opt_budget (int): The evaluation budget (default: 1000).
+                 * opt_restarts (int): Number of multisolve restarts
+                   (default: n+1).
 
         Returns:
             SurrogateOptimizer: A new SurrogateOptimizer object.
@@ -284,7 +287,20 @@ class TR_LBFGSB(SurrogateOptimizer):
                 raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
-            self.budget = 10000
+            self.budget = 1000
+        # Check that the contents of hyperparams is legal
+        if 'opt_restarts' in hyperparams:
+            if isinstance(hyperparams['opt_restarts'], int):
+                if hyperparams['opt_restarts'] < 1:
+                    raise ValueError("hyperparams['opt_restarts'] "
+                                     "must be positive")
+                else:
+                    self.restarts = hyperparams['opt_restarts']
+            else:
+                raise TypeError("hyperparams['opt_restarts'] "
+                                 "must be an integer")
+        else:
+            self.restarts = self.n + 1
         self.acquisitions = []
         return
 
@@ -433,8 +449,6 @@ class TR_LBFGSB(SurrogateOptimizer):
                 raise ValueError("some of starting points (x) are infeasible")
         # Initialize an empty list of results
         result = []
-        # Calculate budget per call
-        budget_per_call = self.budget / len(self.acquisitions)
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
 
@@ -452,10 +466,19 @@ class TR_LBFGSB(SurrogateOptimizer):
             for i in range(self.n):
                 bounds[i, 0] = max(self.bounds[i, 0], x[j, i] - rad)
                 bounds[i, 1] = min(self.bounds[i, 1], x[j, i] + rad)
-            # Get the solution
-            res = optimize.minimize(scalar_f, x[j, :], method='L-BFGS-B',
-                                    jac=scalar_g, bounds=bounds,
-                                    options={'maxiter': budget_per_call})
+
+            # Get the solution via multistart solve
+            soln = x[j, :].copy()
+            for i in range(self.restarts):
+                # Random starting point within bounds
+                x0 = (np.random.random_sample(self.n) *
+                      (bounds[:, 1] - bounds[:, 0]) - bounds[:, 0])
+                res = optimize.minimize(scalar_f, x0, method='L-BFGS-B',
+                                        jac=scalar_g, bounds=bounds,
+                                        options={'maxiter': self.budget})
+                if scalar_f(res['x']) < scalar_f(soln):
+                    soln = res['x']
+            print(np.max(np.abs(x[j, :] - soln)) / rad)
             # Append the found minima to the results list
-            result.append(res['x'])
+            result.append(soln)
         return np.asarray(result)
