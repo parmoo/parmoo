@@ -472,7 +472,7 @@ class TR_LBFGSB(SurrogateOptimizer):
             for i in range(self.restarts):
                 # Random starting point within bounds
                 x0 = (np.random.random_sample(self.n) *
-                      (bounds[:, 1] - bounds[:, 0]) - bounds[:, 0])
+                      (bounds[:, 1] - bounds[:, 0]) + bounds[:, 0])
                 res = optimize.minimize(scalar_f, x0, method='L-BFGS-B',
                                         jac=scalar_g, bounds=bounds,
                                         options={'maxiter': self.budget})
