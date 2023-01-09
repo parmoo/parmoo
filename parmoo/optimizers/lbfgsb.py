@@ -531,7 +531,6 @@ class TR_LBFGSB(SurrogateOptimizer):
                                         options={'maxiter': self.budget})
                 if scalar_f(res['x']) < scalar_f(soln):
                     soln = res['x']
-            #print(np.max(np.abs(x[j, :] - soln)) / rad)
             # Append the found minima to the results list
             result.append(soln)
         return np.asarray(result)

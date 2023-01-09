@@ -61,7 +61,6 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
     sim_count = 0
     # Iterate until the termination condition is reached
     while tag not in [STOP_TAG, PERSIS_STOP]:
-        print(f"----- Batch {k} -----")
         # Generate a batch by running one iteration
         x_out = moop.iterate(k)
         # Check for duplicates in simulation databases
@@ -143,7 +142,6 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
                 sim_count += new_count
         # Update the ParMOO databases
         moop.updateAll(k, batch)
-        print(f"------- Done. -------")
         k += 1
     # Return the results
     persis_info['moop'] = moop
