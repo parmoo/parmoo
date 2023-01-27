@@ -320,16 +320,14 @@ class GaussRBF(SurrogateFunction):
             inds = np.argsort(dists)
             if dists[inds[self.n]] >= 1.5:
                 # Uniformly sample within the box [x - rad, x + rad].
-                rad = np.abs(x - self.x_vals[self.n])
-                xn = self.x_vals[self.n]
-                x_new = np.fmin(np.fmax(2.0 * np.random.random(self.n)
-                                        * rad[:] + (x - np.abs(xn)),
-                                        self.lb), self.ub)
+                rad = np.abs(x - self.x_vals[inds[self.n]])
+                x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
+                                        * rad[:] + x, self.lb), self.ub)
                 while any([np.all(np.abs(x_new - xj) < self.eps)
                            for xj in self.x_vals]):
-                    x_new = np.fmin(np.fmax(2.0 * np.random.random(self.n)
-                                            * rad[:] + (x - np.abs(xn)),
-                                            self.lb), self.ub)
+                    x_new = np.fmin(np.fmax(2.0 *
+                                            (np.random.random(self.n) - 0.5)
+                                            * rad[:] + x, self.lb), self.ub)
             else:
                 # If the n+1st nearest point is too close, use global_improv.
                 x_new[:] = self.lb[:] + np.random.random(self.n) \
@@ -721,17 +719,14 @@ class LocalGaussRBF(SurrogateFunction):
             inds = np.argsort(dists)
             if dists[inds[self.n_loc - 1]] > 1.5:
                 # Uniformly sample within B(x, dists[n_loc]).
-                xn = self.x_vals[self.n_loc - 1]
-                rad = np.abs(x - self.x_vals[self.n_loc - 1])
-                x_new = np.fmin(np.fmax(2.0 * np.random.random(self.n)
-                                        * rad[:] + (x - np.abs(xn)),
-                                        self.lb), self.ub)
+                rad = np.abs(x - self.x_vals[inds[self.n_loc - 1]])
+                x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
+                                        * rad[:] + x, self.lb), self.ub)
                 while any([np.all(np.abs(x_new - xj) < self.eps)
                            for xj in self.x_vals]):
-                    x_new = np.fmin(np.fmax(2.0 * rad[:] *
-                                            np.random.random(self.n) +
-                                            (x - np.abs(xn)),
-                                            self.lb), self.ub)
+                    x_new = np.fmin(np.fmax(2.0 *
+                                            (np.random.random(self.n) - 0.5)
+                                            * rad[:] + x, self.lb), self.ub)
             else:
                 # If the n_loc nearest point is too close, use global_improv
                 x_new[:] = self.lb[:] + np.random.random(self.n) \
