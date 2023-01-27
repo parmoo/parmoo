@@ -13,6 +13,7 @@ The classes include:
 import numpy as np
 from parmoo.structs import SurrogateFunction
 from scipy.spatial.distance import cdist
+from parmoo.util import xerror
 
 
 class GaussRBF(SurrogateFunction):
@@ -52,10 +53,8 @@ class GaussRBF(SurrogateFunction):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(m, lb, ub, hyperparams)
+        xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
         # Initialize problem dimensions
         self.m = m
         self.lb = lb
@@ -67,7 +66,7 @@ class GaussRBF(SurrogateFunction):
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros((0, 0))
         # Check for the 'nugget' optional value in hyperparams
-        if 'nugget' in hyperparams.keys():
+        if 'nugget' in hyperparams:
             if isinstance(hyperparams['nugget'], float):
                 self.nugget = hyperparams['nugget']
                 if self.nugget < 0.0:
@@ -78,7 +77,7 @@ class GaussRBF(SurrogateFunction):
                                  + " value")
         else:
             self.nugget = 0.0
-        if 'des_tols' in hyperparams.keys():
+        if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
                     if np.all(hyperparams['des_tols'] > 0.0):
@@ -115,14 +114,14 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x and f values are legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         if isinstance(f, np.ndarray):
             if f.shape[0] == 0:
                 raise ValueError("no data provided")
             if self.m != np.size(f[0, :]):
                 raise ValueError("each row of f must have length m")
         else:
-            raise ValueError("f must be a numpy array")
+            raise TypeError("f must be a numpy array")
         if x.shape[0] != f.shape[0]:
             raise ValueError("x and f must have equal lengths")
         # Initialize the internal database with x and f
@@ -171,14 +170,14 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x and f values are legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         if isinstance(f, np.ndarray):
             if f.shape[0] == 0:
                 return    # No new data, do nothing
             if self.m != np.size(f[0, :]):
                 raise ValueError("each row of f must have length m")
         else:
-            raise ValueError("f must be a numpy array")
+            raise TypeError("f must be a numpy array")
         if x.shape[0] != f.shape[0]:
             raise ValueError("x and f must have equal lengths")
         # Update the internal database with x and f
@@ -238,7 +237,7 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -264,7 +263,7 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -296,7 +295,7 @@ class GaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -321,16 +320,14 @@ class GaussRBF(SurrogateFunction):
             inds = np.argsort(dists)
             if dists[inds[self.n]] >= 1.5:
                 # Uniformly sample within the box [x - rad, x + rad].
-                rad = np.abs(x - self.x_vals[self.n])
-                xn = self.x_vals[self.n]
-                x_new = np.fmin(np.fmax(2.0 * np.random.random(self.n)
-                                        * rad[:] + (x - np.abs(xn)),
-                                        self.lb), self.ub)
+                rad = np.abs(x - self.x_vals[inds[self.n]])
+                x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
+                                        * rad[:] + x, self.lb), self.ub)
                 while any([np.all(np.abs(x_new - xj) < self.eps)
                            for xj in self.x_vals]):
-                    x_new = np.fmin(np.fmax(2.0 * np.random.random(self.n)
-                                            * rad[:] + (x - np.abs(xn)),
-                                            self.lb), self.ub)
+                    x_new = np.fmin(np.fmax(2.0 *
+                                            (np.random.random(self.n) - 0.5)
+                                            * rad[:] + x, self.lb), self.ub)
             else:
                 # If the n+1st nearest point is too close, use global_improv.
                 x_new[:] = self.lb[:] + np.random.random(self.n) \
@@ -437,10 +434,8 @@ class LocalGaussRBF(SurrogateFunction):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(m, lb, ub, hyperparams)
+        xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
         # Initialize problem dimensions
         self.m = m
         self.lb = lb
@@ -455,7 +450,7 @@ class LocalGaussRBF(SurrogateFunction):
         self.tr_center = np.zeros(0)
         self.loc_inds = []
         # Check for the 'nugget' optional value in hyperparams
-        if 'nugget' in hyperparams.keys():
+        if 'nugget' in hyperparams:
             if isinstance(hyperparams['nugget'], float):
                 self.nugget = hyperparams['nugget']
                 if self.nugget < 0.0:
@@ -467,7 +462,7 @@ class LocalGaussRBF(SurrogateFunction):
         else:
             self.nugget = 0.0
         # Check for the 'n_loc' optional value in hyperparams
-        if 'n_loc' in hyperparams.keys():
+        if 'n_loc' in hyperparams:
             if isinstance(hyperparams['n_loc'], int):
                 self.n_loc = hyperparams['n_loc']
                 if self.n_loc < self.n + 1:
@@ -479,7 +474,7 @@ class LocalGaussRBF(SurrogateFunction):
         else:
             self.n_loc = self.n + 1
         # Check for 'des_tols' optional key in hyperparms
-        if 'des_tols' in hyperparams.keys():
+        if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
                     if np.all(hyperparams['des_tols'] > 0.0):
@@ -516,14 +511,14 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x and f values are legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         if isinstance(f, np.ndarray):
             if f.shape[0] == 0:
                 raise ValueError("no data provided")
             if self.m != np.size(f[0, :]):
                 raise ValueError("each row of f must have length m")
         else:
-            raise ValueError("f must be a numpy array")
+            raise TypeError("f must be a numpy array")
         if x.shape[0] != f.shape[0]:
             raise ValueError("x and f must have equal lengths")
         # Initialize the internal database with x and f
@@ -548,14 +543,14 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x and f values are legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         if isinstance(f, np.ndarray):
             if f.shape[0] == 0:
                 return    # No new data, do nothing
             if self.m != np.size(f[0, :]):
                 raise ValueError("each row of f must have length m")
         else:
-            raise ValueError("f must be a numpy array")
+            raise TypeError("f must be a numpy array")
         if x.shape[0] != f.shape[0]:
             raise ValueError("x and f must have equal lengths")
         # Update the internal database with x and f
@@ -581,7 +576,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the center is legal
         if not isinstance(center, np.ndarray):
-            raise ValueError("center must be a numpy array")
+            raise TypeError("center must be a numpy array")
         else:
             if center.size != self.n:
                 raise ValueError("center must have length n")
@@ -639,7 +634,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -666,7 +661,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -699,7 +694,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         # Check that the x is legal
         if not isinstance(x, np.ndarray):
-            raise ValueError("x must be a numpy array")
+            raise TypeError("x must be a numpy array")
         else:
             if x.size != self.n:
                 raise ValueError("x must have length n")
@@ -724,17 +719,14 @@ class LocalGaussRBF(SurrogateFunction):
             inds = np.argsort(dists)
             if dists[inds[self.n_loc - 1]] > 1.5:
                 # Uniformly sample within B(x, dists[n_loc]).
-                xn = self.x_vals[self.n_loc - 1]
-                rad = np.abs(x - self.x_vals[self.n_loc - 1])
-                x_new = np.fmin(np.fmax(2.0 * np.random.random(self.n)
-                                        * rad[:] + (x - np.abs(xn)),
-                                        self.lb), self.ub)
+                rad = np.abs(x - self.x_vals[inds[self.n_loc - 1]])
+                x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
+                                        * rad[:] + x, self.lb), self.ub)
                 while any([np.all(np.abs(x_new - xj) < self.eps)
                            for xj in self.x_vals]):
-                    x_new = np.fmin(np.fmax(2.0 * rad[:] *
-                                            np.random.random(self.n) +
-                                            (x - np.abs(xn)),
-                                            self.lb), self.ub)
+                    x_new = np.fmin(np.fmax(2.0 *
+                                            (np.random.random(self.n) - 0.5)
+                                            * rad[:] + x, self.lb), self.ub)
             else:
                 # If the n_loc nearest point is too close, use global_improv
                 x_new[:] = self.lb[:] + np.random.random(self.n) \

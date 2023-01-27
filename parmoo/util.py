@@ -14,7 +14,7 @@ from parmoo import structs
 import inspect
 
 
-def xerror(o, lb, ub, hyperparams):
+def xerror(o=1, lb=None, ub=None, hyperparams=None):
     """ Typecheck the input arguments for a class interface.
 
     Args:
@@ -31,6 +31,13 @@ def xerror(o, lb, ub, hyperparams):
 
     """
 
+    # Assign default values, if needed
+    if lb is None:
+        lb = np.zeros(1)
+    if ub is None:
+        ub = np.ones(1)
+    if hyperparams is None:
+        hyperparams = {}
     # Check the objective count
     if isinstance(o, int):
         if o < 1:
@@ -104,12 +111,12 @@ def check_sims(n, *args):
     m = 0
     for arg in args:
         if isinstance(arg, dict):
-            if 'name' in arg.keys():
+            if 'name' in arg:
                 if not isinstance(arg['name'], str):
                     raise TypeError("sims[" + str(s) + "]['name']"
                                     + " must be a string when present")
             # Check the number of sim outputs
-            if 'm' in arg.keys():
+            if 'm' in arg:
                 if isinstance(arg['m'], int):
                     if arg['m'] > 0:
                         m = arg['m']
@@ -123,13 +130,13 @@ def check_sims(n, *args):
                 raise AttributeError("sims[" + str(s)
                                      + "] is missing the key 'm'")
             # Get the hyperparameter dict
-            if 'hyperparams' in arg.keys():
+            if 'hyperparams' in arg:
                 if not isinstance(arg['hyperparams'], dict):
                     raise TypeError("sims[" + str(s)
                                     + "]: 'hyperparams'"
                                     + " key must be a dict when present")
             # Check the search technique
-            if 'search' in arg.keys():
+            if 'search' in arg:
                 try:
                     assert(isinstance(arg['search'](m, np.zeros(n),
                                                     np.ones(n), {}),
@@ -142,7 +149,7 @@ def check_sims(n, *args):
                 raise AttributeError("sims[" + str(s) + "] is missing"
                                      + " the key 'search'")
             # Check the des_tol, if present
-            if 'des_tol' in arg.keys():
+            if 'des_tol' in arg:
                 if isinstance(arg['des_tol'], float):
                     if arg['des_tol'] <= 0.0:
                         raise ValueError("sims[" + str(s)
@@ -153,7 +160,7 @@ def check_sims(n, *args):
                                     + "]['des_tol'] must"
                                     + " be a float")
             # Get the surrogate function
-            if 'surrogate' in arg.keys():
+            if 'surrogate' in arg:
                 try:
                     if not isinstance(arg['surrogate'](m, np.zeros(n),
                                                        np.ones(n), {}),
@@ -172,7 +179,7 @@ def check_sims(n, *args):
                 raise AttributeError("sims[" + str(s) + "] is missing"
                                      + " the key 'surrogate'")
             # Get the simulation function
-            if 'sim_func' in arg.keys():
+            if 'sim_func' in arg:
                 if callable(arg['sim_func']):
                     if len(inspect.signature(arg['sim_func']).parameters) \
                        != 1 and \
@@ -189,10 +196,10 @@ def check_sims(n, *args):
                 raise AttributeError("sims[" + str(s) + "] is missing"
                                      + " the key 'sim_func'")
             # Get the starting database, if present
-            if 'sim_db' in arg.keys():
+            if 'sim_db' in arg:
                 if isinstance(arg['sim_db'], dict):
-                    if 'x_vals' in arg['sim_db'].keys() and \
-                       's_vals' in arg['sim_db'].keys():
+                    if 'x_vals' in arg['sim_db'] and \
+                       's_vals' in arg['sim_db']:
                         try:
                             # Cast arg['sim_db'] contents to np.ndarrays
                             xvals = np.asarray(arg['sim_db']['x_vals'])
@@ -234,8 +241,8 @@ def check_sims(n, *args):
                                              + "]['sim_db']['s_vals']"
                                              + " is nonempty, and vice"
                                              + " versa")
-                    elif 'x_vals' in arg['sim_db'].keys() or \
-                         's_vals' in arg['sim_db'].keys():
+                    elif 'x_vals' in arg['sim_db'] or \
+                         's_vals' in arg['sim_db']:
                         raise AttributeError("sims[" + str(s) + "] cannot"
                                              + " contain a sim_db with"
                                              + " 'x_vals' but not 's_vals'"

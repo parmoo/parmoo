@@ -13,6 +13,7 @@ The classes include:
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
+from parmoo.util import xerror
 
 
 class UniformWeights(AcquisitionFunction):
@@ -47,10 +48,8 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         # Set the objective count
         self.o = o
         # Set the design variable count
@@ -62,21 +61,24 @@ class UniformWeights(AcquisitionFunction):
         self.weights = np.zeros(o)
         return
 
-    def setTarget(self, data, constraint_func, history):
+    def setTarget(self, data, lagrange_func, history):
         """ Randomly generate a new vector of scalarizing weights.
 
         Args:
             data (dict): A dictionary specifying the current function
                 evaluation database.
 
-            constraint_func (function): A function whose components evaluate
-                to zero if an only if no constraint is violated.
+            lagrange_func (function): A function whose components correspond
+                to constraint violation amounts.
+
 
             history (dict): Another unused argument for this function.
 
         Returns:
-            numpy.ndarray: A 1d array containing a feasible starting point
-            for the scalarized problem.
+            numpy.ndarray: A 1d array containing the 'best' feasible starting
+            point for the scalarized problem (if any previous evaluations
+            were feasible) or the point in the existing database that is
+            most nearly feasible.
 
         """
 
@@ -86,12 +88,12 @@ class UniformWeights(AcquisitionFunction):
         no_data = False
         # Check for illegal input from data
         if not isinstance(data, dict):
-            raise ValueError("data must be a dict")
+            raise TypeError("data must be a dict")
         else:
-            if ('x_vals' in data.keys()) != ('f_vals' in data.keys()):
+            if ('x_vals' in data) != ('f_vals' in data):
                 raise AttributeError("if x_vals is a key in data, then " +
                                      "f_vals must also appear")
-            elif 'x_vals' in data.keys():
+            elif 'x_vals' in data:
                 if data['x_vals'] is not None and data['f_vals'] is not None:
                     if data['x_vals'].shape[0] != data['f_vals'].shape[0]:
                         raise ValueError("x_vals and f_vals must be equal " +
@@ -106,13 +108,13 @@ class UniformWeights(AcquisitionFunction):
                     no_data = True
             else:
                 no_data = True
-        # Check whether constraint_func() has an appropriate signature
-        if callable(constraint_func):
-            if len(inspect.signature(constraint_func).parameters) != 1:
-                raise ValueError("constraint_func() must accept exactly one"
+        # Check whether lagrange_func() has an appropriate signature
+        if callable(lagrange_func):
+            if len(inspect.signature(lagrange_func).parameters) != 1:
+                raise ValueError("lagrange_func() must accept exactly one"
                                  + " input")
         else:
-            raise ValueError("constraint_func() must be callable")
+            raise TypeError("lagrange_func() must be callable")
         if no_data:
             # If data is empty, then the Pareto front is empty
             pf = {'x_vals': np.zeros((0, self.n)),
@@ -126,20 +128,21 @@ class UniformWeights(AcquisitionFunction):
         self.weights = self.weights[:] / sum(self.weights[:])
         # If pf is empty, randomly select the starting point
         if pf['x_vals'].shape[0] == 0:
-            # Randomly select a feasible starting point
-            x = np.random.random_sample(self.n) * (self.ub - self.lb) + self.lb
-            count = 0
-            while np.any(constraint_func(x) > 0):
+            # Randomly search for a good starting point
+            x_min = np.random.random_sample(self.n) * (self.ub - self.lb) \
+                    + self.lb
+            for count in range(1000):
                 x = np.random.random_sample(self.n) * (self.ub - self.lb) \
                     + self.lb
-                count += 1
-                if count == 1000:
-                    raise ValueError("constraint_func has no feasible points")
+                if np.dot(self.weights, lagrange_func(x)) \
+                   < np.dot(self.weights, lagrange_func(x_min)):
+                    x_min[:] = x[:]
+            return x_min
         else:
             i = np.argmin(np.asarray([np.dot(self.weights, fi)
                                       for fi in pf['f_vals']]))
             x = pf['x_vals'][i, :]
-        return x
+            return x
 
     def scalarize(self, f_vals):
         """ Scalarize a vector of function values using the current weights.
@@ -158,7 +161,7 @@ class UniformWeights(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Compute the dot product between the weights and function values
         return np.dot(f_vals, self.weights)
 
@@ -182,13 +185,13 @@ class UniformWeights(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Check that the gradient values are legal
         if isinstance(g_vals, np.ndarray):
             if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
                 raise ValueError("g_vals must have shape o-by-n")
         else:
-            raise ValueError("g_vals must be a numpy array")
+            raise TypeError("g_vals must be a numpy array")
         # Compute the dot product between the weights and the gradient values
         return np.dot(np.transpose(g_vals), self.weights)
 
@@ -227,10 +230,8 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(o, lb, ub, hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         # Set the objective count
         self.o = o
         # Set the design variable count
@@ -239,10 +240,10 @@ class FixedWeights(AcquisitionFunction):
         self.lb = lb
         self.ub = ub
         # Check the hyperparams dictionary for weights
-        if 'weights' in hyperparams.keys():
+        if 'weights' in hyperparams:
             # If weights are provided, check that they are legal
             if not isinstance(hyperparams['weights'], np.ndarray):
-                raise ValueError("when present, 'weights' must be a " +
+                raise TypeError("when present, 'weights' must be a " +
                                  "numpy array")
             else:
                 if hyperparams['weights'].size != self.o:
@@ -256,21 +257,23 @@ class FixedWeights(AcquisitionFunction):
             self.weights = np.ones(self.o) / float(self.o)
         return
 
-    def setTarget(self, data, constraint_func, history):
+    def setTarget(self, data, lagrange_func, history):
         """ Randomly generate a feasible starting point.
 
         Args:
             data (dict): A dictionary specifying the current function
                 evaluation database.
 
-            constraint_func (function): A function whose components evaluate
-                to zero if an only if no constraint is violated.
+            lagrange_func (function): A function whose components correspond
+                to constraint violation amounts.
 
             history (dict): Another unused argument for this function.
 
         Returns:
-            numpy.ndarray: A 1d array containing a feasible starting point
-            for the scalarized problem.
+            numpy.ndarray: A 1d array containing the 'best' feasible starting
+            point for the scalarized problem (if any previous evaluations
+            were feasible) or the point in the existing database that is
+            most nearly feasible.
 
         """
 
@@ -280,12 +283,12 @@ class FixedWeights(AcquisitionFunction):
         no_data = False
         # Check for illegal input from data
         if not isinstance(data, dict):
-            raise ValueError("data must be a dict")
+            raise TypeError("data must be a dict")
         else:
-            if ('x_vals' in data.keys()) != ('f_vals' in data.keys()):
+            if ('x_vals' in data) != ('f_vals' in data):
                 raise AttributeError("if x_vals is a key in data, then " +
                                      "f_vals must also appear")
-            elif 'x_vals' in data.keys():
+            elif 'x_vals' in data:
                 if data['x_vals'] is not None and data['f_vals'] is not None:
                     if data['x_vals'].shape[0] != data['f_vals'].shape[0]:
                         raise ValueError("x_vals and f_vals must be equal " +
@@ -300,13 +303,13 @@ class FixedWeights(AcquisitionFunction):
                     no_data = True
             else:
                 no_data = True
-        # Check whether constraint_func() has an appropriate signature
-        if callable(constraint_func):
-            if len(inspect.signature(constraint_func).parameters) != 1:
-                raise ValueError("constraint_func() must accept exactly one"
+        # Check whether lagrange_func() has an appropriate signature
+        if callable(lagrange_func):
+            if len(inspect.signature(lagrange_func).parameters) != 1:
+                raise ValueError("lagrange_func() must accept exactly one"
                                  + " input")
         else:
-            raise ValueError("constraint_func() must be callable")
+            raise TypeError("lagrange_func() must be callable")
         if no_data:
             # If data is empty, then the Pareto front is empty
             pf = {'x_vals': np.zeros((0, self.n)),
@@ -317,20 +320,21 @@ class FixedWeights(AcquisitionFunction):
             pf = updatePF(data, {})
         # If pf is empty, randomly select the starting point
         if pf['x_vals'].shape[0] == 0:
-            # Randomly select a feasible starting point
-            x = np.random.random_sample(self.n) * (self.ub - self.lb) + self.lb
-            count = 0
-            while np.any(constraint_func(x) > 0):
+            # Randomly search for a good starting point
+            x_min = np.random.random_sample(self.n) * (self.ub - self.lb) \
+                    + self.lb
+            for count in range(1000):
                 x = np.random.random_sample(self.n) * (self.ub - self.lb) \
                     + self.lb
-                count += 1
-                if count == 1000:
-                    raise ValueError("constraint_func has no feasible points")
+                if np.dot(self.weights, lagrange_func(x)) \
+                   < np.dot(self.weights, lagrange_func(x_min)):
+                    x_min[:] = x[:]
+            return x_min
         else:
             i = np.argmin(np.asarray([np.dot(self.weights, fi)
                                       for fi in pf['f_vals']]))
             x = pf['x_vals'][i, :]
-        return x
+            return x
 
     def scalarize(self, f_vals):
         """ Scalarize a vector of function values using the current weights.
@@ -349,7 +353,7 @@ class FixedWeights(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Compute the dot product between the weights and function values
         return np.dot(f_vals, self.weights)
 
@@ -373,12 +377,12 @@ class FixedWeights(AcquisitionFunction):
             if self.o != np.size(f_vals):
                 raise ValueError("f_vals must have length o")
         else:
-            raise ValueError("f_vals must be a numpy array")
+            raise TypeError("f_vals must be a numpy array")
         # Check that the gradient values are legal
         if isinstance(g_vals, np.ndarray):
             if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
                 raise ValueError("g_vals must have shape o-by-n")
         else:
-            raise ValueError("g_vals must be a numpy array")
+            raise TypeError("g_vals must be a numpy array")
         # Compute the dot product between the weights and the gradient values
         return np.dot(np.transpose(g_vals), self.weights)

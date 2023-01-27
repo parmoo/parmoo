@@ -10,11 +10,18 @@ installed depending on your choice of method:
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
  * pyDOE_ -- for generating experimental designs
+ * pandas_ -- for exporting the resulting databases
 
 Additional dependencies are needed to use the additional features in
 ``parmoo.extras``:
 
  * libEnsemble_ -- for managing parallel simulation evaluations
+
+And for using the Pareto front visualization library in ``parmoo.viz``:
+
+ * plotly_ -- for generating interactive plots
+ * dash_ -- for hosting interactive plots in your browser
+ * kaleido_ -- for exporting static plots post-interaction
 
 If you want to run the tests (in ``parmoo.tests``), then you will also need:
 
@@ -30,7 +37,10 @@ To install the latest release:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo
+    pip install < --user > parmoo
+
+where the braces around ``< --user >`` indicate that the ``--user`` flag is
+optional.
 
 Note that the default install will not install the extra dependencies,
 such as libEnsemble_.
@@ -39,7 +49,7 @@ To install *all* dependencies, use:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo[extras]
+    pip install < --user > parmoo[extras]
 
 To check the installation by running the full test suite, use:
 
@@ -49,6 +59,36 @@ To check the installation by running the full test suite, use:
 
 which will also install the test dependencies (pytest_, pytest-cov_, and
 flake8_).
+
+Conda Forge
+-----------
+
+For some users (in particular, this is the recommended method for Windows
+users), the preferred method for obtaining the latest release of
+ParMOO may be through the ``conda`` package manager.
+The latest release of ParMOO is available through the ``conda-forge`` channel.
+Note that ``conda`` does not support optional dependencies, so the following
+command will automatically fetch all required and optional dependencies:
+
+.. code-block:: bash
+
+   conda install --channel=conda-forge parmoo
+
+Before running the above command, it is recommended to create a new conda
+environment to avoid conflicts.
+Do so using:
+
+.. code-block:: bash
+
+   conda create --name channel-name
+   conda activate channel-name
+
+After performing a ``conda-forge`` installation of ParMOO, you can run
+our unit tests to make sure your installation is working:
+
+.. code-block:: bash
+
+   py.test --pyargs parmoo.tests.unit_tests
 
 Install from GitHub source
 --------------------------
@@ -102,15 +142,19 @@ After installation, you can run the tests using either:
 
 .. code-block:: bash
 
-    parmoo/tests/run-tests.sh -cu[rl]
+    parmoo/tests/run-tests.sh -cu<rl>
 
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
+.. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
+.. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _libEnsemble_documentation: https://libensemble.readthedocs.io/en/main/advanced_installation.html
 .. _numpy: https://numpy.org
+.. _pandas: https://pandas.pydata.org
+.. _plotly: https://plotly.com/python
 .. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
 .. _pytest-cov: https://pytest-cov.readthedocs.io/en/latest

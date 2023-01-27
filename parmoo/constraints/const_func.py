@@ -5,7 +5,7 @@ Defines an ABC for the callable ``const_func`` class.
 """
 
 import numpy as np
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class const_func(ABC):
@@ -87,6 +87,7 @@ class const_func(ABC):
             raise ValueError("An illegal sim_type was given")
         return
 
+    @abstractmethod
     def __call__(self, x, sim, der=0):
         """ Make const_func objects callable.
 
@@ -98,5 +99,3 @@ class const_func(ABC):
             float: The constraint violation for the input x.
 
         """
-
-        raise NotImplementedError("This method has not yet been implemented")
