@@ -1,6 +1,6 @@
-""" Test the PARMOO MOOP.iterate() point generator as a MDML client.
+""" Use the MOOP.iterate() point generator as a MDML client.
 
-Create a start up MDML client and optimize the producer using the PARMOO
+Create and start up a MDML client and optimize the producer using the PARMOO
 generator as the consumer.
 
 """
