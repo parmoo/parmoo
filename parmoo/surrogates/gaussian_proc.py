@@ -13,6 +13,7 @@ The classes include:
 import numpy as np
 from parmoo.structs import SurrogateFunction
 from scipy.spatial.distance import cdist
+from scipy.stats import tstd
 from parmoo.util import xerror
 
 
@@ -314,13 +315,19 @@ class GaussRBF(SurrogateFunction):
                 x_new[:] = self.lb[:] + (np.random.random(self.n)
                                          * (self.ub[:] - self.lb[:]))
         else:
-            # Find the n+1 closest points to x in the current database.
-            dists = np.asarray([np.amax(np.abs(x - xj) / self.eps)
+            # Find the n+1 closest points to x in the current database
+            diffs = np.asarray([np.abs(x - xj) / self.eps
                                 for xj in self.x_vals])
+            dists = np.asarray([np.amax(dj) for dj in diffs])
             inds = np.argsort(dists)
-            if dists[inds[self.n]] >= 1.5:
-                # Uniformly sample within the box [x - rad, x + rad].
-                rad = np.abs(x - self.x_vals[inds[self.n]])
+            diffs = diffs[inds]
+            if dists[inds[self.n]] > 1.5:
+                # Calculate the normalized sample std dev along each axis
+                stddev = np.asarray(tstd(diffs[:self.n+1], axis=0))
+                stddev[:] = np.maximum(stddev, np.ones(self.n))
+                stddev[:] = stddev[:] / np.amin(stddev)
+                # Sample within B(x, dists[inds[self.n]] / stddev)
+                rad = (dists[inds[self.n]] * self.eps) / stddev
                 x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
                                         * rad[:] + x, self.lb), self.ub)
                 while any([np.all(np.abs(x_new - xj) < self.eps)
@@ -701,7 +708,7 @@ class LocalGaussRBF(SurrogateFunction):
             elif (np.any(x < self.lb - self.eps) or
                   np.any(x > self.ub + self.eps)):
                 raise ValueError("x cannot be infeasible")
-        # Allocate the output array.
+        # Allocate the output array
         x_new = np.zeros(self.n)
         if global_improv:
             # If global improvement has been specified, randomly select a
@@ -714,12 +721,18 @@ class LocalGaussRBF(SurrogateFunction):
                                          * (self.ub[:] - self.lb[:]))
         else:
             # Find the n_loc closest points to x in the current database
-            dists = np.asarray([np.amax(np.abs(x - xj) / self.eps)
+            diffs = np.asarray([np.abs(x - xj) / self.eps
                                 for xj in self.x_vals])
+            dists = np.asarray([np.amax(dj) for dj in diffs])
             inds = np.argsort(dists)
+            diffs = diffs[inds]
             if dists[inds[self.n_loc - 1]] > 1.5:
-                # Uniformly sample within B(x, dists[n_loc]).
-                rad = np.abs(x - self.x_vals[inds[self.n_loc - 1]])
+                # Calculate the normalized sample std dev along each axis
+                stddev = np.asarray(tstd(diffs[:self.n_loc], axis=0))
+                stddev[:] = np.maximum(stddev, np.ones(self.n))
+                stddev[:] = stddev[:] / np.amin(stddev)
+                # Sample within B(x, dists[inds[n_loc - 1]] / stddev)
+                rad = (dists[inds[self.n_loc - 1]] * self.eps) / stddev
                 x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
                                         * rad[:] + x, self.lb), self.ub)
                 while any([np.all(np.abs(x_new - xj) < self.eps)
@@ -731,7 +744,7 @@ class LocalGaussRBF(SurrogateFunction):
                 # If the n_loc nearest point is too close, use global_improv
                 x_new[:] = self.lb[:] + np.random.random(self.n) \
                            * (self.ub[:] - self.lb[:])
-                # If the nearest point is too close, resample.
+                # If the nearest point is too close, resample
                 while any([np.all(np.abs(x_new - xj) < self.eps)
                            for xj in self.x_vals]):
                     x_new[:] = self.lb[:] + (np.random.random(self.n)
