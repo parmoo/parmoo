@@ -30,6 +30,7 @@ exploit simulation-based structure in objective and constraint functions.
 
 To exploit structure, ParMOO models *simulations* separately from
 *objectives* and *constraints*. In our language:
+
  * a **design variable** is an input to the problem, which we can directly
    control;
  * a **simulation** is an expensive or time-consuming process, including
@@ -60,6 +61,7 @@ Dependencies
 ParMOO has been tested on Unix/Linux and MacOS systems.
 
 ParMOO's base has the following dependencies:
+
  * Python_ 3.6+
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
@@ -68,9 +70,11 @@ ParMOO's base has the following dependencies:
 
 Additional dependencies are needed to use the additional features in
 ``parmoo.extras``:
+
  * libEnsemble_ -- for managing parallel simulation evaluations
 
 And for using the Pareto front visualization library in ``parmoo.viz``:
+
  * plotly_ -- for generating interactive plots
  * dash_ -- for hosting interactive plots in your browser
  * kaleido_ -- for exporting static plots post-interaction
@@ -248,6 +252,7 @@ Congratulations, you now know enough to get started solving MOOPs with
 ParMOO!
 
 Next steps:
+
  * Learn more about all that ParMOO has to offer (including saving and
    checkpointing, INFO-level logging, advanced problem definitions, and
    different surrogate and solver options) at our ReadTheDocs_ page.
@@ -261,9 +266,11 @@ Resources
 ---------
 
 To seek support or report issues, e-mail:
+
  * ``parmoo@mcs.anl.gov``
 
 Our full documentation is hosted on:
+
  * ReadTheDocs_
 
 Please read our LICENSE_ and CONTRIBUTING_ files.
