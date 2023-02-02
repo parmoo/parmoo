@@ -43,7 +43,8 @@ Our online documentation:
         institution = {Argonne National Laboratory},
         number      = {Version 0.2.0},
         year        = {2023},
-        url         = {https://parmoo.readthedocs.io/en/latest}
+        url         = {https://parmoo.readthedocs.io/en/latest},
+        doi         = {10.5281/zenodo.7600559}
     }
 
 

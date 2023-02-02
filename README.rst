@@ -19,6 +19,10 @@
     :target: https://parmoo.readthedocs.org/en/latest
     :alt: Documentation Status
 
+.. image:: https://zenodo.org/badge/449011189.svg
+   :target: https://zenodo.org/badge/latestdoi/449011189
+   :alt: Zenodo DOI for this repository
+
 
 |
 
@@ -301,7 +305,8 @@ Our online documentation:
         institution = {Argonne National Laboratory},
         number      = {Version 0.2.0},
         year        = {2023},
-        url         = {https://parmoo.readthedocs.io/en/latest}
+        url         = {https://parmoo.readthedocs.io/en/latest},
+        doi         = {10.5281/zenodo.7600559}
     }
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
