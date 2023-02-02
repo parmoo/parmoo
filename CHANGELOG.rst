@@ -52,17 +52,18 @@ Official release corresponding to accepted JOSS article.
    user-provided custom embedders/extractors.
    Documentation on design variables has been expanded accordingly.
    Although design variables are still specified through dicts not classes,
-   this addresses and therefore closes the primary issue raised in #28
+   this addresses and therefore closes the primary issue raised in
+   parmoo/parmoo#28
  - Updated ``extras/libe.py`` corresponding to interface changes made in
    libEnsemble Release 0.8.0. This also addresses the issues on MacOS,
-   referenced in #34
+   referenced in parmoo/parmoo#34
  - Added a post-run visualization library and corresponding
-   documentation, closing issue #27
+   documentation, closing issue parmoo/parmoo#27
  - Allow solvers to start from an initial point that is infeasible, so that
    problems with relaxable constraints and a very small feasible set can
    still be solved
  - Various style changes and additional usage environments requested by
-   JOSS reviewers openjournals/joss-reviews#4468 including #32
+   JOSS reviewers openjournals/joss-reviews#4468 including parmoo/parmoo#32
  - Added support for multistarting optimization solvers when solving
    surrogate problems. This is particularly important for the global
    ``GaussRBF`` surrogate
@@ -81,4 +82,4 @@ Note:
 Known issues:
 
  - The visualization library uses advanced plotly/dash features, which may
-   not support the chrome browser, as described in #37
+   not support the chrome browser, as described in parmoo/parmoo#37
