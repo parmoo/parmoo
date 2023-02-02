@@ -66,11 +66,18 @@ ParMOO's base has the following dependencies:
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
  * pyDOE_ -- for generating experimental designs
+ * pandas_ -- for exporting the resulting databases
 
 Additional dependencies are needed to use the additional features in
 ``parmoo.extras``:
 
  * libEnsemble_ -- for managing parallel simulation evaluations
+
+And for using the Pareto front visualization library in ``parmoo.viz``:
+
+ * plotly_ -- for generating interactive plots
+ * dash_ -- for hosting interactive plots in your browser
+ * kaleido_ -- for exporting static plots post-interaction
 
 Installation
 ------------
@@ -80,13 +87,16 @@ The easiest way to install ParMOO is via the Python package index, PyPI
 
 .. code-block:: bash
 
-    pip install [--user] parmoo
+    pip install < --user > parmoo
+
+where the braces around ``< --user >`` indicate that the ``--user`` flag is
+optional.
 
 To install *all* dependencies (including libEnsemble) use:
 
 .. code-block:: bash
 
-    pip install [--user] parmoo[extras]
+    pip install < --user > "parmoo[extras]"
 
 You can also clone this project from our GitHub_ and ``pip`` install it
 in-place, so that you can easily pull the latest version or checkout
@@ -98,6 +108,20 @@ On Debian-based systems with a bash shell, this looks like:
    git clone https://github.com/parmoo/parmoo
    cd parmoo
    pip install -e .
+
+Alternatively, the latest release of ParMOO (including all required and
+optional dependencies) can be installed from the ``conda-forge`` channel using:
+
+.. code-block:: bash
+
+   conda install --channel=conda-forge parmoo
+
+Before doing so, it is recommended to create a new conda environment using:
+
+.. code-block:: bash
+
+   conda create --name channel-name
+   conda activate channel-name
 
 Testing
 -------
@@ -124,12 +148,18 @@ class. To get started, create a ``MOOP`` object.
 
    my_moop = MOOP(LocalGPS)
 
+To summarize the framework, in each iteration ParMOO models each simulation
+using a computationally cheap surrogate, then solves one or more scalarizations
+of the objectives, which are specified by acquisition functions.
+Read more about this framework at our ReadTheDocs_ page.
 In the above example, ``LocalGPS`` is the class of optimizers that the
-``my_moop`` will use to solve scalarized surrogate problems.
+``my_moop`` will use to solve the scalarized surrogate problems.
 
 Next, add design variables to the problem as follows using the
 ``MOOP.addDesign(*args)`` method. In this example, we define one continuous
 and one categorical design variable.
+Other options include integer, custom, and raw (using raw variables is not
+recommended except for expert users).
 
 .. code-block:: python
 
@@ -143,7 +173,7 @@ and one categorical design variable.
    # Add a second categorical design variable with 3 levels
    my_moop.addDesign({'name': "x2", # optional, name
                       'des_type': "categorical", # required, type of variable
-                      'levels': 3 # required, number of categories
+                      'levels': ["good", "bad"] # required, category names
                      })
 
 Next, add simulations to the problem as follows using the
@@ -158,7 +188,7 @@ Next, add simulations to the problem as follows using the
 
    # Define a toy simulation for the problem, whose outputs are quadratic
    def sim_func(x):
-      if x["x2"] == 0:
+      if x["x2"] == "good":
          return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
       else:
          return np.array([99.9, 99.9])
@@ -211,6 +241,13 @@ results can be viewed using ``MOOP.getPF()`` method.
    my_moop.solve(5) # Solve with 5 iterations of ParMOO algorithm
    results = my_moop.getPF() # Extract the results
 
+After executing the above block of code, the ``results`` variable points to
+a numpy structured array, each of whose entries corresponds to a
+nondominated objective value in the ``my_moop`` object's final database.
+You can reference individual fields in the ``results`` array by using the
+``name`` keys that were assigned during ``my_moop``'s construction, or
+plot the results by using the viz_ library.
+
 Congratulations, you now know enough to get started solving MOOPs with
 ParMOO!
 
@@ -222,11 +259,13 @@ Next steps:
  * Explore the advanced examples (including a ``libEnsemble`` example)
    in the ``examples`` directory.
  * Install libEnsemble_ and get started solving MOOPs in parallel.
+ * To interactively explore your solutions, install its extra dependencies and
+   use our built-in viz_ tool.
 
 Resources
 ---------
 
-For more information, e-mail questions to:
+To seek support or report issues, e-mail:
 
  * ``parmoo@mcs.anl.gov``
 
@@ -236,32 +275,50 @@ Our full documentation is hosted on:
 
 Please read our LICENSE_ and CONTRIBUTING_ files.
 
-Citing ParMOO:
+Citing ParMOO
+-------------
 
- * Please use the following to cite ParMOO:
+Please use one of the following to cite ParMOO.
+
+Our JOSS paper:
+
+.. code-block:: bibtex
+
+    @article{parmoo-joss,
+        title       = {{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        author      = {Chang, Tyler H. and Wild, Stefan M.},
+        year        = {2023},
+        journal     = {To appear in The Journal of Open Source Software}
+    }
+
+Our online documentation:
 
 .. code-block:: bibtex
 
     @techreport{parmoo-docs,
         title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
-        author      = {Chang, Tyler H. and Wild, Stefan M.},
+        author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.1.0},
-        year        = {2022},
+        number      = {Version 0.2.0},
+        year        = {2023},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
 
-
 .. _Actions: https://github.com/parmoo/parmoo/actions
 .. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
+.. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
+.. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
+.. _pandas: https://pandas.pydata.org
+.. _plotly: https://plotly.com/python
 .. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
 .. _pytest-cov: https://pytest-cov.readthedocs.io/en/latest
 .. _Python: https://www.python.org/downloads
 .. _ReadTheDocs: https://parmoo.readthedocs.org
 .. _scipy: https://scipy.org
+.. _viz: https://parmoo.readthedocs.io/en/latest/modules/viz.html

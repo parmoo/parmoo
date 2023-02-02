@@ -12,10 +12,10 @@ my_moop.addDesign({'name': "x1",
                    'des_type': "continuous",
                    'lb': 0.0, 'ub': 1.0})
 my_moop.addDesign({'name': "x2", 'des_type': "categorical",
-                   'levels': 3})
+                   'levels': ["good", "bad"]})
 
 def sim_func(x):
-   if x["x2"] == 0:
+   if x["x2"] == "good":
       return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
    else:
       return np.array([99.9, 99.9])
@@ -41,3 +41,8 @@ results = my_moop.getPF()
 
 # Display solution
 print(results, "\n dtype=" + str(results.dtype))
+
+# Plot results -- must have extra viz dependencies installed
+from parmoo.viz import scatter
+# The optional arg `output` exports directly to jpg instead of interactive mode
+scatter(my_moop, output="jpeg")

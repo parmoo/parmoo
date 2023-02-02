@@ -60,3 +60,5 @@ After release
 -------------
 
 - Ensure all relevant GitHub issues are closed.
+- Check that the conda-forge package has tracked latest release
+  and update dependency list if needed.

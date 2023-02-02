@@ -4,7 +4,7 @@ References
 Additional Resources
 --------------------
 
-For questions, please e-mail:
+To seek support or report issues, e-mail:
 
  * ``parmoo@mcs.anl.gov``
 
@@ -20,16 +20,29 @@ Our full user guide is hosted here:
 Reference Format
 ----------------
 
- * Please use the following to cite ParMOO:
+Please use one of the following to cite ParMOO.
+
+Our JOSS paper:
+
+.. code-block:: bibtex
+
+    @article{parmoo-joss,
+        title       = {{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        author      = {Chang, Tyler H. and Wild, Stefan M.},
+        year        = {2023},
+        journal     = {To appear in The Journal of Open Source Software}
+    }
+
+Our online documentation:
 
 .. code-block:: bibtex
 
     @techreport{parmoo-docs,
         title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
-        author      = {Chang, Tyler H. and Wild, Stefan M.},
+        author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.1.0},
-        year        = {2022},
+        number      = {Version 0.2.0},
+        year        = {2023},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
 

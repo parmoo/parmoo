@@ -12,6 +12,7 @@ The classes include:
 import numpy as np
 from parmoo.structs import GlobalSearch
 from pyDOE import lhs
+from parmoo.util import xerror
 
 
 class LatinHypercube(GlobalSearch):
@@ -47,10 +48,8 @@ class LatinHypercube(GlobalSearch):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(m, lb, ub, hyperparams)
+        xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         # Assign the bounds
         self.lb = lb
@@ -86,10 +85,8 @@ class LatinHypercube(GlobalSearch):
 
         """
 
-        from parmoo.util import xerror
-
         # Check inputs
-        xerror(1, lb, ub, {})
+        xerror(lb=lb, ub=ub)
         # Assign the bounds
         self.lb = lb
         self.ub = ub
