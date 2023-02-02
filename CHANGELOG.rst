@@ -49,7 +49,7 @@ Official release corresponding to accepted JOSS article.
 
  - Added support for a wider variety of design variables (including integer
    types), as well as support for "custom" design variables that use
-   user-provided custom embedders/extractors.
+   user-provided custom embedders/extractors
    Documentation on design variables has been expanded accordingly.
    Although design variables are still specified through dicts not classes,
    this addresses and therefore closes the primary issue raised in
