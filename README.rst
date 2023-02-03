@@ -23,6 +23,9 @@
    :target: https://zenodo.org/badge/latestdoi/449011189
    :alt: Zenodo DOI for this repository
 
+.. image:: https://joss.theoj.org/papers/10.21105/joss.04468/status.svg
+   :target: https://doi.org/10.21105/joss.04468
+   :alt: JOSS DOI
 
 |
 
@@ -288,11 +291,14 @@ Our JOSS paper:
 
 .. code-block:: bibtex
 
-    @article{parmoo-joss,
-        title       = {{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
-        author      = {Chang, Tyler H. and Wild, Stefan M.},
-        year        = {2023},
-        journal     = {To appear in The Journal of Open Source Software}
+    @article{parmoo,
+        author={Chang, Tyler H. and Wild, Stefan M.},
+        title={{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        journal = {Journal of Open Source Software},
+        volume = {8},
+        number = {82},
+        pages = {4468},
+        doi = {10.21105/joss.04468}
     }
 
 Our online documentation:
@@ -305,8 +311,7 @@ Our online documentation:
         institution = {Argonne National Laboratory},
         number      = {Version 0.2.0},
         year        = {2023},
-        url         = {https://parmoo.readthedocs.io/en/latest},
-        doi         = {10.5281/zenodo.7600559}
+        url         = {https://parmoo.readthedocs.io/en/latest}
     }
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
