@@ -121,7 +121,7 @@ simulation- or experimentation-based MOOPs.
 In our *statement of need*, we outlined the properties that make ParMOO
 unique.
 In this section, we outline our strategy for achieving these goals.
-In particular, properties 1, 6, and 7 are non-trivial.
+In particular, properties 1, 6, and 7 are nontrivial.
 
 First, in order to achieve flexibility and customizability without sacrificing
 ease of use, we have focused on implementing a multiobjective response surface
