@@ -43,7 +43,7 @@ and deploying highly customized multiobjective simulation optimization solvers.
 ParMOO is designed to help engineers, practitioners, and optimization experts
 exploit available structures in how simulation outputs are used to formulate
 the objectives for a MOOP.
-We elaborate on these structures, and provide two examples, in future
+We elaborate on these structures and provide two examples in future
 sections.
 
 Additionally, ParMOO is:
@@ -63,11 +63,11 @@ multiobjective simulation optimization problems include
 ``Playtpus`` [@platypus],
 ``jMetalPy`` [@jMetalPy], and
 ``pygmo`` [@pygmo].
-Non multiobjective optimization specific Python packages that are
+Non-multiobjective-optimization-specific Python packages that are
 often used for implementing multiobjective optimization solvers include
 ``BoTorch`` [@botorch] and
 ``DEAP`` [@deap].
-Other non Python packages include
+Other non-Python packages include
 the Fortran solvers ``MODIR`` [@modir] and
 ``VTMOP`` [@vtmop], and
 the Matlab toolboxes ``PlatEMO`` [@platemo] and
@@ -121,7 +121,7 @@ simulation- or experimentation-based MOOPs.
 In our *statement of need*, we outlined the properties that make ParMOO
 unique.
 In this section, we outline our strategy for achieving these goals.
-In particular, properties 1, 6, and 7 are non trivial.
+In particular, properties 1, 6, and 7 are non-trivial.
 
 First, in order to achieve flexibility and customizability without sacrificing
 ease of use, we have focused on implementing a multiobjective response surface
