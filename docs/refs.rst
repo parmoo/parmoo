@@ -20,7 +20,23 @@ Our full user guide is hosted here:
 Reference Format
 ----------------
 
- * Please use the following to cite ParMOO:
+Please use one of the following to cite ParMOO.
+
+Our JOSS paper:
+
+.. code-block:: bibtex
+
+    @article{parmoo,
+        author={Chang, Tyler H. and Wild, Stefan M.},
+        title={{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        journal = {Journal of Open Source Software},
+        volume = {8},
+        number = {82},
+        pages = {4468},
+        doi = {10.21105/joss.04468}
+    }
+
+Our online documentation:
 
 .. code-block:: bibtex
 
@@ -28,11 +44,10 @@ Reference Format
         title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.1.0},
-        year        = {2022},
+        number      = {Version 0.2.0},
+        year        = {2023},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
-
 
 .. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE

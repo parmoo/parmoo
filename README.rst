@@ -19,6 +19,9 @@
     :target: https://parmoo.readthedocs.org/en/latest
     :alt: Documentation Status
 
+.. image:: https://joss.theoj.org/papers/10.21105/joss.04468/status.svg
+   :target: https://doi.org/10.21105/joss.04468
+   :alt: JOSS DOI
 
 |
 
@@ -275,9 +278,26 @@ Our full documentation is hosted on:
 
 Please read our LICENSE_ and CONTRIBUTING_ files.
 
-Citing ParMOO:
+Citing ParMOO
+-------------
 
- * Please use the following to cite ParMOO:
+Please use one of the following to cite ParMOO.
+
+Our JOSS paper:
+
+.. code-block:: bibtex
+
+    @article{parmoo,
+        author={Chang, Tyler H. and Wild, Stefan M.},
+        title={{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        journal = {Journal of Open Source Software},
+        volume = {8},
+        number = {82},
+        pages = {4468},
+        doi = {10.21105/joss.04468}
+    }
+
+Our online documentation:
 
 .. code-block:: bibtex
 
@@ -285,11 +305,10 @@ Citing ParMOO:
         title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.1.0},
-        year        = {2022},
+        number      = {Version 0.2.0},
+        year        = {2023},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
-
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
 .. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
