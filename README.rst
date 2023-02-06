@@ -19,10 +19,6 @@
     :target: https://parmoo.readthedocs.org/en/latest
     :alt: Documentation Status
 
-.. image:: https://zenodo.org/badge/449011189.svg
-   :target: https://zenodo.org/badge/latestdoi/449011189
-   :alt: Zenodo DOI for this repository
-
 .. image:: https://joss.theoj.org/papers/10.21105/joss.04468/status.svg
    :target: https://doi.org/10.21105/joss.04468
    :alt: JOSS DOI
