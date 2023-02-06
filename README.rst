@@ -19,6 +19,9 @@
     :target: https://parmoo.readthedocs.org/en/latest
     :alt: Documentation Status
 
+.. image:: https://joss.theoj.org/papers/10.21105/joss.04468/status.svg
+   :target: https://doi.org/10.21105/joss.04468
+   :alt: JOSS DOI
 
 |
 
@@ -284,11 +287,14 @@ Our JOSS paper:
 
 .. code-block:: bibtex
 
-    @article{parmoo-joss,
-        title       = {{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
-        author      = {Chang, Tyler H. and Wild, Stefan M.},
-        year        = {2023},
-        journal     = {To appear in The Journal of Open Source Software}
+    @article{parmoo,
+        author={Chang, Tyler H. and Wild, Stefan M.},
+        title={{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        journal = {Journal of Open Source Software},
+        volume = {8},
+        number = {82},
+        pages = {4468},
+        doi = {10.21105/joss.04468}
     }
 
 Our online documentation:
