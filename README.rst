@@ -294,6 +294,7 @@ Our JOSS paper:
         volume = {8},
         number = {82},
         pages = {4468},
+        year = {2023},
         doi = {10.21105/joss.04468}
     }
 
