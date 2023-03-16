@@ -4,4 +4,5 @@ pyDOE>=0.3.8
 libensemble>=0.9.0
 pandas>=0.3.0
 plotly>=5.9.0
+dash==2.8.1
 kaleido>=0.2.1
