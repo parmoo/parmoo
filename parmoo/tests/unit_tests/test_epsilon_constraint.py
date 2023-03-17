@@ -49,14 +49,14 @@ def test_RandomConstraint():
         acqu.setTarget(data, lambda x: np.ones(1), {})
     data['c_vals'] = np.zeros((10, 1))
     # Set a few good target
-    assert(np.all(acqu.setTarget({}, lambda x: np.zeros(3), {}) < 1.0))
-    assert(np.all(acqu.setTarget({}, lambda x: np.zeros(3), {}) > 0.0))
-    assert(np.all(acqu.setTarget({'x_vals': np.zeros((1, 3)),
-                                  'f_vals': np.zeros((1, 3)),
-                                  'c_vals': np.zeros((1, 1))},
-                                 lambda x: np.ones(3) * (0.01 - sum(x)),
-                                 {}) < 1.0))
-    assert(acqu.setTarget(data, lambda x: np.zeros(3), {}) in data['x_vals'])
+    assert (np.all(acqu.setTarget({}, lambda x: np.zeros(3), {}) < 1.0))
+    assert (np.all(acqu.setTarget({}, lambda x: np.zeros(3), {}) > 0.0))
+    assert (np.all(acqu.setTarget({'x_vals': np.zeros((1, 3)),
+                                   'f_vals': np.zeros((1, 3)),
+                                   'c_vals': np.zeros((1, 1))},
+                                  lambda x: np.ones(3) * (0.01 - sum(x)),
+                                  {}) < 1.0))
+    assert (acqu.setTarget(data, lambda x: np.zeros(3), {}) in data['x_vals'])
     # Try some bad scalarizations to test error handling
     with pytest.raises(TypeError):
         acqu.scalarize(5)
@@ -71,8 +71,8 @@ def test_RandomConstraint():
     pf = updatePF(data, {})
     # Check that the scalar value is either less than the sum of fi or bad
     for fi in pf['f_vals']:
-        assert(acqu.scalarize(fi) <= np.sum(fi) or
-               np.any(fi > acqu.f_ub))
+        assert (acqu.scalarize(fi) <= np.sum(fi) or
+                np.any(fi > acqu.f_ub))
     # Try some bad gradient scalarizations to test error handling
     with pytest.raises(TypeError):
         acqu.scalarizeGrad(5, np.zeros((3, 4))[0])
@@ -85,8 +85,8 @@ def test_RandomConstraint():
     # Check that the scalar grad is either less than the sum of fi or bad
     for fi in pf['f_vals']:
         gi = np.random.random_sample((3, 3))
-        assert(all(acqu.scalarizeGrad(fi, gi) <= np.sum(gi, axis=0)) or
-               np.any(fi > acqu.f_ub))
+        assert (all(acqu.scalarizeGrad(fi, gi) <= np.sum(gi, axis=0)) or
+                np.any(fi > acqu.f_ub))
     return
 
 

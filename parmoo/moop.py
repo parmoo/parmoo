@@ -820,8 +820,8 @@ class MOOP:
                 self.n_raw += 1
                 self.des_tols.append(1.0e-8)
             else:
-                raise(ValueError("des_type=" + arg['des_type'] +
-                                 " is not a recognized value"))
+                raise ValueError("des_type=" + arg['des_type'] +
+                                 " is not a recognized value")
         # Set the effective design dimension
         self.n = (self.n_cat_d + self.n_cont + self.n_int +
                   sum(self.n_custom_d) + self.n_raw)

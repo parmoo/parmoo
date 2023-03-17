@@ -13,7 +13,7 @@ def test_UniformWeights():
 
     # Initilaize a good acquisition for future testing
     acqu = UniformWeights(3, np.zeros(4), np.ones(4), {})
-    assert(np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
+    assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
     # Set some bad targets to check error handling
     with pytest.raises(TypeError):
         acqu.setTarget(5, lambda x: np.zeros(3), {})
@@ -34,8 +34,8 @@ def test_UniformWeights():
         acqu.setTarget({}, lambda x, y: np.zeros(3), {})
     # Set a good target for future usage
     x0 = acqu.setTarget({}, lambda x: np.zeros(3), {})
-    assert(abs(sum(acqu.weights) - 1.0) < 0.00000001)
-    assert(np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
+    assert (abs(sum(acqu.weights) - 1.0) < 0.00000001)
+    assert (np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
     # Try some bad scalarizations to test error handling
     with pytest.raises(TypeError):
         acqu.scalarize(5)
@@ -50,16 +50,19 @@ def test_UniformWeights():
     acqu3.setTarget({'x_vals': None, 'f_vals': None},
                     lambda x: np.zeros(3), {})
     # Check that the weights are all greater than 0
-    assert(all(acqu1.weights[:] >= 0.0))
-    assert(all(acqu2.weights[:] >= 0.0))
-    assert(all(acqu3.weights[:] >= 0.0))
+    assert (all(acqu1.weights[:] >= 0.0))
+    assert (all(acqu2.weights[:] >= 0.0))
+    assert (all(acqu3.weights[:] >= 0.0))
     # Use the scalarization function to check that the weights sum to 1
-    assert(np.abs(acqu1.scalarize(np.eye(3)[0]) + acqu1.scalarize(np.eye(3)[1])
-                  + acqu1.scalarize(np.eye(3)[2]) - 1.0) < 0.00000001)
-    assert(np.abs(acqu2.scalarize(np.eye(3)[0]) + acqu2.scalarize(np.eye(3)[1])
-                  + acqu2.scalarize(np.eye(3)[2]) - 1.0) < 0.00000001)
-    assert(np.abs(acqu3.scalarize(np.eye(3)[0]) + acqu3.scalarize(np.eye(3)[1])
-                  + acqu3.scalarize(np.eye(3)[2]) - 1.0) < 0.00000001)
+    assert (np.abs(acqu1.scalarize(np.eye(3)[0])
+                   + acqu1.scalarize(np.eye(3)[1])
+                   + acqu1.scalarize(np.eye(3)[2]) - 1.0) < 0.00000001)
+    assert (np.abs(acqu2.scalarize(np.eye(3)[0])
+                   + acqu2.scalarize(np.eye(3)[1])
+                   + acqu2.scalarize(np.eye(3)[2]) - 1.0) < 0.00000001)
+    assert (np.abs(acqu3.scalarize(np.eye(3)[0])
+                   + acqu3.scalarize(np.eye(3)[1])
+                   + acqu3.scalarize(np.eye(3)[2]) - 1.0) < 0.00000001)
     # Try some bad gradient scalarizations to test error handling
     with pytest.raises(TypeError):
         acqu.scalarizeGrad(5, np.zeros((3, 4))[0])
@@ -70,12 +73,12 @@ def test_UniformWeights():
     with pytest.raises(ValueError):
         acqu.scalarizeGrad(np.eye(3)[0], np.zeros((2, 4)))
     # Use the gradient scalarization to check that the weights sum to 1
-    assert(np.abs(np.sum(acqu1.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
-                  - 1.0) < 0.00000001)
-    assert(np.abs(np.sum(acqu2.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
-                  - 1.0) < 0.00000001)
-    assert(np.abs(np.sum(acqu3.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
-                  - 1.0) < 0.00000001)
+    assert (np.abs(np.sum(acqu1.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
+                   - 1.0) < 0.00000001)
+    assert (np.abs(np.sum(acqu2.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
+                   - 1.0) < 0.00000001)
+    assert (np.abs(np.sum(acqu3.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
+                   - 1.0) < 0.00000001)
     return
 
 
@@ -98,10 +101,10 @@ def test_FixedWeights():
         FixedWeights(3, np.zeros(4), np.ones(4), {'weights': np.ones(2)})
     # Initilaize a good acquisition for future testing
     acqu = FixedWeights(3, np.zeros(4), np.ones(4), {'weights': np.ones((3))})
-    assert(np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
+    assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
     acqu = FixedWeights(3, np.zeros(4), np.ones(4), {})
-    assert(np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
-    assert(np.all(acqu.weights[:] - (1.0 / 3.0) < 0.00000001))
+    assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
+    assert (np.all(acqu.weights[:] - (1.0 / 3.0) < 0.00000001))
     # Set some bad targets to check error handling
     with pytest.raises(TypeError):
         acqu.setTarget(5, lambda x: np.zeros(3), {})
@@ -123,22 +126,22 @@ def test_FixedWeights():
     # Set some good targets
     x0 = acqu.setTarget({'x_vals': None, 'f_vals': None},
                         lambda x: np.zeros(3), {})
-    assert(np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
+    assert (np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
     x0 = acqu.setTarget({'x_vals': np.zeros((1, 4)),
                          'f_vals': np.zeros((1, 3)),
                          'c_vals': np.zeros((1, 1))},
                         lambda x: np.zeros(3), {})
-    assert(np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
+    assert (np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
     x0 = acqu.setTarget({}, lambda x: np.zeros(3), {})
-    assert(np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
+    assert (np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
     # Try some bad scalarizations to test error handling
     with pytest.raises(TypeError):
         acqu.scalarize(5)
     with pytest.raises(ValueError):
         acqu.scalarize(np.ones(2))
     # Use the scalarization function to check that the weights sum to 1
-    assert(np.abs(acqu.scalarize(np.eye(3)[0]) + acqu.scalarize(np.eye(3)[1])
-                  + acqu.scalarize(np.eye(3)[2]) - 1.0) < 0.00000001)
+    assert (np.abs(acqu.scalarize(np.eye(3)[0]) + acqu.scalarize(np.eye(3)[1])
+                   + acqu.scalarize(np.eye(3)[2]) - 1.0) < 0.00000001)
     # Try some bad gradient scalarizations to test error handling
     with pytest.raises(TypeError):
         acqu.scalarizeGrad(5, np.zeros((3, 4))[0])
@@ -149,8 +152,8 @@ def test_FixedWeights():
     with pytest.raises(ValueError):
         acqu.scalarizeGrad(np.eye(3)[0], np.zeros((2, 4)))
     # Use the gradient scalarization to check that the weights sum to 1
-    assert(np.abs(np.sum(acqu.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
-                  - 1.0) < 0.00000001)
+    assert (np.abs(np.sum(acqu.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
+                   - 1.0) < 0.00000001)
     return
 
 

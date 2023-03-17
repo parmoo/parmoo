@@ -83,13 +83,13 @@ def test_libE_MOOP():
 
     # Create a libE_MOOP with named variables
     moop = libE_MOOP(LocalGPS)
-    assert(isinstance(moop.moop, MOOP))
+    assert (isinstance(moop.moop, MOOP))
     moop = libE_MOOP(LocalGPS, hyperparams={})
-    assert(isinstance(moop.moop, MOOP))
+    assert (isinstance(moop.moop, MOOP))
     # Add n design vars
     for i in range(n):
         moop.addDesign({'name': "x" + str(i + 1), 'lb': 0.0, 'ub': 1.0})
-    assert(len(moop.getDesignType().names) == n)
+    assert (len(moop.getDesignType().names) == n)
     # Add simulation
     moop.addSimulation({'name': "Eye",
                         'm': o,
@@ -99,7 +99,7 @@ def test_libE_MOOP():
                         'surrogate': GaussRBF,
                         'sim_db': {},
                         'des_tol': 0.00000001})
-    assert(len(moop.getSimulationType().names) == 1)
+    assert (len(moop.getSimulationType().names) == 1)
     # Add o objectives
     def obj1(x, s): return s['Eye'][0]
     def obj2(x, s): return s['Eye'][1]
@@ -107,15 +107,15 @@ def test_libE_MOOP():
     moop.addObjective({'name': "obj1", 'obj_func': obj1})
     moop.addObjective({'name': "obj2", 'obj_func': obj2})
     moop.addObjective({'name': "obj3", 'obj_func': obj3})
-    assert(len(moop.getObjectiveType().names) == 3)
+    assert (len(moop.getObjectiveType().names) == 3)
     # Add 1 constraint
     def const1(x, s): return x["x5"] - 0.5
     moop.addConstraint({'name': "c1", 'constraint': const1})
-    assert(len(moop.getConstraintType().names) == 1)
+    assert (len(moop.getConstraintType().names) == 1)
     # Add 4 acquisition functions
     for i in range(4):
         moop.addAcquisition({'acquisition': RandomConstraint})
-    assert(len(moop.moop.acquisitions) == 4)
+    assert (len(moop.moop.acquisitions) == 4)
     # Perform 0 iteration manually
     batch = moop.iterate(0)
     for (xi, i) in batch:
@@ -125,12 +125,12 @@ def test_libE_MOOP():
     x_val = np.zeros(1, dtype=moop.getDesignType())[0]
     sx_val = np.zeros(1, dtype=moop.getSimulationType())[0]
     moop.update_sim_db(x_val, sx_val["Eye"], "Eye")
-    assert(np.all(moop.check_sim_db(x_val, "Eye") == 0))
+    assert (np.all(moop.check_sim_db(x_val, "Eye") == 0))
     moop.addData(x_val, sx_val)
     # Check Pareto front, objective data, sim data
-    assert(moop.getPF()['x1'].shape[0] == 1)
-    assert(moop.getObjectiveData()['x1'].shape[0] == 101)
-    assert(moop.getSimulationData()['Eye']['x1'].shape[0] == 101)
+    assert (moop.getPF()['x1'].shape[0] == 1)
+    assert (moop.getObjectiveData()['x1'].shape[0] == 101)
+    assert (moop.getSimulationData()['Eye']['x1'].shape[0] == 101)
     # Test checkpointing features
     moop.setCheckpoint(True)
     moop.save()

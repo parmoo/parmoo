@@ -24,19 +24,19 @@ def test_LatinHypercube():
     latin_search = LatinHypercube(2, lb, ub, {'search_budget': 0})
     # Generate a design of size 0 and confirm that it is an empty array
     des1 = latin_search.startSearch(lb, ub)
-    assert(np.size(des1) == 0)
+    assert (np.size(des1) == 0)
     # Resume the search with size 0 and check that it is an empty array
     des2 = latin_search.resumeSearch()
-    assert(np.size(des2) == 0)
+    assert (np.size(des2) == 0)
     # Generate a new design and check that it conforms to the dimensions
     latin_search = LatinHypercube(2, lb, ub, {})
     des3 = latin_search.startSearch(lb, ub)
-    assert(np.shape(des3) == (100, 5))
-    assert(all([all(xi <= ub) and all(xi >= lb) for xi in des3]))
+    assert (np.shape(des3) == (100, 5))
+    assert (all([all(xi <= ub) and all(xi >= lb) for xi in des3]))
     # Resume the search and check that it conforms to the dimensions
     des4 = latin_search.resumeSearch()
-    assert(np.shape(des4) == (100, 5))
-    assert(all([all(xi <= ub) and all(xi >= lb) for xi in des4]))
+    assert (np.shape(des4) == (100, 5))
+    assert (all([all(xi <= ub) and all(xi >= lb) for xi in des4]))
     return
 
 

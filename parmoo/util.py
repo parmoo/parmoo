@@ -138,9 +138,9 @@ def check_sims(n, *args):
             # Check the search technique
             if 'search' in arg:
                 try:
-                    assert(isinstance(arg['search'](m, np.zeros(n),
+                    assert isinstance(arg['search'](m, np.zeros(n),
                                                     np.ones(n), {}),
-                                      structs.GlobalSearch))
+                                      structs.GlobalSearch)
                 except BaseException:
                     raise TypeError("sims[" + str(s) + "]['search']"
                                     + " must be a derivative of the"
