@@ -323,8 +323,9 @@ class GaussRBF(SurrogateFunction):
         tmp = np.dot(self.v.transpose(), dists) / self.w[:]
         stdd_weights[:] = np.dot(self.v, tmp)
         # Evaluate stddev of all m surrogates at x
-        return ((self.__gaussian(0.0) - np.dot(stdd_weights, dists))
-                * np.ones(self.m))
+        return (np.sqrt(max(self.__gaussian(0.0) -
+                            np.dot(stdd_weights, dists), 0)
+                * np.ones(self.m)))
 
     def stdDevGrad(self, x):
         """ Evaluate the gradient of the std deviation of the GaussRBF at x.
@@ -339,7 +340,38 @@ class GaussRBF(SurrogateFunction):
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
+        # Check that the x is legal
+        if not isinstance(x, np.ndarray):
+            raise TypeError("x must be a numpy array")
+        else:
+            if x.size != self.n:
+                raise ValueError("x must have length n")
+            elif (np.any(x < self.lb - self.eps) or
+                  np.any(x > self.ub + self.eps)):
+                raise ValueError("x cannot be infeasible")
+        # Get vector of Gaussian-transformed distances
+        dists = self.__gaussian(cdist(self.x_vals, [x])).flatten()
+        # Solve using previously factored Kernel matrix
+        stdd_weights = np.zeros(self.v.shape[0])
+        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
+        stdd_weights[:] = np.dot(self.v, tmp)
+        # Evaluate stddev of all m surrogates at x
+        stdd = np.sqrt(max(self.__gaussian(0.0) - np.dot(stdd_weights, dists),
+                           0))
+        # Evaluate all m gradients at x
+        kgrad = np.zeros((self.x_vals.shape[0], self.n))
+        for i, xi in enumerate(self.x_vals):
+            kgrad[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
+        # Just return 0 when derivative is undefined (at training points)
+        if stdd < 1.0e-4:
+            result = np.zeros(self.n)
+        else:
+            result = -np.dot(kgrad.T, stdd_weights).flatten() / stdd
+        # Build Jacobian (all m rows identical)
+        jac = np.zeros((self.m, self.n))
+        for i in range(self.m):
+            jac[i, :] = result[:]
+        return jac
 
     def improve(self, x, global_improv):
         """ Suggests a design to evaluate to improve the RBF model near x.
@@ -761,6 +793,86 @@ class LocalGaussRBF(SurrogateFunction):
         for i, xi in enumerate(self.x_vals[self.loc_inds]):
             outs[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
         return np.dot(self.weights, outs)
+
+    def stdDev(self, x):
+        """ Evaluate the std deviation (uncertainty) of the Gaussian RBF at x.
+
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 1d array containing the standard deviation at x.
+
+        """
+
+        # Check that the x is legal
+        if not isinstance(x, np.ndarray):
+            raise TypeError("x must be a numpy array")
+        else:
+            if x.size != self.n:
+                raise ValueError("x must have length n")
+            elif (np.any(x < self.lb - self.eps) or
+                  np.any(x > self.ub + self.eps)):
+                raise ValueError("x cannot be infeasible")
+        # Get vector of Gaussian-transformed distances
+        dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
+                                [x])).flatten()
+        # Solve using previously factored Kernel matrix
+        stdd_weights = np.zeros(self.v.shape[0])
+        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
+        stdd_weights[:] = np.dot(self.v, tmp)
+        # Evaluate stddev of all m surrogates at x
+        return (np.sqrt(max(self.__gaussian(0.0) -
+                            np.dot(stdd_weights, dists), 0)
+                * np.ones(self.m)))
+
+    def stdDevGrad(self, x):
+        """ Evaluate the gradient of the std deviation of the GaussRBF at x.
+ 
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the gradient of standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 2d array containing the Jacobian matrix of the
+            std deviation at x.
+
+        """
+
+        # Check that the x is legal
+        if not isinstance(x, np.ndarray):
+            raise TypeError("x must be a numpy array")
+        else:
+            if x.size != self.n:
+                raise ValueError("x must have length n")
+            elif (np.any(x < self.lb - self.eps) or
+                  np.any(x > self.ub + self.eps)):
+                raise ValueError("x cannot be infeasible")
+        # Get vector of Gaussian-transformed distances
+        dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
+                                      [x])).flatten()
+        # Solve using previously factored Kernel matrix
+        stdd_weights = np.zeros(self.v.shape[0])
+        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
+        stdd_weights[:] = np.dot(self.v, tmp)
+        # Evaluate stddev of all m surrogates at x
+        stdd = np.sqrt(max(self.__gaussian(0.0) - np.dot(stdd_weights, dists),
+                           0))
+        # Evaluate all m gradients at x
+        kgrad = np.zeros((self.v.shape[0], self.n))
+        for i, xi in enumerate(self.x_vals[self.loc_inds]):
+            kgrad[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
+        # Just return 0 when derivative is undefined (at training points)
+        if stdd < 1.0e-4:
+            result = np.zeros(self.n)
+        else:
+            result = -np.dot(kgrad.T, stdd_weights).flatten() / stdd
+        # Build Jacobian (all m rows identical)
+        jac = np.zeros((self.m, self.n))
+        for i in range(self.m):
+            jac[i, :] = result[:]
+        return jac
 
     def improve(self, x, global_improv):
         """ Suggests a design to evaluate to improve the RBF model near x.

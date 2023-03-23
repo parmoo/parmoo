@@ -91,12 +91,15 @@ def test_GaussRBF():
                 < 0.00000001)
         assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
                 < 0.00000001)
-        assert (np.linalg.norm(rbf1.stdDev(x_vals_full[i])) < 0.00000001)
-        assert (np.linalg.norm(rbf2.stdDev(x_vals_full[i])) < 0.00000001)
+        assert (np.max(rbf1.stdDev(x_vals_full[i])) < 1.0e-4)
+        assert (np.max(rbf2.stdDev(x_vals_full[i])) < 1.0e-4)
     # Check that the RBFs compute the same grad, up to 8 digits of precision
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
                                rbf2.gradient(x_vals_full[i])) < 0.00000001)
+    for i in range(x_vals_full.shape[0]):
+        assert (np.linalg.norm(rbf1.stdDevGrad(x_vals_full[i]) -
+                               rbf2.stdDevGrad(x_vals_full[i])) < 1.0e-4)
     # Check that the RBF gradient evaluates correctly on a known dataset
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
@@ -107,6 +110,10 @@ def test_GaussRBF():
     y_grad_vals3 = -0.03661401 * np.ones((1, 3))
     assert (np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
             < 1.0e-4)
+    # Check standard deviation calculations
+    xi = np.random.random_sample(3)
+    assert (np.all(rbf3.stdDev(xi) >= 0))
+    assert (np.any(rbf3.stdDevGrad(xi) != 0))
     # Check that the RBF generates feasible local improvement points
     for i in range(4):
         x_improv = rbf3.improve(np.zeros(3), False)
@@ -268,6 +275,7 @@ def test_LocalGaussRBF():
     # Check that the RBFs match on a random evaluation point
     x = np.random.random_sample((3))
     assert (all(rbf1.evaluate(x) == rbf2.evaluate(x)))
+    assert (all(rbf1.stdDev(x) == rbf2.stdDev(x)))
     # Check that the RBFs interpolate, up to 8 decimal digits of precision
     for i in range(x_vals_full.shape[0]):
         rbf1.setCenter(x_vals_full[i])
@@ -276,12 +284,16 @@ def test_LocalGaussRBF():
                 < 0.00000001)
         assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
                 < 0.00000001)
+        assert (np.linalg.norm(rbf1.stdDev(x_vals_full[i]) < 1.0e-4))
+        assert (np.linalg.norm(rbf2.stdDev(x_vals_full[i]) < 1.0e-4))
     # Check that the RBFs compute the same grad, up to 8 digits of precision
     rbf1.setCenter(0.5 * np.ones(3))
     rbf2.setCenter(0.5 * np.ones(3))
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
                                rbf2.gradient(x_vals_full[i])) < 0.00000001)
+        assert (np.linalg.norm(rbf1.stdDevGrad(x_vals_full[i]) -
+                               rbf2.stdDevGrad(x_vals_full[i])) < 1.0e-4)
     # Check that the RBF gradient evaluates correctly on a known dataset
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
@@ -292,6 +304,11 @@ def test_LocalGaussRBF():
     y_grad_vals3 = -0.08798618 * np.ones((1, 3))
     assert (np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
             < 1.0e-4)
+    assert (np.linalg.norm(rbf3.stdDevGrad(x_vals3[-1]) >= 0))
+    # Check standard deviation calculations
+    xi = np.random.random_sample(3)
+    assert (np.all(rbf3.stdDev(xi) >= 0))
+    assert (np.any(rbf3.stdDevGrad(xi) != 0))
     # Check that the RBF generates feasible local improvement points
     for i in range(4):
         x_improv = rbf3.improve(np.zeros(3), False)
