@@ -174,6 +174,25 @@ def test_GaussRBF():
     xx = np.random.random_sample(3)
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
     os.remove("parmoo.surrogate")
+    # Generate a simple 1D RBF and check its stdDev and stdDevGrad are accurate
+    x_vals4 = np.array([[0], [1]])
+    y_vals4 = np.array([[1], [1]])
+    rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {})
+    rbf8.fit(x_vals4, y_vals4)
+    assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 1.0) < 1.0e-8)
+    assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 1.0e-1)
+    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) < 1.0e-8)
+    assert (np.linalg.norm(rbf8.stdDevGrad(np.array([0.5]))) < 1.0e-4)
+    xx = np.linspace(0, 1).reshape((50, 1))
+    maxind = 0
+    for i, xi in enumerate(xx):
+        if np.all(rbf8.stdDev(xi) > rbf8.stdDev(xx[maxind])):
+            maxind = i
+        if i < 25:
+            assert(np.all(rbf8.stdDevGrad(xi) >= 0))
+        else:
+            assert(np.all(rbf8.stdDevGrad(xi) <= 0))
+    assert (maxind in [24, 25])
     return
 
 
@@ -375,6 +394,26 @@ def test_LocalGaussRBF():
     xx = np.random.random_sample(3)
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
     os.remove("parmoo.surrogate")
+    # Generate a simple 1D RBF and check its stdDev and stdDevGrad are accurate
+    x_vals4 = np.array([[0], [1]])
+    y_vals4 = np.array([[1], [1]])
+    rbf8 = LocalGaussRBF(1, np.zeros(1), np.ones(1), {})
+    rbf8.fit(x_vals4, y_vals4)
+    rbf8.setCenter(np.array([0.5]))
+    assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 1.0) < 1.0e-8)
+    assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 1.0e-1)
+    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) < 1.0e-8)
+    assert (np.linalg.norm(rbf8.stdDevGrad(np.array([0.5]))) < 1.0e-4)
+    xx = np.linspace(0, 1).reshape((50, 1))
+    maxind = 0
+    for i, xi in enumerate(xx):
+        if np.all(rbf8.stdDev(xi) > rbf8.stdDev(xx[maxind])):
+            maxind = i
+        if i < 25:
+            assert(np.all(rbf8.stdDevGrad(xi) >= 0))
+        else:
+            assert(np.all(rbf8.stdDevGrad(xi) <= 0))
+    assert (maxind in [24, 25])
     return
 
 
