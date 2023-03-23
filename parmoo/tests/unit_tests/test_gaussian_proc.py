@@ -84,12 +84,15 @@ def test_GaussRBF():
     # Check that the RBFs match on a random evaluation point
     x = np.random.random_sample((3))
     assert (all(rbf1.evaluate(x) == rbf2.evaluate(x)))
+    assert (all(rbf1.stdDev(x) == rbf2.stdDev(x)))
     # Check that the RBFs interpolate, up to 8 decimal digits of precision
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
                 < 0.00000001)
         assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
                 < 0.00000001)
+        assert (np.linalg.norm(rbf1.stdDev(x_vals_full[i])) < 0.00000001)
+        assert (np.linalg.norm(rbf2.stdDev(x_vals_full[i])) < 0.00000001)
     # Check that the RBFs compute the same grad, up to 8 digits of precision
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -

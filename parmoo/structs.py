@@ -244,6 +244,8 @@ class SurrogateFunction(ABC):
      * ``setCenter(x)``
      * ``evaluate(x)``
      * ``gradient(x)``
+     * ``stdDev(x)``
+     * ``stdDevGrad(x)``
      * ``improve(x, global_improv)``
      * ``save(filename)``
      * ``load(filename)``
@@ -320,7 +322,7 @@ class SurrogateFunction(ABC):
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
-                which to the Gaussian RBF should be evaluated.
+                which to the surrogate should be evaluated.
 
         Returns:
             numpy.ndarray: A 1d array containing the predicted objective value
@@ -331,13 +333,51 @@ class SurrogateFunction(ABC):
     def gradient(self, x):
         """ Evaluate the gradient of the surrogate at a design point.
 
+        Note: this method need not be implemented when using a derivative
+        free SurrogateOptimization solver.
+
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
-                which the gradient of the RBF should be evaluated.
+                which the gradient of the surrogate should be evaluated.
 
         Returns:
             numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            RBF interpolants at x.
+            surrogate at x.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
+
+    def stdDev(self, x):
+        """ Evaluate the std deviation (uncertainty) of the surrogate at x.
+
+        Note: this method need not be implemented when the acquisition
+        function does not use the model uncertainty.
+
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 1d array containing the standard deviation at x.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
+
+    def stdDevGrad(self, x):
+        """ Evaluate the gradient of the std deviation at x.
+
+        Note: this method need not be implemented when the acquisition
+        function does not use both the model uncertainty and gradient.
+
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the gradient of standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 2d array containing the Jacobian matrix of the
+            std deviation at x.
 
         """
 
