@@ -1504,6 +1504,53 @@ class MOOP:
         # Return the result
         return fx
 
+    def surrogateUncertainty(self, x, grad=False):
+        """ Evaluate uncertainty of all objectives based on surrogates UQ.
+
+        Assumes a normal distribution on simulation outputs.
+
+        Warning: Not recommended for external usage!
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+            grad (bool): Specifies whether or not to evalaute the
+
+        Returns:
+            numpy.ndarray: (When grad is False) a 1d numpy.ndarray containing
+            the expected objective value based on the surrogate and
+            uncertainty. (When grad is True) a 2d numpy.ndarray containing
+            the gradient of the expected objective value at x.
+
+            numpy.ndarray: (When grad is False) a 1d numpy.ndarray containing
+            the std deviation of the surrogates at x. (When grad is True)
+            a 2d numpy.ndarray containing the Jacobian of gradients of
+            all surrogates uncertainties at x.
+
+        """
+
+        # Check for illegal input
+        if isinstance(x, np.ndarray):
+            if x.shape[0] != self.n:
+                raise ValueError("x must have length n")
+        else:
+            raise TypeError("x must be a numpy array")
+        # Evaluate the surrogate models to approximate the simulation outputs
+        sim_mean = np.zeros(self.m_total)
+        sim_stdD = np.zeros(self.m_total)
+        m_count = 0
+        for i, surrogate in enumerate(self.surrogates):
+            sim_mean[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
+            sim_stdD[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
+            m_count += self.m[i]
+        # Evaluate the objective functions
+        fx = np.zeros(self.o)
+        for i, obj_func in enumerate(self.objectives):
+            fx[i] = obj_func(self.__extract__(x), self.__unpack_sim__(sim_mean))
+        # Return the result
+        return fx
+
     def evaluateConstraints(self, x):
         """ Evaluate the constraints using the simulation surrogates as needed.
 
