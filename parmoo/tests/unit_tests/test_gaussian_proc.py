@@ -189,9 +189,9 @@ def test_GaussRBF():
         if np.all(rbf8.stdDev(xi) > rbf8.stdDev(xx[maxind])):
             maxind = i
         if i < 25:
-            assert(np.all(rbf8.stdDevGrad(xi) >= 0))
+            assert (np.all(rbf8.stdDevGrad(xi) >= 0))
         else:
-            assert(np.all(rbf8.stdDevGrad(xi) <= 0))
+            assert (np.all(rbf8.stdDevGrad(xi) <= 0))
     assert (maxind in [24, 25])
     return
 
@@ -410,9 +410,9 @@ def test_LocalGaussRBF():
         if np.all(rbf8.stdDev(xi) > rbf8.stdDev(xx[maxind])):
             maxind = i
         if i < 25:
-            assert(np.all(rbf8.stdDevGrad(xi) >= 0))
+            assert (np.all(rbf8.stdDevGrad(xi) >= 0))
         else:
-            assert(np.all(rbf8.stdDevGrad(xi) <= 0))
+            assert (np.all(rbf8.stdDevGrad(xi) <= 0))
     assert (maxind in [24, 25])
     return
 

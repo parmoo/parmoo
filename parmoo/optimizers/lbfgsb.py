@@ -14,7 +14,6 @@ The classes include:
 """
 
 import numpy as np
-import inspect
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
 
@@ -30,7 +29,8 @@ class LBFGSB(SurrogateOptimizer):
 
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'gradients', 'penalty_func', 'restarts']
+                 'objectives', 'simulations', 'gradients', 'resetObjectives',
+                 'penalty_func']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LBFGSB class.
@@ -89,108 +89,6 @@ class LBFGSB(SurrogateOptimizer):
         else:
             self.budget = 1000
         self.acquisitions = []
-        return
-
-    def setObjective(self, obj_func):
-        """ Add a vector-valued objective function that will be solved.
-
-        Args:
-            obj_func (function): A vector-valued function that can be evaluated
-                to solve the surrogate optimization problem.
-
-        """
-
-        # Check whether obj_func() has an appropriate signature
-        if callable(obj_func):
-            if len(inspect.signature(obj_func).parameters) != 1:
-                raise ValueError("obj_func() must accept exactly one input")
-            else:
-                # Add obj_func to the problem
-                self.objectives = obj_func
-        else:
-            raise TypeError("obj_func() must be callable")
-        return
-
-    def setReset(self, reset):
-        """ Add a reset function for resetting surrogate updates.
-
-        This method is not used by this class.
-
-        """
-
-        return
-
-    def setPenalty(self, penalty_func, grad_func):
-        """ Add a matrix-valued gradient function for obj_func.
-
-        Args:
-            penalty_func (function): A vector-valued penalized objective
-                that incorporates a penalty for violating constraints.
-
-            grad_func (function): A matrix-valued function that can be
-                evaluated to obtain the Jacobian matrix for obj_func.
-
-        """
-
-        # Check whether grad_func() has an appropriate signature
-        if callable(grad_func):
-            if len(inspect.signature(grad_func).parameters) != 1:
-                raise ValueError("grad_func must accept exactly one input")
-            else:
-                # Add grad_func to the problem
-                self.gradients = grad_func
-        else:
-            raise TypeError("grad_func() must be callable")
-        # Check whether penalty_func() has an appropriate signature
-        if callable(penalty_func):
-            if len(inspect.signature(penalty_func).parameters) != 1:
-                raise ValueError("penalty_func must accept exactly one input")
-            else:
-                # Add Lagrangian to the problem
-                self.penalty_func = penalty_func
-        else:
-            raise TypeError("penalty_func must be callable")
-        return
-
-    def setConstraints(self, constraint_func):
-        """ Add a constraint function that will be satisfied.
-
-        Args:
-            constraint_func (function): A vector-valued function from the
-                design space whose components correspond to constraint
-                violations. If the problem is unconstrained, a function
-                that returns zeros could be provided.
-
-        """
-
-        # Check whether constraint_func() has an appropriate signature
-        if callable(constraint_func):
-            if len(inspect.signature(constraint_func).parameters) != 1:
-                raise ValueError("constraint_func() must accept exactly one"
-                                 + " input")
-            else:
-                # Add constraint_func to the problem
-                self.constraints = constraint_func
-        else:
-            raise TypeError("constraint_func() must be callable")
-        return
-
-    def addAcquisition(self, *args):
-        """ Add an acquisition function for the surrogate optimizer.
-
-        Args:
-            *args (AcquisitionFunction): Acquisition functions that are used
-                to scalarize the list of objectives in order to solve the
-                surrogate optimization problem.
-
-        """
-
-        # Check for illegal inputs
-        if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
-            raise TypeError("Args must be instances of AcquisitionFunction")
-        # Append all arguments to the acquisitions list
-        for arg in args:
-            self.acquisitions.append(arg)
         return
 
     def solve(self, x):
@@ -280,7 +178,7 @@ class TR_LBFGSB(SurrogateOptimizer):
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'gradients', 'penalty_func', 'resetObjectives',
-                 'restarts']
+                 'restarts', 'simulations']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the TR_LBFGSB class.
@@ -340,120 +238,6 @@ class TR_LBFGSB(SurrogateOptimizer):
         else:
             self.restarts = 2
         self.acquisitions = []
-        return
-
-    def setObjective(self, obj_func):
-        """ Add a vector-valued objective function that will be solved.
-
-        Args:
-            obj_func (function): A vector-valued function that can be evaluated
-                to solve the surrogate optimization problem.
-
-        """
-
-        # Check whether obj_func() has an appropriate signature
-        if callable(obj_func):
-            if len(inspect.signature(obj_func).parameters) != 1:
-                raise ValueError("obj_func() must accept exactly one input")
-            else:
-                # Add obj_func to the problem
-                self.objectives = obj_func
-        else:
-            raise TypeError("obj_func() must be callable")
-        return
-
-    def setReset(self, reset):
-        """ Add a reset function for resetting surrogate updates.
-
-        Args:
-            reset (function): A function with one input, which will be
-                called prior to solving the surrogate optimization
-                problem with each acquisition function.
-
-        """
-
-        # Check whether reset() has an appropriate signature
-        if callable(reset):
-            if len(inspect.signature(reset).parameters) != 1:
-                raise ValueError("reset() must accept exactly one input")
-            else:
-                # Add obj_func to the problem
-                self.resetObjectives = reset
-        else:
-            raise TypeError("reset() must be callable")
-        return
-
-    def setPenalty(self, penalty_func, grad_func):
-        """ Add a matrix-valued gradient function for obj_func.
-
-        Args:
-            penalty_func (function): A vector-valued penalized objective
-                that incorporates a penalty for violating constraints.
-
-            grad_func (function): A matrix-valued function that can be
-                evaluated to obtain the Jacobian matrix for obj_func.
-
-        """
-
-        # Check whether grad_func() has an appropriate signature
-        if callable(grad_func):
-            if len(inspect.signature(grad_func).parameters) != 1:
-                raise ValueError("grad_func() must accept exactly one input")
-            else:
-                # Add grad_func to the problem
-                self.gradients = grad_func
-        else:
-            raise TypeError("grad_func() must be callable")
-        # Check whether penalty_func() has an appropriate signature
-        if callable(penalty_func):
-            if len(inspect.signature(penalty_func).parameters) != 1:
-                raise ValueError("penalty_func must accept exactly one input")
-            else:
-                # Add Lagrangian to the problem
-                self.penalty_func = penalty_func
-        else:
-            raise TypeError("penalty_func must be callable")
-        return
-
-    def setConstraints(self, constraint_func):
-        """ Add a constraint function that will be satisfied.
-
-        Args:
-            constraint_func (function): A vector-valued function from the
-                design space whose components correspond to constraint
-                violations. If the problem is unconstrained, a function
-                that returns zeros could be provided.
-
-        """
-
-        # Check whether constraint_func() has an appropriate signature
-        if callable(constraint_func):
-            if len(inspect.signature(constraint_func).parameters) != 1:
-                raise ValueError("constraint_func() must accept exactly one"
-                                 + " input")
-            else:
-                # Add constraint_func to the problem
-                self.constraints = constraint_func
-        else:
-            raise TypeError("constraint_func() must be callable")
-        return
-
-    def addAcquisition(self, *args):
-        """ Add an acquisition function for the surrogate optimizer.
-
-        Args:
-            *args (AcquisitionFunction): Acquisition functions that are used
-                to scalarize the list of objectives in order to solve the
-                surrogate optimization problem.
-
-        """
-
-        # Check for illegal inputs
-        if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
-            raise TypeError("Args must be instances of AcquisitionFunction")
-        # Append all arguments to the acquisitions list
-        for arg in args:
-            self.acquisitions.append(arg)
         return
 
     def solve(self, x):

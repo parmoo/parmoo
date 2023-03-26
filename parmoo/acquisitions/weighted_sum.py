@@ -71,7 +71,6 @@ class UniformWeights(AcquisitionFunction):
             lagrange_func (function): A function whose components correspond
                 to constraint violation amounts.
 
-
             history (dict): Another unused argument for this function.
 
         Returns:

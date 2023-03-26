@@ -229,17 +229,6 @@ class GaussRBF(SurrogateFunction):
             self.weights[i, :] = np.dot(self.v, tmp)
         return
 
-    def setCenter(self, center):
-        """ This is a dummy subroutine, that does nothing for this class.
-
-        Returns:
-            float: The max of ub - lb, which could be used as the trust region
-            radius for a local optimizer, i.e., the entire design space.
-
-        """
-
-        return max(self.ub - self.lb)
-
     def evaluate(self, x):
         """ Evaluate the Gaussian RBF at a design point.
 
@@ -372,75 +361,6 @@ class GaussRBF(SurrogateFunction):
         for i in range(self.m):
             jac[i, :] = result[:]
         return jac
-
-    def improve(self, x, global_improv):
-        """ Suggests a design to evaluate to improve the RBF model near x.
-
-        Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the RBF should be improved.
-
-            global_improv (Boolean): When True, returns a point for global
-                improvement, ignoring the value of x.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the list of design points
-            that should be evaluated to improve the RBF models.
-
-        """
-
-        # Check that the x is legal
-        if not isinstance(x, np.ndarray):
-            raise TypeError("x must be a numpy array")
-        else:
-            if x.size != self.n:
-                raise ValueError("x must have length n")
-            elif (np.any(x < self.lb - self.eps) or
-                  np.any(x > self.ub + self.eps)):
-                raise ValueError("x cannot be infeasible")
-        # Allocate the output array.
-        x_new = np.zeros(self.n)
-        if global_improv:
-            # If global improvement has been specified, randomly select a
-            # point from within the bound constraints.
-            x_new[:] = self.lb[:] + (np.random.random(self.n)
-                                     * (self.ub[:] - self.lb[:]))
-            while any([np.all(np.abs(x_new - xj) < self.eps)
-                       for xj in self.x_vals]):
-                x_new[:] = self.lb[:] + (np.random.random(self.n)
-                                         * (self.ub[:] - self.lb[:]))
-        else:
-            # Find the n+1 closest points to x in the current database
-            diffs = np.asarray([np.abs(x - xj) / self.eps
-                                for xj in self.x_vals])
-            dists = np.asarray([np.amax(dj) for dj in diffs])
-            inds = np.argsort(dists)
-            diffs = diffs[inds]
-            if dists[inds[self.n]] > 1.5:
-                # Calculate the normalized sample std dev along each axis
-                stddev = np.asarray(tstd(diffs[:self.n+1], axis=0))
-                stddev[:] = np.maximum(stddev, np.ones(self.n))
-                stddev[:] = stddev[:] / np.amin(stddev)
-                # Sample within B(x, dists[inds[self.n]] / stddev)
-                rad = (dists[inds[self.n]] * self.eps) / stddev
-                x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
-                                        * rad[:] + x, self.lb), self.ub)
-                while any([np.all(np.abs(x_new - xj) < self.eps)
-                           for xj in self.x_vals]):
-                    x_new = np.fmin(np.fmax(2.0 *
-                                            (np.random.random(self.n) - 0.5)
-                                            * rad[:] + x, self.lb), self.ub)
-            else:
-                # If the n+1st nearest point is too close, use global_improv.
-                x_new[:] = self.lb[:] + np.random.random(self.n) \
-                           * (self.ub[:] - self.lb[:])
-                # If the nearest point is too close, resample.
-                while any([np.all(np.abs(x_new - xj) < self.eps)
-                           for xj in self.x_vals]):
-                    x_new[:] = self.lb[:] + (np.random.random(self.n)
-                                             * (self.ub[:] - self.lb[:]))
-        # Return the point to be sampled in a 2d array.
-        return np.asarray([x_new])
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.
