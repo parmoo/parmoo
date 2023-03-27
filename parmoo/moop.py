@@ -998,22 +998,21 @@ class MOOP:
                     * 1 -- return derivative wrt x, or
                     * 2 -- return derivative wrt sim(x).
                  * 'exp_func' (function): An algebraic objective function
-                   that uses surrogate uncertainties to estimate the expected
-                   value and variance in objectives. Maps from
-                   R^n X S ~ N^m(mean, var) --> R.
-                   Here, the first input represents x, the second input
+                   that calculates the expected value and distribution of
+                   an objective, given that surrogate outputs are normal
+                   distributed with given mean and variance. Accepts three
+                   inputs. The first input represents x, the second input
                    is the expected value of S(x), and the third value
                    represents the standard deviation of S(x) -- assuming
-                   a Gaussian distribution on the true value of S(x).
-                   The outputs are the expected value and variance of
-                   f(x, S) given S ~ N(S, var(S)).
+                   S(x) is Gaussian distributed.
+                   The output is the expected value of f(x, S).
                    Interface should match:
-                   `cost = exp_func(x, sim_mean(x), sim_std_dev(x),
-                                    std_dev=False, der=0)`,
-                   where `std_dev` is an optional argument specifying whether
-                   to evaluate the standard deviation instead of the mean,
+                   `cost = exp_func(x, sim_mean, sim_std_dev,
+                                    acq_func=None, der=0)`,
+                   where `acq_func` is an optional argument specifying an
+                   acquisition function to evaluate instead of the mean,
                    and `der` is an optional argument specifying whether to
-                   take the derivative of the objective function
+                   take the derivative of the expected value
                     * 0 -- no derivative taken, return f(x, sim_func(x))
                     * 1 -- return derivative wrt x,
                     * 2 -- return derivative wrt expected value of sim(x), or
