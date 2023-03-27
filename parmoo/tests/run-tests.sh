@@ -39,7 +39,7 @@ if [ $UNIT_TESTS == true ]; then
   echo
   echo "Running unit tests with pytest and collecting coverage data..."
   echo
-  pytest -v --cov-config=parmoo/tests/.coveragerc --cov=parmoo --cov-report= parmoo/tests/unit_tests -W error::UserWarning;
+  python3 -m pytest -v --cov-config=parmoo/tests/.coveragerc --cov=parmoo --cov-report= parmoo/tests/unit_tests -W error::UserWarning;
 
   code=$? # capture pytest exit code
   if [ "$code" -eq "0" ]; then
