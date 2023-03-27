@@ -10,7 +10,7 @@ def test_sims_dtlz_g1():
     import numpy as np
 
     g1 = g1_sim(5, num_obj=3, offset=0.6)
-    assert(np.abs(g1(np.ones(5) * 0.6)) < 1.0e-8)
+    assert (np.abs(g1(np.ones(5) * 0.6)) < 1.0e-8)
 
 
 def test_sims_dtlz_g2():
@@ -24,7 +24,7 @@ def test_sims_dtlz_g2():
     import numpy as np
 
     g2 = g2_sim(5, num_obj=3, offset=0.6)
-    assert(np.abs(g2(np.ones(5) * 0.6)) < 1.0e-8)
+    assert (np.abs(g2(np.ones(5) * 0.6)) < 1.0e-8)
 
 
 def test_sims_dtlz_g3():
@@ -38,7 +38,7 @@ def test_sims_dtlz_g3():
     import numpy as np
 
     g3 = g3_sim(5, num_obj=3, offset=0.6)
-    assert(np.abs(g3(np.ones(5) * 0.6)) < 1.0e-8)
+    assert (np.abs(g3(np.ones(5) * 0.6)) < 1.0e-8)
 
 
 def test_sims_dtlz_g4():
@@ -52,7 +52,7 @@ def test_sims_dtlz_g4():
     import numpy as np
 
     g4 = g4_sim(5, num_obj=3, offset=0.6)
-    assert(np.abs(g4(np.ones(5) * 0.6) - 1.0) < 1.0e-8)
+    assert (np.abs(g4(np.ones(5) * 0.6) - 1.0) < 1.0e-8)
 
 
 def test_sims_dtlz_dtlz1():
@@ -66,7 +66,7 @@ def test_sims_dtlz_dtlz1():
     import numpy as np
 
     dtlz1 = dtlz1_sim(5, num_obj=3, offset=0.6)
-    assert(sum(dtlz1(np.ones(5) * 0.6)) - 0.5 < 1.0e-8)
+    assert (sum(dtlz1(np.ones(5) * 0.6)) - 0.5 < 1.0e-8)
 
 
 def test_sims_dtlz_dtlz2():
@@ -80,7 +80,7 @@ def test_sims_dtlz_dtlz2():
     import numpy as np
 
     dtlz2 = dtlz2_sim(5, num_obj=3, offset=0.6)
-    assert(np.linalg.norm(dtlz2(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    assert (np.linalg.norm(dtlz2(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
 
 
 def test_sims_dtlz_dtlz3():
@@ -94,7 +94,7 @@ def test_sims_dtlz_dtlz3():
     import numpy as np
 
     dtlz3 = dtlz3_sim(5, num_obj=3, offset=0.6)
-    assert(np.linalg.norm(dtlz3(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    assert (np.linalg.norm(dtlz3(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
 
 
 def test_sims_dtlz_dtlz4():
@@ -108,7 +108,7 @@ def test_sims_dtlz_dtlz4():
     import numpy as np
 
     dtlz4 = dtlz4_sim(5, num_obj=3, offset=0.6)
-    assert(np.linalg.norm(dtlz4(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    assert (np.linalg.norm(dtlz4(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
 
 
 def test_sims_dtlz_dtlz5():
@@ -122,7 +122,7 @@ def test_sims_dtlz_dtlz5():
     import numpy as np
 
     dtlz5 = dtlz5_sim(5, num_obj=3, offset=0.6)
-    assert(np.linalg.norm(dtlz5(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    assert (np.linalg.norm(dtlz5(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
 
 
 def test_sims_dtlz_dtlz6():
@@ -136,7 +136,7 @@ def test_sims_dtlz_dtlz6():
     import numpy as np
 
     dtlz6 = dtlz6_sim(5, num_obj=3, offset=0.6)
-    assert(np.linalg.norm(dtlz6(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    assert (np.linalg.norm(dtlz6(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
 
 
 def test_sims_dtlz_dtlz7():
@@ -152,7 +152,7 @@ def test_sims_dtlz_dtlz7():
     dtlz7 = dtlz7_sim(5, num_obj=3, offset=0.6)
     x_in = np.ones(5) * 0.6
     x_in[:2] = 0.0
-    assert(np.abs(dtlz7(x_in)[2] - 6.0) < 1.0e-8)
+    assert (np.abs(dtlz7(x_in)[2] - 6.0) < 1.0e-8)
 
 
 def test_sims_dtlz_dtlz8():
@@ -166,7 +166,7 @@ def test_sims_dtlz_dtlz8():
     import numpy as np
 
     dtlz8 = dtlz8_sim(5, num_obj=3, offset=0.6)
-    assert(np.all(np.abs(dtlz8(np.ones(5) * 0.6)) < 1.0e-8))
+    assert (np.all(np.abs(dtlz8(np.ones(5) * 0.6)) < 1.0e-8))
 
 
 def test_sims_dtlz_dtlz9():
@@ -180,7 +180,7 @@ def test_sims_dtlz_dtlz9():
     import numpy as np
 
     dtlz9 = dtlz9_sim(5, num_obj=3, offset=0.6)
-    assert(np.all(np.abs(dtlz9(np.ones(5) * 0.6)) < 1.0e-8))
+    assert (np.all(np.abs(dtlz9(np.ones(5) * 0.6)) < 1.0e-8))
 
 
 if __name__ == "__main__":

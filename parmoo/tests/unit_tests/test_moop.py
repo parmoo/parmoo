@@ -21,15 +21,15 @@ def test_MOOP_init():
         MOOP(LocalGPS, hyperparams=[])
     # Initialize a MOOP with no hyperparameters
     moop = MOOP(LocalGPS)
-    assert(moop.n == 0 and moop.n_cont == 0 and moop.n_cat == 0 and
-           moop.n_cat_d == 0 and moop.s == 0 and moop.m_total == 0 and
-           moop.o == 0 and moop.p == 0)
+    assert (moop.n == 0 and moop.n_cont == 0 and moop.n_cat == 0 and
+            moop.n_cat_d == 0 and moop.s == 0 and moop.m_total == 0 and
+            moop.o == 0 and moop.p == 0)
     # Initialize a MOOP with a hyperparameter list
     moop = MOOP(LocalGPS, hyperparams={'test': 0})
-    assert(moop.n == 0 and moop.n_cont == 0 and moop.n_cat == 0 and
-           moop.n_cat_d == 0 and moop.s == 0 and moop.m_total == 0 and
-           moop.o == 0 and moop.p == 0)
-    assert(moop.hyperparams['test'] == 0)
+    assert (moop.n == 0 and moop.n_cont == 0 and moop.n_cat == 0 and
+            moop.n_cat_d == 0 and moop.s == 0 and moop.m_total == 0 and
+            moop.o == 0 and moop.p == 0)
+    assert (moop.hyperparams['test'] == 0)
 
 
 def test_MOOP_addSimulation():
@@ -81,8 +81,8 @@ def test_MOOP_addSimulation():
                     'ub': 1.0})
     # Now add one simulation and check
     moop.addSimulation(g1)
-    assert(moop.n == 3 and moop.s == 1 and moop.m_total == 1
-           and moop.o == 0 and moop.p == 0)
+    assert (moop.n == 3 and moop.s == 1 and moop.m_total == 1
+            and moop.o == 0 and moop.p == 0)
     # Initialize another MOOP with 3 design variables
     moop = MOOP(LocalGPS)
     moop.addDesign({'des_type': "continuous",
@@ -95,8 +95,8 @@ def test_MOOP_addSimulation():
                     'lb': 0.0,
                     'ub': 1.0})
     moop.addSimulation(g1, g2)
-    assert(moop.n == 3 and moop.s == 2 and moop.m_total == 3
-           and moop.o == 0 and moop.p == 0)
+    assert (moop.n == 3 and moop.s == 2 and moop.m_total == 3
+            and moop.o == 0 and moop.p == 0)
     # Now test adding simulations with empty precomputed databases
     g1['sim_db'] = {}
     moop = MOOP(LocalGPS)
@@ -110,9 +110,9 @@ def test_MOOP_addSimulation():
                     'lb': 0.0,
                     'ub': 1.0})
     moop.addSimulation(g1)
-    assert(moop.n == 3 and moop.s == 1 and moop.m_total == 1
-           and moop.o == 0 and moop.p == 0)
-    assert(moop.sim_db[0]['n'] == 0)
+    assert (moop.n == 3 and moop.s == 1 and moop.m_total == 1
+            and moop.o == 0 and moop.p == 0)
+    assert (moop.sim_db[0]['n'] == 0)
     # Now test adding a simulation with nonempty database, but empty lists
     g1['sim_db'] = {'x_vals': [], 's_vals': []}
     moop = MOOP(LocalGPS)
@@ -126,9 +126,9 @@ def test_MOOP_addSimulation():
                     'lb': 0.0,
                     'ub': 1.0})
     moop.addSimulation(g1)
-    assert(moop.n == 3 and moop.s == 1 and moop.m_total == 1
-           and moop.o == 0 and moop.p == 0)
-    assert(moop.sim_db[0]['n'] == 0)
+    assert (moop.n == 3 and moop.s == 1 and moop.m_total == 1
+            and moop.o == 0 and moop.p == 0)
+    assert (moop.sim_db[0]['n'] == 0)
     # Now try a simulation with some data
     g1['sim_db'] = {'x_vals': [[0.0, 0.0, 0.0]], 's_vals': [[0.0]]}
     moop = MOOP(LocalGPS)
@@ -142,17 +142,17 @@ def test_MOOP_addSimulation():
                     'lb': 0.0,
                     'ub': 1.0})
     moop.addSimulation(g1)
-    assert(moop.n == 3 and moop.s == 1 and moop.m_total == 1
-           and moop.o == 0 and moop.p == 0)
-    assert(moop.sim_db[0]['n'] == 1)
+    assert (moop.n == 3 and moop.s == 1 and moop.m_total == 1
+            and moop.o == 0 and moop.p == 0)
+    assert (moop.sim_db[0]['n'] == 1)
     moop.addSimulation(g3, g4)
     # Try to use a repeated name to test error handling
     with pytest.raises(ValueError):
         moop.addSimulation(g4)
     # Check the names
-    assert(moop.sim_names[0][0] == "sim1")
-    assert(moop.sim_names[1][0] == "Bobo1")
-    assert(moop.sim_names[2][0] == "Bobo2")
+    assert (moop.sim_names[0][0] == "sim1")
+    assert (moop.sim_names[1][0] == "Bobo1")
+    assert (moop.sim_names[2][0] == "Bobo2")
 
 
 def test_pack_unpack_sim():
@@ -190,8 +190,8 @@ def test_pack_unpack_sim():
     moop.addDesign({'lb': 0.0, 'ub': 1000.0},
                    {'lb': -1.0, 'ub': 0.0})
     moop.addSimulation(g1, g2)
-    assert(all(moop.__pack_sim__(sx)[:] == sx[:]))
-    assert(all(moop.__unpack_sim__(sx)[:] == sx[:]))
+    assert (all(moop.__pack_sim__(sx)[:] == sx[:]))
+    assert (all(moop.__unpack_sim__(sx)[:] == sx[:]))
     # Create a MOOP with named variables and test simulation unpacking
     moop = MOOP(LocalGPS)
     # Add two continuous variables and two simulations
@@ -203,11 +203,11 @@ def test_pack_unpack_sim():
     sxx[0]['sim1'] = 1.0
     sxx[0]['sim2'][:] = np.array([2.0, 3.0])
     # Check packing
-    assert(all(moop.__pack_sim__(sxx) == sx))
+    assert (all(moop.__pack_sim__(sxx) == sx))
     # Check unpacking
-    assert(moop.__unpack_sim__(sx)['sim1'] == sxx[0]['sim1'])
-    assert(moop.__unpack_sim__(sx)['sim2'][0] == sxx[0]['sim2'][0])
-    assert(moop.__unpack_sim__(sx)['sim2'][1] == sxx[0]['sim2'][1])
+    assert (moop.__unpack_sim__(sx)['sim1'] == sxx[0]['sim1'])
+    assert (moop.__unpack_sim__(sx)['sim2'][0] == sxx[0]['sim2'][0])
+    assert (moop.__unpack_sim__(sx)['sim2'][1] == sxx[0]['sim2'][1])
 
 
 def test_MOOP_addObjective():
@@ -260,22 +260,22 @@ def test_MOOP_addObjective():
         moop1.acquisitions.append(0)
         moop1.addObjective({'obj_func': lambda x, s: 0.0})
     # Check that no objectives were added yet
-    assert(moop.o == 0)
+    assert (moop.o == 0)
     # Now add 3 good objectives
     moop.addObjective({'obj_func': lambda x, s: x[0]})
-    assert(moop.o == 1)
+    assert (moop.o == 1)
     moop.addObjective({'obj_func': lambda x, s: s[0]},
                       {'obj_func': lambda x, s, der=0: s[1]})
-    assert(moop.o == 3)
+    assert (moop.o == 3)
     moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: s[0]})
-    assert(moop.o == 4)
+    assert (moop.o == 4)
     # Try to use a repeated name to test error handling
     with pytest.raises(ValueError):
         moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: s[0]})
-    assert(moop.obj_names[0] == ("f1", 'f8'))
-    assert(moop.obj_names[1] == ("f2", 'f8'))
-    assert(moop.obj_names[2] == ("f3", 'f8'))
-    assert(moop.obj_names[3] == ("Bobo", 'f8'))
+    assert (moop.obj_names[0] == ("f1", 'f8'))
+    assert (moop.obj_names[1] == ("f2", 'f8'))
+    assert (moop.obj_names[2] == ("f3", 'f8'))
+    assert (moop.obj_names[3] == ("Bobo", 'f8'))
 
 
 def test_MOOP_addConstraint():
@@ -323,22 +323,22 @@ def test_MOOP_addConstraint():
     with pytest.raises(TypeError):
         moop.addConstraint({'name': 5, 'constraint': lambda x, s: 0.0})
     # Check that no constraints were added yet
-    assert(moop.p == 0)
+    assert (moop.p == 0)
     # Now add 3 good constraints
     moop.addConstraint({'constraint': lambda x, s: x[0]})
-    assert(moop.p == 1)
+    assert (moop.p == 1)
     moop.addConstraint({'constraint': lambda x, s: s[0]},
                        {'constraint': lambda x, s, der=0: s[1] + s[2]})
-    assert(moop.p == 3)
+    assert (moop.p == 3)
     moop.addConstraint({'name': "Bobo", 'constraint': lambda x, s: s[0]})
-    assert(moop.p == 4)
+    assert (moop.p == 4)
     # Try to use a repeated name to test error handling
     with pytest.raises(ValueError):
         moop.addConstraint({'name': "Bobo", 'constraint': lambda x, s: s[0]})
-    assert(moop.const_names[0] == ("c1", 'f8'))
-    assert(moop.const_names[1] == ("c2", 'f8'))
-    assert(moop.const_names[2] == ("c3", 'f8'))
-    assert(moop.const_names[3] == ("Bobo", 'f8'))
+    assert (moop.const_names[0] == ("c1", 'f8'))
+    assert (moop.const_names[1] == ("c2", 'f8'))
+    assert (moop.const_names[2] == ("c3", 'f8'))
+    assert (moop.const_names[3] == ("Bobo", 'f8'))
 
 
 def test_MOOP_addAcquisition():
@@ -399,13 +399,13 @@ def test_MOOP_addAcquisition():
         moop.addAcquisition({'acquisition': GaussRBF,
                              'hyperparams': {}})
     # Check that no acquisitions were added yet
-    assert(len(moop.acquisitions) == 0)
+    assert (len(moop.acquisitions) == 0)
     # Now add 3 good acquisitions
     moop.addAcquisition({'acquisition': UniformWeights})
-    assert(len(moop.acquisitions) == 1)
+    assert (len(moop.acquisitions) == 1)
     moop.addAcquisition({'acquisition': UniformWeights},
                         {'acquisition': UniformWeights, 'hyperparams': {}})
-    assert(len(moop.acquisitions) == 3)
+    assert (len(moop.acquisitions) == 3)
 
 
 def test_MOOP_getTypes():
@@ -432,20 +432,20 @@ def test_MOOP_getTypes():
     # Create a new MOOP
     moop = MOOP(LocalGPS)
     # Check that all types are None
-    assert(moop.getDesignType() is None)
-    assert(moop.getSimulationType() is None)
-    assert(moop.getObjectiveType() is None)
-    assert(moop.getConstraintType() is None)
+    assert (moop.getDesignType() is None)
+    assert (moop.getSimulationType() is None)
+    assert (moop.getObjectiveType() is None)
+    assert (moop.getConstraintType() is None)
     # Add some unnamed variables, simulations, objectives, and constraints
     moop.addDesign({'des_type': "continuous", 'lb': 0.0, 'ub': 1.0})
     moop.addDesign({'des_type': "categorical", 'levels': 3})
     moop.addSimulation(g1)
     moop.addObjective({'obj_func': lambda x, s: [sum(s)]})
     moop.addConstraint({'constraint': lambda x, s: [sum(s) - 1]})
-    assert(np.zeros(1, dtype=moop.getDesignType()).size == 2)
-    assert(np.zeros(1, dtype=moop.getSimulationType()).size == 1)
-    assert(np.zeros(1, dtype=moop.getObjectiveType()).size == 1)
-    assert(np.zeros(1, dtype=moop.getConstraintType()).size == 1)
+    assert (np.zeros(1, dtype=moop.getDesignType()).size == 2)
+    assert (np.zeros(1, dtype=moop.getSimulationType()).size == 1)
+    assert (np.zeros(1, dtype=moop.getObjectiveType()).size == 1)
+    assert (np.zeros(1, dtype=moop.getConstraintType()).size == 1)
     # Add some named variables, simulations, objectives, and constraints
     moop = MOOP(LocalGPS)
     moop.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
@@ -453,10 +453,10 @@ def test_MOOP_getTypes():
     moop.addSimulation(g1)
     moop.addObjective({'obj_func': lambda x, s: [sum(s)]})
     moop.addConstraint({'constraint': lambda x, s: [sum(s) - 1]})
-    assert(np.zeros(1, dtype=moop.getDesignType()).size == 1)
-    assert(np.zeros(1, dtype=moop.getSimulationType()).size == 1)
-    assert(np.zeros(1, dtype=moop.getObjectiveType()).size == 1)
-    assert(np.zeros(1, dtype=moop.getConstraintType()).size == 1)
+    assert (np.zeros(1, dtype=moop.getDesignType()).size == 1)
+    assert (np.zeros(1, dtype=moop.getSimulationType()).size == 1)
+    assert (np.zeros(1, dtype=moop.getObjectiveType()).size == 1)
+    assert (np.zeros(1, dtype=moop.getConstraintType()).size == 1)
 
 
 def test_MOOP_evaluateSimulation():
@@ -525,13 +525,13 @@ def test_MOOP_evaluateSimulation():
         moop2.check_sim_db(x2, "hello world")
     # Try 2 good evaluations
     moop1.evaluateSimulation(x1, 0)
-    assert(moop1.check_sim_db(x1, 0) is not None)
+    assert (moop1.check_sim_db(x1, 0) is not None)
     moop1.evaluateSimulation(y1, 0)
-    assert(moop1.check_sim_db(y1, 0) is not None)
+    assert (moop1.check_sim_db(y1, 0) is not None)
     moop2.evaluateSimulation(x2, "g2")
-    assert(moop2.check_sim_db(x2, "g2") is not None)
+    assert (moop2.check_sim_db(x2, "g2") is not None)
     moop2.evaluateSimulation(y2, "g2")
-    assert(moop2.check_sim_db(y2, "g2") is not None)
+    assert (moop2.check_sim_db(y2, "g2") is not None)
     return
 
 
@@ -597,27 +597,32 @@ def test_MOOP_evaluateSurrogates():
     with pytest.raises(ValueError):
         moop1.evaluateSurrogates(np.zeros(1))
     # Now do some good evaluations and check the results
-    assert(np.linalg.norm(moop1.evaluateSurrogates(np.zeros(3)) -
-                          np.asarray([0.0, 0.0, np.sqrt(3.0) + np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.5, 0.5, 0.5]))
-                          - np.asarray([0.5, np.sqrt(0.75), np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateSurrogates(np.asarray([1.0, 0.0, 0.0]))
-                          - np.asarray([1.0, 1.0, np.sqrt(2.0) +
-                                        np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.0, 1.0, 0.0]))
-                          - np.asarray([0.0, 1.0, np.sqrt(2.0) +
-                                        np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.0, 0.0, 1.0]))
-                          - np.asarray([0.0, 1.0, np.sqrt(2.0) +
-                                        np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateSurrogates(np.ones(3)) -
-                          np.asarray([1.0, np.sqrt(3.0), np.sqrt(0.75)]))
-           < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateSurrogates(np.zeros(3)) -
+                           np.asarray([0.0, 0.0, np.sqrt(3.0) +
+                                       np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.5,
+                                                                0.5, 0.5]))
+                           - np.asarray([0.5, np.sqrt(0.75), np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateSurrogates(np.asarray([1.0, 0.0,
+                                                                0.0]))
+                           - np.asarray([1.0, 1.0, np.sqrt(2.0) +
+                                         np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.0, 1.0,
+                                                                0.0]))
+                           - np.asarray([0.0, 1.0, np.sqrt(2.0) +
+                                         np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.0, 0.0,
+                                                                1.0]))
+                           - np.asarray([0.0, 1.0, np.sqrt(2.0) +
+                                         np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateSurrogates(np.ones(3)) -
+                           np.asarray([1.0, np.sqrt(3.0), np.sqrt(0.75)]))
+            < 0.00000001)
     # Adjust the scale and try again
     moop2 = MOOP(LocalGPS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
@@ -644,12 +649,12 @@ def test_MOOP_evaluateSurrogates():
     # Now compare evaluations against the original surrogate
     x = moop1.__embed__(np.zeros(3))
     xx = moop2.__embed__(np.zeros(3))
-    assert(np.linalg.norm(moop1.evaluateSurrogates(x) -
-                          moop2.evaluateSurrogates(xx)) < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateSurrogates(x) -
+                           moop2.evaluateSurrogates(xx)) < 0.00000001)
     x = moop1.__embed__(np.ones(3))
     xx = moop2.__embed__(np.ones(3))
-    assert(np.linalg.norm(moop1.evaluateSurrogates(x) -
-                          moop2.evaluateSurrogates(xx)) < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateSurrogates(x) -
+                           moop2.evaluateSurrogates(xx)) < 0.00000001)
 
 
 def test_MOOP_evaluateConstraints():
@@ -686,7 +691,7 @@ def test_MOOP_evaluateConstraints():
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
     # Evaluate an empty constraint and check that a zero array is returned
-    assert(all(moop1.evaluateConstraints(np.zeros(3)) == np.zeros(1)))
+    assert (all(moop1.evaluateConstraints(np.zeros(3)) == np.zeros(1)))
     # Now add 3 constraints
     moop1.addConstraint({'constraint': lambda x, s: x[0]})
     moop1.addConstraint({'constraint': lambda x, s: s[0]})
@@ -711,31 +716,32 @@ def test_MOOP_evaluateConstraints():
     with pytest.raises(ValueError):
         moop1.evaluateConstraints(np.zeros(1))
     # Now do some good evaluations and check the results
-    assert(np.linalg.norm(moop1.evaluateConstraints(np.zeros(3)) -
-                          np.asarray([0.0, 0.0, np.sqrt(3.0) + np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateConstraints(np.asarray([0.5, 0.5,
-                                                                0.5]))
-                          - np.asarray([0.5, np.sqrt(0.75), np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateConstraints(np.asarray([1.0, 0.0,
-                                                                0.0]))
-                          - np.asarray([1.0, 1.0, np.sqrt(2.0)
-                                        + np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateConstraints(np.asarray([0.0, 1.0,
-                                                                0.0]))
-                          - np.asarray([0.0, 1.0, np.sqrt(2.0)
-                                        + np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateConstraints(np.asarray([0.0, 0.0,
-                                                                1.0]))
-                          - np.asarray([0.0, 1.0, np.sqrt(2.0)
-                                        + np.sqrt(0.75)]))
-           < 0.00000001)
-    assert(np.linalg.norm(moop1.evaluateConstraints(np.ones(3)) -
-                          np.asarray([1.0, np.sqrt(3.0), np.sqrt(0.75)]))
-           < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateConstraints(np.zeros(3)) -
+                           np.asarray([0.0, 0.0, np.sqrt(3.0) +
+                                       np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateConstraints(np.asarray([0.5, 0.5,
+                                                                 0.5]))
+                           - np.asarray([0.5, np.sqrt(0.75), np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateConstraints(np.asarray([1.0, 0.0,
+                                                                 0.0]))
+                           - np.asarray([1.0, 1.0, np.sqrt(2.0)
+                                         + np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateConstraints(np.asarray([0.0, 1.0,
+                                                                 0.0]))
+                           - np.asarray([0.0, 1.0, np.sqrt(2.0)
+                                         + np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateConstraints(np.asarray([0.0, 0.0,
+                                                                 1.0]))
+                           - np.asarray([0.0, 1.0, np.sqrt(2.0)
+                                         + np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateConstraints(np.ones(3)) -
+                           np.asarray([1.0, np.sqrt(3.0), np.sqrt(0.75)]))
+            < 0.00000001)
     # Adjust the scale and try again
     moop2 = MOOP(LocalGPS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
@@ -762,12 +768,12 @@ def test_MOOP_evaluateConstraints():
     # Now compare evaluations against the original surrogate
     x = moop1.__embed__(np.zeros(3))
     xx = moop2.__embed__(np.zeros(3))
-    assert(np.linalg.norm(moop1.evaluateConstraints(x) -
-                          moop2.evaluateConstraints(xx)) < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateConstraints(x) -
+                           moop2.evaluateConstraints(xx)) < 0.00000001)
     x = moop1.__embed__(np.ones(3))
     xx = moop2.__embed__(np.ones(3))
-    assert(np.linalg.norm(moop1.evaluateConstraints(x) -
-                          moop2.evaluateConstraints(xx)) < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateConstraints(x) -
+                           moop2.evaluateConstraints(xx)) < 0.00000001)
 
 
 def test_MOOP_addData():
@@ -809,10 +815,10 @@ def test_MOOP_addData():
     moop1.addData(np.zeros(3), np.zeros(3))
     moop1.addData(np.zeros(3), np.zeros(3))
     moop1.addData(np.ones(3), np.ones(3))
-    assert(moop1.data['f_vals'].shape == (2, 2))
-    assert(moop1.data['x_vals'].shape == (2, 3))
-    assert(moop1.data['c_vals'].shape == (2, 1))
-    assert(moop1.n_dat == 2)
+    assert (moop1.data['f_vals'].shape == (2, 2))
+    assert (moop1.data['x_vals'].shape == (2, 3))
+    assert (moop1.data['c_vals'].shape == (2, 1))
+    assert (moop1.n_dat == 2)
     # Initialize a new MOOP with 2 SimGroups and 2 objectives
     moop2 = MOOP(LocalGPS)
     for i in range(3):
@@ -830,10 +836,10 @@ def test_MOOP_addData():
     moop2.addData(np.zeros(3), np.zeros(3))
     moop2.addData(np.asarray([0.0, 0.0, 1.0]), np.zeros(3))
     moop2.addData(np.ones(3), np.ones(3))
-    assert(moop2.data['f_vals'].shape == (3, 2))
-    assert(moop2.data['x_vals'].shape == (3, 3))
-    assert(moop2.data['c_vals'].shape == (3, 3))
-    assert(moop2.n_dat == 3)
+    assert (moop2.data['f_vals'].shape == (3, 2))
+    assert (moop2.data['x_vals'].shape == (3, 3))
+    assert (moop2.data['c_vals'].shape == (3, 3))
+    assert (moop2.n_dat == 3)
     # Initialize a new MOOP with 2 SimGroups and 2 objectives
     moop3 = MOOP(LocalGPS)
     for i in range(3):
@@ -849,10 +855,10 @@ def test_MOOP_addData():
     # Test adding some data
     moop3.iterate(0)
     moop3.addData(np.ones(4), np.ones(3))
-    assert(moop3.data['f_vals'].shape == (1, 2))
-    assert(moop3.data['x_vals'].shape == (1, 5))
-    assert(moop3.data['c_vals'].shape == (1, 3))
-    assert(moop3.n_dat == 1)
+    assert (moop3.data['f_vals'].shape == (1, 2))
+    assert (moop3.data['x_vals'].shape == (1, 5))
+    assert (moop3.data['c_vals'].shape == (1, 3))
+    assert (moop3.n_dat == 1)
 
 
 def test_MOOP_iterate():
@@ -921,13 +927,13 @@ def test_MOOP_iterate():
     moop1.updateAll(1, batch)
     soln = moop1.getPF()
     # Assert that solutions were found
-    assert(np.size(soln['x_vals']) > 0)
+    assert (np.size(soln['x_vals']) > 0)
     # Assert that the x_vals and f_vals match
     for i in range(np.shape(soln['x_vals'])[0]):
-        assert(np.linalg.norm(np.asarray([g1['sim_func'](soln['x_vals'][i]),
-                                          g2['sim_func'](soln['x_vals'][i])]
-                                         ).flatten() - soln['f_vals'][i])
-               < 0.00000001)
+        assert (np.linalg.norm(np.asarray([g1['sim_func'](soln['x_vals'][i]),
+                                           g2['sim_func'](soln['x_vals'][i])]
+                                          ).flatten() - soln['f_vals'][i])
+                < 0.00000001)
 
     g3 = {'m': 4,
           'hyperparams': {},
@@ -996,18 +1002,18 @@ def test_MOOP_iterate():
     moop2.updateAll(1, batch)
     soln = moop2.getPF()
     # Assert that solutions were found
-    assert(np.size(soln['x_vals']) > 0)
+    assert (np.size(soln['x_vals']) > 0)
     # Assert that the x_vals and f_vals match
     sim = np.zeros(4)
     for i in range(np.shape(soln['x_vals'])[0]):
         sim = soln['x_vals'][i]
-        assert(np.linalg.norm(np.asarray([f3(soln['x_vals'][i], sim),
-                                          f4(soln['x_vals'][i], sim),
-                                          f5(soln['x_vals'][i], sim)]
-                                         ).flatten()
-                              - soln['f_vals'][i])
-               < 0.00000001)
-        assert(all(soln['x_vals'][i, :4] <= 0.2))
+        assert (np.linalg.norm(np.asarray([f3(soln['x_vals'][i], sim),
+                                           f4(soln['x_vals'][i], sim),
+                                           f5(soln['x_vals'][i], sim)]
+                                          ).flatten()
+                               - soln['f_vals'][i])
+                < 0.00000001)
+        assert (all(soln['x_vals'][i, :4] <= 0.2))
 
     g4 = {'m': 4,
           'hyperparams': {},
@@ -1077,18 +1083,18 @@ def test_MOOP_iterate():
     moop3.updateAll(1, batch)
     soln = moop3.getPF()
     # Assert that solutions were found
-    assert(np.size(soln['x_vals']) > 0)
+    assert (np.size(soln['x_vals']) > 0)
     # Assert that the x_vals and f_vals match
     sim = np.zeros(4)
     for i in range(np.shape(soln['x_vals'])[0]):
         sim = soln['x_vals'][i, :4] - abs(soln['x_vals'][i, 4] - 1.0)
-        assert(np.linalg.norm(np.asarray([f6(soln['x_vals'][i], sim),
-                                          f7(soln['x_vals'][i], sim),
-                                          f8(soln['x_vals'][i], sim)]
-                                         ).flatten()
-                              - soln['f_vals'][i])
-               < 0.00000001)
-        assert(soln['x_vals'][i, 3] <= 0.1 and soln['x_vals'][i, 4] == 1.0)
+        assert (np.linalg.norm(np.asarray([f6(soln['x_vals'][i], sim),
+                                           f7(soln['x_vals'][i], sim),
+                                           f8(soln['x_vals'][i], sim)]
+                                          ).flatten()
+                               - soln['f_vals'][i])
+                < 0.00000001)
+        assert (soln['x_vals'][i, 3] <= 0.1 and soln['x_vals'][i, 4] == 1.0)
 
     x_entry = np.zeros(1, dtype=np.dtype([("x0", float), ("x1", float),
                                           ("x2", object)]))
@@ -1149,15 +1155,15 @@ def test_MOOP_iterate():
     moop4.updateAll(1, batch)
     soln = moop4.getPF()
     # Assert that solutions were found
-    assert(soln.size > 0)
+    assert (soln.size > 0)
     # Assert that the x_vals and f_vals match
     sim = np.zeros(1)
     for i, xi in enumerate(soln):
         sim[0] = ((xi["x0"] - 1.0) * (xi["x0"] - 1.0) +
                   (xi["x1"]) * (xi["x1"]) + float(xi["x2"]))
-        assert(f9(soln[i], sim) - soln['f1'][i] < 1.0e-8 and
-               f10(soln[i], sim) - soln['f2'][i] < 1.0e-8)
-        assert(xi["x2"] == "0")
+        assert (f9(soln[i], sim) - soln['f1'][i] < 1.0e-8 and
+                f10(soln[i], sim) - soln['f2'][i] < 1.0e-8)
+        assert (xi["x2"] == "0")
 
 
 def test_MOOP_solve():
@@ -1166,8 +1172,8 @@ def test_MOOP_solve():
     Perform a test of the MOOP solver class by minimizing a 5 variable,
     biobjective convex function s.t. $x in [0, 1]^n$.
 
-    The correctness of the solutions is difficult to assert, but we can
-    assert that the efficient points map onto the Pareto front, as
+    The correctness of the solutions is difficult to assert , but we can
+    assert  that the efficient points map onto the Pareto front, as
     expected.
 
     """
@@ -1219,12 +1225,12 @@ def test_MOOP_solve():
     moop1.solve(6)
     soln = moop1.data
     # Assert that solutions were found
-    assert(np.size(soln['x_vals']) > 0)
+    assert (np.size(soln['x_vals']) > 0)
     # Assert that the x_vals and f_vals match
     for i in range(np.shape(soln['x_vals'])[0]):
-        assert(np.linalg.norm(np.asarray([g1['sim_func'](soln['x_vals'][i]),
-                                          g2['sim_func'](soln['x_vals'][i])]
-                                         ).flatten() - soln['f_vals'][i])
+        assert (np.linalg.norm(np.asarray([g1['sim_func'](soln['x_vals'][i]),
+                                           g2['sim_func'](soln['x_vals'][i])]
+                                          ).flatten() - soln['f_vals'][i])
                < 0.00000001)
     # Create new single objective toy problem
     g3 = {'m': 1,
@@ -1251,12 +1257,12 @@ def test_MOOP_solve():
     moop2.solve(6)
     soln = moop2.data
     # Assert that solutions were found
-    assert(np.size(soln['x_vals']) > 0)
+    assert (np.size(soln['x_vals']) > 0)
     # Assert that the x_vals and f_vals match
     for i in range(np.shape(soln['x_vals'])[0]):
-        assert(np.linalg.norm(np.asarray(g3['sim_func'](soln['x_vals'][i])) +
-                              np.asarray(g4['sim_func'](soln['x_vals'][i])) -
-                              soln['f_vals'][i]) < 0.00000001)
+        assert (np.linalg.norm(np.asarray(g3['sim_func'](soln['x_vals'][i])) +
+                               np.asarray(g4['sim_func'](soln['x_vals'][i])) -
+                               soln['f_vals'][i]) < 0.00000001)
 
     # Create a 3 objective toy problem, with no simulations
     moop3 = MOOP(LBFGSB, hyperparams={})
@@ -1308,16 +1314,16 @@ def test_MOOP_solve():
     moop3.solve(6)
     soln = moop3.data
     # Assert that solutions were found
-    assert(np.size(soln['x_vals']) > 0)
+    assert (np.size(soln['x_vals']) > 0)
     # Assert that the x_vals and f_vals match
     sim = np.zeros(0)
     for i in range(np.shape(soln['x_vals'])[0]):
-        assert(np.linalg.norm(np.asarray([f4(soln['x_vals'][i], sim),
-                                          f5(soln['x_vals'][i], sim),
-                                          f6(soln['x_vals'][i], sim)]
-                                         ).flatten()
-                              - soln['f_vals'][i])
-               < 0.00000001)
+        assert (np.linalg.norm(np.asarray([f4(soln['x_vals'][i], sim),
+                                           f5(soln['x_vals'][i], sim),
+                                           f6(soln['x_vals'][i], sim)]
+                                          ).flatten()
+                               - soln['f_vals'][i])
+                < 0.00000001)
 
     # Create a 3 objective toy problem, with no simulations and 1 categorical
     moop4 = MOOP(LBFGSB, hyperparams={})
@@ -1334,16 +1340,16 @@ def test_MOOP_solve():
     moop4.solve(6)
     soln = moop4.getPF()
     # Assert that solutions were found
-    assert(np.size(soln['x_vals']) > 0)
+    assert (np.size(soln['x_vals']) > 0)
     # Assert that the x_vals and f_vals match
     sim = np.zeros(0)
     for i in range(np.shape(soln['x_vals'])[0]):
-        assert(np.linalg.norm(np.asarray([f4(soln['x_vals'][i], sim),
+        assert (np.linalg.norm(np.asarray([f4(soln['x_vals'][i], sim),
                                           f5(soln['x_vals'][i], sim),
-                                          f6(soln['x_vals'][i], sim)]
-                                         ).flatten()
-                              - soln['f_vals'][i])
-               < 0.00000001)
+                                           f6(soln['x_vals'][i], sim)]
+                                          ).flatten()
+                               - soln['f_vals'][i])
+                < 0.00000001)
 
 
 def test_MOOP_getPF():
@@ -1395,7 +1401,7 @@ def test_MOOP_getPF():
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
     moop.n_dat = 5
     soln = moop.getPF()
-    assert(soln['f_vals'].shape == (4, 3))
+    assert (soln['f_vals'].shape == (4, 3))
     # Create a toy problem with 4 design variables
     moop = MOOP(LocalGPS, hyperparams={})
     for i in range(4):
@@ -1448,7 +1454,7 @@ def test_MOOP_getPF():
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
     moop.n_dat = 5
     soln = moop.getPF()
-    assert(soln.shape[0] == 4)
+    assert (soln.shape[0] == 4)
 
 
 def test_MOOP_getSimulationData():
@@ -1495,8 +1501,8 @@ def test_MOOP_getSimulationData():
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     moop.addSimulation(g1, g2)
     soln = moop.getSimulationData()
-    assert(soln[0]['s_vals'].size == 0)
-    assert(soln[1]['s_vals'].size == 0)
+    assert (soln[0]['s_vals'].size == 0)
+    assert (soln[1]['s_vals'].size == 0)
     # Evaluate 5 simulations
     moop.evaluateSimulation(np.asarray([0.0, 0.0, 0.0, 0.0]), 0)
     moop.evaluateSimulation(np.asarray([0.0, 0.0, 0.0, 0.0]), 1)
@@ -1509,16 +1515,16 @@ def test_MOOP_getSimulationData():
     moop.evaluateSimulation(np.asarray([0.0, 0.0, 0.0, 1.0]), 0)
     moop.evaluateSimulation(np.asarray([0.0, 0.0, 0.0, 1.0]), 1)
     soln = moop.getSimulationData()
-    assert(soln[0]['s_vals'].shape == (5, 1))
-    assert(soln[1]['s_vals'].shape == (5, 2))
+    assert (soln[0]['s_vals'].shape == (5, 1))
+    assert (soln[1]['s_vals'].shape == (5, 2))
     # Create a toy problem with 4 design variables
     moop = MOOP(LocalGPS, hyperparams={})
     for i in range(4):
         moop.addDesign({'name': ("x" + str(i + 1)), 'lb': 0.0, 'ub': 1.0})
     moop.addSimulation(g3, g4)
     soln = moop.getSimulationData()
-    assert(soln['Bobo1']['out'].size == 0)
-    assert(soln['Bobo2']['out'].size == 0)
+    assert (soln['Bobo1']['out'].size == 0)
+    assert (soln['Bobo2']['out'].size == 0)
     # Evaluate 5 simulations
     sample_x = np.zeros(1, dtype=moop.des_names)
     moop.evaluateSimulation(sample_x[0], 0)
@@ -1539,8 +1545,8 @@ def test_MOOP_getSimulationData():
     moop.evaluateSimulation(sample_x[0], 0)
     moop.evaluateSimulation(sample_x[0], 1)
     soln = moop.getSimulationData()
-    assert(soln['Bobo1']['out'].shape == (5,))
-    assert(soln['Bobo2']['out'].shape == (5, 2))
+    assert (soln['Bobo1']['out'].shape == (5,))
+    assert (soln['Bobo2']['out'].shape == (5, 2))
 
 
 def test_MOOP_getObjectiveData():
@@ -1602,7 +1608,7 @@ def test_MOOP_getObjectiveData():
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
     moop.n_dat = 5
     soln = moop.getObjectiveData()
-    assert(soln['f_vals'].shape == (5, 3))
+    assert (soln['f_vals'].shape == (5, 3))
     # Create a toy problem with 4 design variables
     moop = MOOP(LocalGPS, hyperparams={})
     for i in range(4):
@@ -1655,7 +1661,7 @@ def test_MOOP_getObjectiveData():
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
     moop.n_dat = 5
     soln = moop.getObjectiveData()
-    assert(soln.shape[0] == 5)
+    assert (soln.shape[0] == 5)
 
 
 def test_MOOP_save_load1():
@@ -1899,80 +1905,80 @@ def check_moops(moop1, moop2):
     import numpy as np
 
     # Check scalars
-    assert(moop2.n == moop1.n and moop2.m_total == moop1.m_total and
-           moop2.o == moop1.o and moop2.p == moop1.p and
-           moop2.s == moop1.s and moop2.n_dat == moop1.n_dat and
-           moop2.n_cat_d == moop1.n_cat_d and moop2.n_cat == moop1.n_cat and
-           moop2.n_cont == moop1.n_cont and moop2.lam == moop1.lam and
-           moop2.use_names == moop1.use_names and
-           moop2.iteration == moop1.iteration)
+    assert (moop2.n == moop1.n and moop2.m_total == moop1.m_total and
+            moop2.o == moop1.o and moop2.p == moop1.p and
+            moop2.s == moop1.s and moop2.n_dat == moop1.n_dat and
+            moop2.n_cat_d == moop1.n_cat_d and moop2.n_cat == moop1.n_cat and
+            moop2.n_cont == moop1.n_cont and moop2.lam == moop1.lam and
+            moop2.use_names == moop1.use_names and
+            moop2.iteration == moop1.iteration)
     # Check lists
-    assert(all([dt2i == dt1i for dt2i, dt1i in zip(moop2.des_tols,
-                                                   moop1.des_tols)]))
-    assert(all([m2i == m1i for m2i, m1i in zip(moop2.m, moop1.m)]))
-    assert(all([lb2i == lb1i for lb2i, lb1i in zip(moop2.cont_lb,
-                                                   moop1.cont_lb)]))
-    assert(all([ub2i == ub1i for ub2i, ub1i in zip(moop2.cont_ub,
-                                                   moop1.cont_ub)]))
-    assert(all([lb2i == lb1i for lb2i, lb1i in zip(moop2.int_lb,
-                                                   moop1.int_lb)]))
-    assert(all([ub2i == ub1i for ub2i, ub1i in zip(moop2.int_ub,
-                                                   moop1.int_ub)]))
-    assert(all([nl2i == nl1i for nl2i, nl1i in zip(moop2.n_lvls,
-                                                   moop1.n_lvls)]))
-    assert(all([do2i == do1i for do2i, do1i in zip(moop2.des_order,
-                                                   moop1.des_order)]))
-    assert(all([n2i == n1i for n2i, n1i in zip(moop2.cat_names,
-                                               moop1.cat_names)]))
-    assert(all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.sim_names,
-                                                     moop1.sim_names)]))
-    assert(all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.des_names,
-                                                     moop1.des_names)]))
-    assert(all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.obj_names,
-                                                     moop1.obj_names)]))
-    assert(all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.const_names,
-                                                     moop1.const_names)]))
+    assert (all([dt2i == dt1i for dt2i, dt1i in zip(moop2.des_tols,
+                                                    moop1.des_tols)]))
+    assert (all([m2i == m1i for m2i, m1i in zip(moop2.m, moop1.m)]))
+    assert (all([lb2i == lb1i for lb2i, lb1i in zip(moop2.cont_lb,
+                                                    moop1.cont_lb)]))
+    assert (all([ub2i == ub1i for ub2i, ub1i in zip(moop2.cont_ub,
+                                                    moop1.cont_ub)]))
+    assert (all([lb2i == lb1i for lb2i, lb1i in zip(moop2.int_lb,
+                                                    moop1.int_lb)]))
+    assert (all([ub2i == ub1i for ub2i, ub1i in zip(moop2.int_ub,
+                                                    moop1.int_ub)]))
+    assert (all([nl2i == nl1i for nl2i, nl1i in zip(moop2.n_lvls,
+                                                    moop1.n_lvls)]))
+    assert (all([do2i == do1i for do2i, do1i in zip(moop2.des_order,
+                                                    moop1.des_order)]))
+    assert (all([n2i == n1i for n2i, n1i in zip(moop2.cat_names,
+                                                moop1.cat_names)]))
+    assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.sim_names,
+                                                      moop1.sim_names)]))
+    assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.des_names,
+                                                      moop1.des_names)]))
+    assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.obj_names,
+                                                      moop1.obj_names)]))
+    assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.const_names,
+                                                      moop1.const_names)]))
     # Check dictionaries
-    assert(all([ki in moop2.hyperparams.keys()
-                for ki in moop1.hyperparams.keys()]))
-    assert(all([ki in moop2.history.keys() for ki in moop1.history.keys()]))
+    assert (all([ki in moop2.hyperparams.keys()
+                 for ki in moop1.hyperparams.keys()]))
+    assert (all([ki in moop2.history.keys() for ki in moop1.history.keys()]))
     # Check np.ndarrays
-    assert(np.all(moop2.scale == np.asarray(moop1.scale)))
-    assert(np.all(moop2.scaled_lb == np.asarray(moop1.scaled_lb)))
-    assert(np.all(moop2.scaled_ub == np.asarray(moop1.scaled_ub)))
-    assert(np.all(moop2.scaled_des_tols == np.asarray(moop1.scaled_des_tols)))
-    assert(np.all(moop2.cat_lb == np.asarray(moop1.cat_lb)))
-    assert(np.all(moop2.cat_scale == np.asarray(moop1.cat_scale)))
-    assert(np.all(moop2.RSVT == np.asarray(moop1.RSVT)))
-    assert(np.all(moop2.mean == np.asarray(moop1.mean)))
-    assert(all([moop2.data[ki].shape == moop1.data[ki].shape
-                for ki in moop2.data.keys()]))
-    assert(all([all([moop2.sim_db[j][ki].shape == moop1.sim_db[j][ki].shape
-                     for ki in ["x_vals", "s_vals"]])
-                for j in range(len(moop1.sim_db))]))
+    assert (np.all(moop2.scale == np.asarray(moop1.scale)))
+    assert (np.all(moop2.scaled_lb == np.asarray(moop1.scaled_lb)))
+    assert (np.all(moop2.scaled_ub == np.asarray(moop1.scaled_ub)))
+    assert (np.all(moop2.scaled_des_tols == np.asarray(moop1.scaled_des_tols)))
+    assert (np.all(moop2.cat_lb == np.asarray(moop1.cat_lb)))
+    assert (np.all(moop2.cat_scale == np.asarray(moop1.cat_scale)))
+    assert (np.all(moop2.RSVT == np.asarray(moop1.RSVT)))
+    assert (np.all(moop2.mean == np.asarray(moop1.mean)))
+    assert (all([moop2.data[ki].shape == moop1.data[ki].shape
+                 for ki in moop2.data.keys()]))
+    assert (all([all([moop2.sim_db[j][ki].shape == moop1.sim_db[j][ki].shape
+                      for ki in ["x_vals", "s_vals"]])
+                 for j in range(len(moop1.sim_db))]))
     for obj1, obj2 in zip(moop1.objectives, moop2.objectives):
         if hasattr(obj1, "__name__"):
-            assert(obj1.__name__ == obj2.__name__)
+            assert (obj1.__name__ == obj2.__name__)
         else:
-            assert(obj1.__class__.__name__ == obj2.__class__.__name__)
+            assert (obj1.__class__.__name__ == obj2.__class__.__name__)
     for sim1, sim2 in zip(moop1.sim_funcs, moop2.sim_funcs):
         if hasattr(sim1, "__name__"):
-            assert(sim1.__name__ == sim2.__name__)
+            assert (sim1.__name__ == sim2.__name__)
         else:
-            assert(sim1.__class__.__name__ == sim2.__class__.__name__)
+            assert (sim1.__class__.__name__ == sim2.__class__.__name__)
     for const1, const2 in zip(moop1.constraints, moop2.constraints):
         if hasattr(const1, "__name__"):
-            assert(const1.__name__ == const2.__name__)
+            assert (const1.__name__ == const2.__name__)
         else:
-            assert(const1.__class__.__name__ == const2.__class__.__name__)
+            assert (const1.__class__.__name__ == const2.__class__.__name__)
     # Check functions
-    assert(moop2.optimizer.__name__ == moop1.optimizer.__name__)
-    assert(all([s1.__class__.__name__ == s2.__class__.__name__
-                for s1, s2 in zip(moop1.searches, moop2.searches)]))
-    assert(all([s1.__class__.__name__ == s2.__class__.__name__
-                for s1, s2 in zip(moop1.surrogates, moop2.surrogates)]))
-    assert(all([s1.__class__.__name__ == s2.__class__.__name__
-                for s1, s2 in zip(moop1.acquisitions, moop2.acquisitions)]))
+    assert (moop2.optimizer.__name__ == moop1.optimizer.__name__)
+    assert (all([s1.__class__.__name__ == s2.__class__.__name__
+                 for s1, s2 in zip(moop1.searches, moop2.searches)]))
+    assert (all([s1.__class__.__name__ == s2.__class__.__name__
+                 for s1, s2 in zip(moop1.surrogates, moop2.surrogates)]))
+    assert (all([s1.__class__.__name__ == s2.__class__.__name__
+                 for s1, s2 in zip(moop1.acquisitions, moop2.acquisitions)]))
 
 
 if __name__ == "__main__":

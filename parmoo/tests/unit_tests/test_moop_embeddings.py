@@ -174,69 +174,69 @@ def test_MOOP_addDesign():
     # Initialize a MOOP with no hyperparameters
     moop = MOOP(LocalGPS)
     # Now add some continuous and integer design variables
-    assert(moop.n == 0)
+    assert (moop.n == 0)
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n == 1)
+    assert (moop.n == 1)
     moop.addDesign({'des_type': "integer",
                     'lb': 0,
                     'ub': 4})
-    assert(moop.n == 2)
-    assert(moop.n_int == 1)
+    assert (moop.n == 2)
+    assert (moop.n_int == 1)
     moop.addDesign({'name': "x_3",
                     'des_type': "continuous",
                     'des_tol': 0.01,
                     'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n == 3)
+    assert (moop.n == 3)
     moop.addDesign({'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n == 4)
+    assert (moop.n == 4)
     moop.addDesign({'des_tol': 0.01,
                     'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n == 5)
+    assert (moop.n == 5)
     moop.addDesign({'name': "x_6",
                     'des_tol': 0.01,
                     'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n == 6)
+    assert (moop.n == 6)
     # Now add some categorical design variables
-    assert(moop.n_cat == 0)
+    assert (moop.n_cat == 0)
     moop.addDesign({'des_type': "categorical",
                     'levels': 2})
-    assert(moop.n_cat == 1)
+    assert (moop.n_cat == 1)
     moop.addDesign({'des_type': "categorical",
                     'levels': 3})
-    assert(moop.n_cat == 2)
+    assert (moop.n_cat == 2)
     moop.addDesign({'name': "x_9",
                     'des_type': "categorical",
                     'levels': 3})
-    assert(moop.n_cat == 3)
+    assert (moop.n_cat == 3)
     moop.addDesign({'name': "x_10",
                     'des_type': "categorical",
                     'levels': ["boy", "girl", "doggo"]})
-    assert(moop.n_cat == 4)
+    assert (moop.n_cat == 4)
     # Now add a custom design variables
     moop.addDesign({'des_type': "custom",
                     'embedding_size': 1,
                     'embedder': lambda x: x,
                     'extracter': lambda x: x})
-    assert(moop.n_custom == 1)
+    assert (moop.n_custom == 1)
     moop.addDesign({'des_type': "raw"})
-    assert(moop.n_raw == 1)
+    assert (moop.n_raw == 1)
     # Now add more continuous design variables
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n_cont == 6)
+    assert (moop.n_cont == 6)
     moop.addDesign({'lb': 0.0,
                     'ub': 1.0})
-    assert(moop.n_cont == 7)
+    assert (moop.n_cont == 7)
     # Check the design order
     right_order = [0, 7, 1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 5, 6]
-    assert(all([moop.des_order[i] == right_order[i] for i in range(14)]))
+    assert (all([moop.des_order[i] == right_order[i] for i in range(14)]))
 
 
 def test_MOOP_embed_extract_unnamed1():
@@ -270,30 +270,30 @@ def test_MOOP_embed_extract_unnamed1():
         xi[1] -= 1.0
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(moop.__extract__(xxi)[0] - xi[0] <= 0.5)
-        assert(moop.__extract__(xxi)[1] - xi[1] < 1.0e-8)
+        assert (moop.__extract__(xxi)[0] - xi[0] <= 0.5)
+        assert (moop.__extract__(xxi)[1] - xi[1] < 1.0e-8)
     # Test upper and lower bounds
     x0 = np.zeros(2)
     x0[0] *= 1000.0
     x0[1] -= 1.0
     xx0 = moop.__embed__(x0)
     # Check that embedding is legal
-    assert(all(xx0 >= 0.0) and all(xx0 <= 1.0))
-    assert(xx0.size == moop.n)
+    assert (all(xx0 >= 0.0) and all(xx0 <= 1.0))
+    assert (xx0.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx0) - x0 < 1.0e-8))
+    assert (all(moop.__extract__(xx0) - x0 < 1.0e-8))
     x1 = np.ones(2)
     x1[0] *= 1000.0
     x1[1] -= 1.0
     xx1 = moop.__embed__(x1)
     # Check that embedding is legal
-    assert(all(xx1 >= 0.0) and all(xx1 <= 1.0))
-    assert(xx1.size == moop.n)
+    assert (all(xx1 >= 0.0) and all(xx1 <= 1.0))
+    assert (xx1.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx1) - x1 < 1.0e-8))
+    assert (all(moop.__extract__(xx1) - x1 < 1.0e-8))
     # Add two categorical variables and check that they embed correctly
     moop.addDesign({'des_type': "categorical",
                     'levels': 2})
@@ -308,10 +308,10 @@ def test_MOOP_embed_extract_unnamed1():
         xi[2:] = np.round(xi[2:])
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all(moop.__extract__(xxi) - xi < 1.0e-8))
+        assert (all(moop.__extract__(xxi) - xi < 1.0e-8))
     # Test upper and lower bounds
     x0 = np.zeros(4)
     x0[0] *= 1000.0
@@ -319,20 +319,20 @@ def test_MOOP_embed_extract_unnamed1():
     x0[2:] = np.round(x0[2:])
     xx0 = moop.__embed__(x0)
     # Check that embedding is legal
-    assert(all(xx0 >= 0.0) and all(xx0 <= 1.0))
-    assert(xx0.size == moop.n)
+    assert (all(xx0 >= 0.0) and all(xx0 <= 1.0))
+    assert (xx0.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx0) - x0 < 1.0e-8))
+    assert (all(moop.__extract__(xx0) - x0 < 1.0e-8))
     x1 = np.ones(4)
     x1[0] *= 1000.0
     x1[1] -= 1.0
     x1[2:] = np.round(x1[2:])
     xx1 = moop.__embed__(x1)
     # Check that embedding is legal
-    assert(all(xx1 >= 0.0) and all(xx1 <= 1.0))
-    assert(xx1.size == moop.n)
+    assert (all(xx1 >= 0.0) and all(xx1 <= 1.0))
+    assert (xx1.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx1) - x1 < 1.0e-8))
+    assert (all(moop.__extract__(xx1) - x1 < 1.0e-8))
     # Add a custom variable and raw variable and check that they embed
     moop.addDesign({'des_type': "custom",
                     'embedding_size': 1,
@@ -349,10 +349,10 @@ def test_MOOP_embed_extract_unnamed1():
         xi[5] *= 5.0
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi[:5] >= 0.0) and all(xxi[:5] <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi[:5] >= 0.0) and all(xxi[:5] <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all(moop.__extract__(xxi) - xi < 1.0e-8))
+        assert (all(moop.__extract__(xxi) - xi < 1.0e-8))
     # Test upper and lower bounds
     x0 = np.zeros(6)
     x0[0] *= 1000.0
@@ -362,10 +362,10 @@ def test_MOOP_embed_extract_unnamed1():
     x0[5] *= 5.0
     xx0 = moop.__embed__(x0)
     # Check that embedding is legal
-    assert(all(xx0 >= 0.0) and all(xx0 <= 1.0))
-    assert(xx0.size == moop.n)
+    assert (all(xx0 >= 0.0) and all(xx0 <= 1.0))
+    assert (xx0.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx0) - x0 < 1.0e-8))
+    assert (all(moop.__extract__(xx0) - x0 < 1.0e-8))
     x1 = np.ones(6)
     x1[0] *= 1000.0
     x1[1] -= 1.0
@@ -374,10 +374,10 @@ def test_MOOP_embed_extract_unnamed1():
     x1[5] *= 5.0
     xx1 = moop.__embed__(x1)
     # Check that embedding is legal
-    assert(all(xx1[:5] >= 0.0) and all(xx1[:5] <= 1.0))
-    assert(xx1.size == moop.n)
+    assert (all(xx1[:5] >= 0.0) and all(xx1[:5] <= 1.0))
+    assert (xx1.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx1) - x1 < 1.0e-8))
+    assert (all(moop.__extract__(xx1) - x1 < 1.0e-8))
 
 
 def test_MOOP_embed_extract_unnamed2():
@@ -416,29 +416,29 @@ def test_MOOP_embed_extract_unnamed2():
         xi[2:] = np.round(xi[2:])
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all(moop.__extract__(xxi) - xi < 1.0e-8))
+        assert (all(moop.__extract__(xxi) - xi < 1.0e-8))
     # Test upper and lower bounds
     x0 = np.zeros(4)
     x0[0] *= 0.5
     x0[2:] = np.round(x0[2:])
     xx0 = moop.__embed__(x0)
     # Check that embedding is legal
-    assert(all(xx0 >= 0.0) and all(xx0 <= 1.0))
-    assert(xx0.size == moop.n)
+    assert (all(xx0 >= 0.0) and all(xx0 <= 1.0))
+    assert (xx0.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx0) - x0 < 1.0e-8))
+    assert (all(moop.__extract__(xx0) - x0 < 1.0e-8))
     x1 = np.ones(4)
     x1[0] *= 0.5
     x1[2:] = np.round(x1[2:])
     xx1 = moop.__embed__(x1)
     # Check that embedding is legal
-    assert(all(xx1 >= 0.0) and all(xx1 <= 1.0))
-    assert(xx1.size == moop.n)
+    assert (all(xx1 >= 0.0) and all(xx1 <= 1.0))
+    assert (xx1.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx1) - x1 < 1.0e-8))
+    assert (all(moop.__extract__(xx1) - x1 < 1.0e-8))
     # Add two continuous variables and check that they are embedded correctly
     moop.addDesign({'lb': -1.0,
                     'ub': 0.0})
@@ -454,10 +454,10 @@ def test_MOOP_embed_extract_unnamed2():
         xi[5] *= 1000.0
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all(moop.__extract__(xxi) - xi < 1.0e-8))
+        assert (all(moop.__extract__(xxi) - xi < 1.0e-8))
     # Test upper and lower bounds
     x0 = np.zeros(6)
     x0[0] *= 0.5
@@ -466,10 +466,10 @@ def test_MOOP_embed_extract_unnamed2():
     x0[5] *= 1000.0
     xx0 = moop.__embed__(x0)
     # Check that embedding is legal
-    assert(all(xx0 >= 0.0) and all(xx0 <= 1.0))
-    assert(xx0.size == moop.n)
+    assert (all(xx0 >= 0.0) and all(xx0 <= 1.0))
+    assert (xx0.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx0) - x0 < 1.0e-8))
+    assert (all(moop.__extract__(xx0) - x0 < 1.0e-8))
     x1 = np.ones(6)
     x1[0] *= 0.5
     x1[2:4] = np.round(x1[2:4])
@@ -477,10 +477,10 @@ def test_MOOP_embed_extract_unnamed2():
     x1[5] *= 1000.0
     xx1 = moop.__embed__(x1)
     # Check that embedding is legal
-    assert(all(xx1 >= 0.0) and all(xx1 <= 1.0))
-    assert(xx1.size == moop.n)
+    assert (all(xx1 >= 0.0) and all(xx1 <= 1.0))
+    assert (xx1.size == moop.n)
     # Check extraction
-    assert(all(moop.__extract__(xx1) - x1 < 1.0e-8))
+    assert (all(moop.__extract__(xx1) - x1 < 1.0e-8))
 
 
 def test_MOOP_embed_extract_named1():
@@ -517,11 +517,11 @@ def test_MOOP_embed_extract_named1():
         xi["x1"] = nums[1] - 1.0
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
-                    for key in ["x0", "x1"]]))
+        assert (all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                     for key in ["x0", "x1"]]))
     # Add two categorical variables and check that they are embedded correctly
     moop.addDesign({'name': "x2",
                     'des_type': "categorical",
@@ -540,12 +540,12 @@ def test_MOOP_embed_extract_named1():
         xi["x3"] = np.random.choice(["biggie", "shortie", "shmedium"])
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
-                    for key in ["x0", "x1", "x2"]]))
-        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert (all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                     for key in ["x0", "x1", "x2"]]))
+        assert (moop.__extract__(xxi)["x3"] == xi["x3"])
     # Add an integer variables and check that it is embedded correctly
     moop.addDesign({'name': "x4",
                     'des_type': "int",
@@ -563,12 +563,12 @@ def test_MOOP_embed_extract_named1():
         xi["x4"] = np.random.randint(-5, 5)
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
-                    for key in ["x0", "x1", "x2", "x4"]]))
-        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert (all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                     for key in ["x0", "x1", "x2", "x4"]]))
+        assert (moop.__extract__(xxi)["x3"] == xi["x3"])
     # Add a custom variable and check that it is embedded correctly
     moop.addDesign({'name': "x5",
                     'des_type': "custom",
@@ -588,14 +588,14 @@ def test_MOOP_embed_extract_named1():
         xi["x5"] = str(num[5])
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
-                    for key in ["x0", "x1", "x2", "x4"]]))
-        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
-        assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
-               < 1.0e-8)
+        assert (all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                     for key in ["x0", "x1", "x2", "x4"]]))
+        assert (moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert (abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
+                < 1.0e-8)
     # Add a raw variable
     moop.addDesign({'name': "x6",
                     'des_type': "raw"})
@@ -614,14 +614,14 @@ def test_MOOP_embed_extract_named1():
         xi["x6"] = num[6]
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
-                    for key in ["x0", "x1", "x2", "x4", "x6"]]))
-        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
-        assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
-               < 1.0e-8)
+        assert (all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                     for key in ["x0", "x1", "x2", "x4", "x6"]]))
+        assert (moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert (abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
+                < 1.0e-8)
     # Add another custom variable and check that it is embedded correctly
     moop.addDesign({'name': "x7",
                     'des_type': "custom",
@@ -646,15 +646,15 @@ def test_MOOP_embed_extract_named1():
         xi["x7"] = "010"
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
-                    for key in ["x0", "x1", "x2", "x4", "x6"]]))
-        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
-        assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
-               < 1.0e-8)
-        assert(moop.__extract__(xxi)["x7"] == xi["x7"])
+        assert (all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                     for key in ["x0", "x1", "x2", "x4", "x6"]]))
+        assert (moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert (abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
+                < 1.0e-8)
+        assert (moop.__extract__(xxi)["x7"] == xi["x7"])
 
 
 def test_MOOP_embed_extract_named2():
@@ -731,15 +731,15 @@ def test_MOOP_embed_extract_named2():
         xi["x7"] = "010"
         xxi = moop.__embed__(xi)
         # Check that embedding is legal
-        assert(all(xxi >= 0.0) and all(xxi <= 1.0))
-        assert(xxi.size == moop.n)
+        assert (all(xxi >= 0.0) and all(xxi <= 1.0))
+        assert (xxi.size == moop.n)
         # Check extraction
-        assert(all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
-                    for key in ["x0", "x1", "x2", "x4", "x6"]]))
-        assert(moop.__extract__(xxi)["x3"] == xi["x3"])
-        assert(abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
-               < 1.0e-8)
-        assert(moop.__extract__(xxi)["x7"] == xi["x7"])
+        assert (all([abs(moop.__extract__(xxi)[key] - xi[key]) < 1.0e-8
+                     for key in ["x0", "x1", "x2", "x4", "x6"]]))
+        assert (moop.__extract__(xxi)["x3"] == xi["x3"])
+        assert (abs(float(moop.__extract__(xxi)["x5"]) - float(xi["x5"]))
+                < 1.0e-8)
+        assert (moop.__extract__(xxi)["x7"] == xi["x7"])
 
 
 if __name__ == "__main__":

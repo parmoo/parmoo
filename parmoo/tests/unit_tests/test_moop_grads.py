@@ -66,11 +66,11 @@ def test_MOOP_evaluatePenalty():
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addObjective({'obj_func': f1})
-    assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
-    assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.0 * np.ones(1)))
+    assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
+    assert (np.all(moop1.evaluatePenalty(np.ones(3)) == 3.0 * np.ones(1)))
     moop1.addConstraint({'constraint': c1})
-    assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
-    assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
+    assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
+    assert (np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
     moop1 = MOOP(LocalGPS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
@@ -80,11 +80,11 @@ def test_MOOP_evaluatePenalty():
     moop1.fitSurrogates()
     moop1.addObjective({'obj_func': f1})
     moop1.addObjective({'obj_func': f1})
-    assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
-    assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.0 * np.ones(1)))
+    assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
+    assert (np.all(moop1.evaluatePenalty(np.ones(3)) == 3.0 * np.ones(1)))
     moop1.addConstraint({'constraint': c1})
-    assert(np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
-    assert(np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
+    assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
+    assert (np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
     # Now try some bad evaluations
     with pytest.raises(TypeError):
         moop1.evaluatePenalty(10.0)
@@ -104,8 +104,8 @@ def test_MOOP_evaluatePenalty():
     moop2.addConstraint({'constraint': c1})
     x = moop1.__embed__(np.ones(3))
     xx = moop2.__embed__(np.ones(3))
-    assert(np.linalg.norm(moop1.evaluatePenalty(x) -
-                          moop2.evaluatePenalty(xx)) < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluatePenalty(x) -
+                           moop2.evaluatePenalty(xx)) < 0.00000001)
 
 
 def test_MOOP_evaluateGradients_1():
@@ -175,14 +175,14 @@ def test_MOOP_evaluateGradients_1():
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addObjective({'obj_func': f1})
-    assert(np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
-    assert(np.all(moop1.evaluateGradients(np.ones(3)) ==
-                  2.0 * np.ones((1, 3))))
+    assert (np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
+    assert (np.all(moop1.evaluateGradients(np.ones(3)) ==
+                   2.0 * np.ones((1, 3))))
     moop1.addConstraint({'constraint': c1})
-    assert(np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
+    assert (np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
     result = 2.0 * np.ones((1, 3))
     result[0, 0] = 3.0
-    assert(np.all(moop1.evaluateGradients(np.ones(3)) == result))
+    assert (np.all(moop1.evaluateGradients(np.ones(3)) == result))
     moop1 = MOOP(LocalGPS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
@@ -191,20 +191,20 @@ def test_MOOP_evaluateGradients_1():
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
     moop1.addObjective({'obj_func': f1})
-    assert(np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
-    assert(np.all(moop1.evaluateGradients(np.ones(3)) ==
-                  2.0 * np.ones((1, 3))))
+    assert (np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
+    assert (np.all(moop1.evaluateGradients(np.ones(3)) ==
+                   2.0 * np.ones((1, 3))))
     moop1.addConstraint({'constraint': c1})
-    assert(np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
-    assert(np.all(moop1.evaluateGradients(np.ones(3)) == result))
+    assert (np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
+    assert (np.all(moop1.evaluateGradients(np.ones(3)) == result))
     result = np.zeros((2, 3))
     result[1, 0] = 1.0
     result[0, :] = 2.0
     result[0, 0] = 3.0
     moop1.addObjective({'obj_func': f2})
-    assert(np.all(moop1.evaluateGradients(np.ones(3)) == result))
+    assert (np.all(moop1.evaluateGradients(np.ones(3)) == result))
     moop1.addConstraint({'constraint': c2})
-    assert(np.all(moop1.evaluateGradients(np.ones(3)) == result))
+    assert (np.all(moop1.evaluateGradients(np.ones(3)) == result))
     # Now try some bad evaluations
     with pytest.raises(TypeError):
         moop1.evaluateGradients(10.0)
@@ -225,8 +225,8 @@ def test_MOOP_evaluateGradients_1():
     moop2.addConstraint({'constraint': c2})
     x = moop1.__embed__(np.ones(3))
     xx = moop2.__embed__(np.ones(3))
-    assert(np.linalg.norm(moop1.evaluatePenalty(x) -
-                          moop2.evaluatePenalty(xx)) < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluatePenalty(x) -
+                           moop2.evaluatePenalty(xx)) < 0.00000001)
 
 
 def test_MOOP_evaluateGradients_2():
@@ -314,14 +314,14 @@ def test_MOOP_evaluateGradients_2():
     for i in range(3):
         moop3.addDesign({'name': ('x' + str(i + 1)), 'lb': 0.0, 'ub': 1.0})
     moop3.addObjective({'obj_func': f3})
-    assert(np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
-    assert(np.all(moop3.evaluateGradients(np.ones(3)) ==
-                  2.0 * np.ones((1, 3))))
+    assert (np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
+    assert (np.all(moop3.evaluateGradients(np.ones(3)) ==
+                   2.0 * np.ones((1, 3))))
     moop3.addConstraint({'constraint': c3})
-    assert(np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
+    assert (np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
     result = 2.0 * np.ones((1, 3))
     result[0, 0] = 3.0
-    assert(np.all(moop3.evaluateGradients(np.ones(3)) == result))
+    assert (np.all(moop3.evaluateGradients(np.ones(3)) == result))
     moop3 = MOOP(LocalGPS)
     for i in range(3):
         moop3.addDesign({'name': ('x' + str(i + 1)), 'lb': 0.0, 'ub': 1.0})
@@ -332,20 +332,20 @@ def test_MOOP_evaluateGradients_2():
                                                ("x3", float)]), 1)
     moop3.fitSurrogates()
     moop3.addObjective({'obj_func': f3})
-    assert(np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
-    assert(np.all(moop3.evaluateGradients(np.ones(3)) ==
-                  2.0 * np.ones((1, 3))))
+    assert (np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
+    assert (np.all(moop3.evaluateGradients(np.ones(3)) ==
+                   2.0 * np.ones((1, 3))))
     moop3.addConstraint({'constraint': c3})
-    assert(np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
-    assert(np.all(moop3.evaluateGradients(np.ones(3)) == result))
+    assert (np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
+    assert (np.all(moop3.evaluateGradients(np.ones(3)) == result))
     result = np.zeros((2, 3))
     result[1, 0] = 1.0
     result[0, :] = 2.0
     result[0, 0] = 3.0
     moop3.addObjective({'obj_func': f4})
-    assert(np.all(moop3.evaluateGradients(np.ones(3)) == result))
+    assert (np.all(moop3.evaluateGradients(np.ones(3)) == result))
     moop3.addConstraint({'constraint': c4})
-    assert(np.all(moop3.evaluateGradients(np.ones(3)) == result))
+    assert (np.all(moop3.evaluateGradients(np.ones(3)) == result))
     # Adjust the scaling and try again
     moop4 = MOOP(LocalGPS)
     moop4.addDesign({'name': "x1", 'lb': -1.0, 'ub': 1.0},
@@ -366,8 +366,8 @@ def test_MOOP_evaluateGradients_2():
     xx = moop4.__embed__(np.ones(1, dtype=[("x1", float), ("x2", float),
                                            ("x3", float)]))
     # Check for a double-sized step due to step in rescaled input space
-    assert(np.linalg.norm(moop3.evaluateGradients(x) -
-                          moop4.evaluateGradients(xx) * 2) < 0.00000001)
+    assert (np.linalg.norm(moop3.evaluateGradients(x) -
+                           moop4.evaluateGradients(xx) * 2) < 0.00000001)
 
 
 def test_MOOP_evaluateGradients_3():
@@ -458,7 +458,7 @@ def test_MOOP_evaluateGradients_3():
     b2 = moop2.iterate(1)
     # Check that same solutions were found
     for x1, x2 in zip(b1, b2):
-        assert(np.all(np.abs(x1[0] - x2[0]) < 0.1))
+        assert (np.all(np.abs(x1[0] - x2[0]) < 0.1))
 
 
 if __name__ == "__main__":
