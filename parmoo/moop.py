@@ -1546,7 +1546,7 @@ class MOOP:
             x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
                 design point to evaluate.
 
-            grad (bool): Specifies whether or not to evalaute the
+            grad (bool): Specifies whether or not to evalaute the gradients.
 
         Returns:
             numpy.ndarray: (When grad is False) a 1d numpy.ndarray containing
@@ -1562,14 +1562,23 @@ class MOOP:
                 raise ValueError("x must have length n")
         else:
             raise TypeError("x must be a numpy array")
-        # Evaluate the surrogate models to approximate the simulation outputs
-        sim_stdD = np.zeros(self.m_total)
-        m_count = 0
-        for i, surrogate in enumerate(self.surrogates):
-            sim_stdD[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
-            m_count += self.m[i]
-        # Return the result
-        return sim_stdD
+        # If gradient evaluation was requested
+        if grad:
+            dstdD_dx = np.zeros((self.m_total, self.n))
+            m_count = 0
+            for i, surrogate in enumerate(self.surrogates):
+                dstdD_dx[m_count:m_count+self.m[i]] = \
+                    surrogate.stdDevGrad(x)
+                m_count += self.m[i]
+            return dstdD_dx
+        # Otherwise, evaluate the surrogate standard deviations
+        else:
+            sim_stdD = np.zeros(self.m_total)
+            m_count = 0
+            for i, surrogate in enumerate(self.surrogates):
+                sim_stdD[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
+                m_count += self.m[i]
+            return sim_stdD
 
     def evaluateObjectives(self, x):
         """ Evaluate all objectives using the simulation surrogates as needed.
@@ -1748,7 +1757,7 @@ class MOOP:
                 # Also standard deviation gradients
                 if any(self.exp_vals):
                     dstdD_dx[m_count:m_count+self.m[i]] = \
-                        surrogate.stdDevGradient(x)
+                        surrogate.stdDevGrad(x)
                 m_count += self.m[i]
         # Evaluate the gradients of the objective functions
         df_dx = np.zeros((self.o, self.n))
@@ -1811,11 +1820,11 @@ class MOOP:
                                           self.__unpack_sim__(sim),
                                           self.__unpack_sim__(sim_std_dev),
                                           der=3)
-                # If names are used, pack the sims
-                if self.use_names:
-                    df_dstdD[i, :] = self.__pack_sim__(df_dsd_tmp)
-                else:
-                    df_dstdD[i, :] = df_dsd_tmp
+                    # If names are used, pack the sims
+                    if self.use_names:
+                        df_dstdD[i, :] = self.__pack_sim__(df_dsd_tmp)
+                    else:
+                        df_dstdD[i, :] = df_dsd_tmp
         # Finally, evaluate the full objective Jacobian
         dfx = np.zeros((self.o, self.n))
         dfx = df_dx
