@@ -65,7 +65,7 @@ ParMOO has been tested on Unix/Linux and MacOS systems.
 
 ParMOO's base has the following dependencies:
 
- * Python_ 3.6+
+ * Python_ 3.8+
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
  * pyDOE_ -- for generating experimental designs
@@ -306,7 +306,7 @@ Our online documentation:
         title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.2.0},
+        number      = {Version 0.2.1+dev},
         year        = {2023},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
