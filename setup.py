@@ -55,7 +55,7 @@ setup(
     description="Python library for parallel multiobjective simulation optimization",
     long_description="\n".join(DOCLINES[2:]),
     url="https://github.com/parmoo/parmoo",
-    author="Tyler H. Chang and Stefan M. Wild",
+    author="Tyler H. Chang, Stefan M. Wild, et al.",
     author_email="parmoo@mcs.anl.gov",
     license="BSD 3-clause",
 
