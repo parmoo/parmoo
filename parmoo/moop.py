@@ -1163,7 +1163,7 @@ class MOOP:
                 self.const_names.append(("c" + str(self.p + 1), 'f8'))
             # Finally, if all else passed, add the constraint
             if 'exp_func' in arg.keys():
-                self.constraints.append(arg['constraint'])
+                self.constraints.append(arg['exp_func'])
                 self.c_exp_vals.append(True)
             else:
                 self.constraints.append(arg['constraint'])
@@ -1686,10 +1686,10 @@ class MOOP:
             m_count = 0
             for i, surrogate in enumerate(self.surrogates):
                 sim[m_count:m_count + self.m[i]] = surrogate.evaluate(x)
-                m_count += self.m[i]
                 if any(self.c_exp_vals):
                     sim_std_dev[m_count:m_count+self.m[i]] = \
                                                     surrogate.stdDev(x)
+                m_count += self.m[i]
             # Evaluate the constraint functions
             cx = np.zeros(self.p)
             for i, constraint_func in enumerate(self.constraints):
@@ -1800,7 +1800,7 @@ class MOOP:
                 dsim_dx[m_count:m_count+self.m[i], :] = \
                         surrogate.gradient(x)
                 # Also standard deviation gradients
-                if any(self.obj_exp_vals):
+                if any(self.obj_exp_vals) or any(self.c_exp_vals):
                     dstdD_dx[m_count:m_count+self.m[i]] = \
                         surrogate.stdDevGrad(x)
                 m_count += self.m[i]
@@ -1963,7 +1963,7 @@ class MOOP:
                     dcx[:] = dcx[:] + dc_dx[i, :]
                     if self.m_total > 0:
                         dcx[:] = dcx[:] + np.dot(dc_dsim[i, :], dsim_dx[:, :])
-                    if any(self.c_exp_vals):
+                    if self.c_exp_vals[i]:
                         dcx[:] = dcx[:] + np.dot(dc_dstdD[i, :],
                                                  dstdD_dx[:, :])
         # Construct the Jacobian of the penalized objective function
