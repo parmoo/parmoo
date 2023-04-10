@@ -23,8 +23,8 @@ sys.path.insert(0, os.path.abspath('../parmoo'))
 # -- Project information -----------------------------------------------------
 
 project = 'ParMOO'
-copyright = str(datetime.now().year) + ' Tyler Chang, Stefan Wild, et al.'
-author = "Tyler Chang, Stefan Wild, et al."
+copyright = str(datetime.now().year) + ' Tyler H. Chang, Stefan M. Wild, et al.'
+author = "Tyler H. Chang, Stefan M. Wild, et al."
 
 # The full version, including alpha/beta/rc tags
 exec(open("../parmoo/version.py").read())
@@ -95,7 +95,7 @@ latex_elements = {
 
 latex_documents = [
     (latex_doc, "parmoo.tex", "ParMOO User's Manual",
-     "Tyler Chang, Stefan Wild, et al.", "manual"),
+     "Tyler H. Chang, Stefan M. Wild, et al.", "manual"),
      ]
 
 latex_logo = "img/logo-ParMOO_white.png"
