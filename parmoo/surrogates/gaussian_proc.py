@@ -27,7 +27,7 @@ class GaussRBF(SurrogateFunction):
 
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'std_dev',
-                 'nugget', 'weights']
+                 'nugget', 'weights', 'mean']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the GaussRBF class.
@@ -61,6 +61,7 @@ class GaussRBF(SurrogateFunction):
         self.lb = lb
         self.ub = ub
         self.n = self.lb.size
+        self.mean = np.zeros(self.m)
         self.std_dev = 0.0
         # Create empty database
         self.x_vals = np.zeros((0, self.n))
@@ -149,10 +150,15 @@ class GaussRBF(SurrogateFunction):
             for i in range(self.x_vals.shape[0]):
                 cov[i, i] = cov[i, i] + 0.00000001 - sigma_n
             w, v = np.linalg.eigh(cov)
+        # Calculate RHS
+        rhs = self.f_vals.copy()
+        self.mean[:] = np.sum(rhs, axis=0) / rhs.shape[0]
+        for i in range(rhs.shape[0]):
+            rhs[i, :] = rhs[i, :] - self.mean[:]
         # Finish the solve
-        self.weights = np.zeros((self.m, self.f_vals.shape[0]))
+        self.weights = np.zeros((self.m, rhs.shape[0]))
         for i in range(self.m):
-            tmp = np.dot(v.transpose(), self.f_vals[:, i]) / w[:]
+            tmp = np.dot(v.transpose(), rhs[:, i]) / w[:]
             self.weights[i, :] = np.dot(v, tmp)
         return
 
@@ -205,10 +211,15 @@ class GaussRBF(SurrogateFunction):
             for i in range(self.x_vals.shape[0]):
                 cov[i, i] = cov[i, i] + 0.00000001 - sigma_n
             w, v = np.linalg.eigh(cov)
+        # Calculate RHS
+        rhs = self.f_vals.copy()
+        self.mean[:] = np.sum(rhs, axis=0) / rhs.shape[0]
+        for i in range(rhs.shape[0]):
+            rhs[i, :] = rhs[i, :] - self.mean[:]
         # Finish the solve
-        self.weights = np.zeros((self.m, self.f_vals.shape[0]))
+        self.weights = np.zeros((self.m, rhs.shape[0]))
         for i in range(self.m):
-            tmp = np.dot(v.transpose(), self.f_vals[:, i]) / w[:]
+            tmp = np.dot(v.transpose(), rhs[:, i]) / w[:]
             self.weights[i, :] = np.dot(v, tmp)
         return
 
@@ -247,7 +258,7 @@ class GaussRBF(SurrogateFunction):
                 raise ValueError("x cannot be infeasible")
         # Evaluate all m surrogates at x
         dists = self.__gaussian(cdist(self.x_vals, [x])).flatten()
-        return np.dot(self.weights, dists)
+        return np.dot(self.weights, dists) + self.mean[:]
 
     def gradient(self, x):
         """ Evaluate the gradients of the Gaussian RBF at a design point.
@@ -370,6 +381,7 @@ class GaussRBF(SurrogateFunction):
         gp_state['f_vals'] = self.f_vals.tolist()
         gp_state['eps'] = self.eps.tolist()
         gp_state['weights'] = self.weights.tolist()
+        gp_state['mean'] = self.mean.tolist()
         # Save file
         with open(filename, 'w') as fp:
             json.dump(gp_state, fp)
@@ -401,6 +413,7 @@ class GaussRBF(SurrogateFunction):
         self.f_vals = np.array(gp_state['f_vals'])
         self.eps = np.array(gp_state['eps'])
         self.weights = np.array(gp_state['weights'])
+        self.mean = np.array(gp_state['mean'])
         return
 
 
@@ -414,7 +427,8 @@ class LocalGaussRBF(SurrogateFunction):
 
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'std_dev',
-                 'nugget', 'n_loc', 'loc_inds', 'tr_center', 'weights']
+                 'nugget', 'n_loc', 'loc_inds', 'tr_center', 'weights',
+                 'mean']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the LocalGaussRBF class.
@@ -453,6 +467,7 @@ class LocalGaussRBF(SurrogateFunction):
         self.x_vals = np.zeros((0, self.n))
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros((0, 0))
+        self.mean = np.zeros(self.m)
         # Initialize trust-region settings
         self.tr_center = np.zeros(0)
         self.loc_inds = []
@@ -618,11 +633,15 @@ class LocalGaussRBF(SurrogateFunction):
                 for i in range(len(self.loc_inds)):
                     cov[i, i] = cov[i, i] + 0.00000001 - sigma_n
                 w, v = np.linalg.eigh(cov)
+            # Calculate RHS
+            rhs = self.f_vals[self.loc_inds, :].copy()
+            self.mean[:] = np.sum(rhs, axis=0) / rhs.shape[0]
+            for i in range(rhs.shape[0]):
+                rhs[i, :] = rhs[i, :] - self.mean[:]
             # Finish the solve
-            self.weights = np.zeros((self.m, len(self.loc_inds)))
+            self.weights = np.zeros((self.m, rhs.shape[0]))
             for i in range(self.m):
-                tmp = np.dot(v.transpose(),
-                             self.f_vals[self.loc_inds, i]) / w[:]
+                tmp = np.dot(v.transpose(), rhs[:, i]) / w[:]
                 self.weights[i, :] = np.dot(v, tmp)
         return self.std_dev
 
@@ -651,7 +670,7 @@ class LocalGaussRBF(SurrogateFunction):
         # Evaluate all m surrogates at x
         dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
                                       [x])).flatten()
-        return np.dot(self.weights, dists)
+        return np.dot(self.weights, dists) + self.mean[:]
 
     def gradient(self, x):
         """ Evaluate the gradients of the Gaussian RBF at a design point.
@@ -778,6 +797,7 @@ class LocalGaussRBF(SurrogateFunction):
         gp_state['eps'] = self.eps.tolist()
         gp_state['tr_center'] = self.tr_center.tolist()
         gp_state['weights'] = self.weights.tolist()
+        gp_state['mean'] = self.mean.tolist()
         # Save file
         with open(filename, 'w') as fp:
             json.dump(gp_state, fp)
@@ -812,4 +832,5 @@ class LocalGaussRBF(SurrogateFunction):
         self.eps = np.array(gp_state['eps'])
         self.tr_center = np.array(gp_state['tr_center'])
         self.weights = np.array(gp_state['weights'])
+        self.mean = np.array(gp_state['mean'])
         return

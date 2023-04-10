@@ -18,32 +18,32 @@ def test_static_export():
 
     # * html output
     scatter(moop1, output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * svg output
     parallel_coordinates(moop1, output='svg')
-    assert(os.path.exists("Pareto Front.svg"))
+    assert (os.path.exists("Pareto Front.svg"))
     os.remove("Pareto Front.svg")
 
     # * pdf output
     radar(moop1, output='pdf')
-    assert(os.path.exists("Pareto Front.pdf"))
+    assert (os.path.exists("Pareto Front.pdf"))
     os.remove("Pareto Front.pdf")
 
     # * jpeg output
     scatter(moop1, output='jpeg')
-    assert(os.path.exists("Pareto Front.jpeg"))
+    assert (os.path.exists("Pareto Front.jpeg"))
     os.remove("Pareto Front.jpeg")
 
     # * png output
     parallel_coordinates(moop1, output='png')
-    assert(os.path.exists("Pareto Front.png"))
+    assert (os.path.exists("Pareto Front.png"))
     os.remove("Pareto Front.png")
 
     # * webp output
     radar(moop1, output='webp')
-    assert(os.path.exists("Pareto Front.webp"))
+    assert (os.path.exists("Pareto Front.webp"))
     os.remove("Pareto Front.webp")
 
 
@@ -63,32 +63,32 @@ def test_quantity_constraints_objectives():
 
     # * 2 objective scatter with constraint
     scatter(moop1, output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * 2 objective parallel with constraint
     parallel_coordinates(moop1, output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * 2 objective radar with constraint
     radar(moop1, output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * 5 objective scatter without constraint
     scatter(moop2, output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * 5 objective parallel without constraint
     parallel_coordinates(moop2, output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * 5 objective radar without constraint
     radar(moop2, output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
 
@@ -116,7 +116,7 @@ def test_database_options():
         db='pf',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     parallel_coordinates(
@@ -124,7 +124,7 @@ def test_database_options():
         db='pf',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     radar(
@@ -132,7 +132,7 @@ def test_database_options():
         db='pf',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * obj x constraint_satisfying x constraints in MOOP
@@ -141,7 +141,7 @@ def test_database_options():
         db='obj',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     parallel_coordinates(
@@ -149,7 +149,7 @@ def test_database_options():
         db='obj',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     radar(
@@ -157,7 +157,7 @@ def test_database_options():
         db='obj',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     # * pf x constraint_violating x constraints in MOOP
@@ -166,7 +166,7 @@ def test_database_options():
         db='pf',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     parallel_coordinates(
@@ -174,7 +174,7 @@ def test_database_options():
         db='pf',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     radar(
@@ -182,7 +182,7 @@ def test_database_options():
         db='pf',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * obj x constraint_violating x constraints in MOOP
@@ -191,7 +191,7 @@ def test_database_options():
         db='obj',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     parallel_coordinates(
@@ -199,7 +199,7 @@ def test_database_options():
         db='obj',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     radar(
@@ -207,7 +207,7 @@ def test_database_options():
         db='obj',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     # * pf x all x constraints in MOOP
@@ -216,7 +216,7 @@ def test_database_options():
         db='pf',
         points='all',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     parallel_coordinates(
@@ -224,7 +224,7 @@ def test_database_options():
         db='pf',
         points='all',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     radar(
@@ -232,7 +232,7 @@ def test_database_options():
         db='pf',
         points='all',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * obj x all x constraints in MOOP
@@ -241,7 +241,7 @@ def test_database_options():
         db='obj',
         points='all',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     parallel_coordinates(
@@ -249,7 +249,7 @@ def test_database_options():
         db='obj',
         points='all',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     radar(
@@ -257,7 +257,7 @@ def test_database_options():
         db='obj',
         points='all',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     # * pf x none x constraints in MOOP
@@ -266,7 +266,7 @@ def test_database_options():
         db='pf',
         points='none',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     parallel_coordinates(
@@ -274,7 +274,7 @@ def test_database_options():
         db='pf',
         points='none',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     radar(
@@ -282,7 +282,7 @@ def test_database_options():
         db='pf',
         points='none',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * obj x none x constraints in MOOP
@@ -291,7 +291,7 @@ def test_database_options():
         db='obj',
         points='none',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     parallel_coordinates(
@@ -299,7 +299,7 @@ def test_database_options():
         db='obj',
         points='none',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     radar(
@@ -307,7 +307,7 @@ def test_database_options():
         db='obj',
         points='none',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     # * pf x constraint_satisfying x no constraints in MOOP
@@ -316,7 +316,7 @@ def test_database_options():
         db='pf',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     parallel_coordinates(
@@ -324,7 +324,7 @@ def test_database_options():
         db='pf',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     radar(
@@ -332,7 +332,7 @@ def test_database_options():
         db='pf',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * obj x constraint_satisfying x no constraints in MOOP
@@ -341,7 +341,7 @@ def test_database_options():
         db='obj',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     parallel_coordinates(
@@ -349,7 +349,7 @@ def test_database_options():
         db='obj',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     radar(
@@ -357,7 +357,7 @@ def test_database_options():
         db='obj',
         points='constraint_satisfying',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     # * pf x constraint_violating x no constraints in MOOP
@@ -366,7 +366,7 @@ def test_database_options():
         db='pf',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     parallel_coordinates(
@@ -374,7 +374,7 @@ def test_database_options():
         db='pf',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     radar(
@@ -382,7 +382,7 @@ def test_database_options():
         db='pf',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * obj x constraint_violating x no constraints in MOOP
@@ -391,7 +391,7 @@ def test_database_options():
         db='obj',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     parallel_coordinates(
@@ -399,7 +399,7 @@ def test_database_options():
         db='obj',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     radar(
@@ -407,7 +407,7 @@ def test_database_options():
         db='obj',
         points='constraint_violating',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     # * pf x all x no constraints in MOOP
@@ -416,7 +416,7 @@ def test_database_options():
         db='pf',
         points='all',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     parallel_coordinates(
@@ -424,7 +424,7 @@ def test_database_options():
         db='pf',
         points='all',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     radar(
@@ -432,7 +432,7 @@ def test_database_options():
         db='pf',
         points='all',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * obj x all x no constraints in MOOP
@@ -441,7 +441,7 @@ def test_database_options():
         db='obj',
         points='all',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     parallel_coordinates(
@@ -449,7 +449,7 @@ def test_database_options():
         db='obj',
         points='all',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     radar(
@@ -457,7 +457,7 @@ def test_database_options():
         db='obj',
         points='all',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     # * pf x none x no constraints in MOOP
@@ -466,7 +466,7 @@ def test_database_options():
         db='pf',
         points='none',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     parallel_coordinates(
@@ -474,7 +474,7 @@ def test_database_options():
         db='pf',
         points='none',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     radar(
@@ -482,7 +482,7 @@ def test_database_options():
         db='pf',
         points='none',
         output='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # * obj x none x no constraints in MOOP
@@ -491,7 +491,7 @@ def test_database_options():
         db='obj',
         points='none',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     parallel_coordinates(
@@ -499,7 +499,7 @@ def test_database_options():
         db='obj',
         points='none',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
     radar(
@@ -507,7 +507,7 @@ def test_database_options():
         db='obj',
         points='none',
         output='html')
-    assert(os.path.exists("Objective Data.html"))
+    assert (os.path.exists("Objective Data.html"))
     os.remove("Objective Data.html")
 
 
@@ -551,19 +551,19 @@ def test_inputs_to_dash():
     # * height
     # test valid height values
     scatter(moop1, output='html', height=1)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', height=50)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', height=92.2678)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', height=7789)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid height values
@@ -573,19 +573,19 @@ def test_inputs_to_dash():
     # * width
     # test valid width values
     scatter(moop1, output='html', width=1)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', width=50)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', width=92.2678)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', width=7789)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid width values
@@ -595,11 +595,11 @@ def test_inputs_to_dash():
     # * font
     # test valid font values
     scatter(moop1, output='html', font='Verdana')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', font='Times New Roman')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid font values
@@ -609,19 +609,19 @@ def test_inputs_to_dash():
     # * fontsize
     # test valid fontsize values
     scatter(moop1, output='html', fontsize=1)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', fontsize=50)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', fontsize=55.71)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', fontsize=100)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid fontsize values
@@ -634,11 +634,11 @@ def test_inputs_to_dash():
     # * background_color
     # test valid background_color values
     scatter(moop1, output='html', background_color='white')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', background_color='black')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(
@@ -646,15 +646,15 @@ def test_inputs_to_dash():
         output='html',
         background_color='transparent'
     )
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', background_color='white')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', background_color='grey')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid background_color values
@@ -665,19 +665,19 @@ def test_inputs_to_dash():
     # * screenshot
     # test valid screenshot values
     scatter(moop1, output='html', screenshot='png')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', screenshot='jpeg')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', screenshot='svg')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', screenshot='webp')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid screenshot values
@@ -690,27 +690,27 @@ def test_inputs_to_dash():
     # * image_export_format
     # test valid image_export_format values (except eps)
     scatter(moop1, output='html', image_export_format='html')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', image_export_format='svg')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', image_export_format='pdf')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', image_export_format='png')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', image_export_format='jpeg')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', image_export_format='webp')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid image_export_format values
@@ -723,11 +723,11 @@ def test_inputs_to_dash():
     # * data_export_format
     # test valid data_export_format values
     scatter(moop1, output='html', data_export_format='csv')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', data_export_format='json')
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid data_export_format values
@@ -740,11 +740,11 @@ def test_inputs_to_dash():
     # * dev_mode
     # test valid dev_mode values
     scatter(moop1, output='html', dev_mode=True)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', dev_mode=False)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid dev_mode values
@@ -754,11 +754,11 @@ def test_inputs_to_dash():
     # * pop_up
     # test valid pop_up values
     scatter(moop1, output='html', pop_up=True)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     scatter(moop1, output='html', pop_up=False)
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid pop_up values
@@ -772,7 +772,7 @@ def test_inputs_to_dash():
         output='html',
         port='http://127.0.0.1:8050/'
     )
-    assert(os.path.exists("Pareto Front.html"))
+    assert (os.path.exists("Pareto Front.html"))
     os.remove("Pareto Front.html")
 
     # test invalid port values

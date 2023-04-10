@@ -92,9 +92,9 @@ def test_RandomSearch():
     # eps is the tolerance for rejecting a solution as incorrect
     eps = 0.25
     # Check that the computed solutions are within eps of the truth
-    assert(np.linalg.norm(x1 - x1_soln) < eps)
-    assert(np.linalg.norm(x2 - x2_soln) < eps)
-    assert(np.abs(x3[n-1] - 0.1) < eps)
+    assert (np.linalg.norm(x1 - x1_soln) < eps)
+    assert (np.linalg.norm(x2 - x2_soln) < eps)
+    assert (np.abs(x3[n-1] - 0.1) < eps)
     return
 
 

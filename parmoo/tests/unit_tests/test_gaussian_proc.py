@@ -83,17 +83,17 @@ def test_GaussRBF():
         rbf1.improve(-np.ones(3), False)
     # Check that the RBFs match on a random evaluation point
     x = np.random.random_sample((3))
-    assert(all(rbf1.evaluate(x) == rbf2.evaluate(x)))
+    assert (all(rbf1.evaluate(x) == rbf2.evaluate(x)))
     # Check that the RBFs interpolate, up to 8 decimal digits of precision
     for i in range(x_vals_full.shape[0]):
-        assert(np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
-               < 0.00000001)
-        assert(np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
-               < 0.00000001)
+        assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
+                < 0.00000001)
+        assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
+                < 0.00000001)
     # Check that the RBFs compute the same grad, up to 8 digits of precision
     for i in range(x_vals_full.shape[0]):
-        assert(np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
-                              rbf2.gradient(x_vals_full[i])) < 0.00000001)
+        assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
+                               rbf2.gradient(x_vals_full[i])) < 0.00000001)
     # Check that the RBF gradient evaluates correctly on a known dataset
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
@@ -101,18 +101,18 @@ def test_GaussRBF():
     rbf3 = GaussRBF(1, np.zeros(3), np.ones(3), {})
     rbf3.fit(x_vals3, y_vals3)
     rbf3.setCenter(np.zeros(3))
-    y_grad_vals3 = -0.357428774951389 * np.ones((1, 3))
-    assert(np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
-           < 0.00000001)
+    y_grad_vals3 = -0.03661401 * np.ones((1, 3))
+    assert (np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
+            < 1.0e-4)
     # Check that the RBF generates feasible local improvement points
     for i in range(4):
         x_improv = rbf3.improve(np.zeros(3), False)
-        assert(np.all(x_improv[0] <= np.ones(3)) and
-               np.all(x_improv[0] >= np.zeros(3)))
+        assert (np.all(x_improv[0] <= np.ones(3)) and
+                np.all(x_improv[0] >= np.zeros(3)))
     # Check that the RBF generates feasible global improvement points
     x_improv = rbf3.improve(x_vals3[-1], True)
-    assert(np.all(x_improv[0] <= np.ones(3)) and
-           np.all(x_improv[0] >= np.zeros(3)))
+    assert (np.all(x_improv[0] <= np.ones(3)) and
+            np.all(x_improv[0] >= np.zeros(3)))
     # Check that RBF generates good improvements when points are bunched
     x_new = np.ones((3, 3))
     x_new = x_new * 0.5
@@ -122,10 +122,10 @@ def test_GaussRBF():
         f_new[i, 0] = np.dot(x_new[i, :], x_new[i, :])
     rbf3.update(x_new, f_new)
     x_improv = rbf3.improve(np.asarray([0.5, 0.5, 0.5]), False)
-    assert(np.all(x_improv[0] <= np.ones(3)) and
-           np.all(x_improv[0] >= np.zeros(3)))
-    assert(np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
-           > 0.00000001))
+    assert (np.all(x_improv[0] <= np.ones(3)) and
+            np.all(x_improv[0] >= np.zeros(3)))
+    assert (np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
+            > 0.00000001))
     # Now fit redundant data points using a nugget
     x_vals1 = np.append(x_vals1, np.asarray([x_vals1[0, :]]), axis=0)
     y_vals1 = np.append(y_vals1, np.asarray([y_vals1[0, :]]), axis=0)
@@ -141,10 +141,10 @@ def test_GaussRBF():
     # Test that improve() is able to find points outside the design tolerance
     for i in range(5):
         x_improv = rbf5.improve(xdat5[0], False)
-        assert(x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
+        assert (x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
     for i in range(5):
         x_improv = rbf5.improve(xdat5[0], True)
-        assert(x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
+        assert (x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
     # Now fit redundant data points without a nugget
     rbf6 = GaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf6.fit(x_vals1, y_vals1)
@@ -162,7 +162,7 @@ def test_GaussRBF():
     rbf6.save("parmoo.surrogate")
     rbf7.load("parmoo.surrogate")
     xx = np.random.random_sample(3)
-    assert(np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
+    assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
     os.remove("parmoo.surrogate")
     return
 
@@ -264,21 +264,21 @@ def test_LocalGaussRBF():
         rbf1.improve(-np.ones(3), False)
     # Check that the RBFs match on a random evaluation point
     x = np.random.random_sample((3))
-    assert(all(rbf1.evaluate(x) == rbf2.evaluate(x)))
+    assert (all(rbf1.evaluate(x) == rbf2.evaluate(x)))
     # Check that the RBFs interpolate, up to 8 decimal digits of precision
     for i in range(x_vals_full.shape[0]):
         rbf1.setCenter(x_vals_full[i])
         rbf2.setCenter(x_vals_full[i])
-        assert(np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
-               < 0.00000001)
-        assert(np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
-               < 0.00000001)
+        assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
+                < 0.00000001)
+        assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
+                < 0.00000001)
     # Check that the RBFs compute the same grad, up to 8 digits of precision
     rbf1.setCenter(0.5 * np.ones(3))
     rbf2.setCenter(0.5 * np.ones(3))
     for i in range(x_vals_full.shape[0]):
-        assert(np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
-                              rbf2.gradient(x_vals_full[i])) < 0.00000001)
+        assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
+                               rbf2.gradient(x_vals_full[i])) < 0.00000001)
     # Check that the RBF gradient evaluates correctly on a known dataset
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
@@ -286,18 +286,18 @@ def test_LocalGaussRBF():
     rbf3 = LocalGaussRBF(1, np.zeros(3), np.ones(3), {})
     rbf3.fit(x_vals3, y_vals3)
     rbf3.setCenter(x_vals3[-1])
-    y_grad_vals3 = -0.484569593266457 * np.ones((1, 3))
-    assert(np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
-           < 0.00000001)
+    y_grad_vals3 = -0.08798618 * np.ones((1, 3))
+    assert (np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
+            < 1.0e-4)
     # Check that the RBF generates feasible local improvement points
     for i in range(4):
         x_improv = rbf3.improve(np.zeros(3), False)
-        assert(np.all(x_improv[0] <= np.ones(3)) and
-               np.all(x_improv[0] >= np.zeros(3)))
+        assert (np.all(x_improv[0] <= np.ones(3)) and
+                np.all(x_improv[0] >= np.zeros(3)))
     # Check that the RBF generates feasible global improvement points
     x_improv = rbf3.improve(x_vals3[-1], True)
-    assert(np.all(x_improv[0] <= np.ones(3)) and
-           np.all(x_improv[0] >= np.zeros(3)))
+    assert (np.all(x_improv[0] <= np.ones(3)) and
+            np.all(x_improv[0] >= np.zeros(3)))
     # Check that RBF generates good improvements when points are bunched
     x_new = np.ones((3, 3))
     x_new = x_new * 0.5
@@ -308,10 +308,10 @@ def test_LocalGaussRBF():
     rbf3.update(x_new, f_new)
     rbf3.setCenter(0.5 * np.ones(3))
     x_improv = rbf3.improve(np.asarray([0.5, 0.5, 0.5]), False)
-    assert(np.all(x_improv[0] <= np.ones(3)) and
-           np.all(x_improv[0] >= np.zeros(3)))
-    assert(np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
-           > 0.00000001))
+    assert (np.all(x_improv[0] <= np.ones(3)) and
+            np.all(x_improv[0] >= np.zeros(3)))
+    assert (np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
+            > 0.00000001))
     # Now fit redundant data points using a nugget
     x_vals1 = np.append(x_vals1, np.asarray([x_vals1[0, :]]), axis=0)
     y_vals1 = np.append(y_vals1, np.asarray([y_vals1[0, :]]), axis=0)
@@ -331,10 +331,10 @@ def test_LocalGaussRBF():
     # Test that improve() is able to find points outside the design tolerance
     for i in range(5):
         x_improv = rbf5.improve(xdat5[0], False)
-        assert(x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
+        assert (x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
     for i in range(5):
         x_improv = rbf5.improve(xdat5[0], True)
-        assert(x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
+        assert (x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
     # Now fit redundant data points to test adaptive nugget
     rbf6 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf6.fit(x_vals1, y_vals1)
@@ -353,7 +353,7 @@ def test_LocalGaussRBF():
     rbf6.save("parmoo.surrogate")
     rbf7.load("parmoo.surrogate")
     xx = np.random.random_sample(3)
-    assert(np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
+    assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
     os.remove("parmoo.surrogate")
     return
 

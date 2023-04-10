@@ -140,22 +140,22 @@ def test_lex_leq():
     import numpy as np
 
     # Check for a < b
-    assert(lex_leq(np.zeros(3), np.ones(3)))
-    assert(lex_leq(np.zeros(3), np.asarray([0.1, 0.0, 0.0])))
-    assert(lex_leq(np.asarray([100.0, 0.0]), np.asarray([0.0, 0.1])))
-    assert(lex_leq(np.zeros(1), np.ones(1)))
+    assert (lex_leq(np.zeros(3), np.ones(3)))
+    assert (lex_leq(np.zeros(3), np.asarray([0.1, 0.0, 0.0])))
+    assert (lex_leq(np.asarray([100.0, 0.0]), np.asarray([0.0, 0.1])))
+    assert (lex_leq(np.zeros(1), np.ones(1)))
     # Check for a = b
-    assert(lex_leq(np.zeros(3), np.zeros(3)))
-    assert(lex_leq(np.ones(1), np.ones(1)))
+    assert (lex_leq(np.zeros(3), np.zeros(3)))
+    assert (lex_leq(np.ones(1), np.ones(1)))
     # Check for a > b
-    assert(not lex_leq(np.ones(3), np.zeros(3)))
-    assert(not lex_leq(np.ones(1), np.zeros(1)))
-    assert(not lex_leq(np.asarray([0.1, 0.0, 0.0]), np.zeros(3)))
-    assert(not lex_leq(np.asarray([0.0, 0.1]), np.asarray([1.0, 0.0])))
+    assert (not lex_leq(np.ones(3), np.zeros(3)))
+    assert (not lex_leq(np.ones(1), np.zeros(1)))
+    assert (not lex_leq(np.asarray([0.1, 0.0, 0.0]), np.zeros(3)))
+    assert (not lex_leq(np.asarray([0.0, 0.1]), np.asarray([1.0, 0.0])))
     # Check for mismatched dimensions
-    assert(lex_leq(np.zeros(3), np.zeros(4)))
-    assert(lex_leq(np.zeros(4), np.zeros(3)))
-    assert(lex_leq(np.zeros(1), np.zeros(1)))
+    assert (lex_leq(np.zeros(3), np.zeros(4)))
+    assert (lex_leq(np.zeros(4), np.zeros(3)))
+    assert (lex_leq(np.zeros(1), np.zeros(1)))
 
 
 def test_updatePF():
@@ -210,12 +210,12 @@ def test_updatePF():
     soln = updatePF({'x_vals': data['x_vals'][:5, :],
                      'f_vals': data['f_vals'][:5, :],
                      'c_vals': data['c_vals'][:5, :]}, soln)
-    assert(soln['f_vals'].shape == (4, 3))
+    assert (soln['f_vals'].shape == (4, 3))
     # Update the Pareto front with the last 5 points
     soln = updatePF({'x_vals': data['x_vals'][5:, :],
                      'f_vals': data['f_vals'][5:, :],
                      'c_vals': data['c_vals'][:5, :]}, soln)
-    assert(soln['f_vals'].shape == (5, 3))
+    assert (soln['f_vals'].shape == (5, 3))
     # Add a constraint and re-filter
     def Constraints(x): return np.asarray([0.1 - obj(x)[0]])
     for i in range(10):
@@ -225,12 +225,12 @@ def test_updatePF():
     soln = updatePF({'x_vals': data['x_vals'][:5, :],
                      'f_vals': data['f_vals'][:5, :],
                      'c_vals': data['c_vals'][:5, :]}, soln)
-    assert(soln['f_vals'].shape == (3, 3))
+    assert (soln['f_vals'].shape == (3, 3))
     # Update the Pareto front with the last 5 points
     soln = updatePF({'x_vals': data['x_vals'][5:, :],
                      'f_vals': data['f_vals'][5:, :],
                      'c_vals': data['c_vals'][5:, :]}, soln)
-    assert(soln['f_vals'].shape == (4, 3))
+    assert (soln['f_vals'].shape == (4, 3))
 
 
 def test_unpack():
@@ -262,9 +262,9 @@ def test_unpack():
     with pytest.raises(TypeError):
         unpack(x_unnamed, [("x4", "f8")])
     # Test unnamed unpack
-    assert(np.all(x_unnamed == unpack(x_unnamed, dt_unnamed)))
+    assert (np.all(x_unnamed == unpack(x_unnamed, dt_unnamed)))
     # Test named unpack
-    assert(np.all(x_unnamed == unpack(x_named, dt_named)))
+    assert (np.all(x_unnamed == unpack(x_named, dt_named)))
 
 
 if __name__ == "__main__":
