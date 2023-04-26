@@ -6,6 +6,15 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
+Release 0.2.2
+-------------
+
+:Date: Apr 25, 2023
+
+Hot-fix for a minor issue in the plotting library without workaround.
+
+ - Resolves #58
+
 Release 0.2.1
 -------------
 
