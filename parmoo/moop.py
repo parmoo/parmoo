@@ -1008,12 +1008,10 @@ class MOOP:
                    S(x) is Gaussian distributed.
                    The output is the expected value of f(x, S).
                    Interface should match:
-                   `cost = exp_func(x, sim_mean, sim_std_dev,
-                                    acq_func=None, der=0)`,
-                   where `acq_func` is an optional argument specifying an
-                   acquisition function to evaluate instead of the mean,
-                   and `der` is an optional argument specifying whether to
-                   take the derivative of the expected value
+                   `cost = exp_func(x, sim_mean, sim_std_dev, der=0,
+                                    sd=False)`,
+                   where `der` is an optional argument specifying whether to
+                   evaluate the derivative
                     * 0 -- no derivative taken, return f(x, sim_func(x))
                     * 1 -- return derivative wrt x,
                     * 2 -- return derivative wrt expected value of sim(x), or
@@ -1032,8 +1030,8 @@ class MOOP:
             if 'exp_func' in arg:
                 if callable(arg['exp_func']):
                     if not (len(inspect.signature(arg['exp_func']).parameters)
-                            in [3, 4, 5]):
-                        raise ValueError("The 'exp_func' must take 3, 4, or 5"
+                            in [3, 4]):
+                        raise ValueError("The 'exp_func' must take 3 or 4"
                                          + " arguments")
                 else:
                     raise TypeError("The 'exp_func' must be callable")
@@ -1112,13 +1110,10 @@ class MOOP:
                    S(x) is Gaussian distributed.
                    The output is the expected value of c(x, S).
                    Interface should match:
-                   `penalty = exp_func(x, sim_mean, sim_std_dev,
-                                       acq_func=None, der=0)`,
-                   where `acq_func` is an optional argument specifying an
-                   acquisition function to evaluate instead of the mean,
-                   penalty is the amount by which exp_func(x, Sx) > 0,
-                   and `der` is an optional argument specifying whether to
-                   take the derivative of the expected value
+                   `penalty = exp_func(x, sim_mean, sim_std_dev, der=0,
+                                       sd=False)`,
+                   where `der` is an optional argument specifying whether to
+                   evaluate the derivative
                     * 0 -- no derivative taken, return exp val c(x, Sx)
                     * 1 -- return derivative wrt x,
                     * 2 -- return derivative wrt expected value of sim(x), or
@@ -1133,8 +1128,8 @@ class MOOP:
             if 'exp_func' in arg:
                 if callable(arg['exp_func']):
                     if not (len(inspect.signature(arg['exp_func']).parameters)
-                            in [3, 4, 5]):
-                        raise ValueError("The 'exp_func' must take 3, 4, or 5"
+                            in [3, 4]):
+                        raise ValueError("The 'exp_func' must take 3 or 4"
                                          + " arguments")
                 else:
                     raise TypeError("The 'exp_func' must be callable")
