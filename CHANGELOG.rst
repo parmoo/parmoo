@@ -6,39 +6,34 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
-Release 0.1.0
+Release 0.2.2
 -------------
 
-:Date: May 10, 2022
+:Date: Apr 25, 2023
 
-Initial release.
+Hot-fix for a minor issue in the plotting library without workaround.
 
-Known issues and desired features will be raised on GitHub post-release.
+ - Resolves #58
 
-Known issues:
+Release 0.2.1
+-------------
 
- - update unit tests to use sim/obj/const libraries
- - restructure test suite, unit tests are currently not usable as
-   additional documentation
- - ``solve()`` method(s) should support additional stopping criteria
- - allow for maximizing objectives and constraint lower bounds without
-   "hacky" solution (negating values)
- - missing functions from DTLZ libraries
- - ``README.md`` needs a code coverage badge
+:Date: Apr 10, 2023
 
-Desired features:
+Minor performance improvements, maintenance, and restructuring of test cases.
 
- - update, test, and merge-in MDML interface
- - allow user to choose whether or not to use named variables via ``useNames``
-   method, or similar
- - add a funcx simulation interface, using libEnsemble release 0.9
- - add predicter interface and standalone module
- - a GUI interface for creating MOOPs
- - static visualization tools for plotting results
-   (from ``MOOP.getPF()`` method)
- - a visualization dashboard for viewing progress interactively
- - design variable types should be a class, with embed/extract methods
-   that can be called by ``MOOP.__embed__()`` and ``MOOP.__extract__()``
+ - Both Gaussian RBF surrogates in ``parmoo/surrogates/gaussian_proc.py``
+   now use the current mean of the response values as the prior instead
+   of the zero function. This greatly improves convergence rates in practice,
+   especially for our structure-exploiting methods.
+ - Using an old version of ``plotly/dash`` for now because of a dash issue
+   described in plotly/dash#2460
+ - Added additional tests to check gradient calculations of ``GaussRBF``
+   surrogates.
+ - Added whitespace to pass new ``flake8`` standards.
+ - Added year to JOSS publication in several places
+ - Added "et al." to our docs configuration file after author names, to
+   credit additional contributors in our documentation.
 
 Release 0.2.0
 -------------
@@ -83,3 +78,37 @@ Known issues:
 
  - The visualization library uses advanced plotly/dash features, which may
    not support the chrome browser, as described in parmoo/parmoo#37
+
+Release 0.1.0
+-------------
+
+:Date: May 10, 2022
+
+Initial release.
+
+Known issues and desired features will be raised on GitHub post-release.
+
+Known issues:
+
+ - update unit tests to use sim/obj/const libraries
+ - restructure test suite, unit tests are currently not usable as
+   additional documentation
+ - ``solve()`` method(s) should support additional stopping criteria
+ - allow for maximizing objectives and constraint lower bounds without
+   "hacky" solution (negating values)
+ - missing functions from DTLZ libraries
+ - ``README.md`` needs a code coverage badge
+
+Desired features:
+
+ - update, test, and merge-in MDML interface
+ - allow user to choose whether or not to use named variables via ``useNames``
+   method, or similar
+ - add a funcx simulation interface, using libEnsemble release 0.9
+ - add predicter interface and standalone module
+ - a GUI interface for creating MOOPs
+ - static visualization tools for plotting results
+   (from ``MOOP.getPF()`` method)
+ - a visualization dashboard for viewing progress interactively
+ - design variable types should be a class, with embed/extract methods
+   that can be called by ``MOOP.__embed__()`` and ``MOOP.__extract__()``

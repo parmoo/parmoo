@@ -107,14 +107,14 @@ def set_database(moop, db, points):
             for constraint in constraints:
                 indices = df[df[constraint] > 0].index
                 df.drop(indices, inplace=True)
-                df.reset_index(inplace=True)
+                df.reset_index(inplace=True, drop=True)
         elif points == 'constraint_violating':
             constraints = moop.getConstraintType().names
             df = database.copy(deep=True)
             for constraint in constraints:
                 indices = df[df[constraint] <= 0].index
                 df.drop(indices, inplace=True)
-                df.reset_index(inplace=True)
+                df.reset_index(inplace=True, drop=True)
         elif points == 'all':
             df = database
         elif points == 'none':

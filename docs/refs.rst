@@ -29,6 +29,7 @@ Our JOSS paper:
     @article{parmoo,
         author={Chang, Tyler H. and Wild, Stefan M.},
         title={{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        year={2023},
         journal = {Journal of Open Source Software},
         volume = {8},
         number = {82},
@@ -44,7 +45,7 @@ Our online documentation:
         title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.2.0},
+        number      = {Version 0.2.2+dev},
         year        = {2023},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
