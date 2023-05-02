@@ -28,7 +28,7 @@ class RandomSearch(SurrogateOptimizer):
     # Slots for the RandomSearch class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'constraints', 'objectives',
                  'budget', 'simulations', 'gradients', 'resetObjectives',
-                 'penalty_func']
+                 'penalty_func', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the RandomSearch class.

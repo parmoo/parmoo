@@ -30,7 +30,7 @@ class LocalGPS(SurrogateOptimizer):
     # Slots for the LocalGPS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'simulations', 'gradients', 'resetObjectives',
-                 'penalty_func']
+                 'penalty_func', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalGPS class.
@@ -170,7 +170,7 @@ class GlobalGPS(SurrogateOptimizer):
     # Slots for the GlobalGPS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'constraints', 'objectives',
                  'simulations', 'gradients', 'resetObjectives', 'penalty_func',
-                 'search_budget', 'gps_budget']
+                 'search_budget', 'gps_budget', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the GlobalGPS class.

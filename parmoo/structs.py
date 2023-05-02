@@ -499,7 +499,7 @@ class SurrogateOptimizer(ABC):
 
     This class contains three methods.
      * ``setObjective(obj_func)`` (default implementation provided)
-     * ``setSimulation(obj_func)`` (default implementation provided)
+     * ``setSimulation(sim_func, sd_func)`` (default implementation provided)
      * ``setConstraints(constraint_func)`` (default implementation provided)
      * ``setPenalty(penaltyFunc, gradFunc)`` (default implementation provided)
      * ``setReset(reset)`` (default implementation provided)
@@ -551,12 +551,16 @@ class SurrogateOptimizer(ABC):
             raise TypeError("obj_func() must be callable")
         return
 
-    def setSimulation(self, sim_func):
+    def setSimulation(self, sim_func, sd_func=None):
         """ Add a vector-valued simulation function, used to calculate objs.
 
         Args:
             sim_func (function): A vector-valued function that can be evaluated
                 to determine the surrogate-predicted simulation outputs.
+
+            sd_func (function): A vector-valued function that can be evaluated
+                to determine the standard deviations of the surrogate
+                predictions.
 
         """
 
@@ -569,6 +573,15 @@ class SurrogateOptimizer(ABC):
                 self.simulations = sim_func
         else:
             raise TypeError("sim_func() must be callable")
+        # Check whether sd_func() has an appropriate signature
+        if sd_func is not None and callable(sd_func):
+            if len(inspect.signature(sd_func).parameters) not in (1, 2):
+                raise ValueError("sd_func() must accept one or 2 inputs")
+            else:
+                # Add sd_func to the problem
+                self.sim_sd = sd_func
+        else:
+            raise TypeError("sd_func() must be callable")
         return
 
     def setPenalty(self, penalty_func, grad_func):

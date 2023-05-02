@@ -2116,7 +2116,8 @@ class MOOP:
             opt = self.optimizer(self.o, self.scaled_lb, self.scaled_ub,
                                  self.hyperparams)
             opt.setObjective(self.evaluateObjectives)
-            opt.setSimulation(self.evaluateSurrogates)
+            opt.setSimulation(self.evaluateSurrogates,
+                              self.surrogateUncertainty)
             opt.setPenalty(self.evaluatePenalty, self.evaluateGradients)
             opt.setConstraints(self.evaluateConstraints)
             opt.addAcquisition(*self.acquisitions)

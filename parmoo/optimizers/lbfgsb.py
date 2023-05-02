@@ -30,7 +30,7 @@ class LBFGSB(SurrogateOptimizer):
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'simulations', 'gradients', 'resetObjectives',
-                 'penalty_func']
+                 'penalty_func', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LBFGSB class.
@@ -178,7 +178,7 @@ class TR_LBFGSB(SurrogateOptimizer):
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'gradients', 'penalty_func', 'resetObjectives',
-                 'restarts', 'simulations']
+                 'restarts', 'simulations', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the TR_LBFGSB class.
