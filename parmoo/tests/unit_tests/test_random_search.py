@@ -31,7 +31,9 @@ def test_RandomSearch():
     ub = np.ones(n)
     # Create the biobjective function
     def f(z): return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
-    def L(z): return np.ones(2)
+    def L(z, sz=1): return f(z)
+    def S(z): return np.ones(2)
+    def SD(z): return np.zeros(2)
     def g(z): return np.ones((2, 3))
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
@@ -68,6 +70,7 @@ def test_RandomSearch():
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
+    opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)
@@ -78,8 +81,6 @@ def test_RandomSearch():
         opt.solve(np.zeros((3, n-1)))
     with pytest.raises(ValueError):
         opt.solve(np.zeros((4, n)))
-    with pytest.raises(ValueError):
-        opt.solve(-np.ones((3, n)))
     # Solve the surrogate problem with RandomSearch, starting from the centroid
     x = np.zeros((3, n))
     x[:] = 0.5

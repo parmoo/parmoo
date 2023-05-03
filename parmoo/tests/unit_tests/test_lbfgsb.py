@@ -34,7 +34,11 @@ def test_LBFGSB():
     def f(z):
         return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
 
-    def L(z):
+    def S(z): return np.ones(1)
+
+    def SD(z): return np.zeros(1)
+
+    def L(z, sz=1):
         res = np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
         if z[2] < 0.1:
             res[:] = res[:] + 2.0 * (0.1 - z[2])
@@ -93,6 +97,7 @@ def test_LBFGSB():
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
+    opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)
@@ -158,7 +163,11 @@ def test_TR_LBFGSB():
     def f(z):
         return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
 
-    def L(z):
+    def S(z): return np.ones(1)
+
+    def SD(z): return np.zeros(1)
+
+    def L(z, sz=1):
         res = np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
         if z[2] < 0.1:
             res[:] = res[:] + 2.0 * (0.1 - z[2])
@@ -221,6 +230,7 @@ def test_TR_LBFGSB():
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
+    opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setReset(lambda x: 100.0)

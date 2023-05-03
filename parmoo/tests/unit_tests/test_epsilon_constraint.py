@@ -59,9 +59,9 @@ def test_RandomConstraint():
     assert (acqu.setTarget(data, lambda x: np.zeros(3), {}) in data['x_vals'])
     # Try some bad scalarizations to test error handling
     with pytest.raises(TypeError):
-        acqu.scalarize(5)
+        acqu.scalarize(5, 1, 2, 3)
     with pytest.raises(ValueError):
-        acqu.scalarize(np.ones(2))
+        acqu.scalarize(np.ones(2), np.ones(2), np.ones(2), np.ones(2))
     # Generate a random scalarization target and check the scalarization
     acqu = RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
@@ -71,8 +71,8 @@ def test_RandomConstraint():
     pf = updatePF(data, {})
     # Check that the scalar value is either less than the sum of fi or bad
     for fi in pf['f_vals']:
-        assert (acqu.scalarize(fi) <= np.sum(fi) or
-                np.any(fi > acqu.f_ub))
+        assert (acqu.scalarize(fi, np.zeros(3), np.zeros(3), np.zeros(3))
+                <= np.sum(fi) or np.any(fi > acqu.f_ub))
     # Try some bad gradient scalarizations to test error handling
     with pytest.raises(TypeError):
         acqu.scalarizeGrad(5, np.zeros((3, 4))[0])

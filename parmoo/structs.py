@@ -22,7 +22,8 @@ from scipy.stats import tstd
 class AcquisitionFunction(ABC):
     """ ABC describing acquisition functions.
 
-    This class contains two methods:
+    This class contains the following methods:
+     * ``useSD()``
      * ``setTarget(data, constraint_func, history)``
      * ``scalarize(f_vals)``
      * ``scalarizeGrad(f_vals, g_vals)``
@@ -53,7 +54,7 @@ class AcquisitionFunction(ABC):
         """
 
     @abstractmethod
-    def setTarget(self, data, constraint_func, history):
+    def setTarget(self, data, penalty_func, history):
         """ Set a new target value or region for the AcquisitionFunction.
 
         Args:
@@ -70,10 +71,8 @@ class AcquisitionFunction(ABC):
                    Jacobian of the objective function at each
                    point in 'x_vals'.
 
-            constraint_func (function): A function whose components evaluate
-                to zero if an only if no constraint is violated. If a
-                constraint is violated, then constraint_func returns the
-                magnitude of the violation.
+            penalty_func (function): A function of one (x) or two (x, sx)
+                inputs that evaluates all (penalized) objective scores.
 
             history (dict): A persistent dictionary that could be used by
                 the implementation of the AcquisitionFunction to pass data
@@ -85,13 +84,35 @@ class AcquisitionFunction(ABC):
 
         """
 
+    def useSD(self):
+        """ Querry whether this method uses uncertainties.
+
+        When False, allows users to shortcut expensive uncertainty
+        computations.
+
+        Default implementation returns True, requiring full uncertainty
+        computation for applicable models.
+
+        """
+
+        return True
+
     @abstractmethod
-    def scalarize(self, f_vals):
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
         """ Scalarize a vector-valued function using the AcquisitionFunction.
 
         Args:
             f_vals (np.ndarray): A 1D array specifying a vector of function
                 values to be scalarized.
+
+            x_vals (np.ndarray): A 1D array specifying a vector the design
+                point corresponding to f_vals.
+
+            s_vals_mean (np.ndarray): A 1D array specifying the expected
+                simulation outputs for the x value being scalarized.
+
+            s_vals_sd (np.ndarray): A 1D array specifying the standard
+                deviation for each of the simulation outputs.
 
         Returns:
             float: The scalarized value.
@@ -149,7 +170,7 @@ class AcquisitionFunction(ABC):
 class GlobalSearch(ABC):
     """ ABC describing global search techniques.
 
-    This class contains two methods.
+    This class contains the following methods.
      * ``startSearch(lb, ub)``
      * ``resumeSearch()``
      * ``save(filename)``
@@ -241,7 +262,7 @@ class GlobalSearch(ABC):
 class SurrogateFunction(ABC):
     """ ABC describing surrogate functions.
 
-    This class contains three methods.
+    This class contains the following methods.
      * ``fit(x, f)``
      * ``update(x, f)``
      * ``setCenter(x)`` (default implementation provided)
@@ -497,7 +518,7 @@ class SurrogateFunction(ABC):
 class SurrogateOptimizer(ABC):
     """ ABC describing surrogate optimization techniques.
 
-    This class contains three methods.
+    This class contains the following methods.
      * ``setObjective(obj_func)`` (default implementation provided)
      * ``setSimulation(sim_func, sd_func)`` (default implementation provided)
      * ``setConstraints(constraint_func)`` (default implementation provided)

@@ -126,8 +126,21 @@ class LBFGSB(SurrogateOptimizer):
         for j, acquisition in enumerate(self.acquisitions):
 
             # Define the scalarized wrapper functions
-            def scalar_f(x, *args):
-                return acquisition.scalarize(self.penalty_func(x))
+            if acquisition.useSD():
+
+                def scalar_f(x, *args):
+                    sx = self.simulations(x)
+                    sdx = self.sim_sd(x)
+                    fx = self.penalty_func(x, sx)
+                    return acquisition.scalarize(fx, x, sx, sdx)
+
+            else:
+
+                def scalar_f(x, *args):
+                    sx = self.simulations(x)
+                    sdx = np.zeros(sx.size)
+                    fx = self.penalty_func(x, sx)
+                    return acquisition.scalarize(fx, x, sx, sdx)
 
             def scalar_g(x, *args):
                 return acquisition.scalarizeGrad(self.penalty_func(x),
@@ -275,8 +288,21 @@ class TR_LBFGSB(SurrogateOptimizer):
         for j, acquisition in enumerate(self.acquisitions):
 
             # Define the scalarized wrapper functions
-            def scalar_f(x, *args):
-                return acquisition.scalarize(self.penalty_func(x))
+            if acquisition.useSD():
+
+                def scalar_f(x, *args):
+                    sx = self.simulations(x)
+                    sdx = self.sim_sd(x)
+                    fx = self.penalty_func(x, sx)
+                    return acquisition.scalarize(fx, x, sx, sdx)
+
+            else:
+
+                def scalar_f(x, *args):
+                    sx = self.simulations(x)
+                    sdx = np.zeros(sx.size)
+                    fx = self.penalty_func(x, sx)
+                    return acquisition.scalarize(fx, x, sx, sdx)
 
             def scalar_g(x, *args):
                 return acquisition.scalarizeGrad(self.penalty_func(x),

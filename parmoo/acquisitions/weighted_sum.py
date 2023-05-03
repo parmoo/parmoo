@@ -61,15 +61,25 @@ class UniformWeights(AcquisitionFunction):
         self.weights = np.zeros(o)
         return
 
-    def setTarget(self, data, lagrange_func, history):
+    def useSD(self):
+        """ Querry whether this method uses uncertainties.
+
+        When False, allows users to shortcut expensive uncertainty
+        computations.
+
+        """
+
+        return False
+
+    def setTarget(self, data, penalty_func, history):
         """ Randomly generate a new vector of scalarizing weights.
 
         Args:
             data (dict): A dictionary specifying the current function
                 evaluation database.
 
-            lagrange_func (function): A function whose components correspond
-                to constraint violation amounts.
+            penalty_func (function): A function of one (x) or two (x, sx)
+                inputs that evaluates the (penalized) objectives.
 
             history (dict): Another unused argument for this function.
 
@@ -107,13 +117,13 @@ class UniformWeights(AcquisitionFunction):
                     no_data = True
             else:
                 no_data = True
-        # Check whether lagrange_func() has an appropriate signature
-        if callable(lagrange_func):
-            if len(inspect.signature(lagrange_func).parameters) not in [1, 2]:
-                raise ValueError("lagrange_func() must accept exactly one"
+        # Check whether penalty_func() has an appropriate signature
+        if callable(penalty_func):
+            if len(inspect.signature(penalty_func).parameters) not in [1, 2]:
+                raise ValueError("penalty_func() must accept exactly one"
                                  + " input")
         else:
-            raise TypeError("lagrange_func() must be callable")
+            raise TypeError("penalty_func() must be callable")
         if no_data:
             # If data is empty, then the Pareto front is empty
             pf = {'x_vals': np.zeros((0, self.n)),
@@ -133,8 +143,8 @@ class UniformWeights(AcquisitionFunction):
             for count in range(1000):
                 x = np.random.random_sample(self.n) * (self.ub - self.lb) \
                     + self.lb
-                if np.dot(self.weights, lagrange_func(x)) \
-                   < np.dot(self.weights, lagrange_func(x_min)):
+                if np.dot(self.weights, penalty_func(x)) \
+                   < np.dot(self.weights, penalty_func(x_min)):
                     x_min[:] = x[:]
             return x_min
         else:
@@ -143,12 +153,23 @@ class UniformWeights(AcquisitionFunction):
             x = pf['x_vals'][i, :]
             return x
 
-    def scalarize(self, f_vals):
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
         """ Scalarize a vector of function values using the current weights.
 
         Args:
             f_vals (numpy.ndarray): A 1d array specifying the function
                 values to be scalarized.
+
+            x_vals (np.ndarray): A 1D array specifying a vector the design
+                point corresponding to f_vals (unused by this method).
+
+            s_vals_mean (np.ndarray): A 1D array specifying the expected
+                simulation outputs for the x value being scalarized
+                (unused by this method).
+
+            s_vals_sd (np.ndarray): A 1D array specifying the standard
+                deviation for each of the simulation outputs (unused by
+                this method).
 
         Returns:
             float: The scalarized value.
@@ -256,15 +277,25 @@ class FixedWeights(AcquisitionFunction):
             self.weights = np.ones(self.o) / float(self.o)
         return
 
-    def setTarget(self, data, lagrange_func, history):
+    def useSD(self):
+        """ Querry whether this method uses uncertainties.
+
+        When False, allows users to shortcut expensive uncertainty
+        computations.
+
+        """
+
+        return False
+
+    def setTarget(self, data, penalty_func, history):
         """ Randomly generate a feasible starting point.
 
         Args:
             data (dict): A dictionary specifying the current function
                 evaluation database.
 
-            lagrange_func (function): A function whose components correspond
-                to constraint violation amounts.
+            penalty_func (function): A function of one (x) or two (x, sx)
+                inputs that evaluates the (penalized) objectives.
 
             history (dict): Another unused argument for this function.
 
@@ -302,13 +333,13 @@ class FixedWeights(AcquisitionFunction):
                     no_data = True
             else:
                 no_data = True
-        # Check whether lagrange_func() has an appropriate signature
-        if callable(lagrange_func):
-            if len(inspect.signature(lagrange_func).parameters) not in [1, 2]:
-                raise ValueError("lagrange_func() must accept exactly one"
+        # Check whether penalty_func() has an appropriate signature
+        if callable(penalty_func):
+            if len(inspect.signature(penalty_func).parameters) not in [1, 2]:
+                raise ValueError("penalty_func() must accept exactly one"
                                  + " input")
         else:
-            raise TypeError("lagrange_func() must be callable")
+            raise TypeError("penalty_func() must be callable")
         if no_data:
             # If data is empty, then the Pareto front is empty
             pf = {'x_vals': np.zeros((0, self.n)),
@@ -325,8 +356,8 @@ class FixedWeights(AcquisitionFunction):
             for count in range(1000):
                 x = np.random.random_sample(self.n) * (self.ub - self.lb) \
                     + self.lb
-                if np.dot(self.weights, lagrange_func(x)) \
-                   < np.dot(self.weights, lagrange_func(x_min)):
+                if np.dot(self.weights, penalty_func(x)) \
+                   < np.dot(self.weights, penalty_func(x_min)):
                     x_min[:] = x[:]
             return x_min
         else:
@@ -335,12 +366,23 @@ class FixedWeights(AcquisitionFunction):
             x = pf['x_vals'][i, :]
             return x
 
-    def scalarize(self, f_vals):
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
         """ Scalarize a vector of function values using the current weights.
 
         Args:
             f_vals (numpy.ndarray): A 1d array specifying the function
                 values to be scalarized.
+
+            x_vals (np.ndarray): A 1D array specifying a vector the design
+                point corresponding to f_vals (unused by this method).
+
+            s_vals_mean (np.ndarray): A 1D array specifying the expected
+                simulation outputs for the x value being scalarized
+                (unused by this method).
+
+            s_vals_sd (np.ndarray): A 1D array specifying the standard
+                deviation for each of the simulation outputs (unused by
+                this method).
 
         Returns:
             float: The scalarized value.

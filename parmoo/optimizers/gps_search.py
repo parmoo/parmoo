@@ -97,12 +97,6 @@ class LocalGPS(SurrogateOptimizer):
                                  "of acquisition functions")
         else:
             raise TypeError("x must be a numpy array")
-        # Check that x is feasible.
-        for xj in x:
-            if any(self.constraints(xj) > 0.00000001) or \
-               np.any(xj[:] < self.lb[:]) or \
-               np.any(xj[:] > self.ub[:]):
-                raise ValueError("some of starting points (x) are infeasible")
         # Initialize an empty list of results
         result = []
         # For each acqusisition function
@@ -110,8 +104,13 @@ class LocalGPS(SurrogateOptimizer):
             # Reset the mesh dimensions
             mesh = np.diag(self.ub[:] - self.lb[:] * 0.5)
             # Evaluate the starting point
-            v = np.asarray(self.objectives(x[j, :]))
-            f_min = acquisition.scalarize(v.flatten())
+            sx = np.asarray(self.simulations(x[j, :]))
+            if acquisition.useSD():
+                sdx = np.asarray(self.sim_sd(x))
+            else:
+                sdx = np.zeros(sx.size)
+            fx = np.asarray(self.penalty_func(x[j, :], sx))
+            f_min = acquisition.scalarize(fx.flatten(), x[j, :], sx, sdx)
             x_min = x[j, :]
             # Loop over the budget
             for k in range(int(self.budget / (self.n * 2 *
@@ -123,13 +122,16 @@ class LocalGPS(SurrogateOptimizer):
                     x_tmp = x_min + mesh[:, i]
                     if any(x_tmp > self.ub):
                         f_tmp = np.inf
-                    elif any(self.constraints(x_tmp) > 0.00000001):
-                        f_tmp = np.inf
                     else:
-                        v = np.asarray(self.objectives(x_tmp))
-                        f_tmp = acquisition.scalarize(v.flatten())
+                        sx = np.asarray(self.simulations(x_tmp))
+                        if acquisition.useSD():
+                            sdx = self.sim_sd(x)
+                        else:
+                            sdx = 0.0
+                        fx = self.penalty_func(x_tmp, sx)
+                        f_tmp = acquisition.scalarize(fx, x_tmp, sx, sdx)
                     # Check for improvement
-                    if f_tmp + 10**(-8) < f_min:
+                    if f_tmp + 1.0e-8 < f_min:
                         f_min = f_tmp
                         x_min = x_tmp
                         improve = True
@@ -137,19 +139,22 @@ class LocalGPS(SurrogateOptimizer):
                     x_tmp = x_min - mesh[:, i]
                     if any(x_tmp < self.lb):
                         f_tmp = np.inf
-                    elif any(self.constraints(x_tmp) > 0.00000001):
-                        f_tmp = np.inf
                     else:
-                        v = np.asarray(self.objectives(x_tmp))
-                        f_tmp = acquisition.scalarize(v.flatten())
+                        sx = np.asarray(self.simulations(x_tmp))
+                        if acquisition.useSD():
+                            sdx = self.sim_sd(x)
+                        else:
+                            sdx = 0.0
+                        fx = self.penalty_func(x_tmp, sx)
+                        f_tmp = acquisition.scalarize(fx, x_tmp, sx, sdx)
                     # Check for improvement
-                    if f_tmp + 10**(-8) < f_min:
+                    if f_tmp + 1.0e-8 < f_min:
                         f_min = f_tmp
                         x_min = x_tmp
                         improve = True
                 # If no improvement, decay the mesh down to the tolerance
                 if not improve:
-                    if any([mesh[i, i] < 0.0001 for i in range(self.n)]):
+                    if any([mesh[i, i] < 1.0e-4 for i in range(self.n)]):
                         break
                     else:
                         mesh = mesh * 0.5
@@ -262,16 +267,12 @@ class GlobalGPS(SurrogateOptimizer):
                                  "of acquisition functions")
         else:
             raise TypeError("x must be a numpy array")
-        # Check that x is feasible.
-        for xj in x:
-            if any(self.constraints(xj) > 0.00000001) or \
-               np.any(xj[:] < self.lb[:]) or \
-               np.any(xj[:] > self.ub[:]):
-                raise ValueError("some of starting points (x) are infeasible")
         # Do a global search to get global solutions
         gs = RandomSearch(self.n, self.lb, self.ub,
                           {'opt_budget': self.search_budget})
         gs.setObjective(self.objectives)
+        gs.setSimulation(self.simulations, self.sim_sd)
+        gs.setPenalty(self.penalty_func, self.gradients)
         gs.setConstraints(self.constraints)
         gs.addAcquisition(*self.acquisitions)
         gs_soln = gs.solve(x)
@@ -280,6 +281,8 @@ class GlobalGPS(SurrogateOptimizer):
         ls = LocalGPS(self.n, self.lb, self.ub,
                       {'opt_budget': gps_budget_loc})
         ls.setObjective(self.objectives)
+        ls.setSimulation(self.simulations, self.sim_sd)
+        ls.setPenalty(self.penalty_func, self.gradients)
         ls.setConstraints(self.constraints)
         ls.addAcquisition(*self.acquisitions)
         ls_soln = ls.solve(gs_soln)

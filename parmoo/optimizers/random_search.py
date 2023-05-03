@@ -98,20 +98,13 @@ class RandomSearch(SurrogateOptimizer):
                                  "of acquisition functions")
         else:
             raise TypeError("x must be a numpy array")
-        # Check that x is feasible.
-        for xj in x:
-            if any(self.constraints(xj) > 0.00000001) or \
-               np.any(xj[:] < self.lb[:]) or \
-               np.any(xj[:] > self.ub[:]):
-                raise ValueError("some of starting points (x) are infeasible")
         # Set the batch size
         batch_size = 1000
         # Initialize the database
         o = self.objectives(x[0, :]).size
-        p = self.constraints(x[0, :]).size
         data = {'x_vals': np.zeros((batch_size, self.n)),
                 'f_vals': np.zeros((batch_size, o)),
-                'c_vals': np.zeros((batch_size, p))}
+                'c_vals': np.zeros((batch_size, 0))}
         # Loop over batch size until k == budget
         k = 0
         nondom = {}
@@ -121,20 +114,30 @@ class RandomSearch(SurrogateOptimizer):
             if k_new < batch_size:
                 data['x_vals'] = np.zeros((k_new, self.n))
                 data['f_vals'] = np.zeros((k_new, o))
-                data['c_vals'] = np.zeros((k_new, p))
+                data['c_vals'] = np.zeros((k_new, 0))
             # Randomly generate k_new new points
             for i in range(k_new):
                 data['x_vals'][i, :] = np.random.random_sample(self.n) \
                                        * (self.ub[:] - self.lb[:]) + self.lb[:]
-                data['f_vals'][i, :] = self.objectives(data['x_vals'][i, :])
-                data['c_vals'][i, :] = self.constraints(data['x_vals'][i, :])
+                data['f_vals'][i, :] = self.penalty_func(data['x_vals'][i, :])
             # Update the PF
             nondom = updatePF(data, nondom)
             k += k_new
         # Use acquisition functions to extract array of results
         results = []
         for acq in self.acquisitions:
-            imin = np.argmin(np.asarray([acq.scalarize(fi)
-                                         for fi in nondom['f_vals']]))
+            f_vals = []
+            if acq.useSD():
+                f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
+                                        self.sim_sd(xi))
+                          for fi, xi in zip(nondom['f_vals'],
+                                            nondom['x_vals'])]
+            else:
+                m = self.simulations(nondom['x_vals'][0]).size
+                f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
+                                        np.zeros(m))
+                          for fi, xi in zip(nondom['f_vals'],
+                                            nondom['x_vals'])]
+            imin = np.argmin(np.asarray([f_vals]))
             results.append(nondom['x_vals'][imin, :])
         return np.asarray(results)
