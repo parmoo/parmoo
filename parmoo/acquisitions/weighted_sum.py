@@ -109,7 +109,7 @@ class UniformWeights(AcquisitionFunction):
                 no_data = True
         # Check whether lagrange_func() has an appropriate signature
         if callable(lagrange_func):
-            if len(inspect.signature(lagrange_func).parameters) != 1:
+            if len(inspect.signature(lagrange_func).parameters) not in [1, 2]:
                 raise ValueError("lagrange_func() must accept exactly one"
                                  + " input")
         else:
@@ -304,7 +304,7 @@ class FixedWeights(AcquisitionFunction):
                 no_data = True
         # Check whether lagrange_func() has an appropriate signature
         if callable(lagrange_func):
-            if len(inspect.signature(lagrange_func).parameters) != 1:
+            if len(inspect.signature(lagrange_func).parameters) not in [1, 2]:
                 raise ValueError("lagrange_func() must accept exactly one"
                                  + " input")
         else:

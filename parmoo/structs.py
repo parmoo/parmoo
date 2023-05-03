@@ -607,7 +607,7 @@ class SurrogateOptimizer(ABC):
             raise TypeError("grad_func() must be callable")
         # Check whether penalty_func() has an appropriate signature
         if callable(penalty_func):
-            if len(inspect.signature(penalty_func).parameters) != 1:
+            if len(inspect.signature(penalty_func).parameters) not in [1, 2]:
                 raise ValueError("penalty_func must accept exactly one input")
             else:
                 # Add Lagrangian to the problem

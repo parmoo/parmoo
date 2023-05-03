@@ -42,7 +42,7 @@ def test_RandomConstraint():
     with pytest.raises(TypeError):
         acqu.setTarget(data, 5, {})
     with pytest.raises(ValueError):
-        acqu.setTarget(data, lambda x, y: np.zeros(0), {})
+        acqu.setTarget(data, lambda x, y, z: np.zeros(0), {})
     with pytest.raises(ValueError):
         acqu.setTarget({}, lambda x: np.ones(1), {})
     with pytest.raises(ValueError):

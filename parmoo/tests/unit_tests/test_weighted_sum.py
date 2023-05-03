@@ -31,7 +31,7 @@ def test_UniformWeights():
     with pytest.raises(TypeError):
         acqu.setTarget({}, 4, {})
     with pytest.raises(ValueError):
-        acqu.setTarget({}, lambda x, y: np.zeros(3), {})
+        acqu.setTarget({}, lambda x, y, z: np.zeros(3), {})
     # Set a good target for future usage
     x0 = acqu.setTarget({}, lambda x: np.zeros(3), {})
     assert (abs(sum(acqu.weights) - 1.0) < 0.00000001)
@@ -122,7 +122,7 @@ def test_FixedWeights():
     with pytest.raises(TypeError):
         acqu.setTarget({}, 4, {})
     with pytest.raises(ValueError):
-        acqu.setTarget({}, lambda x, y: np.zeros(3), {})
+        acqu.setTarget({}, lambda x, y, z: np.zeros(3), {})
     # Set some good targets
     x0 = acqu.setTarget({'x_vals': None, 'f_vals': None},
                         lambda x: np.zeros(3), {})

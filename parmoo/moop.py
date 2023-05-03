@@ -1698,7 +1698,7 @@ class MOOP:
             # Return the constraint violations
             return cx
 
-    def evaluatePenalty(self, x):
+    def evaluatePenalty(self, x, sx=None):
         """ Evaluate the penalized objective using the surrogates as needed.
 
         Warning: Not recommended for external usage!
@@ -1722,12 +1722,21 @@ class MOOP:
         # Evaluate the surrogate models to approximate the simulation outputs
         sim = np.zeros(self.m_total)
         sim_std_dev = np.zeros(self.m_total)
-        m_count = 0
-        for i, surrogate in enumerate(self.surrogates):
-            sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
-            if any(self.obj_exp_vals) or any(self.c_exp_vals):
-                sim_std_dev[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
-            m_count += self.m[i]
+        if sx is None:
+            m_count = 0
+            for i, surrogate in enumerate(self.surrogates):
+                sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
+                if any(self.obj_exp_vals) or any(self.c_exp_vals):
+                    sim_std_dev[m_count:m_count+self.m[i]] = \
+                                                    surrogate.stdDev(x)
+                m_count += self.m[i]
+        else:
+            if isinstance(sx, np.ndarray):
+                if sx.shape[0] != self.m_total:
+                    raise ValueError("sx must have length m when present")
+            else:
+                raise TypeError("sx must be a numpy array when present")
+            sim[:] = sx[:]
         # Evaluate the objective functions
         fx = np.zeros(self.o)
         for i, obj_func in enumerate(self.objectives):

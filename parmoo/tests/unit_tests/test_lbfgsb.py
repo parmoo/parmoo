@@ -83,7 +83,7 @@ def test_LBFGSB():
     with pytest.raises(TypeError):
         opt.setPenalty(5, lambda z: np.zeros(1))
     with pytest.raises(ValueError):
-        opt.setPenalty(lambda z1, z2: np.zeros(1), lambda z: np.zeros(1))
+        opt.setPenalty(lambda z1, z2, z3: np.zeros(1), lambda z: np.zeros(1))
     with pytest.raises(TypeError):
         opt.setPenalty(lambda z: np.zeros(1), 5)
     with pytest.raises(ValueError):
@@ -207,7 +207,7 @@ def test_TR_LBFGSB():
     with pytest.raises(TypeError):
         opt.setPenalty(5, lambda z: np.zeros(1))
     with pytest.raises(ValueError):
-        opt.setPenalty(lambda z1, z2: np.zeros(1), lambda z: np.zeros(1))
+        opt.setPenalty(lambda z1, z2, z3: np.zeros(1), lambda z: np.zeros(1))
     with pytest.raises(TypeError):
         opt.setPenalty(lambda z: np.zeros(1), 5)
     with pytest.raises(ValueError):
