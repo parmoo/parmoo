@@ -10,7 +10,7 @@ The classes include:
 """
 
 import numpy as np
-from scipy import stats
+from scipy import stats, integrate
 import inspect
 from parmoo.structs import AcquisitionFunction
 from parmoo.util import xerror
@@ -277,7 +277,9 @@ class EI_RandomConstraint(AcquisitionFunction):
                 region. The dimension must match ub.
 
             hyperparams (dict): A dictionary of hyperparameters for tuning
-                the acquisition function.
+                the acquisition function. Including
+                 * mc_sample_size (int): The number of samples to use for
+                   monte carlo integration (defaults to 10 * m ** 2).
 
         Returns:
             RandomConstraint: A new RandomConstraint scalarizer.
@@ -294,6 +296,10 @@ class EI_RandomConstraint(AcquisitionFunction):
         self.weights = np.zeros(self.o)
         self.ub = ub
         self.lb = lb
+        if 'mc_sample_size' in hyperparams.keys():
+            self.sample_size = hyperparams['mc_sample_size']
+        else:
+            self.sample_size = None
         return
 
     def useSD(self):
@@ -451,22 +457,73 @@ class EI_RandomConstraint(AcquisitionFunction):
                 if f_vals[i] > self.f_ub[i]:
                     result = result + 10.0 * (f_vals[i] - self.f_ub[i])
             return result
+        elif s_vals_mean.size == 1:
+            # Construct the distribution for sampling
+            s_cov = stats.Covariance.from_diagonal(s_vals_sd)
+            s_dist = stats.multivariate_normal(mean=s_vals_mean, cov=s_cov)
+
+            def weighted_f(sx):
+                """ Calculates the pdf-weighted value of f at sx """
+
+                fx = self.f(x_vals, sx)
+                # Add penalty
+                for j in range(self.o):
+                    if fx[j] > self.f_ub[j]:
+                        fx[:] = fx[:] + 10.0 * (fx[j] - self.f_ub[j])
+                result = min(np.dot(fx, self.weights) - self.best, 0.0)
+                return result * s_dist.pdf(sx)
+
+            y = integrate.quad(weighted_f, -np.inf, np.inf)
+            return y[0]
+        elif s_vals_mean.size == 2:
+            # Construct the distribution for sampling
+            s_cov = stats.Covariance.from_diagonal(s_vals_sd)
+            s_dist = stats.multivariate_normal(mean=s_vals_mean, cov=s_cov)
+
+            def weighted_f(sx1, sx2):
+                """ Calculates the pdf-weighted value of f at sx """
+
+                sx = np.array([sx1, sx2])
+                fx = self.f(x_vals, sx)
+                # Add penalty
+                for j in range(self.o):
+                    if fx[j] > self.f_ub[j]:
+                        fx[:] = fx[:] + 10.0 * (fx[j] - self.f_ub[j])
+                result = min(np.dot(fx, self.weights) - self.best, 0.0)
+                return result * s_dist.pdf(sx)
+
+            def g_fun(sx1):
+                return -(np.sqrt(1.0 - ((sx1 - s_vals_mean[1]) /
+                                        (3.0 * s_vals_sd[1])) ** 2)
+                         * (3.0 * s_vals_sd[0]) + s_vals_mean[0])
+
+            def h_fun(sx1):
+                return (np.sqrt(1.0 - ((sx1 - s_vals_mean[1]) /
+                                       (3.0 * s_vals_sd[1])) ** 2)
+                        * (3.0 * s_vals_sd[0]) + s_vals_mean[0])
+
+            a = s_vals_mean[1] - 3 * s_vals_sd[1]
+            b = s_vals_mean[1] + 3 * s_vals_sd[1]
+            y = integrate.dblquad(weighted_f, a, b, g_fun, h_fun)
+            return y[0]
         # Otherwise, evaluate EI with Monte carlo sampling
         else:
+            if self.sample_size is None:
+                self.sample_size = int(10 * s_vals_mean.size ** 2)
             # Construct the distribution for sampling
             s_cov = stats.Covariance.from_diagonal(s_vals_sd)
             s_dist = stats.multivariate_normal(mean=s_vals_mean, cov=s_cov)
             result = 0.0
             # Loop over sample size
-            for i in range(sample_size): # TODO
+            for i in range(self.sample_size):
                 s_vals = s_dist.rvs()
-                fi = np.dot(self.f(x_vals, s_vals), self.weights)
+                fi = self.f(x_vals, s_vals)
                 # Add penalty
                 for j in range(self.o):
                     if fi[j] > self.f_ub[j]:
-                        fi = fi + 10.0 * (fi[j] - self.f_ub[j])
-                result += min(fi - self.best, 0.0)
-            result /= sample_size
+                        fi[:] = fi[:] + 10.0 * (fi[j] - self.f_ub[j])
+                result = min(np.dot(fi, self.weights) - self.best, 0.0)
+            result /= self.sample_size
             return result
 
     def scalarizeGrad(self, f_vals, g_vals):
