@@ -516,7 +516,7 @@ class EI_RandomConstraint(AcquisitionFunction):
             result = 0.0
             # Loop over sample size
             for i in range(self.sample_size):
-                s_vals = s_dist.rvs()
+                s_vals = s_dist.rvs().flatten()
                 fi = self.f(x_vals, s_vals)
                 # Add penalty
                 for j in range(self.o):

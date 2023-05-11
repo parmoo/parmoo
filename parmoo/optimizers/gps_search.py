@@ -106,7 +106,7 @@ class LocalGPS(SurrogateOptimizer):
             # Evaluate the starting point
             sx = np.asarray(self.simulations(x[j, :]))
             if acquisition.useSD():
-                sdx = np.asarray(self.sim_sd(x))
+                sdx = np.asarray(self.sim_sd(x[j, :]))
             else:
                 sdx = np.zeros(sx.size)
             fx = np.asarray(self.penalty_func(x[j, :], sx))
@@ -125,7 +125,7 @@ class LocalGPS(SurrogateOptimizer):
                     else:
                         sx = np.asarray(self.simulations(x_tmp))
                         if acquisition.useSD():
-                            sdx = self.sim_sd(x)
+                            sdx = self.sim_sd(x_tmp)
                         else:
                             sdx = 0.0
                         fx = self.penalty_func(x_tmp, sx)
@@ -142,7 +142,7 @@ class LocalGPS(SurrogateOptimizer):
                     else:
                         sx = np.asarray(self.simulations(x_tmp))
                         if acquisition.useSD():
-                            sdx = self.sim_sd(x)
+                            sdx = self.sim_sd(x_tmp)
                         else:
                             sdx = 0.0
                         fx = self.penalty_func(x_tmp, sx)
