@@ -465,15 +465,17 @@ class EI_RandomConstraint(AcquisitionFunction):
             def weighted_f(sx):
                 """ Calculates the pdf-weighted value of f at sx """
 
-                fx = self.f(x_vals, sx)
+                fx = self.f(x_vals, np.array([sx]))
                 # Add penalty
                 for j in range(self.o):
                     if fx[j] > self.f_ub[j]:
                         fx[:] = fx[:] + 10.0 * (fx[j] - self.f_ub[j])
                 result = min(np.dot(fx, self.weights) - self.best, 0.0)
-                return result * s_dist.pdf(sx)
+                return result * s_dist.pdf(np.array([sx]))
 
-            y = integrate.quad(weighted_f, -np.inf, np.inf)
+            a = s_vals_mean[0] - 3 * s_vals_sd[0]
+            b = s_vals_mean[0] + 3 * s_vals_sd[0]
+            y = integrate.quad(weighted_f, -np.infty, np.infty)
             return y[0]
         elif s_vals_mean.size == 2:
             # Construct the distribution for sampling
