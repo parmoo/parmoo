@@ -146,6 +146,13 @@ class LBFGSB(SurrogateOptimizer):
                 return acquisition.scalarizeGrad(self.penalty_func(x),
                                                  self.gradients(x))
 
+            # Create a new trust region
+            rad = self.resetObjectives(x[j, :])
+            bounds = np.zeros((self.n, 2))
+            for i in range(self.n):
+                bounds[i, 0] = max(self.bounds[i, 0], x[j, i] - rad)
+                bounds[i, 1] = min(self.bounds[i, 1], x[j, i] + rad)
+
             # Get the solution via multistart solve
             soln = x[j, :].copy()
             for i in range(self.restarts):
@@ -158,18 +165,18 @@ class LBFGSB(SurrogateOptimizer):
                     gg = scalar_g(x0)
                     for ii in range(self.n):
                         if gg[ii] < 0:
-                            x0[ii] = self.bounds[ii, 1]
+                            x0[ii] = bounds[ii, 1]
                         elif gg[ii] > 0:
-                            x0[ii] = self.bounds[ii, 0]
+                            x0[ii] = bounds[ii, 0]
                 else:
                     # Random starting point within bounds for all other starts
                     x0 = (np.random.random_sample(self.n) *
-                          (self.bounds[:, 1] - self.bounds[:, 0]) +
-                          self.bounds[:, 0])
+                          (bounds[:, 1] - bounds[:, 0]) +
+                          bounds[:, 0])
 
                 # Solve the problem globally within bound constraints
                 res = optimize.minimize(scalar_f, x0, method='L-BFGS-B',
-                                        jac=scalar_g, bounds=self.bounds,
+                                        jac=scalar_g, bounds=bounds,
                                         options={'maxiter': self.budget})
                 if scalar_f(res['x']) < scalar_f(soln):
                     soln = res['x']
