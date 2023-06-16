@@ -31,8 +31,7 @@ def test_LocalGPS():
     ub = np.ones(n)
     # Create the biobjective function
     def f(z): return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
-    def L(z, sz=1): return f(z) + 5.0 * (max(0.1 - z[2], 0) +
-                                         max(z[2] - 0.6, 0))
+    def L(z, sz=1): return f(z) + 5 * (max(0.1 - z[2], 0) + max(z[2] - 0.6, 0))
     def S(z): return np.ones(2)
     def SD(z): return np.zeros(2)
     def g(z): return np.ones((2, 3))
@@ -132,8 +131,7 @@ def test_GlobalGPS():
     ub = np.ones(n)
     # Create the biobjective function
     def f(z): return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
-    def L(z, sz=1): return f(z) + 5.0 * (max(0.1 - z[2], 0) +
-                                         max(z[2] - 0.6, 0))
+    def L(z, sz=1): return f(z) + 5 * (max(0.1 - z[2], 0) + max(z[2] - 0.6, 0))
     def S(z): return np.ones(2)
     def SD(z): return np.zeros(2)
     def g(z): return np.ones((2, 3))

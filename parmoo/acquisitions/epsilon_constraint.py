@@ -145,11 +145,11 @@ class RandomConstraint(AcquisitionFunction):
             self.weights = -np.log(1.0 - np.random.random_sample(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
             # Randomly select a feasible starting point
-            x_min = np.random.random_sample(self.n) * (self.ub - self.lb) \
-                    + self.lb
+            x_min = (np.random.random_sample(self.n) * (self.ub - self.lb)
+                     + self.lb)
             for count in range(1000):
-                x = np.random.random_sample(self.n) * (self.ub - self.lb) \
-                    + self.lb
+                x = (np.random.random_sample(self.n) * (self.ub - self.lb)
+                     + self.lb)
                 if np.dot(self.weights, penalty_func(x)) \
                    < np.dot(self.weights, penalty_func(x_min)):
                     x_min[:] = x[:]
@@ -457,6 +457,9 @@ class EI_RandomConstraint(AcquisitionFunction):
                 if f_vals[i] > self.f_ub[i]:
                     result = result + 10.0 * (f_vals[i] - self.f_ub[i])
             return result
+        # If the feasible set was nonempty and the number of sim outs is 1,
+        # then calculate the EI over the best seen feasible fi for the
+        # current penalty function
         elif s_vals_mean.size == 1:
             # Construct the distribution for sampling
             s_cov = stats.Covariance.from_diagonal(s_vals_sd)
@@ -473,42 +476,10 @@ class EI_RandomConstraint(AcquisitionFunction):
                 result = min(np.dot(fx, self.weights) - self.best, 0.0)
                 return result * s_dist.pdf(np.array([sx]))
 
-            a = s_vals_mean[0] - 3 * s_vals_sd[0]
-            b = s_vals_mean[0] + 3 * s_vals_sd[0]
             y = integrate.quad(weighted_f, -np.infty, np.infty)
             return y[0]
-        #elif s_vals_mean.size == 2:
-        #    # Construct the distribution for sampling
-        #    s_cov = stats.Covariance.from_diagonal(s_vals_sd)
-        #    s_dist = stats.multivariate_normal(mean=s_vals_mean, cov=s_cov)
-
-        #    def weighted_f(sx1, sx2):
-        #        """ Calculates the pdf-weighted value of f at sx """
-
-        #        sx = np.array([sx1, sx2])
-        #        fx = self.f(x_vals, sx)
-        #        # Add penalty
-        #        for j in range(self.o):
-        #            if fx[j] > self.f_ub[j]:
-        #                fx[:] = fx[:] + 10.0 * (fx[j] - self.f_ub[j])
-        #        result = min(np.dot(fx, self.weights) - self.best, 0.0)
-        #        return result * s_dist.pdf(sx)
-
-        #    def g_fun(sx1):
-        #        return -(np.sqrt(1.0 - ((sx1 - s_vals_mean[1]) /
-        #                                (3.0 * s_vals_sd[1])) ** 2)
-        #                 * (3.0 * s_vals_sd[0]) + s_vals_mean[0])
-
-        #    def h_fun(sx1):
-        #        return (np.sqrt(1.0 - ((sx1 - s_vals_mean[1]) /
-        #                               (3.0 * s_vals_sd[1])) ** 2)
-        #                * (3.0 * s_vals_sd[0]) + s_vals_mean[0])
-
-        #    a = s_vals_mean[1] - 3 * s_vals_sd[1]
-        #    b = s_vals_mean[1] + 3 * s_vals_sd[1]
-        #    y = integrate.dblquad(weighted_f, a, b, g_fun, h_fun)
-        #    return y[0]
-        # Otherwise, evaluate EI with Monte carlo sampling
+        # If there is at least one feasible point and the number of sim outs
+        # is greater than 1, then evaluate the EI over fi* via MC integration
         else:
             if self.sample_size is None:
                 self.sample_size = int(10 * s_vals_mean.size ** 2)

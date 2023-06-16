@@ -89,6 +89,7 @@ def test_RandomConstraint():
                 np.any(fi > acqu.f_ub))
     return
 
+
 def test_EI_RandomConstraint():
     """ Test the EI_RandomConstraint class in acquisitions.py.
 
