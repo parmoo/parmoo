@@ -2144,8 +2144,8 @@ class MOOP:
                             namei = self.sim_names[i][0]
                         else:
                             namei = i
-                        if not any([np.all(np.abs(xi - self.__embed__(xj)) <
-                                    self.scaled_des_tols)
+                        if not any([np.all(np.abs(self.__extract__(xi) - xj) <
+                                    self.des_tols)
                                     and namei == j for (xj, j) in batch]) \
                            and self.check_sim_db(xxi, i) is None:
                             # If not, add it to the batch
@@ -2153,9 +2153,9 @@ class MOOP:
                         else:
                             # Try to improve surrogate (locally then globally)
                             x_improv = self.surrogates[i].improve(xi, False)
-                            while (any([any([np.all(np.abs(self.__embed__(xj)
-                                                           - xk) <
-                                                    self.scaled_des_tols)
+                            while (any([any([np.all(np.abs(self.__extract__(xk)
+                                                           - xj) <
+                                                    self.des_tols)
                                              and namei == j for (xj, j)
                                              in batch])
                                         for xk in x_improv]) or
