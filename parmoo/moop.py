@@ -2140,32 +2140,40 @@ class MOOP:
                     # Check whether it has been evaluated by any simulation
                     for i in range(self.s):
                         xxi = self.__extract__(xi)
+                        # This extract embed, while redundant, is necessarry
+                        # for categorical variables to be processed correctly
+                        xxxi = self.__embed__(xxi)
                         if self.use_names:
                             namei = self.sim_names[i][0]
                         else:
                             namei = i
-                        if not any([np.all(np.abs(xi - self.__embed__(xj)) <
-                                    self.scaled_des_tols)
-                                    and namei == j for (xj, j) in batch]) \
+                        if any([np.all(np.abs(xxxi - self.__embed__(xj)) <
+                                       self.scaled_des_tols)
+                                and namei == j for (xj, j) in batch]) \
                            and self.check_sim_db(xxi, i) is None:
                             # If not, add it to the batch
                             batch.append((xxi, namei))
                         else:
                             # Try to improve surrogate (locally then globally)
-                            x_improv = self.surrogates[i].improve(xi, False)
+                            x_improv = self.surrogates[i].improve(xxxi, False)
+                            # Again, this is needed to handle categorical vars
+                            ibatch = [self.__embed__(self.__extract__(xk))
+                                      for xk in x_improv]
                             while (any([any([np.all(np.abs(self.__embed__(xj)
                                                            - xk) <
                                                     self.scaled_des_tols)
                                              and namei == j for (xj, j)
                                              in batch])
-                                        for xk in x_improv]) or
+                                        for xk in ibatch]) or
                                    any([self.check_sim_db(self.__extract__(xk),
                                                           i)
-                                        is not None for xk in x_improv])):
-                                x_improv = self.surrogates[i].improve(xi,
+                                        is not None for xk in ibatch])):
+                                x_improv = self.surrogates[i].improve(xxxi,
                                                                       True)
+                                ibatch = [self.__embed__(self.__extract__(xk))
+                                          for xk in x_improv]
                             # Add improvement points to the batch
-                            for xj in x_improv:
+                            for xj in ibatch:
                                 batch.append((self.__extract__(xj), namei))
             else:
                 # If there were no simulations, just add all points to batch
