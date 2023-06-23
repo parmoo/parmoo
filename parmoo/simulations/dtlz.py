@@ -643,9 +643,9 @@ class dtlz5_sim(sim_func):
         # Calculate the output array
         for i in range(self.o):
             for j in range(self.o - 1 - i):
-                fx[i] *= np.cos(np.pi * theta[j] / 2)
+                fx[i] *= np.cos(theta[j])
             if i > 0:
-                fx[i] *= np.sin(np.pi * theta[self.o - 1 - i] / 2)
+                fx[i] *= np.sin(theta[self.o - 1 - i])
         return fx
 
 
@@ -717,9 +717,9 @@ class dtlz6_sim(sim_func):
         # Calculate the output array
         for i in range(self.o):
             for j in range(self.o - 1 - i):
-                fx[i] *= np.cos(np.pi * theta[j] / 2)
+                fx[i] *= np.cos(theta[j])
             if i > 0:
-                fx[i] *= np.sin(np.pi * theta[self.o - 1 - i] / 2)
+                fx[i] *= np.sin(theta[self.o - 1 - i])
         return fx
 
 
