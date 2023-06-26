@@ -62,7 +62,7 @@ class UniformWeights(AcquisitionFunction):
         return
 
     def useSD(self):
-        """ Querry whether this method uses uncertainties.
+        """ Query whether this method uses uncertainties.
 
         When False, allows users to shortcut expensive uncertainty
         computations.
