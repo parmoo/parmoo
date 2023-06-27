@@ -633,19 +633,20 @@ class dtlz5_sim(sim_func):
         # Initialize kernel function
         ker = g2_sim(self.n, self.o, self.offset)
         # Calculate theta values
-        theta = np.zeros(self.o - 1)
-        g2x = ker(xx)
-        for i in range(self.o - 1):
-            theta[i] = np.pi * (1 + 2 * g2x * xx[i]) / (4 * (1 + g2x))
+        theta = np.zeros(self.o)
+        g2x = ker(xx)[0]
+        theta[0] = xx[0]
+        for i in range(1, self.o):
+            theta[i] = (1 + 2 * g2x * xx[i]) / (2 * (1 + g2x))
         # Initialize output array
         fx = np.zeros(self.o)
         fx[:] = (1.0 + g2x)
         # Calculate the output array
         for i in range(self.o):
             for j in range(self.o - 1 - i):
-                fx[i] *= np.cos(theta[j])
+                fx[i] *= np.cos(np.pi * theta[j] / 2)
             if i > 0:
-                fx[i] *= np.sin(theta[self.o - 1 - i])
+                fx[i] *= np.sin(np.pi * theta[self.o - 1 - i] / 2)
         return fx
 
 
@@ -707,19 +708,20 @@ class dtlz6_sim(sim_func):
         # Initialize kernel function
         ker = g3_sim(self.n, self.o, self.offset)
         # Calculate theta values
-        theta = np.zeros(self.o - 1)
-        g3x = ker(xx)
-        for i in range(self.o - 1):
-            theta[i] = np.pi * (1 + 2 * g3x * xx[i]) / (4 * (1 + g3x))
+        theta = np.zeros(self.o)
+        g3x = ker(xx)[0]
+        theta[0] = xx[0]
+        for i in range(1, self.o):
+            theta[i] = (1 + 2 * g3x * xx[i]) / (2 * (1 + g3x))
         # Initialize output array
         fx = np.zeros(self.o)
         fx[:] = (1.0 + g3x)
         # Calculate the output array
         for i in range(self.o):
             for j in range(self.o - 1 - i):
-                fx[i] *= np.cos(theta[j])
+                fx[i] *= np.cos(np.pi * theta[j] / 2)
             if i > 0:
-                fx[i] *= np.sin(theta[self.o - 1 - i])
+                fx[i] *= np.sin(np.pi * theta[self.o - 1 - i] / 2)
         return fx
 
 
@@ -782,12 +784,11 @@ class dtlz7_sim(sim_func):
         ker = g4_sim(self.n, self.o, self.offset)
         # Initialize first o-1 entries in the output array
         fx = np.zeros(self.o)
-        print(xx)
         fx[:self.o-1] = xx[:self.o-1]
         # Calculate kernel functions
-        gx = 1.0 + ker(xx)
+        gx = 1.0 + ker(xx)[0]
         hx = (-np.sum(xx[:self.o-1] *
-                      (1.0 + np.sin(3.0 * np.pi * xx[:self.o-1]) / gx))
+                      (1.0 + np.sin(3.0 * np.pi * xx[:self.o-1])) / gx)
                       + float(self.o))
         # Calculate the last entry in the output array
         fx[self.o-1] = gx * hx
