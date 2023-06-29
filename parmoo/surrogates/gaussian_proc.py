@@ -285,7 +285,7 @@ class GaussRBF(SurrogateFunction):
         return np.dot(self.weights, outs)
 
     def stdDev(self, x):
-        """ Evaluate the std deviation (uncertainty) of the Gaussian RBF at x.
+        """ Evaluate the standard deviation (uncertainty) of the Gaussian RBF at x.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
@@ -317,7 +317,7 @@ class GaussRBF(SurrogateFunction):
                 * np.ones(self.m)))
 
     def stdDevGrad(self, x):
-        """ Evaluate the gradient of the std deviation of the GaussRBF at x.
+        """ Evaluate the gradient of the standard deviation of the GaussRBF at x.
  
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
@@ -325,7 +325,7 @@ class GaussRBF(SurrogateFunction):
 
         Returns:
             numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            std deviation at x.
+            standard deviation at x.
 
         """
 
@@ -715,7 +715,7 @@ class LocalGaussRBF(SurrogateFunction):
         return np.dot(self.weights, outs)
 
     def stdDev(self, x):
-        """ Evaluate the std deviation (uncertainty) of the Gaussian RBF at x.
+        """ Evaluate the standard deviation (uncertainty) of the Gaussian RBF at x.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
@@ -742,13 +742,13 @@ class LocalGaussRBF(SurrogateFunction):
         stdd_weights = np.zeros(self.v.shape[0])
         tmp = np.dot(self.v.transpose(), dists) / self.w[:]
         stdd_weights[:] = np.dot(self.v, tmp)
-        # Evaluate stddev of all m surrogates at x
+        # Evaluate standard deviation of all m surrogates at x
         return (np.sqrt(max(self.__gaussian(0.0) -
                             np.dot(stdd_weights, dists), 0)
                 * np.ones(self.m)))
 
     def stdDevGrad(self, x):
-        """ Evaluate the gradient of the std deviation of the GaussRBF at x.
+        """ Evaluate the gradient of the standard deviation of the GaussRBF at x.
  
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
@@ -756,7 +756,7 @@ class LocalGaussRBF(SurrogateFunction):
 
         Returns:
             numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            std deviation at x.
+            standard deviation at x.
 
         """
 
@@ -776,7 +776,7 @@ class LocalGaussRBF(SurrogateFunction):
         stdd_weights = np.zeros(self.v.shape[0])
         tmp = np.dot(self.v.transpose(), dists) / self.w[:]
         stdd_weights[:] = np.dot(self.v, tmp)
-        # Evaluate stddev of all m surrogates at x
+        # Evaluate standard deviation of all m surrogates at x
         stdd = np.sqrt(max(self.__gaussian(0.0) - np.dot(stdd_weights, dists),
                            0))
         # Evaluate all m gradients at x
@@ -838,7 +838,7 @@ class LocalGaussRBF(SurrogateFunction):
             inds = np.argsort(dists)
             diffs = diffs[inds]
             if dists[inds[self.n_loc - 1]] > 1.5:
-                # Calculate the normalized sample std dev along each axis
+                # Calculate the normalized sample stddev along each axis
                 stddev = np.asarray(tstd(diffs[:self.n_loc], axis=0))
                 stddev[:] = np.maximum(stddev, np.ones(self.n))
                 stddev[:] = stddev[:] / np.amin(stddev)

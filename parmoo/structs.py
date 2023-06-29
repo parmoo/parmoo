@@ -85,7 +85,7 @@ class AcquisitionFunction(ABC):
         """
 
     def useSD(self):
-        """ Querry whether this method uses uncertainties.
+        """ Query whether this method uses uncertainties.
 
         When False, allows users to shortcut expensive uncertainty
         computations.
@@ -334,7 +334,7 @@ class SurrogateFunction(ABC):
         """ Set the center for the fit, if this is a local method.
 
         Default implementation returns the diameter of the design
-        space, resulting in no trust region.
+        space, resulting in a nonbinding trust region.
 
         Args:
             center (numpy.ndarray): A 1d array containing the center for
@@ -377,7 +377,7 @@ class SurrogateFunction(ABC):
         raise NotImplementedError("This class method has not been implemented")
 
     def stdDev(self, x):
-        """ Evaluate the std deviation (uncertainty) of the surrogate at x.
+        """ Evaluate the standard deviation (uncertainty) of the surrogate at x.
 
         Note: this method need not be implemented when the acquisition
         function does not use the model uncertainty.
@@ -394,7 +394,7 @@ class SurrogateFunction(ABC):
         raise NotImplementedError("This class method has not been implemented")
 
     def stdDevGrad(self, x):
-        """ Evaluate the gradient of the std deviation at x.
+        """ Evaluate the gradient of the standard deviation at x.
 
         Note: this method need not be implemented when the acquisition
         function does not use both the model uncertainty and gradient.
@@ -405,7 +405,7 @@ class SurrogateFunction(ABC):
 
         Returns:
             numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            std deviation at x.
+            standard deviation at x.
 
         """
 
@@ -459,7 +459,7 @@ class SurrogateFunction(ABC):
             inds = np.argsort(dists)
             diffs = diffs[inds]
             if dists[inds[self.n]] > 1.5:
-                # Calculate the normalized sample std dev along each axis
+                # Calculate the normalized sample standard dev along each axis
                 stddev = np.asarray(tstd(diffs[:self.n+1], axis=0))
                 stddev[:] = np.maximum(stddev, np.ones(self.n))
                 stddev[:] = stddev[:] / np.amin(stddev)
