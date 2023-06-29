@@ -1,12 +1,21 @@
 """ This module contains simulation function implementations of the DTLZ test
 suite, as described in:
 
-Deb, Thiele, Laumanns, and Zitzler. "Scalable test problems for
-evolutionary multiobjective optimization" in Evolutionary Multiobjective
-Optimization, Theoretical Advances and Applications, Ch. 6 (pp. 105--145).
-Springer-Verlag, London, UK, 2005. Abraham, Jain, and Goldberg (Eds).
+ * Deb, Thiele, Laumanns, and Zitzler. "Scalable test problems for
+   evolutionary multiobjective optimization" in Evolutionary
+   Multiobjective Optimization, Theoretical Advances and Applications,
+   Ch. 6 (pp. 105--145). Springer-Verlag, London, UK, 2005. Abraham,
+   Jain, and Goldberg (Eds).
 
-One drawback of the original DTLZ problems was that their global minima
+When run with default settings, the outputs of ``dtlz{1-7}_sim`` have
+been confirmed against the outputs from the corresponding problems
+in ``pymoo`` up to 8 decimal places of precision.
+
+ * Blank and Deb. "pymoo: Multi-Objective Optimization in Python."
+   IEEE Access 8 (pp. 89497--89509). 2020.
+
+
+One drawback of the original DTLZ problems is that their global minima
 (Pareto points) always corresponded to design points that satisfy
 
 x_i = 0.5, for i = number of objectives, ..., number of design points
@@ -23,8 +32,8 @@ To make these problems applicable for deterministic algorithms, the
 solution sets must be configurable offset by a user-specified amount,
 as proposed in:
 
-Chang. Mathematical Software for Multiobjective Optimization Problems.
-Ph.D. dissertation, Virginia Tech, Dept. of Computer Science, 2020.
+ * Chang. Mathematical Software for Multiobjective Optimization Problems.
+   Ph.D. dissertation, Virginia Tech, Dept. of Computer Science, 2020.
 
 For the problems DTLZ8 and DTLZ9, only objective outputs are given
 by the simulation function herein. To fully define the problem, also
