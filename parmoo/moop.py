@@ -1000,10 +1000,10 @@ class MOOP:
                     * 2 -- return derivative wrt sim(x).
                  * 'exp_func' (function): An algebraic objective function
                    that calculates the expected value and distribution of
-                   an objective, given that surrogate outputs are normal
+                   an objective, given that surrogate outputs are Gaussian
                    distributed with given mean and variance. Accepts three
                    inputs. The first input represents x, the second input
-                   is the expected value of S(x), and the third value
+                   is the expected value of S(x), and the third input
                    represents the standard deviation of S(x) -- assuming
                    S(x) is Gaussian distributed.
                    The output is the expected value of f(x, S).
@@ -1103,9 +1103,9 @@ class MOOP:
                  * 'exp_func' (function): An algebraic objective function
                    that calculates the expected value and distribution of
                    the constraint penalty, given that surrogate outputs are
-                   normal distributed with given mean and variance. Accepts
+                   Gaussian distributed with given mean and variance. Accepts
                    three inputs. The first input represents x, the second
-                   input is the expected value of S(x), and the third value
+                   input is the expected value of S(x), and the third input
                    represents the standard deviation of S(x) -- assuming
                    S(x) is Gaussian distributed.
                    The output is the expected value of c(x, S).
@@ -1564,7 +1564,7 @@ class MOOP:
     def surrogateUncertainty(self, x, grad=False):
         """ Evaluate uncertainty (standard deviation) of all surrogates.
 
-        Assumes a normal distribution on simulation outputs.
+        Assumes a Gaussian distribution on simulation outputs.
 
         Warning: Not recommended for external usage!
 
