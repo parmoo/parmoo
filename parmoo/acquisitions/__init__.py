@@ -1,2 +1,2 @@
 from .weighted_sum import UniformWeights, FixedWeights
-from .epsilon_constraint import RandomConstraint
+from .epsilon_constraint import RandomConstraint, EI_RandomConstraint

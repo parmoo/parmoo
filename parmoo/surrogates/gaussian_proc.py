@@ -27,7 +27,7 @@ class GaussRBF(SurrogateFunction):
 
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'std_dev',
-                 'nugget', 'weights', 'mean']
+                 'nugget', 'weights', 'mean', 'v', 'w']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the GaussRBF class.
@@ -67,6 +67,8 @@ class GaussRBF(SurrogateFunction):
         self.x_vals = np.zeros((0, self.n))
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros((0, 0))
+        self.v = np.zeros((0, 0))
+        self.w = np.zeros((0, 0))
         # Check for the 'nugget' optional value in hyperparams
         if 'nugget' in hyperparams:
             if isinstance(hyperparams['nugget'], float):
@@ -143,13 +145,15 @@ class GaussRBF(SurrogateFunction):
             for i in range(self.x_vals.shape[0]):
                 cov[i, i] = cov[i, i] + self.nugget
         # Get eigenvalue decomp to solve the SPD system with multiple RHS
-        w, v = np.linalg.eigh(cov)
+        self.w = np.zeros(cov.shape[0])
+        self.v = np.zeros(cov.shape)
+        self.w, self.v = np.linalg.eigh(cov)
         # Check the smallest singular value for a bad solution
-        sigma_n = np.min(w)
+        sigma_n = np.min(self.w)
         if sigma_n < 0.00000001:
             for i in range(self.x_vals.shape[0]):
                 cov[i, i] = cov[i, i] + 0.00000001 - sigma_n
-            w, v = np.linalg.eigh(cov)
+            self.w, self.v = np.linalg.eigh(cov)
         # Calculate RHS
         rhs = self.f_vals.copy()
         self.mean[:] = np.sum(rhs, axis=0) / rhs.shape[0]
@@ -158,8 +162,8 @@ class GaussRBF(SurrogateFunction):
         # Finish the solve
         self.weights = np.zeros((self.m, rhs.shape[0]))
         for i in range(self.m):
-            tmp = np.dot(v.transpose(), rhs[:, i]) / w[:]
-            self.weights[i, :] = np.dot(v, tmp)
+            tmp = np.dot(self.v.transpose(), rhs[:, i]) / self.w[:]
+            self.weights[i, :] = np.dot(self.v, tmp)
         return
 
     def update(self, x, f):
@@ -204,13 +208,15 @@ class GaussRBF(SurrogateFunction):
             for i in range(self.x_vals.shape[0]):
                 cov[i, i] = cov[i, i] + self.nugget
         # Get eigenvalue decomp to solve the SPD system with multiple RHS
-        w, v = np.linalg.eigh(cov)
+        self.w = np.zeros(cov.shape[0])
+        self.v = np.zeros(cov.shape)
+        self.w, self.v = np.linalg.eigh(cov)
         # Check the smallest singular value for a bad solution
-        sigma_n = np.min(w)
+        sigma_n = np.min(self.w)
         if sigma_n < 0.00000001:
             for i in range(self.x_vals.shape[0]):
                 cov[i, i] = cov[i, i] + 0.00000001 - sigma_n
-            w, v = np.linalg.eigh(cov)
+            self.w, self.v = np.linalg.eigh(cov)
         # Calculate RHS
         rhs = self.f_vals.copy()
         self.mean[:] = np.sum(rhs, axis=0) / rhs.shape[0]
@@ -219,20 +225,9 @@ class GaussRBF(SurrogateFunction):
         # Finish the solve
         self.weights = np.zeros((self.m, rhs.shape[0]))
         for i in range(self.m):
-            tmp = np.dot(v.transpose(), rhs[:, i]) / w[:]
-            self.weights[i, :] = np.dot(v, tmp)
+            tmp = np.dot(self.v.transpose(), rhs[:, i]) / self.w[:]
+            self.weights[i, :] = np.dot(self.v, tmp)
         return
-
-    def setCenter(self, center):
-        """ This is a dummy subroutine, that does nothing for this class.
-
-        Returns:
-            float: The max of ub - lb, which could be used as the trust region
-            radius for a local optimizer, i.e., the entire design space.
-
-        """
-
-        return max(self.ub - self.lb)
 
     def evaluate(self, x):
         """ Evaluate the Gaussian RBF at a design point.
@@ -289,19 +284,15 @@ class GaussRBF(SurrogateFunction):
             outs[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
         return np.dot(self.weights, outs)
 
-    def improve(self, x, global_improv):
-        """ Suggests a design to evaluate to improve the RBF model near x.
+    def stdDev(self, x):
+        """ Evaluate the standard deviation (uncertainty) of the Gaussian RBF at x.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
-                which the RBF should be improved.
-
-            global_improv (Boolean): When True, returns a point for global
-                improvement, ignoring the value of x.
+                which the standard deviation should be evaluated.
 
         Returns:
-            numpy.ndarray: A 2d array containing the list of design points
-            that should be evaluated to improve the RBF models.
+            numpy.ndarray: A 1d array containing the standard deviation at x.
 
         """
 
@@ -314,49 +305,62 @@ class GaussRBF(SurrogateFunction):
             elif (np.any(x < self.lb - self.eps) or
                   np.any(x > self.ub + self.eps)):
                 raise ValueError("x cannot be infeasible")
-        # Allocate the output array.
-        x_new = np.zeros(self.n)
-        if global_improv:
-            # If global improvement has been specified, randomly select a
-            # point from within the bound constraints.
-            x_new[:] = self.lb[:] + (np.random.random(self.n)
-                                     * (self.ub[:] - self.lb[:]))
-            while any([np.all(np.abs(x_new - xj) < self.eps)
-                       for xj in self.x_vals]):
-                x_new[:] = self.lb[:] + (np.random.random(self.n)
-                                         * (self.ub[:] - self.lb[:]))
+        # Get vector of Gaussian-transformed distances
+        dists = self.__gaussian(cdist(self.x_vals, [x])).flatten()
+        # Solve using previously factored Kernel matrix
+        stdd_weights = np.zeros(self.v.shape[0])
+        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
+        stdd_weights[:] = np.dot(self.v, tmp)
+        # Evaluate stddev of all m surrogates at x
+        return (np.sqrt(max(self.__gaussian(0.0) -
+                            np.dot(stdd_weights, dists), 0)
+                * np.ones(self.m)))
+
+    def stdDevGrad(self, x):
+        """ Evaluate the gradient of the standard deviation of the GaussRBF at x.
+ 
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the gradient of standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 2d array containing the Jacobian matrix of the
+            standard deviation at x.
+
+        """
+
+        # Check that the x is legal
+        if not isinstance(x, np.ndarray):
+            raise TypeError("x must be a numpy array")
         else:
-            # Find the n+1 closest points to x in the current database
-            diffs = np.asarray([np.abs(x - xj) / self.eps
-                                for xj in self.x_vals])
-            dists = np.asarray([np.amax(dj) for dj in diffs])
-            inds = np.argsort(dists)
-            diffs = diffs[inds]
-            if dists[inds[self.n]] > 1.5:
-                # Calculate the normalized sample std dev along each axis
-                stddev = np.asarray(tstd(diffs[:self.n+1], axis=0))
-                stddev[:] = np.maximum(stddev, np.ones(self.n))
-                stddev[:] = stddev[:] / np.amin(stddev)
-                # Sample within B(x, dists[inds[self.n]] / stddev)
-                rad = (dists[inds[self.n]] * self.eps) / stddev
-                x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
-                                        * rad[:] + x, self.lb), self.ub)
-                while any([np.all(np.abs(x_new - xj) < self.eps)
-                           for xj in self.x_vals]):
-                    x_new = np.fmin(np.fmax(2.0 *
-                                            (np.random.random(self.n) - 0.5)
-                                            * rad[:] + x, self.lb), self.ub)
-            else:
-                # If the n+1st nearest point is too close, use global_improv.
-                x_new[:] = self.lb[:] + np.random.random(self.n) \
-                           * (self.ub[:] - self.lb[:])
-                # If the nearest point is too close, resample.
-                while any([np.all(np.abs(x_new - xj) < self.eps)
-                           for xj in self.x_vals]):
-                    x_new[:] = self.lb[:] + (np.random.random(self.n)
-                                             * (self.ub[:] - self.lb[:]))
-        # Return the point to be sampled in a 2d array.
-        return np.asarray([x_new])
+            if x.size != self.n:
+                raise ValueError("x must have length n")
+            elif (np.any(x < self.lb - self.eps) or
+                  np.any(x > self.ub + self.eps)):
+                raise ValueError("x cannot be infeasible")
+        # Get vector of Gaussian-transformed distances
+        dists = self.__gaussian(cdist(self.x_vals, [x])).flatten()
+        # Solve using previously factored Kernel matrix
+        stdd_weights = np.zeros(self.v.shape[0])
+        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
+        stdd_weights[:] = np.dot(self.v, tmp)
+        # Evaluate stddev of all m surrogates at x
+        stdd = np.sqrt(max(self.__gaussian(0.0) - np.dot(stdd_weights, dists),
+                           0))
+        # Evaluate all m gradients at x
+        kgrad = np.zeros((self.x_vals.shape[0], self.n))
+        for i, xi in enumerate(self.x_vals):
+            kgrad[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
+        # Just return 0 when derivative is undefined (at training points)
+        if stdd < 1.0e-4:
+            result = np.zeros(self.n)
+        else:
+            result = -np.dot(kgrad.T, stdd_weights).flatten() / stdd
+        # Build Jacobian (all m rows identical)
+        jac = np.zeros((self.m, self.n))
+        for i in range(self.m):
+            jac[i, :] = result[:]
+        return jac
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.
@@ -382,6 +386,8 @@ class GaussRBF(SurrogateFunction):
         gp_state['eps'] = self.eps.tolist()
         gp_state['weights'] = self.weights.tolist()
         gp_state['mean'] = self.mean.tolist()
+        gp_state['v'] = self.v.tolist()
+        gp_state['w'] = self.w.tolist()
         # Save file
         with open(filename, 'w') as fp:
             json.dump(gp_state, fp)
@@ -414,6 +420,8 @@ class GaussRBF(SurrogateFunction):
         self.eps = np.array(gp_state['eps'])
         self.weights = np.array(gp_state['weights'])
         self.mean = np.array(gp_state['mean'])
+        self.v = np.array(gp_state['v'])
+        self.w = np.array(gp_state['w'])
         return
 
 
@@ -428,7 +436,7 @@ class LocalGaussRBF(SurrogateFunction):
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'std_dev',
                  'nugget', 'n_loc', 'loc_inds', 'tr_center', 'weights',
-                 'mean']
+                 'mean', 'v', 'w']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the LocalGaussRBF class.
@@ -468,6 +476,8 @@ class LocalGaussRBF(SurrogateFunction):
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros((0, 0))
         self.mean = np.zeros(self.m)
+        self.v = np.zeros((0, 0))
+        self.w = np.zeros((0, 0))
         # Initialize trust-region settings
         self.tr_center = np.zeros(0)
         self.loc_inds = []
@@ -626,13 +636,15 @@ class LocalGaussRBF(SurrogateFunction):
                 for i in range(len(self.loc_inds)):
                     cov[i, i] = cov[i, i] + self.nugget
             # Get eigenvalue decomp to solve the SPD system with multiple RHS
-            w, v = np.linalg.eigh(cov)
+            self.w = np.zeros(cov.shape[0])
+            self.v = np.zeros(cov.shape)
+            self.w, self.v = np.linalg.eigh(cov)
             # Check the smallest singular value for a bad solution
-            sigma_n = np.min(w)
+            sigma_n = np.min(self.w)
             if sigma_n < 0.00000001:
                 for i in range(len(self.loc_inds)):
                     cov[i, i] = cov[i, i] + 0.00000001 - sigma_n
-                w, v = np.linalg.eigh(cov)
+                self.w, self.v = np.linalg.eigh(cov)
             # Calculate RHS
             rhs = self.f_vals[self.loc_inds, :].copy()
             self.mean[:] = np.sum(rhs, axis=0) / rhs.shape[0]
@@ -641,8 +653,8 @@ class LocalGaussRBF(SurrogateFunction):
             # Finish the solve
             self.weights = np.zeros((self.m, rhs.shape[0]))
             for i in range(self.m):
-                tmp = np.dot(v.transpose(), rhs[:, i]) / w[:]
-                self.weights[i, :] = np.dot(v, tmp)
+                tmp = np.dot(self.v.transpose(), rhs[:, i]) / self.w[:]
+                self.weights[i, :] = np.dot(self.v, tmp)
         return self.std_dev
 
     def evaluate(self, x):
@@ -702,6 +714,86 @@ class LocalGaussRBF(SurrogateFunction):
             outs[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
         return np.dot(self.weights, outs)
 
+    def stdDev(self, x):
+        """ Evaluate the standard deviation (uncertainty) of the Gaussian RBF at x.
+
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 1d array containing the standard deviation at x.
+
+        """
+
+        # Check that the x is legal
+        if not isinstance(x, np.ndarray):
+            raise TypeError("x must be a numpy array")
+        else:
+            if x.size != self.n:
+                raise ValueError("x must have length n")
+            elif (np.any(x < self.lb - self.eps) or
+                  np.any(x > self.ub + self.eps)):
+                raise ValueError("x cannot be infeasible")
+        # Get vector of Gaussian-transformed distances
+        dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
+                                [x])).flatten()
+        # Solve using previously factored Kernel matrix
+        stdd_weights = np.zeros(self.v.shape[0])
+        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
+        stdd_weights[:] = np.dot(self.v, tmp)
+        # Evaluate standard deviation of all m surrogates at x
+        return (np.sqrt(max(self.__gaussian(0.0) -
+                            np.dot(stdd_weights, dists), 0)
+                * np.ones(self.m)))
+
+    def stdDevGrad(self, x):
+        """ Evaluate the gradient of the standard deviation of the GaussRBF at x.
+ 
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the gradient of standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 2d array containing the Jacobian matrix of the
+            standard deviation at x.
+
+        """
+
+        # Check that the x is legal
+        if not isinstance(x, np.ndarray):
+            raise TypeError("x must be a numpy array")
+        else:
+            if x.size != self.n:
+                raise ValueError("x must have length n")
+            elif (np.any(x < self.lb - self.eps) or
+                  np.any(x > self.ub + self.eps)):
+                raise ValueError("x cannot be infeasible")
+        # Get vector of Gaussian-transformed distances
+        dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
+                                      [x])).flatten()
+        # Solve using previously factored Kernel matrix
+        stdd_weights = np.zeros(self.v.shape[0])
+        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
+        stdd_weights[:] = np.dot(self.v, tmp)
+        # Evaluate standard deviation of all m surrogates at x
+        stdd = np.sqrt(max(self.__gaussian(0.0) - np.dot(stdd_weights, dists),
+                           0))
+        # Evaluate all m gradients at x
+        kgrad = np.zeros((self.v.shape[0], self.n))
+        for i, xi in enumerate(self.x_vals[self.loc_inds]):
+            kgrad[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
+        # Just return 0 when derivative is undefined (at training points)
+        if stdd < 1.0e-4:
+            result = np.zeros(self.n)
+        else:
+            result = -np.dot(kgrad.T, stdd_weights).flatten() / stdd
+        # Build Jacobian (all m rows identical)
+        jac = np.zeros((self.m, self.n))
+        for i in range(self.m):
+            jac[i, :] = result[:]
+        return jac
+
     def improve(self, x, global_improv):
         """ Suggests a design to evaluate to improve the RBF model near x.
 
@@ -746,7 +838,7 @@ class LocalGaussRBF(SurrogateFunction):
             inds = np.argsort(dists)
             diffs = diffs[inds]
             if dists[inds[self.n_loc - 1]] > 1.5:
-                # Calculate the normalized sample std dev along each axis
+                # Calculate the normalized sample stddev along each axis
                 stddev = np.asarray(tstd(diffs[:self.n_loc], axis=0))
                 stddev[:] = np.maximum(stddev, np.ones(self.n))
                 stddev[:] = stddev[:] / np.amin(stddev)
@@ -798,6 +890,8 @@ class LocalGaussRBF(SurrogateFunction):
         gp_state['tr_center'] = self.tr_center.tolist()
         gp_state['weights'] = self.weights.tolist()
         gp_state['mean'] = self.mean.tolist()
+        gp_state['v'] = self.v.tolist()
+        gp_state['w'] = self.w.tolist()
         # Save file
         with open(filename, 'w') as fp:
             json.dump(gp_state, fp)
@@ -833,4 +927,6 @@ class LocalGaussRBF(SurrogateFunction):
         self.tr_center = np.array(gp_state['tr_center'])
         self.weights = np.array(gp_state['weights'])
         self.mean = np.array(gp_state['mean'])
+        self.v = np.array(gp_state['v'])
+        self.w = np.array(gp_state['w'])
         return

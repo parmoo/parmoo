@@ -536,7 +536,7 @@ def test_MOOP_evaluateSimulation():
 
 
 def test_MOOP_evaluateSurrogates():
-    """ Check that the MOOP class handles evaluating objectives properly.
+    """ Check that the MOOP class handles evaluating surrogate models properly.
 
     Initialize a MOOP object and check that the evaluateSurrogates() function
     works correctly.
@@ -598,31 +598,44 @@ def test_MOOP_evaluateSurrogates():
         moop1.evaluateSurrogates(np.zeros(1))
     # Now do some good evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateSurrogates(np.zeros(3)) -
-                           np.asarray([0.0, 0.0, np.sqrt(3.0) +
-                                       np.sqrt(0.75)]))
+                           np.asarray([0.0, np.sqrt(3.0), np.sqrt(0.75)]))
             < 0.00000001)
     assert (np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.5,
                                                                 0.5, 0.5]))
-                           - np.asarray([0.5, np.sqrt(0.75), np.sqrt(0.75)]))
+                           - np.asarray([np.sqrt(0.75), np.sqrt(0.75), 0.0]))
             < 0.00000001)
     assert (np.linalg.norm(moop1.evaluateSurrogates(np.asarray([1.0, 0.0,
                                                                 0.0]))
-                           - np.asarray([1.0, 1.0, np.sqrt(2.0) +
-                                         np.sqrt(0.75)]))
+                           - np.asarray([1.0, np.sqrt(2.0), np.sqrt(0.75)]))
             < 0.00000001)
     assert (np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.0, 1.0,
                                                                 0.0]))
-                           - np.asarray([0.0, 1.0, np.sqrt(2.0) +
-                                         np.sqrt(0.75)]))
+                           - np.asarray([1.0, np.sqrt(2.0), np.sqrt(0.75)]))
             < 0.00000001)
     assert (np.linalg.norm(moop1.evaluateSurrogates(np.asarray([0.0, 0.0,
                                                                 1.0]))
-                           - np.asarray([0.0, 1.0, np.sqrt(2.0) +
-                                         np.sqrt(0.75)]))
+                           - np.asarray([1.0, np.sqrt(2.0), np.sqrt(0.75)]))
             < 0.00000001)
     assert (np.linalg.norm(moop1.evaluateSurrogates(np.ones(3)) -
-                           np.asarray([1.0, np.sqrt(3.0), np.sqrt(0.75)]))
+                           np.asarray([np.sqrt(3.0), 0.0, np.sqrt(0.75)]))
             < 0.00000001)
+    assert (np.linalg.norm(moop1.surrogateUncertainty(np.zeros(3)))
+            < 1.0e-4)
+    assert (np.linalg.norm(moop1.surrogateUncertainty(np.asarray([0.5,
+                                                                  0.5, 0.5])))
+            < 1.0e-4)
+    assert (np.linalg.norm(moop1.surrogateUncertainty(np.asarray([1.0,
+                                                                  0.0, 0.0])))
+            < 1.0e-4)
+    assert (np.linalg.norm(moop1.surrogateUncertainty(np.asarray([0.0,
+                                                                  1.0, 0.0])))
+            < 1.0e-4)
+    assert (np.linalg.norm(moop1.surrogateUncertainty(np.asarray([0.0,
+                                                                  0.0, 1.0])))
+            < 1.0e-4)
+    assert (np.linalg.norm(moop1.surrogateUncertainty(np.ones(3))) < 1.0e-4)
+    xi = np.random.random_sample(3)
+    assert (np.linalg.norm(moop1.surrogateUncertainty(xi)) > 1.0e-4)
     # Adjust the scale and try again
     moop2 = MOOP(LocalGPS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
@@ -655,6 +668,128 @@ def test_MOOP_evaluateSurrogates():
     xx = moop2.__embed__(np.ones(3))
     assert (np.linalg.norm(moop1.evaluateSurrogates(x) -
                            moop2.evaluateSurrogates(xx)) < 0.00000001)
+
+
+def test_MOOP_evaluateObjectives():
+    """ Check that the MOOP class handles evaluating objectives properly.
+
+    Initialize a MOOP object and check that the evaluateObjectives() function
+    works correctly.
+
+    """
+
+    from parmoo import MOOP
+    from parmoo.surrogates import GaussRBF
+    from parmoo.searches import LatinHypercube
+    from parmoo.optimizers import LocalGPS
+    import numpy as np
+    import pytest
+
+    # Create 2 SimGroups for later
+    g1 = {'n': 3,
+          'm': 1,
+          'hyperparams': {},
+          'search': LatinHypercube,
+          'sim_func': lambda x: [np.linalg.norm(x)],
+          'surrogate': GaussRBF}
+    g2 = {'n': 3,
+          'm': 2,
+          'hyperparams': {},
+          'search': LatinHypercube,
+          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
+          'surrogate': GaussRBF}
+    # Initialize a MOOP with 2 SimGroups and 3 objectives
+    moop1 = MOOP(LocalGPS)
+    for i in range(3):
+        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop1.addSimulation(g1, g2)
+    moop1.addObjective({'obj_func': lambda x, s: x[0]},
+                       {'obj_func': lambda x, s: s[0]},
+                       {'obj_func': lambda x, s: s[1] + s[2]})
+    # Try some bad evaluations
+    with pytest.raises(TypeError):
+        moop1.evaluateSimulation(np.zeros(3), 0.0)
+    with pytest.raises(ValueError):
+        moop1.evaluateSimulation(np.zeros(3), -1)
+    # Evaluate some data points and fit the surrogates
+    moop1.evaluateSimulation(np.zeros(3), 0)
+    moop1.evaluateSimulation(np.zeros(3), 1)
+    moop1.evaluateSimulation(np.array([0.5, 0.5, 0.5]), 0)
+    moop1.evaluateSimulation(np.array([0.5, 0.5, 0.5]), 1)
+    moop1.evaluateSimulation(np.array([1.0, 0.0, 0.0]), 0)
+    moop1.evaluateSimulation(np.array([1.0, 0.0, 0.0]), 1)
+    moop1.evaluateSimulation(np.array([0.0, 1.0, 0.0]), 0)
+    moop1.evaluateSimulation(np.array([0.0, 1.0, 0.0]), 1)
+    moop1.evaluateSimulation(np.array([0.0, 0.0, 1.0]), 0)
+    moop1.evaluateSimulation(np.array([0.0, 0.0, 1.0]), 1)
+    moop1.evaluateSimulation(np.ones(3), 0)
+    moop1.evaluateSimulation(np.ones(3), 1)
+    moop1.fitSurrogates()
+    moop1.resetSurrogates(np.ones(3) * 0.5)
+    # Now try some bad evaluations
+    with pytest.raises(TypeError):
+        moop1.evaluateObjectives(10.0)
+    with pytest.raises(ValueError):
+        moop1.evaluateObjectives(np.zeros(1))
+    # Now do some good evaluations and check the results
+    assert (np.linalg.norm(moop1.evaluateObjectives(np.zeros(3)) -
+                           np.asarray([0.0, 0.0, np.sqrt(3.0) +
+                                       np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateObjectives(np.asarray([0.5,
+                                                                0.5, 0.5]))
+                           - np.asarray([0.5, np.sqrt(0.75), np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateObjectives(np.asarray([1.0, 0.0,
+                                                                0.0]))
+                           - np.asarray([1.0, 1.0, np.sqrt(2.0) +
+                                         np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateObjectives(np.asarray([0.0, 1.0,
+                                                                0.0]))
+                           - np.asarray([0.0, 1.0, np.sqrt(2.0) +
+                                         np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateObjectives(np.asarray([0.0, 0.0,
+                                                                1.0]))
+                           - np.asarray([0.0, 1.0, np.sqrt(2.0) +
+                                         np.sqrt(0.75)]))
+            < 0.00000001)
+    assert (np.linalg.norm(moop1.evaluateObjectives(np.ones(3)) -
+                           np.asarray([1.0, np.sqrt(3.0), np.sqrt(0.75)]))
+            < 0.00000001)
+    # Adjust the scale and try again
+    moop2 = MOOP(LocalGPS)
+    moop2.addDesign({'lb': -1.0, 'ub': 1.0},
+                    {'lb': 0.0, 'ub': 2.0},
+                    {'lb': -0.5, 'ub': 1.5})
+    moop2.addObjective({'obj_func': lambda x, s: x[0]},
+                       {'obj_func': lambda x, s: s[0]},
+                       {'obj_func': lambda x, s: s[1] + s[2]})
+    moop2.addSimulation(g1, g2)
+    # Evaluate some data points and fit the surrogates
+    moop2.evaluateSimulation(np.zeros(3), 0)
+    moop2.evaluateSimulation(np.zeros(3), 1)
+    moop2.evaluateSimulation(np.asarray([0.5, 0.5, 0.5]), 0)
+    moop2.evaluateSimulation(np.asarray([0.5, 0.5, 0.5]), 1)
+    moop2.evaluateSimulation(np.asarray([1.0, 0.0, 0.0]), 0)
+    moop2.evaluateSimulation(np.asarray([1.0, 0.0, 0.0]), 1)
+    moop2.evaluateSimulation(np.asarray([0.0, 1.0, 0.0]), 0)
+    moop2.evaluateSimulation(np.asarray([0.0, 1.0, 0.0]), 1)
+    moop2.evaluateSimulation(np.asarray([0.0, 0.0, 1.0]), 0)
+    moop2.evaluateSimulation(np.asarray([0.0, 0.0, 1.0]), 1)
+    moop2.evaluateSimulation(np.ones(3), 0)
+    moop2.evaluateSimulation(np.ones(3), 1)
+    moop2.fitSurrogates()
+    # Now compare evaluations against the original surrogate
+    x = moop1.__embed__(np.zeros(3))
+    xx = moop2.__embed__(np.zeros(3))
+    assert (np.linalg.norm(moop1.evaluateObjectives(x) -
+                           moop2.evaluateObjectives(xx)) < 0.00000001)
+    x = moop1.__embed__(np.ones(3))
+    xx = moop2.__embed__(np.ones(3))
+    assert (np.linalg.norm(moop1.evaluateObjectives(x) -
+                           moop2.evaluateObjectives(xx)) < 0.00000001)
 
 
 def test_MOOP_evaluateConstraints():
@@ -1385,19 +1520,19 @@ def test_MOOP_getPF():
                  'f_vals': np.zeros((5, 3)),
                  'c_vals': np.zeros((5, 1))}
     moop.data['x_vals'][0, :] = np.asarray([0.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][0, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][0, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 0.0, 0.0]))
     moop.data['x_vals'][1, :] = np.asarray([1.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][1, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][1, :] = moop.evaluateObjectives(
                                    np.asarray([1.0, 0.0, 0.0, 0.0]))
     moop.data['x_vals'][2, :] = np.asarray([0.0, 1.0, 0.0, 0.0])
-    moop.data['f_vals'][2, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][2, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 1.0, 0.0, 0.0]))
     moop.data['x_vals'][3, :] = np.asarray([0.0, 0.0, 1.0, 0.0])
-    moop.data['f_vals'][3, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][3, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 1.0, 0.0]))
     moop.data['x_vals'][4, :] = np.asarray([0.0, 0.0, 0.0, 1.0])
-    moop.data['f_vals'][4, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][4, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
     moop.n_dat = 5
     soln = moop.getPF()
@@ -1428,27 +1563,27 @@ def test_MOOP_getPF():
                  'f_vals': np.zeros((5, 3)),
                  'c_vals': np.zeros((5, 1))}
     moop.data['x_vals'][0, :] = np.asarray([0.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][0, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][0, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 0.0, 0.0]))
     moop.data['c_vals'][0, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 0.0, 0.0]))
     moop.data['x_vals'][1, :] = np.asarray([1.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][1, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][1, :] = moop.evaluateObjectives(
                                    np.asarray([1.0, 0.0, 0.0, 0.0]))
     moop.data['c_vals'][1, :] = moop.evaluateConstraints(
                                    np.asarray([1.0, 0.0, 0.0, 0.0]))
     moop.data['x_vals'][2, :] = np.asarray([0.0, 1.0, 0.0, 0.0])
-    moop.data['f_vals'][2, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][2, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 1.0, 0.0, 0.0]))
     moop.data['c_vals'][2, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 1.0, 0.0, 0.0]))
     moop.data['x_vals'][3, :] = np.asarray([0.0, 0.0, 1.0, 0.0])
-    moop.data['f_vals'][3, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][3, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 1.0, 0.0]))
     moop.data['c_vals'][3, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 1.0, 0.0]))
     moop.data['x_vals'][4, :] = np.asarray([0.0, 0.0, 0.0, 1.0])
-    moop.data['f_vals'][4, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][4, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
     moop.data['c_vals'][4, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
@@ -1582,27 +1717,27 @@ def test_MOOP_getObjectiveData():
                  'f_vals': np.zeros((5, 3)),
                  'c_vals': np.zeros((5, 1))}
     moop.data['x_vals'][0, :] = np.asarray([0.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][0, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][0, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 0.0, 0.0]))
     moop.data['c_vals'][0, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 0.0, 0.0]))
     moop.data['x_vals'][1, :] = np.asarray([1.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][1, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][1, :] = moop.evaluateObjectives(
                                    np.asarray([1.0, 0.0, 0.0, 0.0]))
     moop.data['c_vals'][1, :] = moop.evaluateConstraints(
                                    np.asarray([1.0, 0.0, 0.0, 0.0]))
     moop.data['x_vals'][2, :] = np.asarray([0.0, 1.0, 0.0, 0.0])
-    moop.data['f_vals'][2, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][2, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 1.0, 0.0, 0.0]))
     moop.data['c_vals'][2, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 1.0, 0.0, 0.0]))
     moop.data['x_vals'][3, :] = np.asarray([0.0, 0.0, 1.0, 0.0])
-    moop.data['f_vals'][3, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][3, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 1.0, 0.0]))
     moop.data['c_vals'][3, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 1.0, 0.0]))
     moop.data['x_vals'][4, :] = np.asarray([0.0, 0.0, 0.0, 1.0])
-    moop.data['f_vals'][4, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][4, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
     moop.data['c_vals'][4, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
@@ -1635,27 +1770,27 @@ def test_MOOP_getObjectiveData():
                  'f_vals': np.zeros((5, 3)),
                  'c_vals': np.zeros((5, 1))}
     moop.data['x_vals'][0, :] = np.asarray([0.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][0, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][0, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 0.0, 0.0]))
     moop.data['c_vals'][0, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 0.0, 0.0]))
     moop.data['x_vals'][1, :] = np.asarray([1.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][1, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][1, :] = moop.evaluateObjectives(
                                    np.asarray([1.0, 0.0, 0.0, 0.0]))
     moop.data['c_vals'][1, :] = moop.evaluateConstraints(
                                    np.asarray([1.0, 0.0, 0.0, 0.0]))
     moop.data['x_vals'][2, :] = np.asarray([0.0, 1.0, 0.0, 0.0])
-    moop.data['f_vals'][2, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][2, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 1.0, 0.0, 0.0]))
     moop.data['c_vals'][2, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 1.0, 0.0, 0.0]))
     moop.data['x_vals'][3, :] = np.asarray([0.0, 0.0, 1.0, 0.0])
-    moop.data['f_vals'][3, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][3, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 1.0, 0.0]))
     moop.data['c_vals'][3, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 1.0, 0.0]))
     moop.data['x_vals'][4, :] = np.asarray([0.0, 0.0, 0.0, 1.0])
-    moop.data['f_vals'][4, :] = moop.evaluateSurrogates(
+    moop.data['f_vals'][4, :] = moop.evaluateObjectives(
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
     moop.data['c_vals'][4, :] = moop.evaluateConstraints(
                                    np.asarray([0.0, 0.0, 0.0, 1.0]))
@@ -1991,6 +2126,7 @@ if __name__ == "__main__":
     test_MOOP_getTypes()
     test_MOOP_evaluateSimulation()
     test_MOOP_evaluateSurrogates()
+    test_MOOP_evaluateObjectives()
     test_MOOP_evaluateConstraints()
     test_MOOP_addData()
     test_MOOP_iterate()
