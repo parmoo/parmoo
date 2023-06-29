@@ -1,12 +1,21 @@
 """ This module contains simulation function implementations of the DTLZ test
 suite, as described in:
 
-Deb, Thiele, Laumanns, and Zitzler. "Scalable test problems for
-evolutionary multiobjective optimization" in Evolutionary Multiobjective
-Optimization, Theoretical Advances and Applications, Ch. 6 (pp. 105--145).
-Springer-Verlag, London, UK, 2005. Abraham, Jain, and Goldberg (Eds).
+ * Deb, Thiele, Laumanns, and Zitzler. "Scalable test problems for
+   evolutionary multiobjective optimization" in Evolutionary
+   Multiobjective Optimization, Theoretical Advances and Applications,
+   Ch. 6 (pp. 105--145). Springer-Verlag, London, UK, 2005. Abraham,
+   Jain, and Goldberg (Eds).
 
-One drawback of the original DTLZ problems was that their global minima
+When run with default settings, the outputs of ``dtlz{1-7}_sim`` have
+been confirmed against the outputs from the corresponding problems
+in ``pymoo`` up to 8 decimal places of precision.
+
+ * Blank and Deb. "pymoo: Multi-Objective Optimization in Python."
+   IEEE Access 8 (pp. 89497--89509). 2020.
+
+
+One drawback of the original DTLZ problems is that their global minima
 (Pareto points) always corresponded to design points that satisfy
 
 x_i = 0.5, for i = number of objectives, ..., number of design points
@@ -23,8 +32,8 @@ To make these problems applicable for deterministic algorithms, the
 solution sets must be configurable offset by a user-specified amount,
 as proposed in:
 
-Chang. Mathematical Software for Multiobjective Optimization Problems.
-Ph.D. dissertation, Virginia Tech, Dept. of Computer Science, 2020.
+ * Chang. Mathematical Software for Multiobjective Optimization Problems.
+   Ph.D. dissertation, Virginia Tech, Dept. of Computer Science, 2020.
 
 For the problems DTLZ8 and DTLZ9, only objective outputs are given
 by the simulation function herein. To fully define the problem, also
@@ -633,10 +642,11 @@ class dtlz5_sim(sim_func):
         # Initialize kernel function
         ker = g2_sim(self.n, self.o, self.offset)
         # Calculate theta values
-        theta = np.zeros(self.o - 1)
-        g2x = ker(xx)
-        for i in range(self.o - 1):
-            theta[i] = np.pi * (1 + 2 * g2x * xx[i]) / (4 * (1 + g2x))
+        theta = np.zeros(self.o)
+        g2x = ker(xx)[0]
+        theta[0] = xx[0]
+        for i in range(1, self.o):
+            theta[i] = (1 + 2 * g2x * xx[i]) / (2 * (1 + g2x))
         # Initialize output array
         fx = np.zeros(self.o)
         fx[:] = (1.0 + g2x)
@@ -707,10 +717,11 @@ class dtlz6_sim(sim_func):
         # Initialize kernel function
         ker = g3_sim(self.n, self.o, self.offset)
         # Calculate theta values
-        theta = np.zeros(self.o - 1)
-        g3x = ker(xx)
-        for i in range(self.o - 1):
-            theta[i] = np.pi * (1 + 2 * g3x * xx[i]) / (4 * (1 + g3x))
+        theta = np.zeros(self.o)
+        g3x = ker(xx)[0]
+        theta[0] = xx[0]
+        for i in range(1, self.o):
+            theta[i] = (1 + 2 * g3x * xx[i]) / (2 * (1 + g3x))
         # Initialize output array
         fx = np.zeros(self.o)
         fx[:] = (1.0 + g3x)
@@ -782,12 +793,11 @@ class dtlz7_sim(sim_func):
         ker = g4_sim(self.n, self.o, self.offset)
         # Initialize first o-1 entries in the output array
         fx = np.zeros(self.o)
-        print(xx)
         fx[:self.o-1] = xx[:self.o-1]
         # Calculate kernel functions
-        gx = 1.0 + ker(xx)
+        gx = 1.0 + ker(xx)[0]
         hx = (-np.sum(xx[:self.o-1] *
-                      (1.0 + np.sin(3.0 * np.pi * xx[:self.o-1]) / gx))
+                      (1.0 + np.sin(3.0 * np.pi * xx[:self.o-1])) / gx)
                       + float(self.o))
         # Calculate the last entry in the output array
         fx[self.o-1] = gx * hx

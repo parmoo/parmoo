@@ -761,7 +761,9 @@ class libE_MOOP(MOOP):
         H, persis_info, flag = libE(sim_specs, gen_specs, exit_criteria,
                                     persis_info, alloc_specs, libE_specs)
 
-        self.moop = persis_info[1]['moop']
+        # When running with MPI, only the manager returns results
+        if is_manager:
+            self.moop = persis_info[1]['moop']
         return
 
     def getPF(self):
