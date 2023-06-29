@@ -454,7 +454,9 @@ def test_MOOP_evaluateGradients_3():
     moop2.addAcquisition({'acquisition': FixedWeights})
     np.random.seed(0)
     moop2.solve(0)
+    np.random.seed(0)
     b1 = moop1.iterate(1)
+    np.random.seed(0)
     b2 = moop2.iterate(1)
     # Check that same solutions were found
     for x1, x2 in zip(b1, b2):
