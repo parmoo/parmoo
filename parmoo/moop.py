@@ -2371,6 +2371,11 @@ class MOOP:
     def getPF(self, format='ndarray'):
         """ Extract nondominated and efficient sets from internal databases.
 
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe.
+
         Returns:
             A discrete approximation of the Pareto front and efficient set.
 
@@ -2437,6 +2442,11 @@ class MOOP:
 
     def getSimulationData(self, format='ndarray'):
         """ Extract all computed simulation outputs from the MOOP's database.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe.
 
         Returns:
             (dict or list) Either a dictionary or list of dictionaries
@@ -2515,6 +2525,11 @@ class MOOP:
 
     def getObjectiveData(self, format='ndarray'):
         """ Extract all computed objective scores from this MOOP's database.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe.
 
         Returns:
             A database of all designs that have been fully evaluated,
