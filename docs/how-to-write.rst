@@ -796,6 +796,14 @@ After solving the MOOP, you can view the results using
 
     soln = moop.getPF()
 
+The output format defaults to a numpy structured array.
+However, you can change it to a pandas dataframe using the optional
+``format`` argument.
+
+.. code-block:: python
+
+    soln = moop.getPF(format="pandas")
+
 To get the full simulation and objective databases, you can also use
 :meth:`MOOP.getSimulationData() <moop.MOOP.getSimulationData>`
 and
