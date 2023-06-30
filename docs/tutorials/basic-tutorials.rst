@@ -23,7 +23,7 @@ output:
 
 And produces the following figure of the Pareto points:
 
-.. figure:: ../../examples/Pareto\ Front.jpeg
+.. figure:: ../../examples/quickstart.jpeg
     :alt: Scatter plot of the Pareto front after solving demo problem
     :align: center
 

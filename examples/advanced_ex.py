@@ -6,6 +6,9 @@ from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.optimizers import LBFGSB
 
+# Fix the random seed for reproducibility
+np.random.seed(0)
+
 # Create a new MOOP with a derivative-based solver
 my_moop = MOOP(LBFGSB, hyperparams={})
 

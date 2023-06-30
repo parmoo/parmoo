@@ -26,6 +26,9 @@ def const_c1(x, s):
 # When using libEnsemble with Python MP, the "solve" command must be enclosed
 # in an "if __name__ == '__main__':" block, as shown below
 if __name__ == "__main__":
+    # Fix the random seed for reproducibility
+    np.random.seed(0)
+
     # Create a libE_MOOP
     my_moop = libE_MOOP(LocalGPS)
     

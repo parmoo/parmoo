@@ -265,7 +265,7 @@ output:
 
 And produces the following figure of the Pareto points:
 
-.. figure:: ../examples/Pareto\ Front.jpeg
+.. figure:: ../examples/quickstart.jpeg
     :alt: Scatter plot of the Pareto front after solving demo problem
     :align: center
 
@@ -283,6 +283,7 @@ Next Steps
    :doc:`More Tutorials <tutorials/basic-tutorials>`.
  * To start solving MOOPs on parallel hardware, install libEnsemble_ and
    see the :doc:`libEnsemble tutorial <tutorials/libe-tutorial>`.
+ * See some of our pre-built solvers in the parmoo_solver_farm_.
  * To interactively explore your solutions, install its extra dependencies and
    use our built-in :doc:`viz <modules/viz>` tool.
 
@@ -310,6 +311,7 @@ Please read our LICENSE_ and CONTRIBUTING_ files.
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
 .. _pandas: https://pandas.pydata.org
+.. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _plotly: https://plotly.com/python
 .. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
