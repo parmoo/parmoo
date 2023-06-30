@@ -267,6 +267,7 @@ Next steps:
  * See some of our pre-built solvers in the parmoo_solver_farm_.
  * To interactively explore your solutions, install its extra dependencies and
    use our built-in viz_ tool.
+ * For more advice, consult our FAQs_.
 
 Resources
 ---------
@@ -317,6 +318,7 @@ Our online documentation:
 .. _Actions: https://github.com/parmoo/parmoo/actions
 .. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
 .. _dash: https://dash.plotly.com
+.. _FAQs: https://parmoo.readthedocs.io/en/latest/faqs.html
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
 .. _kaleido: https://github.com/plotly/Kaleido

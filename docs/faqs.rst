@@ -90,14 +90,15 @@ Frequently asked questions:
    budget, what can I do?
 
     - A: The key issue is that **global optimization is expensive**.
-      At a fundamental level, we cannot guarantee global convergence without
-      densly sampling the design space, which is exponentially expensive
+      At a fundamental level, *no blackbox solver* can guarantee global
+      convergence without
+      densely sampling the design space, which is exponentially expensive
       when ``n`` (number of design variables) is large.
       So what can you do?
       You can switch to using **local modeling methods**, whose costs
       generally only grow linearly in the dimension.
       You will not get any global convergence guarantees, but in many
-      cases, you will still be able to solve your problem.
+      cases, you will still be able to *approximately* solve your problem.
       Check out our
       :ref:`High-dimensional multiobjective optimization tutorial <high_d_ex>`
       to learn more.
@@ -186,6 +187,10 @@ Frequently asked questions:
          If you try a novel method and it works and you're ready to publish
          it, consider sharing your novel solver on the
          parmoo_solver_farm_!
+
+
+We would like to acknowledge the following users, whose helpful discussions
+with us inspired this FAQ:
 
 
 .. _advanced_example: https://parmoo.readthedocs.io/en/latest/tutorials/basic-tutorials.html#Solving

@@ -47,3 +47,9 @@ Epsilon Constraint Methods
    :members:
 
    .. automethod:: __init__
+
+.. autoclass:: EI_RandomConstraint
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__

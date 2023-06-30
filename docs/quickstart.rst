@@ -286,6 +286,7 @@ Next Steps
  * See some of our pre-built solvers in the parmoo_solver_farm_.
  * To interactively explore your solutions, install its extra dependencies and
    use our built-in :doc:`viz <modules/viz>` tool.
+ * For more advice, consult our :doc:`FAQs <faqs>`.
 
 Resources
 ---------

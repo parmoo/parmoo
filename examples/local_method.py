@@ -1,5 +1,6 @@
 
 import numpy as np
+import pandas as pd
 from parmoo import MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import LocalGaussRBF
@@ -41,7 +42,7 @@ my_moop.addSimulation({'name': "MySim",
                        'sim_func': sim_func,
                        'search': LatinHypercube,
                        'surrogate': LocalGaussRBF,
-                       'hyperparams': {'search_budget': 100}})
+                       'hyperparams': {'search_budget': 200}})
 
 # 2 objectives (using the single_sim_out library objective to minimize a
 # single output of the simulation function)
@@ -71,9 +72,13 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
-# 100 iterations * 4 acquisitions per iteration -- this could take a few mins
-my_moop.solve(100)
-results = my_moop.getPF()
+# 200 iterations * 4 acquisition funcs + 200 point search = 1000 eval budget
+# This could take a few mins to run...
+my_moop.solve(200)
+
+# Get result as pandas dataframe
+results = my_moop.getPF(format="pandas")
+results.to_csv("local_method.csv")
 
 # Plot results -- must have extra viz dependencies installed
 from parmoo.viz import scatter

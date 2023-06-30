@@ -11,14 +11,15 @@ Doing this efficiently on a limited budget could be considered a
 To quote our FAQ_:
 
  - The key issue is that **global optimization is expensive**.
-   At a fundamental level, we cannot guarantee global convergence without
-   densly sampling the design space, which is exponentially expensive
+   At a fundamental level, *no blackbox solver* can guarantee global
+   convergence without
+   densely sampling the design space, which is exponentially expensive
    when ``n`` (number of design variables) is large.
    So what can you do?
    You can switch to using **local modeling methods**, whose costs
    generally only grow linearly in the dimension.
    You will not get any global convergence guarantees, but in many
-   cases, you will still be able to solve your problem.
+   cases, you will still be able to *approximately* solve your problem.
  - If you have a lot of design variables, then you might do better
    with a local solver, by switching your surrogate to the
    :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
@@ -42,6 +43,8 @@ To quote our FAQ_:
    surrogate, which does not use the entire database when fitting
    surrogates, and therefore is more scalable for handling large budgets.
 
+We will attempt to solve a convex 50 design variable, 2 objective problem
+on a budget of just 1000 true simulation evaluations.
 Going off a modification to the quickstart_, this will produce the
 following script. We also have a similar example in the solver_farm_.
 
@@ -57,6 +60,25 @@ produces the following figure of the Pareto points:
     :align: center
 
 |
+
+The solution is inexact, but the general shape of the Pareto front is
+already visible.
+Running for more iterations would further increase the accuracy.
+
+The following ``csv`` file was also saved, reporting the ``x`` and ``f``
+values for all solution points from ParMOO's final objective database.
+**Note that the last 2 columns contain f-values, not x-values.**
+Based on the problem definition in the code block above, a necessary but
+not sufficient condition for Pareto optimality would be
+``x26=0.5``, ``x27=0.5``,... ``x50=0.5``.
+
+.. literalinclude:: ../../examples/local_method.csv
+
+
+Clearly, ParMOO has not found the exact solutions, but many of the solutions
+are quite close in all but a few columns of ``x26``, ..., ``x50``.
+Whether these solutions would be accurate enough for a given application is
+entirely domain dependent.
 
 
 .. _FAQ: ../faqs.html
