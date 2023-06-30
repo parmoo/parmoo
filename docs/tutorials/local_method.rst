@@ -43,8 +43,8 @@ To quote our FAQ_:
    surrogate, which does not use the entire database when fitting
    surrogates, and therefore is more scalable for handling large budgets.
 
-We will attempt to solve a convex 50 design variable, 2 objective problem
-on a budget of just 1000 true simulation evaluations.
+**We will attempt to solve a convex 50 design variable, 2 objective problem
+on a budget of just 1000 true simulation evaluations.**
 Going off a modification to the quickstart_, this will produce the
 following script. We also have a similar example in the solver_farm_.
 
@@ -63,7 +63,7 @@ produces the following figure of the Pareto points:
 
 The solution is inexact, but the general shape of the Pareto front is
 already visible.
-Running for more iterations would further increase the accuracy.
+**Running for more iterations would further increase the accuracy.**
 
 The following ``csv`` file was also saved, reporting the ``x`` and ``f``
 values for all solution points from ParMOO's final objective database.
@@ -77,8 +77,23 @@ not sufficient condition for Pareto optimality would be
 
 Clearly, ParMOO has not found the exact solutions, but many of the solutions
 are quite close in all but a few columns of ``x26``, ..., ``x50``.
-Whether these solutions would be accurate enough for a given application is
-entirely domain dependent.
+**Whether these solutions would be accurate enough for a given application is
+entirely domain dependent.**
+
+
+If you use these techniques in your research, consider citing our design
+paper, where we describe a similar example available in the solver_farm_
+in Section 5:
+
+.. code-block:: bibtex
+
+    @techreport{parmoo-design,
+        author={Chang, Tyler H. and Wild, Stefan M.},
+        title={Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
+        year={2023},
+        institution={arXiv preprint},
+        doi={10.48550/arXiv.2304.06881}
+    }
 
 
 .. _FAQ: ../faqs.html

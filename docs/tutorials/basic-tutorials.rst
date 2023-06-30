@@ -16,7 +16,7 @@ taken from the :doc:`Quickstart <../quickstart>` guide.
     :language: python
 
 The above code saves all (approximate) Pareto optimal solutions in the
-``results`` variable, and prints the ``results`` variable to the standard
+``results`` dataframe, and prints the ``results`` dataframe to the standard
 output:
 
 .. literalinclude:: ../../examples/quickstart.out

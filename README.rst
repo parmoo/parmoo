@@ -243,13 +243,15 @@ results can be viewed using ``MOOP.getPF()`` method.
 
 .. code-block:: python
 
+   import pandas as pd
+
    my_moop.solve(5) # Solve with 5 iterations of ParMOO algorithm
-   results = my_moop.getPF() # Extract the results
+   results = my_moop.getPF(format="pandas") # Extract the results as pandas df
 
 After executing the above block of code, the ``results`` variable points to
-a numpy structured array, each of whose entries corresponds to a
-nondominated objective value in the ``my_moop`` object's final database.
-You can reference individual fields in the ``results`` array by using the
+a pandas_ dataframe, each of whose rows corresponds to a nondominated
+objective value in the ``my_moop`` object's final database.
+You can reference individual columns in the ``results`` array by using the
 ``name`` keys that were assigned during ``my_moop``'s construction, or
 plot the results by using the viz_ library.
 

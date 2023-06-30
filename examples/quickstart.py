@@ -1,5 +1,6 @@
 
 import numpy as np
+import pandas as pd
 from parmoo import MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
@@ -43,10 +44,10 @@ for i in range(3):
                            'hyperparams': {}})
 
 my_moop.solve(5)
-results = my_moop.getPF()
+results = my_moop.getPF(format="pandas")
 
 # Display solution
-print(results, "\n dtype=" + str(results.dtype))
+print(results)
 
 # Plot results -- must have extra viz dependencies installed
 from parmoo.viz import scatter
