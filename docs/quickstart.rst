@@ -205,12 +205,14 @@ simulation output) and one constraint.
 .. code-block:: python
 
    # First objective just returns the first simulation output
-   my_moop.addObjective({'name': "f1", 'obj_func': lambda x, s: s["MySim"][0]})
+   def f1(x, s): return s["MySim"][0]
+   my_moop.addObjective({'name': "f1", 'obj_func': f1})
    # Second objective just returns the second simulation output
-   my_moop.addObjective({'name': "f2", 'obj_func': lambda x, s: s["MySim"][1]})
+   def f2(x, s): return s["MySim"][1]
+   my_moop.addObjective({'name': "f2", 'obj_func': f2})
    # Add a single constraint, that x[0] >= 0.1
-   my_moop.addConstraint({'name': "c1",
-                          'constraint': lambda x, s: 0.1 - x["x1"]})
+   def c1(x, s): return 0.1 - x["x1"]
+   my_moop.addConstraint({'name': "c1", 'constraint': c1})
 
 Finally, we must add one or more acquisition functions using
 :meth:`MOOP.addAcquisition(*args) <moop.MOOP.addAcquisition>`.
@@ -221,11 +223,11 @@ This is useful to know if you are using a parallel solver.
 
 .. code-block:: python
 
-   from parmoo.acquisitions import UniformWeights
+   from parmoo.acquisitions import RandomConstraint
 
    # Add 3 acquisition functions
    for i in range(3):
-      my_moop.addAcquisition({'acquisition': UniformWeights,
+      my_moop.addAcquisition({'acquisition': RandomConstraint,
                               'hyperparams': {}})
 
 Finally, the MOOP is solved using the

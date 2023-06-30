@@ -593,9 +593,9 @@ method.
 
 .. code-block:: python
 
-    from parmoo.acquisitions import UniformWeights, FixedWeights
+    from parmoo.acquisitions import RandomConstraint, FixedWeights
 
-    moop.addAcquisition({'acquisition': UniformWeights})
+    moop.addAcquisition({'acquisition': RandomConstraint})
     moop.addAcquisition({'acquisition': FixedWeights,
                          'hyperparams': {'weights': np.array([0.5, 0.5])}})
 

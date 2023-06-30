@@ -1,7 +1,7 @@
 
 import numpy as np
 from parmoo import MOOP
-from parmoo.acquisitions import UniformWeights, FixedWeights
+from parmoo.acquisitions import RandomConstraint, FixedWeights
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.optimizers import LBFGSB
@@ -90,7 +90,7 @@ my_moop.addConstraint({'name': "c_x4",
                        'constraint': const_x4})
 
 # Add 2 different acquisition functions to the problem
-my_moop.addAcquisition({'acquisition': UniformWeights})
+my_moop.addAcquisition({'acquisition': RandomConstraint})
 my_moop.addAcquisition({'acquisition': FixedWeights,
                         # Fixed weight with equal weight on both objectives
                         'hyperparams': {'weights': np.array([0.5, 0.5])}})

@@ -3,7 +3,7 @@ import numpy as np
 from parmoo import MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
-from parmoo.acquisitions import UniformWeights
+from parmoo.acquisitions import RandomConstraint
 from parmoo.optimizers import LocalGPS
 
 my_moop = MOOP(LocalGPS)
@@ -27,13 +27,16 @@ my_moop.addSimulation({'name': "MySim",
                        'surrogate': GaussRBF,
                        'hyperparams': {'search_budget': 20}})
 
-my_moop.addObjective({'name': "f1", 'obj_func': lambda x, s: s["MySim"][0]})
-my_moop.addObjective({'name': "f2", 'obj_func': lambda x, s: s["MySim"][1]})
+def f1(x, s): return s["MySim"][0]
+def f2(x, s): return s["MySim"][1]
+my_moop.addObjective({'name': "f1", 'obj_func': f1})
+my_moop.addObjective({'name': "f2", 'obj_func': f2})
 
-my_moop.addConstraint({'name': "c1", 'constraint': lambda x, s: 0.1 - x["x1"]})
+def c1(x, s): return 0.1 - x["x1"]
+my_moop.addConstraint({'name': "c1", 'constraint': c1})
 
 for i in range(3):
-   my_moop.addAcquisition({'acquisition': UniformWeights,
+   my_moop.addAcquisition({'acquisition': RandomConstraint,
                            'hyperparams': {}})
 
 my_moop.solve(5)
