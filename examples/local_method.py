@@ -13,7 +13,7 @@ np.random.seed(0)
 
 # Switch to using the TR_LBFGSB solver to solve surrogate problems in
 # a trust region with multi-start LBFGSB
-my_moop = MOOP(TR_LBFGSB, hyperparams={'opt_budget': 200})
+my_moop = MOOP(TR_LBFGSB)
 
 # Massive 50 variable black-box optimization problem
 # Completely hopeless for methods that rely on global models
@@ -30,8 +30,8 @@ def sim_func(x):
     # 25 variables that don't affect tradeoff, but need to be minimized
     tail = np.linalg.norm(xx[25:] - 0.5) ** 2 / 25
     # 25 variables that do affect tradeoff
-    s1 = np.linalg.norm(xx[:25]) ** 2 / 25 + tail
-    s2 = np.linalg.norm(xx[:25] - 1) ** 2 / 25 + tail
+    s1 = np.linalg.norm(xx[:25] - 0.2) ** 2 / 25 + tail
+    s2 = np.linalg.norm(xx[:25] - 0.8) ** 2 / 25 + tail
     return np.array([s1, s2])
 
 # Using a local surrogate to dodge the curse of dimensionality
@@ -71,7 +71,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
-# 200 iterations * 4 acquisitions per iteration -- this could take a few mins
+# 100 iterations * 4 acquisitions per iteration -- this could take a few mins
 my_moop.solve(100)
 results = my_moop.getPF()
 

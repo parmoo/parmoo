@@ -38,10 +38,14 @@ Frequently asked questions:
 
     - A: The answer is problem dependent, but these are our recommendations:
 
-       - For most of our solver settings (there are several notable
-         exceptions, such as our Bayesian optimization implementations)
+       - For most of our solver settings
          ParMOO performs pure "exploitation" after the initial search,
          so you can think of ``B_s`` as the "exploration" parameter.
+         (There are several notable
+         exceptions, such as if you use the
+         :class:`EI_RandomConstraint <acquisitions.epsilon_constraint.EI_RandomConstraint>`
+         acquisition function, which we generally do not recommend due to its
+         computational expense).
          If your problem is very
          smooth or doesn't have many local minima, then you can get away with
          a small value of ``B_s``. If your problem is nonsmooth or highly
@@ -94,6 +98,9 @@ Frequently asked questions:
       generally only grow linearly in the dimension.
       You will not get any global convergence guarantees, but in many
       cases, you will still be able to solve your problem.
+      Check out our
+      :ref:`High-dimensional multiobjective optimization tutorial <high_d_ex>`
+      to learn more.
 
  - Q: How can I determine whether my problem was solved by ParMOO?
 
@@ -124,6 +131,25 @@ Frequently asked questions:
          to compute when you have a large number of objectives. Therefore, we
          do not have a hypervolume metric calculator available in ParMOO at
          this time, but we will add it in the future.
+
+ - Q: Why are the iteration costs (time spent generating a batch) so high?
+
+    - A: The majority of ParMOO's overhead comes from fitting the surrogate
+      models and solving the scalarized surrogate problems. If you followed
+      the quickstart_, then the default method for surrogate modeling
+      was to fit a Gaussian process. For numerical stability reasons,
+      we fit our Gaussian processes via a *symmetric-eigensolve*,
+      which is not cheap. Then you may have to evaluate the Gaussian
+      process thousands of times while solving the surrogate problem.
+      All of this expense adds up, especially if you are using a large
+      total budget, since the cost of fitting Gaussian processes grows
+      cubically with the number of data points.
+      One solution is to switch to using a
+      :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
+      surrogate, which does not use the entire database when fitting
+      surrogates, and therefore is more scalable for handling large budgets.
+      See our :ref:`tutorial on local methods <high_d_ex>`
+      for an example.
 
  - Q: Surrogate models, acquisition functions, search techniques, and
    optimization solvers -- how do I know which ones to pick?

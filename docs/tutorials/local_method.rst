@@ -27,6 +27,20 @@ To quote our FAQ_:
    :class:`LBFGSB <optimizers.lbfgsb.LBFGSB>` optimizer, then you
    will also need to switch to the
    :class:`TR_LBFGSB <optimizers.lbfgsb.TR_LBFGSB>` optimizer.
+ - The majority of ParMOO's overhead comes from fitting the surrogate
+   models and solving the scalarized surrogate problems. If you followed
+   the quickstart_, then the default method for surrogate modeling
+   was to fit a Gaussian process. For numerical stability reasons,
+   we fit our Gaussian processes via a *symmetric-eigensolve*,
+   which is not cheap. Then you may have to evaluate the Gaussian
+   process thousands of times while solving the surrogate problem.
+   All of this expense adds up, especially if you are using a large
+   total budget, since the cost of fitting Gaussian processes grows
+   cubically with the number of data points.
+   One solution is to switch to using a
+   :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
+   surrogate, which does not use the entire database when fitting
+   surrogates, and therefore is more scalable for handling large budgets.
 
 Going off a modification to the quickstart_, this will produce the
 following script. We also have a similar example in the solver_farm_.
