@@ -51,7 +51,7 @@ if __name__ == "__main__":
         moop.addAcquisition({'acquisition': RandomConstraint})
     
     # Solve
-    moop.solve()
+    moop.solve(sim_max=200)
     assert(moop.getObjectiveData()['x_vals'].shape[0] == 200)
     
     #print(moop.getPF())
@@ -80,5 +80,5 @@ if __name__ == "__main__":
         moop.addAcquisition({'acquisition': RandomConstraint})
     
     # Solve
-    moop.solve()
+    moop.solve(sim_max=200)
     assert(moop.getObjectiveData()['x1'].shape[0] == 200)
