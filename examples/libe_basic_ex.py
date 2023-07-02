@@ -64,7 +64,7 @@ if __name__ == "__main__":
     
     # Use sim_max = 30 to perform just 30 simulations
     my_moop.solve(sim_max=30)
-    results = my_moop.getPF()
+    results = my_moop.getPF(format="pandas")
     
     # Display the solution
-    print(results, "\n dtype=" + str(results.dtype))
+    print(results)

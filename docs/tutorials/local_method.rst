@@ -65,12 +65,11 @@ The solution is inexact, but the general shape of the Pareto front is
 already visible.
 **Running for more iterations would further increase the accuracy.**
 
-The following ``csv`` file was also saved, reporting the ``x`` and ``f``
-values for all solution points from ParMOO's final objective database.
-**Note that the last 2 columns contain f-values, not x-values.**
 Based on the problem definition in the code block above, a necessary but
 not sufficient condition for Pareto optimality would be
-``x26=0.5``, ``x27=0.5``,... ``x50=0.5``.
+``x26=0.5``, ``x27=0.5``, ... ``x50=0.5``.
+To guess at our performance, the above method prints a csv file,
+selecting just columns ``x26``, ... ``x50`` from the final dataframe:
 
 .. literalinclude:: ../../examples/local_method.csv
 
