@@ -76,9 +76,9 @@ logging.basicConfig(level=logging.INFO,
 # This could take a few mins to run...
 my_moop.solve(200)
 
-# Get result as pandas dataframe
+# Display the values of x26, ..., x50 for all solution points
 results = my_moop.getPF(format="pandas")
-results.to_csv("local_method.csv")
+results[[f"x{i}" for i in range(26, 51)]].to_csv("local_method.csv")
 
 # Plot results -- must have extra viz dependencies installed
 from parmoo.viz import scatter

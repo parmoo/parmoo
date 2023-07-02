@@ -111,12 +111,14 @@ logging.basicConfig(level=logging.INFO,
 my_moop.solve(5)
 
 # Get and print full simulation database
-sim_db = my_moop.getSimulationData()
+sim_db = my_moop.getSimulationData(format="pandas")
 print("Simulation data:")
-print(sim_db)
+for key in sim_db.keys():
+    print(f"\t{key}:")
+    print(sim_db[key])
 
 # Get and print results
-soln = my_moop.getPF()
+soln = my_moop.getPF(format="pandas")
 print("\n\n")
 print("Solution points:")
 print(soln)

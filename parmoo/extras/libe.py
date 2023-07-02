@@ -204,9 +204,9 @@ class libE_MOOP(MOOP):
 
     Finally, the following methods are used to retrieve data after the
     problem has been solved:
-     * ``libE_MOOP.getPF()``
-     * ``libE_MOOP.getSimulationData()``
-     * ``libE_MOOP.getObjectiveData()``
+     * ``libE_MOOP.getPF(format='ndarray')``
+     * ``libE_MOOP.getSimulationData(format='ndarray')``
+     * ``libE_MOOP.getObjectiveData(format='ndarray')``
 
     Other private methods from the MOOP class do not work for a libE_MOOP.
 
@@ -766,8 +766,14 @@ class libE_MOOP(MOOP):
             self.moop = persis_info[1]['moop']
         return
 
-    def getPF(self):
+    def getPF(self, format='ndarray'):
         """ Extract nondominated and efficient sets from internal databases.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
 
         Returns:
             A discrete approximation of the Pareto front and efficient set.
@@ -788,10 +794,16 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.getPF()
+        return self.moop.getPF(format=format)
 
-    def getSimulationData(self):
+    def getSimulationData(self, format='ndarray'):
         """ Extract all computed simulation outputs from the MOOP's database.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
 
         Returns:
             (dict or list) Either a dictionary or list of dictionaries
@@ -813,10 +825,16 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.getSimulationData()
+        return self.moop.getSimulationData(format=format)
 
-    def getObjectiveData(self):
+    def getObjectiveData(self, format='ndarray'):
         """ Extract all computed objective scores from this MOOP's database.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
 
         Returns:
             A database of all designs that have been fully evaluated,
@@ -837,7 +855,7 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.getObjectiveData()
+        return self.moop.getObjectiveData(format=format)
 
     def save(self, filename="parmoo"):
         """ Serialize and save the MOOP object and all of its dependencies.
