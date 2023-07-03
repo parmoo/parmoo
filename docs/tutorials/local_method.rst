@@ -43,8 +43,8 @@ To quote our FAQ_:
    surrogate, which does not use the entire database when fitting
    surrogates, and therefore is more scalable for handling large budgets.
 
-**We will attempt to solve a convex 50 design variable, 2 objective problem
-on a budget of just 1000 true simulation evaluations.**
+**We will attempt to solve a convex 50-design variable, 2-objective problem
+on a budget of just 1000 simulation evaluations.**
 Going off a modification to the quickstart_, this will produce the
 following script. We also have a similar example in the solver_farm_.
 
@@ -53,7 +53,7 @@ following script. We also have a similar example in the solver_farm_.
 
 The above code is able to *approximately* solve the problem on an
 extremely limited budget given the large dimension, and it
-produces the following figure of the Pareto points:
+produces the following figure of the nondominated points:
 
 .. figure:: ../../examples/local_method.jpeg
     :alt: Scatter plot of solution points found for a high-dimensional problem
@@ -77,7 +77,7 @@ selecting just columns ``x26``, ... ``x50`` from the final dataframe:
 Clearly, ParMOO has not found the exact solutions, but many of the solutions
 are quite close in all but a few columns of ``x26``, ..., ``x50``.
 **Whether these solutions would be accurate enough for a given application is
-entirely domain dependent.**
+entirely application dependent.**
 
 
 If you use these techniques in your research, consider citing our design
