@@ -193,7 +193,7 @@ Frequently asked questions:
 We would like to acknowledge the following users, whose helpful discussions
 with us inspired this FAQ:
  - Sarah Salem (Bundeswehr University Munich)
- - Nicholas Antoniou
+ - Nicholas Antoniou (independent researcher)
 
 
 .. _advanced_example: https://parmoo.readthedocs.io/en/latest/tutorials/basic-tutorials.html#Solving
