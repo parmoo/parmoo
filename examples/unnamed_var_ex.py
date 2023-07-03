@@ -6,6 +6,9 @@ from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
 from parmoo.optimizers import LocalGPS
 
+# Fix the random seed for reproducibility
+np.random.seed(0)
+
 my_moop = MOOP(LocalGPS)
 
 # Define a simulation to use below

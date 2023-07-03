@@ -7,6 +7,9 @@ from parmoo.acquisitions import UniformWeights
 from parmoo.optimizers import LocalGPS
 import logging
 
+# Fix the random seed for reproducibility
+np.random.seed(0)
+
 # Create a new MOOP
 my_moop = MOOP(LocalGPS)
 

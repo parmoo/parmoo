@@ -593,9 +593,9 @@ method.
 
 .. code-block:: python
 
-    from parmoo.acquisitions import UniformWeights, FixedWeights
+    from parmoo.acquisitions import RandomConstraint, FixedWeights
 
-    moop.addAcquisition({'acquisition': UniformWeights})
+    moop.addAcquisition({'acquisition': RandomConstraint})
     moop.addAcquisition({'acquisition': FixedWeights,
                          'hyperparams': {'weights': np.array([0.5, 0.5])}})
 
@@ -795,6 +795,17 @@ After solving the MOOP, you can view the results using
 .. code-block:: python
 
     soln = moop.getPF()
+
+The output format defaults to a numpy structured array.
+However, you can change it to a pandas dataframe using the optional
+``format`` argument.
+
+.. code-block:: python
+
+    soln = moop.getPF(format="pandas")
+
+Note that ``format="pandas"`` is only supported when working with
+:ref:`named outputs <naming>`.
 
 To get the full simulation and objective databases, you can also use
 :meth:`MOOP.getSimulationData() <moop.MOOP.getSimulationData>`

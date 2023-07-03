@@ -68,9 +68,9 @@ class MOOP:
 
     Finally, the following methods are used to retrieve data after the
     problem has been solved:
-     * ``MOOP.getPF()``
-     * ``MOOP.getSimulationData()``
-     * ``MOOP.getObjectiveData()``
+     * ``MOOP.getPF(format='ndarray')``
+     * ``MOOP.getSimulationData(format='ndarray')``
+     * ``MOOP.getObjectiveData(format='ndarray')``
 
     The following methods are not recommended for external usage:
      * ``MOOP.__extract__(x)``
@@ -2371,6 +2371,12 @@ class MOOP:
     def getPF(self, format='ndarray'):
         """ Extract nondominated and efficient sets from internal databases.
 
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
+
         Returns:
             A discrete approximation of the Pareto front and efficient set.
 
@@ -2429,6 +2435,9 @@ class MOOP:
             if self.p > 0:
                 result['c_vals'] = pf['c_vals'].copy()
         if format == 'pandas':
+            if not self.use_names:
+                raise ValueError("format='pandas' is invalid for unnamed " +
+                                 "inputs")
             return pd.DataFrame(result)
         elif format == 'ndarray':
             return result
@@ -2437,6 +2446,12 @@ class MOOP:
 
     def getSimulationData(self, format='ndarray'):
         """ Extract all computed simulation outputs from the MOOP's database.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
 
         Returns:
             (dict or list) Either a dictionary or list of dictionaries
@@ -2485,7 +2500,22 @@ class MOOP:
                     else:
                         result[sname[0]]['out'] = self.sim_db[i]['s_vals']
             if format == 'pandas':
-                return pd.DataFrame(result)
+                # For simulation data, converting to pandas is a little more
+                # complicated...
+                result_pd = {}
+                for i, snamei in enumerate(result.keys()):
+                    rtempi = {}
+                    for (name, t) in self.des_names:
+                        rtempi[name] = result[snamei][name]
+                    # Need to break apart the output column manually
+                    if self.m[i] > 1:
+                        for i in range(self.m[i]):
+                            rtempi[f'out_{i}'] = result[snamei]['out'][:, i]
+                    else:
+                        rtempi['out'] = result[snamei]['out'][:, 0]
+                    # Create dictionary of dataframes, indexed by sim names
+                    result_pd[snamei] = pd.DataFrame(rtempi)
+                return result_pd
             elif format == 'ndarray':
                 return result
             else:
@@ -2506,7 +2536,8 @@ class MOOP:
                     result.append({'x_vals': np.zeros(0),
                                    's_vals': np.zeros(0)})
             if format == 'pandas':
-                return pd.DataFrame(result)
+                raise ValueError("format='pandas' is invalid for unnamed " +
+                                 "inputs")
             elif format == 'ndarray':
                 return result
             else:
@@ -2515,6 +2546,12 @@ class MOOP:
 
     def getObjectiveData(self, format='ndarray'):
         """ Extract all computed objective scores from this MOOP's database.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
 
         Returns:
             A database of all designs that have been fully evaluated,
@@ -2567,6 +2604,9 @@ class MOOP:
                 if self.p > 0:
                     result['c_vals'] = self.data['c_vals'].copy()
         if format == 'pandas':
+            if not self.use_names:
+                raise ValueError("format='pandas' is invalid for unnamed " +
+                                 "inputs")
             return pd.DataFrame(result)
         elif format == 'ndarray':
             return result
