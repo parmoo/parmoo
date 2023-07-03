@@ -16,14 +16,14 @@ np.random.seed(0)
 # a trust region with multi-start LBFGSB
 my_moop = MOOP(TR_LBFGSB)
 
-# Massive 50 variable black-box optimization problem
+# Massive 50-variable black-box optimization problem
 # Completely hopeless for methods that rely on global models
 for i in range(1, 51):
     my_moop.addDesign({'name': f"x{i}",
                        'des_type': "continuous",
                        'lb': 0.0, 'ub': 1.0})
 
-# A simple convex simulation with 2 outputs
+# A simple convex simulation output with 2 outputs
 def sim_func(x):
     xx = np.zeros(50)
     for i in range(50):
