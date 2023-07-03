@@ -804,6 +804,9 @@ However, you can change it to a pandas dataframe using the optional
 
     soln = moop.getPF(format="pandas")
 
+Note that ``format="pandas"`` is only supported when working with
+:ref:`named outputs <naming>`.
+
 To get the full simulation and objective databases, you can also use
 :meth:`MOOP.getSimulationData() <moop.MOOP.getSimulationData>`
 and
