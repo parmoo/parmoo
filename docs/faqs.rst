@@ -10,7 +10,7 @@ Frequently asked questions:
       It has been our experience that a single solver cannot obtain the
       best performance on every problem.
       Through ParMOO, we are giving you a modeling language and library
-      of useful techniques for building the perfect solver for you problem
+      of useful techniques for building a great solver for your problem
       and deploying it in parallel environments.
 
  - Q: There are too many options, where do I start?
@@ -19,7 +19,7 @@ Frequently asked questions:
       sure where to start, that's OK.
       Start from one of our tutorials_ and modify it to match your problem.
       See how that works for your problem.
-      Then slowly start experimenting with other options, refer to this
+      Then start experimenting with other options, referring to this
       FAQ for some general guidance.
       Alternatively, check out some of our existing pre-built solvers in
       the parmoo_solver_farm_ and see if you can modify one to fit your
@@ -54,18 +54,18 @@ Frequently asked questions:
          number of design variables). All of our existing surrogate models
          will raise an error if ``B_s < n+1``.
          If you are still unsure, a good starting place that works well on
-         a wide variety of problems is ``B_s = min(2000, 0.5*total_budget)``,
+         a variety of challenging problems is ``B_s = min(2000, 0.5*total_budget)``,
          where ``total_budget`` is the total budget that you intend to use
          for this problem.
        - The value of ``q`` determines how many simulations ParMOO will
          evaluate per batch. If you want to achieve NP-way parallelism (using
          the ``libE_MOOP`` class), then you should use ``q=NP``. If you are
-         running serially (using the base ``MOOP`` class) then you should use
+         running serially (using the base ``MOOP`` class), then you should use
          a small number of acquisition functions in order to get more
          iterations.
          In many situations, just 1 acquisition function will work best when
          running serially. In order to amortize the cost of re-fitting the
-         surrogate model, we typically we use ``q=2``, ``3``, or ``4`` when
+         surrogate model, we typically use ``q=2``, ``3``, or ``4`` when
          running serially.
        - The value of ``k`` should be as large as you can afford, given your
          simulation costs. Note that the ``GaussRBF`` surrogate becomes
@@ -81,7 +81,7 @@ Frequently asked questions:
       probably get away with a total budget in the **hundreds**.
       If your problem is large (``n > 8`` design variables **or**
       ``o > 3`` objectives) you will probably need a total budget in the
-      **thousands** or even **ten thousands**.
+      **thousands** or even **tens of thousands**.
       In general, as you increase the number of design variables or objectives
       the problem expense increases **exponentially** if you want to maintain
       the same accuracy. This is part of the *curse of dimensionality*.
@@ -97,7 +97,7 @@ Frequently asked questions:
       So what can you do?
       You can switch to using **local modeling methods**, whose costs
       generally only grow linearly in the dimension.
-      You will not get any global convergence guarantees, but in many
+      You will not get any convergence guarantees to global solutions, but in many
       cases, you will still be able to *approximately* solve your problem.
       Check out our
       :ref:`High-dimensional multiobjective optimization tutorial <high_d_ex>`
@@ -107,27 +107,28 @@ Frequently asked questions:
 
     - Short Answer: you can't. Here's why -- in most situations (unless
       your objectives are not truly conflicting) there are infinitely
-      many solutions to a multiobjective optimization problem. We cannot
-      find all of them on a finite budget. What we can do is give you as
+      many solutions to a multiobjective optimization problem
+      with continuous design variables. We cannot find all such
+      solutions with a finite budget. What we can do is give you as
       many approximate solutions as possible for the budget allocated, so
       that you can make informed decisions about the inherent tradeoffs,
       and possibly run a single-objective solver to refine your favorite
       solution in the future.
-    - Long Answers:
+    - Longer Answers:
 
        - For practical purposes: you could solve the problem with ParMOO on
          as large of a budget as you can afford with checkpointing turned
          on. Then plot the results using one of the methods from our
          :mod:`viz <viz>`
-         library and see how you are doing. If you are un-satisfied with the
+         library and see how you are doing. If you are unsatisfied with the
          results, re-load from the last checkpoint and solve with a few added
          iterations. Then plot your results again and see if the performance
          has improved.
        - For small problems: you could solve the problem with ParMOO on
          as large of a budget as you can afford. Then plot the convergence
          over time, according to one of the common multiobjective performance
-         indicators, such as hypervolume. If you are seeing diminishing
-         improvements in late iterations, then it is likely that you have
+         indicators, such as hypervolume. If you are seeing diminishing to no
+         improvements in late iterations, then you may have
          solved the problem. Note that hypervolume is exponentially expensive
          to compute when you have a large number of objectives. Therefore, we
          do not have a hypervolume metric calculator available in ParMOO at
@@ -140,10 +141,10 @@ Frequently asked questions:
       the quickstart_, then the default method for surrogate modeling
       was to fit a Gaussian process. For numerical stability reasons,
       we fit our Gaussian processes via a *symmetric-eigensolve*,
-      which is not cheap. Then you may have to evaluate the Gaussian
+      which is not inexpensive. Then you may have to evaluate the Gaussian
       process thousands of times while solving the surrogate problem.
       All of this expense adds up, especially if you are using a large
-      total budget, since the cost of fitting Gaussian processes grows
+      total budget, since the cost of fitting such Gaussian processes grows
       cubically with the number of data points.
       One solution is to switch to using a
       :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
@@ -160,7 +161,7 @@ Frequently asked questions:
       search and
       :class:`RandomConstraint <acquisitions.epsilon_constraint.RandomConstraint>`
       acquisition functions, unless you have a good reason for changing.
-      These options work best for most of our test problems,
+      These options work best for many of our test problems,
       and they are demonstrated in our tutorials.
       For the surrogate model and optimization solver, start out with
       :class:`LocalGPS <optimizers.gps_search.LocalGPS>` optimizer
