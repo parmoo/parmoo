@@ -6,6 +6,88 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
+Release 0.3.0
+-------------
+
+:Date: Jul 5, 2023
+
+Significant structural changes for long-term support of future solvers,
+bug-fixes, and significant improvements to documentation.
+
+Major Changes:
+
+ - ``surrogates.GaussRBF`` and ``surrogates.LocalGaussRBF`` now
+   calculate model-form uncertainties
+ - structural changes to ``MOOP`` class to support propagation of
+   uncertainty information
+ - added ``EI_RandomConstraint`` acquisition, which can be used to
+   implement Bayesian optimization -- note that for large budgets,
+   this is not currently recommended due to computational expense
+   of numerical integration
+ - updated ``LocalGPS`` to use trust regions, when provided, and
+   perform multiple restarts
+ - ``SurrogateOptimizer`` class now has access to more information about
+   the objective, including raw simulation outputs, in order to support
+   more diverse structure-exploiting solvers
+ - Added additional stopping criteria to both ``MOOP.solve()`` and
+   ``libE_MOOP.solve()`` -- all stopping criteria are now optional
+   (although at least one must be specified) but they are ordered such
+   that calling ``MOOP.solve(k)``, where ``k`` is a positional input,
+   will pass to the ``iter_max`` criteria and produce the same behavior
+   as before -- closes #18
+
+API Changes:
+
+ - In most cases, none. However, it is possible that if users were previously
+   passing arguments to the ``MOOP.solve()`` method explicitly, then the
+   name of the first positional argument has changed:
+   ``budget`` -> ``max_iters``
+ - For users implementing their own ``searches``, ``surrogates``,
+   ``optimizers``, or ``acquisitions``, several classes in the ``structs``
+   module have been updated to support the present restructuring of
+   the ``MOOP`` class
+
+Docs:
+
+ - Updated Quickstart guide and README to demonstrate recommended inputs
+   and settings for ParMOO -- this includes no more ``lambda`` functions,
+   which closes #50
+ - Added a FAQ page with additional usage details and responses to frequent
+   questions -- the answers in which close #61
+ - Added a new tutorial on how to perform high-dimensional multiobjective
+   optimization on a limited budget with ParMOO
+ - Changed examples and documentation to use and discuss pandas dataframes,
+   which generally produce more legible outputs
+ - Updated ``libE_MOOP`` example to demonstrate how to retrieve data in a
+   way that is threadsafe for both Python MP and MPI usage
+
+Requirements:
+
+ - We now require scipy v1.10 or newer, due to usage of qmc integration tools
+ - At the time of this release, libEnsemble is using a deprecated version of
+   Pydantic -- for this release only we have fixed the requirement on
+   libEnsemble to v0.9.2, but we will relax this requirement in the future
+   once they have patched the issue
+
+Bug-fixes:
+
+ - Fixed an issue where in rare cases, problems with too many categorical
+   variables could produce unexpected batch sizes
+ - Errors in definition of test problems: DTLZ5, 6, and 7 (new implementations
+   have been confirmed against ``pymoo``)
+ - Fixed an issue which occasionally caused the ``libE_MOOP`` class to error
+   out during post-run cleanup when used with MPI
+ - Patched an issue with ``format="pandas"`` option for
+   ``MOOP.getSimulationData()`` class and added a similar option to
+   all ``libE_MOOP`` "getter" functions
+
+Minor changes:
+
+ - Fixed typos in docs/doc-strings
+ - Updated styles to comply with new ``flake8`` recommendations
+ - New unit tests added
+ - Added warnings when ParMOO is run with bad budget settings
+
 Release 0.2.2
 -------------
 
