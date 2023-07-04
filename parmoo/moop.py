@@ -8,10 +8,11 @@ simulations, specified using dictionaries.
 """
 
 import numpy as np
-import json
+import pandas as pd
 from parmoo import structs
 import inspect
-import pandas as pd
+import json
+import warnings
 
 
 class MOOP:
@@ -55,7 +56,7 @@ class MOOP:
 
     After defining the MOOP and setting up checkpointing and logging info,
     use the following method to solve the MOOP (serially):
-     * ``MOOP.solve(budget)``
+     * ``MOOP.solve(iter_max=None, sim_max=None)``
 
     The following methods are used for solving the MOOP and managing the
     internal simulation/objective databases:
@@ -2278,7 +2279,7 @@ class MOOP:
             self.save(filename=self.checkpointfile)
         return
 
-    def solve(self, budget):
+    def solve(self, iter_max=None, sim_max=None):
         """ Solve a MOOP using ParMOO.
 
         If desired, be sure to turn on checkpointing before starting the
@@ -2296,7 +2297,7 @@ class MOOP:
         ``
 
         Args:
-            budget (int): The max budget for ParMOO's internal iteration
+            iter_max (int): The max limit for ParMOO's internal iteration
                 counter. ParMOO keeps track of how many iterations it has
                 completed internally. This value k specifies the stopping
                 criteria for ParMOO.
@@ -2305,12 +2306,46 @@ class MOOP:
 
         import logging
 
-        # Check that the budget is a legal integer
-        if isinstance(budget, int):
-            if budget < 0:
-                raise ValueError("budget must be nonnegative")
-        else:
-            raise TypeError("budget must be an int type")
+        # Check that at least one budget variable was given
+        if iter_max is None and sim_max is None:
+            raise ValueError("At least one of the following arguments " +
+                             "must be set: 'iter_max' or 'sim_max'")
+        # Check that the iter_max is a legal integer
+        if isinstance(iter_max, int):
+            if iter_max < 0:
+                raise ValueError("When present, iter_max must be nonnegative")
+        elif iter_max is not None:
+            raise TypeError("When present, iter_max must be an int type")
+        # Check that the sim_max is a legal integer
+        if isinstance(sim_max, int):
+            if sim_max < 0:
+                raise ValueError("When present, sim_max must be nonnegative")
+        elif sim_max is not None:
+            raise TypeError("When present, sim_max must be an int type")
+        # Set iter_max large enough if None
+        if iter_max is None:
+            if self.s == 0:
+                raise ValueError("If 0 simulations are given, then iter_max" +
+                                 "must be provided")
+            iter_max = sim_max
+        # Count total sims to exhaust iter_max if sim_max is None
+        total_search_budget = 0
+        for search in self.searches:
+            total_search_budget += search.budget
+        if sim_max is None:
+            sim_max = total_search_budget
+            sim_max += iter_max * len(self.acquisitions) * self.s + 1
+        # Warning for the uninitiated
+        if sim_max <= total_search_budget:
+            warnings.warn("You are running ParMOO with a total search budget" +
+                          f" of {total_search_budget} and a sim_max of " +
+                          f"just {sim_max}... This will result in pure " +
+                          "design space exploration with no exploitation/" +
+                          "optimization. Consider increasing the value of " +
+                          "sim_max, decreasing your search_budget, " +
+                          "or using the iter_max stopping criteria, unless " +
+                          "you are really only interested in design space " +
+                          "exploration without exploitation/optimization.")
 
         # Print logging info summary of problem setup
         logging.info(" Beginning new run of ParMOO...")
@@ -2332,7 +2367,8 @@ class MOOP:
         logging.info(f"   {len(self.acquisitions)} acquisition functions")
         logging.info("   estimated simulation evaluations per iteration:" +
                      f" {len(self.acquisitions) * self.s}")
-        logging.info(f"   iteration limit: {budget}")
+        logging.info(f"   iteration limit: {iter_max}")
+        logging.info(f"   total simulation budget: {sim_max}")
         logging.info(" Done.")
 
         # Perform iterations until budget is exceeded
@@ -2340,7 +2376,11 @@ class MOOP:
 
         # Reset the iteration start
         start = self.iteration
-        for k in range(start, budget + 1):
+        total_sims = 0
+        for k in range(start, iter_max + 1):
+            # Check for the sim_max stop condition
+            if total_sims >= sim_max:
+                break
             # Track iteration counter
             self.iteration = k
             # Generate a batch by running one iteration
@@ -2357,6 +2397,10 @@ class MOOP:
                                  f" for simulation: {i}...")
                     sx = self.evaluateSimulation(x, i)
                     logging.info(f"         result: {sx}")
+                    # Count total simulations taken
+                    total_sims += 1
+                    if total_sims >= sim_max:
+                        logging.info(f"   sim_max of {sim_max} reached")
                 logging.info(f"     finished evaluating {len(batch)}" +
                              " simulations.")
             logging.info("     updating models and internal databases...")

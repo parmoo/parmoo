@@ -57,8 +57,8 @@ moop.addConstraint({'name': "SOS Sim Bounds",
 for i in range(10):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
-# Solve the problem with 5 iterations
-moop.solve(5)
+# Solve the problem with the equivalent of 5 iterations
+moop.solve(sim_max=150)
 
 # Check that 150 simulations were evaluated
 assert(moop.getObjectiveData()['x_vals'].shape[0] == 150)
