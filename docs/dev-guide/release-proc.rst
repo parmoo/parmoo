@@ -25,6 +25,9 @@ Before release
   check created tarball contains correct files and directories for PyPI
   package.
 
+- Check that ``parmoo`` requirements (in ``REQUIREMENTS.txt``)
+  are compatible with ``readthedocs.io`` (in ``.readthedocs.yml``)
+
 - Tests are run with source to be released (this may iterate):
 
   - On-line CI (GitHub Actions) tests must pass.
@@ -48,7 +51,8 @@ An administrator will take the following steps.
 
   - A GitHub release will be taken from the main
 
-  - A tarball (source distribution) will be uploaded to PyPI
+  - A tarball (source distribution) will be uploaded to PyPI (should be done
+    via ``twine`` by an admin using PyPI-API-token authentication)
 
 - If the merge was made from a release branch (instead of develop), merge this
   branch into develop.
@@ -62,4 +66,5 @@ After release
 - Ensure all relevant GitHub issues are closed.
 
 - Check that the conda-forge package has tracked latest release
-  and update dependency list if needed.
+  and update dependency list if needed -- an admin will need to approve the
+  automatically generated PR on https://github.com/conda-forge/parmoo-feedstock
