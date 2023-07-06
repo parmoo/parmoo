@@ -14,7 +14,7 @@ Before release
 - Release notes for this version are added to the ``CHANGELOG.rst`` file.
 
 - Version number is updated wherever it appears and ``+dev`` suffix is removed
-  (in ``parmoo/version.py`` and ``README.rst``).
+  (in ``parmoo/version.py``, ``README.rst``, and ``docs/refs.rst``).
 
 - Check ``README.rst`` *Citing ParMOO* and ``docs/refs.rst`` for correctness.
 
@@ -60,5 +60,6 @@ After release
 -------------
 
 - Ensure all relevant GitHub issues are closed.
+
 - Check that the conda-forge package has tracked latest release
   and update dependency list if needed.

@@ -39,6 +39,7 @@ Table of Contents
    about
    how-to-write
    extras
+   faqs
    refs
 
 .. toctree::
@@ -53,6 +54,7 @@ Table of Contents
 
    tutorials/basic-tutorials
    tutorials/libe-tutorial
+   tutorials/local_method
 
 .. toctree::
    :maxdepth: 2

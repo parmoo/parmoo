@@ -6,6 +6,11 @@ from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
 from parmoo.optimizers import LocalGPS
 
+# When running with MPI, we need to keep track of which thread is the manager
+# using libensemble.tools.parse_args()
+from libensemble.tools import parse_args
+_, is_manager, _, _ = parse_args()
+
 # All functions are defined below.
 
 def sim_func(x):
@@ -26,6 +31,9 @@ def const_c1(x, s):
 # When using libEnsemble with Python MP, the "solve" command must be enclosed
 # in an "if __name__ == '__main__':" block, as shown below
 if __name__ == "__main__":
+    # Fix the random seed for reproducibility
+    np.random.seed(0)
+
     # Create a libE_MOOP
     my_moop = libE_MOOP(LocalGPS)
     
@@ -61,7 +69,8 @@ if __name__ == "__main__":
     
     # Use sim_max = 30 to perform just 30 simulations
     my_moop.solve(sim_max=30)
-    results = my_moop.getPF()
     
-    # Display the solution
-    print(results, "\n dtype=" + str(results.dtype))
+    # Display the solution -- this "if" clause is needed when running with MPI
+    if is_manager:
+        results = my_moop.getPF(format="pandas")
+        print(results)

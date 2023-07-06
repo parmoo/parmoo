@@ -1,10 +1,13 @@
 
 import numpy as np
 from parmoo import MOOP
-from parmoo.acquisitions import UniformWeights, FixedWeights
+from parmoo.acquisitions import RandomConstraint, FixedWeights
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.optimizers import LBFGSB
+
+# Fix the random seed for reproducibility
+np.random.seed(0)
 
 # Create a new MOOP with a derivative-based solver
 my_moop = MOOP(LBFGSB, hyperparams={})
@@ -90,7 +93,7 @@ my_moop.addConstraint({'name': "c_x4",
                        'constraint': const_x4})
 
 # Add 2 different acquisition functions to the problem
-my_moop.addAcquisition({'acquisition': UniformWeights})
+my_moop.addAcquisition({'acquisition': RandomConstraint})
 my_moop.addAcquisition({'acquisition': FixedWeights,
                         # Fixed weight with equal weight on both objectives
                         'hyperparams': {'weights': np.array([0.5, 0.5])}})
@@ -108,12 +111,14 @@ logging.basicConfig(level=logging.INFO,
 my_moop.solve(5)
 
 # Get and print full simulation database
-sim_db = my_moop.getSimulationData()
+sim_db = my_moop.getSimulationData(format="pandas")
 print("Simulation data:")
-print(sim_db)
+for key in sim_db.keys():
+    print(f"\t{key}:")
+    print(sim_db[key])
 
 # Get and print results
-soln = my_moop.getPF()
+soln = my_moop.getPF(format="pandas")
 print("\n\n")
 print("Solution points:")
 print(soln)

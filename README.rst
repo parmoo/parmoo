@@ -214,12 +214,14 @@ and ``MOOP.addConstraint(*args)``. In this example, there are 2 objectives
 .. code-block:: python
 
    # First objective just returns the first simulation output
-   my_moop.addObjective({'name': "f1", 'obj_func': lambda x, s: s["MySim"][0]})
+   def f1(x, s): return s["MySim"][0]
+   my_moop.addObjective({'name': "f1", 'obj_func': f1})
    # Second objective just returns the second simulation output
-   my_moop.addObjective({'name': "f2", 'obj_func': lambda x, s: s["MySim"][1]})
+   def f2(x, s): return s["MySim"][1]
+   my_moop.addObjective({'name': "f2", 'obj_func': f2})
    # Add a single constraint, that x[0] >= 0.1
-   my_moop.addConstraint({'name': "c1",
-                          'constraint': lambda x, s: 0.1 - x["x1"]})
+   def c1(x, s): return 0.1 - x["x1"]
+   my_moop.addConstraint({'name': "c1", 'constraint': c1})
 
 Finally, we must add one or more acquisition functions using
 ``MOOP.addAcquisition(*args)``. These are used to scalarize the surrogate
@@ -229,11 +231,11 @@ are using a parallel solver.
 
 .. code-block:: python
 
-   from parmoo.acquisitions import UniformWeights
+   from parmoo.acquisitions import RandomConstraint
 
    # Add 3 acquisition functions
    for i in range(3):
-      my_moop.addAcquisition({'acquisition': UniformWeights,
+      my_moop.addAcquisition({'acquisition': RandomConstraint,
                               'hyperparams': {}})
 
 Finally, the MOOP is solved using the ``MOOP.solve(budget)`` method, and the
@@ -241,13 +243,15 @@ results can be viewed using ``MOOP.getPF()`` method.
 
 .. code-block:: python
 
+   import pandas as pd
+
    my_moop.solve(5) # Solve with 5 iterations of ParMOO algorithm
-   results = my_moop.getPF() # Extract the results
+   results = my_moop.getPF(format="pandas") # Extract the results as pandas df
 
 After executing the above block of code, the ``results`` variable points to
-a numpy structured array, each of whose entries corresponds to a
-nondominated objective value in the ``my_moop`` object's final database.
-You can reference individual fields in the ``results`` array by using the
+a pandas_ dataframe, each of whose rows corresponds to a nondominated
+objective value in the ``my_moop`` object's final database.
+You can reference individual columns in the ``results`` array by using the
 ``name`` keys that were assigned during ``my_moop``'s construction, or
 plot the results by using the viz_ library.
 
@@ -262,8 +266,10 @@ Next steps:
  * Explore the advanced examples (including a ``libEnsemble`` example)
    in the ``examples`` directory.
  * Install libEnsemble_ and get started solving MOOPs in parallel.
+ * See some of our pre-built solvers in the parmoo_solver_farm_.
  * To interactively explore your solutions, install its extra dependencies and
    use our built-in viz_ tool.
+ * For more advice, consult our FAQs_.
 
 Resources
 ---------
@@ -306,7 +312,7 @@ Our online documentation:
         title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.2.2},
+        number      = {Version 0.3.0},
         year        = {2023},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
@@ -314,6 +320,7 @@ Our online documentation:
 .. _Actions: https://github.com/parmoo/parmoo/actions
 .. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
 .. _dash: https://dash.plotly.com
+.. _FAQs: https://parmoo.readthedocs.io/en/latest/faqs.html
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
 .. _kaleido: https://github.com/plotly/Kaleido
@@ -321,6 +328,7 @@ Our online documentation:
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
 .. _pandas: https://pandas.pydata.org
+.. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _plotly: https://plotly.com/python
 .. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x

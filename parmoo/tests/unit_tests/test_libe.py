@@ -46,14 +46,14 @@ def test_libE_MOOP():
 
     """
 
+    import os
+    import pytest
     from parmoo import MOOP
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import RandomConstraint
     from parmoo.optimizers import LocalGPS
     import numpy as np
-    import os
-    import pytest
 
     try:
         from parmoo.extras.libe import libE_MOOP
@@ -191,9 +191,17 @@ def test_libE_MOOP_bad_solve():
     sys.argv.append("--nworkers")
     sys.argv.append("1")
 
-    # Solve with bad CL args
+    # Solve with unset budget vars
     with pytest.raises(ValueError):
         moop.solve()
+
+    # Solve with bad type
+    with pytest.raises(TypeError):
+        moop.solve(sim_max="100")
+
+    # Solve with bad CL args
+    with pytest.raises(ValueError):
+        moop.solve(sim_max=101)
 
 
 if __name__ == "__main__":

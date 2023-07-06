@@ -14,6 +14,7 @@ gen func.
 
 import numpy as np
 from parmoo import MOOP
+import warnings
 
 
 def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
@@ -190,7 +191,8 @@ class libE_MOOP(MOOP):
     After defining the MOOP and setting up checkpointing and logging,
     use the following method to solve the MOOP (using libEnsemble
     to distribute simulation evaluations):
-     * ``libE_MOOP.solve(sim_max=200, wt_max=3600, profile=False)``
+     * ``libE_MOOP.solve(iter_max=None, sim_max=None, wt_max=864000,
+                         profile=False)``
 
     The following methods are used for managing ParMOO's internal
     simulation/objective databases. Note that these databases are
@@ -204,9 +206,9 @@ class libE_MOOP(MOOP):
 
     Finally, the following methods are used to retrieve data after the
     problem has been solved:
-     * ``libE_MOOP.getPF()``
-     * ``libE_MOOP.getSimulationData()``
-     * ``libE_MOOP.getObjectiveData()``
+     * ``libE_MOOP.getPF(format='ndarray')``
+     * ``libE_MOOP.getSimulationData(format='ndarray')``
+     * ``libE_MOOP.getObjectiveData(format='ndarray')``
 
     Other private methods from the MOOP class do not work for a libE_MOOP.
 
@@ -669,7 +671,7 @@ class libE_MOOP(MOOP):
                     self.moop.sim_funcs[j](H['x'][i])
         return H_o, persis_info
 
-    def solve(self, sim_max=200, wt_max=3600, profile=False):
+    def solve(self, iter_max=None, sim_max=None, wt_max=864000, profile=False):
         """ Solve a MOOP using ParMOO + libEnsemble.
 
         If desired, be sure to turn on checkpointing before starting the
@@ -681,11 +683,14 @@ class libE_MOOP(MOOP):
         simulations over available resources.
 
         Args:
+            iter_max (int): The max number of ParMOO iterations to be
+                performed by libEnsemble (default is unlimited).
+
             sim_max (int): The max number of simulation to be performed by
-                libEnsemble (default is 200).
+                libEnsemble (default is unlimited).
 
             wt_max (int): The max number of seconds that the simulation may
-                run for (the default is 3600 secs, i.e., 1 hr).
+                run for (the default is 864000 secs, i.e., 10 days).
 
             profile (bool): Specifies whether to run libE with the profiler.
 
@@ -696,6 +701,51 @@ class libE_MOOP(MOOP):
         from libensemble.alloc_funcs.start_only_persistent \
             import only_persistent_gens as alloc_f
         from libensemble.tools import parse_args
+
+        # Check that at least one budget variable was given
+        if iter_max is None and sim_max is None:
+            raise ValueError("At least one of the following arguments " +
+                             "must be set: 'iter_max' or 'sim_max'")
+        # Check that the iter_max is a legal integer
+        if isinstance(iter_max, int):
+            if iter_max < 0:
+                raise ValueError("When present, iter_max must be nonnegative")
+        elif iter_max is not None:
+            raise TypeError("When present, iter_max must be an int type")
+        # Check that the sim_max is a legal integer
+        if isinstance(sim_max, int):
+            if sim_max < 0:
+                raise ValueError("When present, sim_max must be nonnegative")
+        elif sim_max is not None:
+            raise TypeError("When present, sim_max must be an int type")
+        # Set iter_max large enough if None
+        if iter_max is None:
+            if self.moop.s == 0:
+                raise ValueError("If 0 simulations are given, then iter_max" +
+                                 "must be provided")
+            iter_max = sim_max
+        # Count the total search budget
+        total_search_budget = 0
+        for search in self.moop.searches:
+            total_search_budget += search.budget
+        total_sims_per_iter = len(self.moop.acquisitions) * self.moop.s
+        # Count the total sims to exhaust iter_max if sim_max is None
+        if sim_max is None:
+            sim_max = total_search_budget + iter_max * total_sims_per_iter
+        # libE only uses sim_max, so set it appropriately
+        sim_max = min(sim_max,
+                      total_search_budget + iter_max * total_sims_per_iter)
+        # Warning for the uninitiated
+        if sim_max <= total_search_budget:
+            warnings.warn("You are running ParMOO with a total search budget" +
+                          f" of {total_search_budget} and a sim_max of " +
+                          f"just {sim_max}... This will result in pure " +
+                          "design space exploration with no exploitation/" +
+                          "optimization. Consider increasing the value of " +
+                          "sim_max, decreasing your search_budget, " +
+                          "or using the iter_max stopping criteria, unless " +
+                          "you are really only interested in design space " +
+                          "exploration without exploitation/optimization.")
 
         # Create libEnsemble dictionaries
         nworkers, is_manager, libE_specs, _ = parse_args()
@@ -761,11 +811,19 @@ class libE_MOOP(MOOP):
         H, persis_info, flag = libE(sim_specs, gen_specs, exit_criteria,
                                     persis_info, alloc_specs, libE_specs)
 
-        self.moop = persis_info[1]['moop']
+        # When running with MPI, only the manager returns results
+        if is_manager:
+            self.moop = persis_info[1]['moop']
         return
 
-    def getPF(self):
+    def getPF(self, format='ndarray'):
         """ Extract nondominated and efficient sets from internal databases.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
 
         Returns:
             A discrete approximation of the Pareto front and efficient set.
@@ -786,10 +844,16 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.getPF()
+        return self.moop.getPF(format=format)
 
-    def getSimulationData(self):
+    def getSimulationData(self, format='ndarray'):
         """ Extract all computed simulation outputs from the MOOP's database.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
 
         Returns:
             (dict or list) Either a dictionary or list of dictionaries
@@ -811,10 +875,16 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.getSimulationData()
+        return self.moop.getSimulationData(format=format)
 
-    def getObjectiveData(self):
+    def getObjectiveData(self, format='ndarray'):
         """ Extract all computed objective scores from this MOOP's database.
+
+        Args:
+            format (str, optional): Either 'ndarray' (default) or 'pandas',
+                in order to produce output as a numpy structured array or
+                pandas dataframe. Note: format='pandas' is only valid for
+                named inputs.
 
         Returns:
             A database of all designs that have been fully evaluated,
@@ -835,7 +905,7 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.getObjectiveData()
+        return self.moop.getObjectiveData(format=format)
 
     def save(self, filename="parmoo"):
         """ Serialize and save the MOOP object and all of its dependencies.

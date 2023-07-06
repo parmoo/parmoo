@@ -14,12 +14,16 @@ The classes include:
 """
 
 from abc import ABC, abstractmethod
+import inspect
+import numpy as np
+from scipy.stats import tstd
 
 
 class AcquisitionFunction(ABC):
     """ ABC describing acquisition functions.
 
-    This class contains two methods:
+    This class contains the following methods:
+     * ``useSD()``
      * ``setTarget(data, constraint_func, history)``
      * ``scalarize(f_vals)``
      * ``scalarizeGrad(f_vals, g_vals)``
@@ -50,7 +54,7 @@ class AcquisitionFunction(ABC):
         """
 
     @abstractmethod
-    def setTarget(self, data, constraint_func, history):
+    def setTarget(self, data, penalty_func, history):
         """ Set a new target value or region for the AcquisitionFunction.
 
         Args:
@@ -67,10 +71,8 @@ class AcquisitionFunction(ABC):
                    Jacobian of the objective function at each
                    point in 'x_vals'.
 
-            constraint_func (function): A function whose components evaluate
-                to zero if an only if no constraint is violated. If a
-                constraint is violated, then constraint_func returns the
-                magnitude of the violation.
+            penalty_func (function): A function of one (x) or two (x, sx)
+                inputs that evaluates all (penalized) objective scores.
 
             history (dict): A persistent dictionary that could be used by
                 the implementation of the AcquisitionFunction to pass data
@@ -82,13 +84,35 @@ class AcquisitionFunction(ABC):
 
         """
 
+    def useSD(self):
+        """ Query whether this method uses uncertainties.
+
+        When False, allows users to shortcut expensive uncertainty
+        computations.
+
+        Default implementation returns True, requiring full uncertainty
+        computation for applicable models.
+
+        """
+
+        return True
+
     @abstractmethod
-    def scalarize(self, f_vals):
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
         """ Scalarize a vector-valued function using the AcquisitionFunction.
 
         Args:
             f_vals (np.ndarray): A 1D array specifying a vector of function
                 values to be scalarized.
+
+            x_vals (np.ndarray): A 1D array specifying a vector the design
+                point corresponding to f_vals.
+
+            s_vals_mean (np.ndarray): A 1D array specifying the expected
+                simulation outputs for the x value being scalarized.
+
+            s_vals_sd (np.ndarray): A 1D array specifying the standard
+                deviation for each of the simulation outputs.
 
         Returns:
             float: The scalarized value.
@@ -146,7 +170,7 @@ class AcquisitionFunction(ABC):
 class GlobalSearch(ABC):
     """ ABC describing global search techniques.
 
-    This class contains two methods.
+    This class contains the following methods.
      * ``startSearch(lb, ub)``
      * ``resumeSearch()``
      * ``save(filename)``
@@ -238,13 +262,15 @@ class GlobalSearch(ABC):
 class SurrogateFunction(ABC):
     """ ABC describing surrogate functions.
 
-    This class contains three methods.
+    This class contains the following methods.
      * ``fit(x, f)``
      * ``update(x, f)``
-     * ``setCenter(x)``
+     * ``setCenter(x)`` (default implementation provided)
      * ``evaluate(x)``
      * ``gradient(x)``
-     * ``improve(x, global_improv)``
+     * ``stdDev(x)``
+     * ``stdDevGrad(x)``
+     * ``improve(x, global_improv)`` (default implementation provided)
      * ``save(filename)``
      * ``load(filename)``
 
@@ -304,9 +330,11 @@ class SurrogateFunction(ABC):
 
         """
 
-    @abstractmethod
     def setCenter(self, center):
         """ Set the center for the fit, if this is a local method.
+
+        Default implementation returns the diameter of the design
+        space, resulting in a nonbinding trust region.
 
         Args:
             center (numpy.ndarray): A 1d array containing the center for
@@ -314,13 +342,15 @@ class SurrogateFunction(ABC):
 
         """
 
+        return max(self.ub - self.lb)
+
     @abstractmethod
     def evaluate(self, x):
         """ Evaluate the surrogate at a design point.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
-                which to the Gaussian RBF should be evaluated.
+                which to the surrogate should be evaluated.
 
         Returns:
             numpy.ndarray: A 1d array containing the predicted objective value
@@ -331,21 +361,62 @@ class SurrogateFunction(ABC):
     def gradient(self, x):
         """ Evaluate the gradient of the surrogate at a design point.
 
+        Note: this method need not be implemented when using a derivative
+        free SurrogateOptimization solver.
+
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
-                which the gradient of the RBF should be evaluated.
+                which the gradient of the surrogate should be evaluated.
 
         Returns:
             numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            RBF interpolants at x.
+            surrogate at x.
 
         """
 
         raise NotImplementedError("This class method has not been implemented")
 
-    @abstractmethod
-    def improve(self, x, global_imrpov):
+    def stdDev(self, x):
+        """ Evaluate the standard deviation (uncertainty) of the surrogate at x.
+
+        Note: this method need not be implemented when the acquisition
+        function does not use the model uncertainty.
+
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 1d array containing the standard deviation at x.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
+
+    def stdDevGrad(self, x):
+        """ Evaluate the gradient of the standard deviation at x.
+
+        Note: this method need not be implemented when the acquisition
+        function does not use both the model uncertainty and gradient.
+
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which the gradient of standard deviation should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 2d array containing the Jacobian matrix of the
+            standard deviation at x.
+
+        """
+
+        raise NotImplementedError("This class method has not been implemented")
+
+    def improve(self, x, global_improv):
         """ Suggests a design to evaluate to improve the surrogate near x.
+
+        A default implementation is given based on random sampling.
+        Re-implement the improve method to overwright the default
+        policy.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
@@ -359,6 +430,59 @@ class SurrogateFunction(ABC):
             that should be evaluated to improve the surrogate.
 
         """
+
+        # Check that the x is legal
+        if not isinstance(x, np.ndarray):
+            raise TypeError("x must be a numpy array")
+        else:
+            if x.size != self.n:
+                raise ValueError("x must have length n")
+            elif (np.any(x < self.lb - self.eps) or
+                  np.any(x > self.ub + self.eps)):
+                raise ValueError("x cannot be infeasible")
+        # Allocate the output array.
+        x_new = np.zeros(self.n)
+        if global_improv:
+            # If global improvement has been specified, randomly select a
+            # point from within the bound constraints.
+            x_new[:] = self.lb[:] + (np.random.random(self.n)
+                                     * (self.ub[:] - self.lb[:]))
+            while any([np.all(np.abs(x_new - xj) < self.eps)
+                       for xj in self.x_vals]):
+                x_new[:] = self.lb[:] + (np.random.random(self.n)
+                                         * (self.ub[:] - self.lb[:]))
+        else:
+            # Find the n+1 closest points to x in the current database
+            diffs = np.asarray([np.abs(x - xj) / self.eps
+                                for xj in self.x_vals])
+            dists = np.asarray([np.amax(dj) for dj in diffs])
+            inds = np.argsort(dists)
+            diffs = diffs[inds]
+            if dists[inds[self.n]] > 1.5:
+                # Calculate the normalized sample standard dev along each axis
+                stddev = np.asarray(tstd(diffs[:self.n+1], axis=0))
+                stddev[:] = np.maximum(stddev, np.ones(self.n))
+                stddev[:] = stddev[:] / np.amin(stddev)
+                # Sample within B(x, dists[inds[self.n]] / stddev)
+                rad = (dists[inds[self.n]] * self.eps) / stddev
+                x_new = np.fmin(np.fmax(2.0 * (np.random.random(self.n) - 0.5)
+                                        * rad[:] + x, self.lb), self.ub)
+                while any([np.all(np.abs(x_new - xj) < self.eps)
+                           for xj in self.x_vals]):
+                    x_new = np.fmin(np.fmax(2.0 *
+                                            (np.random.random(self.n) - 0.5)
+                                            * rad[:] + x, self.lb), self.ub)
+            else:
+                # If the n+1st nearest point is too close, use global_improv.
+                x_new[:] = self.lb[:] + np.random.random(self.n) \
+                           * (self.ub[:] - self.lb[:])
+                # If the nearest point is too close, resample.
+                while any([np.all(np.abs(x_new - xj) < self.eps)
+                           for xj in self.x_vals]):
+                    x_new[:] = self.lb[:] + (np.random.random(self.n)
+                                             * (self.ub[:] - self.lb[:]))
+        # Return the point to be sampled in a 2d array.
+        return np.asarray([x_new])
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.
@@ -394,12 +518,13 @@ class SurrogateFunction(ABC):
 class SurrogateOptimizer(ABC):
     """ ABC describing surrogate optimization techniques.
 
-    This class contains three methods.
-     * ``setObjective(obj_func)``
-     * ``setGradient(grad_func)``
-     * ``setConstraints(constraint_func)``
-     * ``addAcquisition(*args)``
-     * ``setReset(reset)``
+    This class contains the following methods.
+     * ``setObjective(obj_func)`` (default implementation provided)
+     * ``setSimulation(sim_func, sd_func)`` (default implementation provided)
+     * ``setConstraints(constraint_func)`` (default implementation provided)
+     * ``setPenalty(penaltyFunc, gradFunc)`` (default implementation provided)
+     * ``setReset(reset)`` (default implementation provided)
+     * ``addAcquisition(*args)`` (default implementation provided)
      * ``solve(x)``
      * ``save(filename)``
      * ``load(filename)``
@@ -427,7 +552,6 @@ class SurrogateOptimizer(ABC):
 
         """
 
-    @abstractmethod
     def setObjective(self, obj_func):
         """ Add a vector-valued objective function that will be solved.
 
@@ -437,18 +561,82 @@ class SurrogateOptimizer(ABC):
 
         """
 
-    def setGradient(self, grad_func):
+        # Check whether obj_func() has an appropriate signature
+        if callable(obj_func):
+            if len(inspect.signature(obj_func).parameters) != 1:
+                raise ValueError("obj_func() must accept exactly one input")
+            else:
+                # Add obj_func to the problem
+                self.objectives = obj_func
+        else:
+            raise TypeError("obj_func() must be callable")
+        return
+
+    def setSimulation(self, sim_func, sd_func=None):
+        """ Add a vector-valued simulation function, used to calculate objs.
+
+        Args:
+            sim_func (function): A vector-valued function that can be evaluated
+                to determine the surrogate-predicted simulation outputs.
+
+            sd_func (function): A vector-valued function that can be evaluated
+                to determine the standard deviations of the surrogate
+                predictions.
+
+        """
+
+        # Check whether sim_func() has an appropriate signature
+        if callable(sim_func):
+            if len(inspect.signature(sim_func).parameters) != 1:
+                raise ValueError("sim_func() must accept exactly one input")
+            else:
+                # Add sim_func to the problem
+                self.simulations = sim_func
+        else:
+            raise TypeError("sim_func() must be callable")
+        # Check whether sd_func() has an appropriate signature
+        if sd_func is not None and callable(sd_func):
+            if len(inspect.signature(sd_func).parameters) not in (1, 2):
+                raise ValueError("sd_func() must accept one or 2 inputs")
+            else:
+                # Add sd_func to the problem
+                self.sim_sd = sd_func
+        else:
+            raise TypeError("sd_func() must be callable")
+        return
+
+    def setPenalty(self, penalty_func, grad_func):
         """ Add a matrix-valued gradient function for obj_func.
 
         Args:
+            penalty_func (function): A vector-valued penalized objective
+                that incorporates a penalty for violating constraints.
+
             grad_func (function): A matrix-valued function that can be
                 evaluated to obtain the Jacobian matrix for obj_func.
 
         """
 
-        raise NotImplementedError("This class method has not been implemented")
+        # Check whether grad_func() has an appropriate signature
+        if callable(grad_func):
+            if len(inspect.signature(grad_func).parameters) != 1:
+                raise ValueError("grad_func() must accept exactly one input")
+            else:
+                # Add grad_func to the problem
+                self.gradients = grad_func
+        else:
+            raise TypeError("grad_func() must be callable")
+        # Check whether penalty_func() has an appropriate signature
+        if callable(penalty_func):
+            if len(inspect.signature(penalty_func).parameters) not in [1, 2]:
+                raise ValueError("penalty_func must accept exactly one input")
+            else:
+                # Add Lagrangian to the problem
+                self.penalty_func = penalty_func
+        else:
+            raise TypeError("penalty_func must be callable")
+        return
 
-    @abstractmethod
     def setConstraints(self, constraint_func):
         """ Add a constraint function that will be satisfied.
 
@@ -460,18 +648,18 @@ class SurrogateOptimizer(ABC):
 
         """
 
-    @abstractmethod
-    def addAcquisition(self, *args):
-        """ Add an acquisition function for the surrogate optimizer.
+        # Check whether constraint_func() has an appropriate signature
+        if callable(constraint_func):
+            if len(inspect.signature(constraint_func).parameters) != 1:
+                raise ValueError("constraint_func() must accept exactly one"
+                                 + " input")
+            else:
+                # Add constraint_func to the problem
+                self.constraints = constraint_func
+        else:
+            raise TypeError("constraint_func() must be callable")
+        return
 
-        Args:
-            args (AcquisitionFunction): Acquisition functions that are used
-                to scalarize the list of surrogates in order to solve the
-                surrogate optimization problem.
-
-        """
-
-    @abstractmethod
     def setReset(self, reset):
         """ Add a reset function for resetting surrogate updates.
 
@@ -481,6 +669,35 @@ class SurrogateOptimizer(ABC):
                 problem with each acquisition function.
 
         """
+
+        # Check whether reset() has an appropriate signature
+        if callable(reset):
+            if len(inspect.signature(reset).parameters) != 1:
+                raise ValueError("reset() must accept exactly one input")
+            else:
+                # Add obj_func to the problem
+                self.resetObjectives = reset
+        else:
+            raise TypeError("reset() must be callable")
+        return
+
+    def addAcquisition(self, *args):
+        """ Add an acquisition function for the surrogate optimizer.
+
+        Args:
+            *args (AcquisitionFunction): Acquisition functions that are used
+                to scalarize the list of objectives in order to solve the
+                surrogate optimization problem.
+
+        """
+
+        # Check for illegal inputs
+        if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
+            raise TypeError("Args must be instances of AcquisitionFunction")
+        # Append all arguments to the acquisitions list
+        for arg in args:
+            self.acquisitions.append(arg)
+        return
 
     @abstractmethod
     def solve(self, x):

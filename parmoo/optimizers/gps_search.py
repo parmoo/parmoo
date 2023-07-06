@@ -14,7 +14,6 @@ The classes include:
 """
 
 import numpy as np
-import inspect
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
 
@@ -30,7 +29,8 @@ class LocalGPS(SurrogateOptimizer):
 
     # Slots for the LocalGPS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
-                 'objectives']
+                 'objectives', 'simulations', 'gradients', 'resetObjectives',
+                 'penalty_func', 'sim_sd', 'restarts']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalGPS class.
@@ -47,7 +47,9 @@ class LocalGPS(SurrogateOptimizer):
 
             hyperparams (dict): A dictionary of hyperparameters for the
                 optimization procedure. It may contain the following:
-                 * opt_budget (int): The evaluation budget (default: 10,000).
+                 * opt_budget (int): The GPS iteration limit (default: 1000).
+                 * opt_restarts (int): Number of multisolve restarts per
+                   scalarization (default: n+1).
 
         Returns:
             SurrogateOptimizer: A new SurrogateOptimizer object.
@@ -60,6 +62,19 @@ class LocalGPS(SurrogateOptimizer):
         self.lb = lb
         self.ub = ub
         # Check that the contents of hyperparams is legal
+        if 'opt_restarts' in hyperparams:
+            if isinstance(hyperparams['opt_restarts'], int):
+                if hyperparams['opt_restarts'] < 1:
+                    raise ValueError("hyperparams['opt_restarts'] "
+                                     "must be positive")
+                else:
+                    self.restarts = hyperparams['opt_restarts']
+            else:
+                raise TypeError("hyperparams['opt_restarts'] "
+                                 "must be an integer")
+        else:
+            self.restarts = self.n + 1
+        # Check that the contents of hyperparams is legal
         if 'opt_budget' in hyperparams:
             if isinstance(hyperparams['opt_budget'], int):
                 if hyperparams['opt_budget'] < 1:
@@ -71,93 +86,8 @@ class LocalGPS(SurrogateOptimizer):
                 raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
-            self.budget = 10000
+            self.budget = 1000
         self.acquisitions = []
-        return
-
-    def setObjective(self, obj_func):
-        """ Add a vector-valued objective function that will be solved.
-
-        Args:
-            obj_func (function): A vector-valued function that can be evaluated
-                to solve the surrogate optimization problem.
-
-        """
-
-        # Check whether obj_func() has an appropriate signature
-        if callable(obj_func):
-            if len(inspect.signature(obj_func).parameters) != 1:
-                raise ValueError("obj_func() must accept exactly one input")
-            else:
-                # Add obj_func to the problem
-                self.objectives = obj_func
-        else:
-            raise TypeError("obj_func() must be callable")
-        return
-
-    def setReset(self, reset):
-        """ Add a reset function for resetting surrogate updates.
-
-        This method is not used by this class.
-
-        """
-
-        return
-
-    def setPenalty(self, penalty_func, grad_func):
-        """ Add a matrix-valued gradient function for obj_func.
-
-        Args:
-            penalty_func (function): A vector-valued penalized objective
-                that incorporates a penalty for violating constraints.
-
-            grad_func (function): A matrix-valued function that can be
-                evaluated to obtain the Jacobian matrix for obj_func.
-
-        """
-
-        # Do nothing, LocalGPS is gradient free
-        return
-
-    def setConstraints(self, constraint_func):
-        """ Add a constraint function that will be satisfied.
-
-        Args:
-            constraint_func (function): A vector-valued function from the
-                design space whose components correspond to constraint
-                violations. If the problem is unconstrained, a function
-                that returns zeros could be provided.
-
-        """
-
-        # Check whether constraint_func() has an appropriate signature
-        if callable(constraint_func):
-            if len(inspect.signature(constraint_func).parameters) != 1:
-                raise ValueError("constraint_func() must accept exactly one"
-                                 + " input")
-            else:
-                # Add constraint_func to the problem
-                self.constraints = constraint_func
-        else:
-            raise TypeError("constraint_func() must be callable")
-        return
-
-    def addAcquisition(self, *args):
-        """ Add an acquisition function for the surrogate optimizer.
-
-        Args:
-            *args (AcquisitionFunction): Acquisition functions that are used
-                to scalarize the list of objectives in order to solve the
-                surrogate optimization problem.
-
-        """
-
-        # Check for illegal inputs
-        if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
-            raise TypeError("Args must be instances of AcquisitionFunction")
-        # Append all arguments to the acquisitions list
-        for arg in args:
-            self.acquisitions.append(arg)
         return
 
     def solve(self, x):
@@ -182,64 +112,85 @@ class LocalGPS(SurrogateOptimizer):
                                  "of acquisition functions")
         else:
             raise TypeError("x must be a numpy array")
-        # Check that x is feasible.
-        for xj in x:
-            if any(self.constraints(xj) > 0.00000001) or \
-               np.any(xj[:] < self.lb[:]) or \
-               np.any(xj[:] > self.ub[:]):
-                raise ValueError("some of starting points (x) are infeasible")
         # Initialize an empty list of results
         result = []
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
-            # Reset the mesh dimensions
-            mesh = np.diag(self.ub[:] - self.lb[:] * 0.5)
-            # Evaluate the starting point
-            v = np.asarray(self.objectives(x[j, :]))
-            f_min = acquisition.scalarize(v.flatten())
-            x_min = x[j, :]
-            # Loop over the budget
-            for k in range(int(self.budget / (self.n * 2 *
-                                              len(self.acquisitions)))):
-                # Track whether or not there is improvement
-                improve = False
-                for i in range(self.n):
-                    # Evaluate x + mesh[:, i]
-                    x_tmp = x_min + mesh[:, i]
-                    if any(x_tmp > self.ub):
-                        f_tmp = np.inf
-                    elif any(self.constraints(x_tmp) > 0.00000001):
-                        f_tmp = np.inf
-                    else:
-                        v = np.asarray(self.objectives(x_tmp))
-                        f_tmp = acquisition.scalarize(v.flatten())
-                    # Check for improvement
-                    if f_tmp + 10**(-8) < f_min:
-                        f_min = f_tmp
-                        x_min = x_tmp
-                        improve = True
-                    # Evaluate x - mesh[:, i]
-                    x_tmp = x_min - mesh[:, i]
-                    if any(x_tmp < self.lb):
-                        f_tmp = np.inf
-                    elif any(self.constraints(x_tmp) > 0.00000001):
-                        f_tmp = np.inf
-                    else:
-                        v = np.asarray(self.objectives(x_tmp))
-                        f_tmp = acquisition.scalarize(v.flatten())
-                    # Check for improvement
-                    if f_tmp + 10**(-8) < f_min:
-                        f_min = f_tmp
-                        x_min = x_tmp
-                        improve = True
-                # If no improvement, decay the mesh down to the tolerance
-                if not improve:
-                    if any([mesh[i, i] < 0.0001 for i in range(self.n)]):
-                        break
-                    else:
-                        mesh = mesh * 0.5
+            # Create a new trust region
+            rad = self.resetObjectives(x[j, :])
+            lb_tmp = np.zeros(self.n)
+            ub_tmp = np.ones(self.n)
+            for i in range(self.n):
+                lb_tmp[i] = max(self.lb[i], x[j, i] - rad)
+                ub_tmp[i] = min(self.ub[i], x[j, i] + rad)
+            # Loop over restarts
+            x_min = np.zeros((self.restarts, self.n))
+            f_min = np.zeros(self.restarts)
+            for kk in range(self.restarts):
+                # Reset the mesh dimensions
+                mesh = np.diag(ub_tmp[:] - lb_tmp[:] * 0.25)
+                # Evaluate the starting point
+                sx = np.asarray(self.simulations(x[j, :]))
+                if acquisition.useSD():
+                    sdx = np.asarray(self.sim_sd(x[j, :]))
+                else:
+                    sdx = np.zeros(sx.size)
+                if kk == 0:
+                    x_min[kk, :] = x[j, :]
+                else:
+                    x_min[kk, :] = (np.random.random_sample(self.n) *
+                                    (ub_tmp - lb_tmp) + lb_tmp)
+                fx = np.asarray(self.penalty_func(x_min[kk, :], sx))
+                f_min[kk] = acquisition.scalarize(fx.flatten(), x_min[kk, :],
+                                                  sx, sdx)
+                # Loop over the budget
+                for k in range(self.budget):
+                    # Track whether or not there is improvement
+                    improve = False
+                    for i in range(self.n):
+                        # Evaluate x + mesh[:, i]
+                        x_tmp = x_min[kk, :] + mesh[:, i]
+                        if any(x_tmp > ub_tmp):
+                            f_tmp = np.inf
+                        else:
+                            sx = np.asarray(self.simulations(x_tmp))
+                            if acquisition.useSD():
+                                sdx = self.sim_sd(x_tmp)
+                            else:
+                                sdx = 0.0
+                            fx = self.penalty_func(x_tmp, sx)
+                            f_tmp = acquisition.scalarize(fx, x_tmp, sx, sdx)
+                        # Check for improvement
+                        if f_tmp + 1.0e-8 < f_min[kk]:
+                            f_min[kk] = f_tmp
+                            x_min[kk, :] = x_tmp
+                            improve = True
+                        # Evaluate x - mesh[:, i]
+                        x_tmp = x_min[kk, :] - mesh[:, i]
+                        if any(x_tmp < lb_tmp):
+                            f_tmp = np.inf
+                        else:
+                            sx = np.asarray(self.simulations(x_tmp))
+                            if acquisition.useSD():
+                                sdx = self.sim_sd(x_tmp)
+                            else:
+                                sdx = 0.0
+                            fx = self.penalty_func(x_tmp, sx)
+                            f_tmp = acquisition.scalarize(fx, x_tmp, sx, sdx)
+                        # Check for improvement
+                        if f_tmp + 1.0e-8 < f_min[kk]:
+                            f_min[kk] = f_tmp
+                            x_min[kk, :] = x_tmp
+                            improve = True
+                    # If no improvement, decay the mesh down to the tolerance
+                    if not improve:
+                        if any([mesh[i, i] < 1.0e-4 for i in range(self.n)]):
+                            break
+                        else:
+                            mesh = mesh * 0.5
             # Append the found minima to the results list
-            result.append(x_min)
+            x_cand_ind = np.argmin(f_min)
+            result.append(x_min[x_cand_ind, :].copy())
         return np.asarray(result)
 
 
@@ -254,7 +205,8 @@ class GlobalGPS(SurrogateOptimizer):
 
     # Slots for the GlobalGPS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'constraints', 'objectives',
-                 'search_budget', 'gps_budget']
+                 'simulations', 'gradients', 'resetObjectives', 'penalty_func',
+                 'search_budget', 'gps_budget', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the GlobalGPS class.
@@ -299,7 +251,7 @@ class GlobalGPS(SurrogateOptimizer):
                 raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
-            budget = 10000
+            budget = 1000
         # Check the GPS budget
         if 'gps_budget' in hyperparams:
             if isinstance(hyperparams['gps_budget'], int):
@@ -316,95 +268,10 @@ class GlobalGPS(SurrogateOptimizer):
                 raise TypeError("hyperparams['gps_budget'] "
                                  "must be an integer")
         else:
-            self.gps_budget = int(budget / 2)
-        self.search_budget = budget - self.gps_budget
+            self.gps_budget = 1000
+        self.search_budget = budget
         # Initialize the list of acquisition functions
         self.acquisitions = []
-        return
-
-    def setObjective(self, obj_func):
-        """ Add a vector-valued objective function that will be solved.
-
-        Args:
-            obj_func (function): A vector-valued function that can be evaluated
-                to solve the surrogate optimization problem.
-
-        """
-
-        # Check whether obj_func() has an appropriate signature
-        if callable(obj_func):
-            if len(inspect.signature(obj_func).parameters) != 1:
-                raise ValueError("obj_func() must accept exactly one input")
-            else:
-                # Add obj_func to the problem
-                self.objectives = obj_func
-        else:
-            raise TypeError("obj_func() must be callable")
-        return
-
-    def setReset(self, reset):
-        """ Add a reset function for resetting surrogate updates.
-
-        This method is not used by this class.
-
-        """
-
-        return
-
-    def setPenalty(self, penalty_func, grad_func):
-        """ Add a matrix-valued gradient function for obj_func.
-
-        Args:
-            penalty_func (function): A vector-valued penalized objective
-                that incorporates a penalty for violating constraints.
-
-            grad_func (function): A matrix-valued function that can be
-                evaluated to obtain the Jacobian matrix for obj_func.
-
-        """
-
-        # Do nothing, GlobalGPS is gradient free
-        return
-
-    def setConstraints(self, constraint_func):
-        """ Add a constraint function that will be satisfied.
-
-        Args:
-            constraint_func (function): A vector-valued function from the
-                design space whose components correspond to constraint
-                violations. If the problem is unconstrained, a function
-                that returns zeros could be provided.
-
-        """
-
-        # Check whether constraint_func() has an appropriate signature
-        if callable(constraint_func):
-            if len(inspect.signature(constraint_func).parameters) != 1:
-                raise ValueError("constraint_func() must accept exactly one"
-                                 + " input")
-            else:
-                # Add constraint_func to the problem
-                self.constraints = constraint_func
-        else:
-            raise TypeError("constraint_func() must be callable")
-        return
-
-    def addAcquisition(self, *args):
-        """ Add an acquisition function for the surrogate optimizer.
-
-        Args:
-            *args (AcquisitionFunction): Acquisition functions that are used
-                to scalarize the list of objectives in order to solve the
-                surrogate optimization problem.
-
-        """
-
-        # Check for illegal inputs
-        if not all([isinstance(arg, AcquisitionFunction) for arg in args]):
-            raise TypeError("Args must be instances of AcquisitionFunction")
-        # Append all arguments to the acquisitions list
-        for arg in args:
-            self.acquisitions.append(arg)
         return
 
     def solve(self, x):
@@ -431,16 +298,12 @@ class GlobalGPS(SurrogateOptimizer):
                                  "of acquisition functions")
         else:
             raise TypeError("x must be a numpy array")
-        # Check that x is feasible.
-        for xj in x:
-            if any(self.constraints(xj) > 0.00000001) or \
-               np.any(xj[:] < self.lb[:]) or \
-               np.any(xj[:] > self.ub[:]):
-                raise ValueError("some of starting points (x) are infeasible")
         # Do a global search to get global solutions
         gs = RandomSearch(self.n, self.lb, self.ub,
                           {'opt_budget': self.search_budget})
         gs.setObjective(self.objectives)
+        gs.setSimulation(self.simulations, self.sim_sd)
+        gs.setPenalty(self.penalty_func, self.gradients)
         gs.setConstraints(self.constraints)
         gs.addAcquisition(*self.acquisitions)
         gs_soln = gs.solve(x)
@@ -449,8 +312,11 @@ class GlobalGPS(SurrogateOptimizer):
         ls = LocalGPS(self.n, self.lb, self.ub,
                       {'opt_budget': gps_budget_loc})
         ls.setObjective(self.objectives)
+        ls.setSimulation(self.simulations, self.sim_sd)
+        ls.setPenalty(self.penalty_func, self.gradients)
         ls.setConstraints(self.constraints)
         ls.addAcquisition(*self.acquisitions)
+        ls.setReset(self.resetObjectives)
         ls_soln = ls.solve(gs_soln)
         # Return the list of local solutions
         return ls_soln

@@ -205,12 +205,14 @@ simulation output) and one constraint.
 .. code-block:: python
 
    # First objective just returns the first simulation output
-   my_moop.addObjective({'name': "f1", 'obj_func': lambda x, s: s["MySim"][0]})
+   def f1(x, s): return s["MySim"][0]
+   my_moop.addObjective({'name': "f1", 'obj_func': f1})
    # Second objective just returns the second simulation output
-   my_moop.addObjective({'name': "f2", 'obj_func': lambda x, s: s["MySim"][1]})
+   def f2(x, s): return s["MySim"][1]
+   my_moop.addObjective({'name': "f2", 'obj_func': f2})
    # Add a single constraint, that x[0] >= 0.1
-   my_moop.addConstraint({'name': "c1",
-                          'constraint': lambda x, s: 0.1 - x["x1"]})
+   def c1(x, s): return 0.1 - x["x1"]
+   my_moop.addConstraint({'name': "c1", 'constraint': c1})
 
 Finally, we must add one or more acquisition functions using
 :meth:`MOOP.addAcquisition(*args) <moop.MOOP.addAcquisition>`.
@@ -221,11 +223,11 @@ This is useful to know if you are using a parallel solver.
 
 .. code-block:: python
 
-   from parmoo.acquisitions import UniformWeights
+   from parmoo.acquisitions import RandomConstraint
 
    # Add 3 acquisition functions
    for i in range(3):
-      my_moop.addAcquisition({'acquisition': UniformWeights,
+      my_moop.addAcquisition({'acquisition': RandomConstraint,
                               'hyperparams': {}})
 
 Finally, the MOOP is solved using the
@@ -235,13 +237,15 @@ results can be viewed using
 
 .. code-block:: python
 
+   import pandas as pd
+
    my_moop.solve(5) # Solve with 5 iterations of ParMOO algorithm
-   results = my_moop.getPF() # Extract the results
+   results = my_moop.getPF(format="pandas") # Extract the results as pandas df
 
 After executing the above block of code, the ``results`` variable points to
-a numpy structured array, each of whose entries corresponds to a
-nondominated objective value in the ``my_moop`` object's final database.
-You can reference individual fields in the ``results`` array by using the
+a pandas_ dataframe, each of whose rows corresponds to a nondominated
+objective value in the ``my_moop`` object's final database.
+You can reference individual columns in the ``results`` array by using the
 ``name`` keys that were assigned during ``my_moop``'s construction, or
 plot the results by using the :doc:`viz <modules/viz>` library.
 
@@ -263,7 +267,7 @@ output:
 
 And produces the following figure of the Pareto points:
 
-.. figure:: ../examples/Pareto\ Front.jpeg
+.. figure:: ../examples/quickstart.jpeg
     :alt: Scatter plot of the Pareto front after solving demo problem
     :align: center
 
@@ -281,8 +285,10 @@ Next Steps
    :doc:`More Tutorials <tutorials/basic-tutorials>`.
  * To start solving MOOPs on parallel hardware, install libEnsemble_ and
    see the :doc:`libEnsemble tutorial <tutorials/libe-tutorial>`.
+ * See some of our pre-built solvers in the parmoo_solver_farm_.
  * To interactively explore your solutions, install its extra dependencies and
    use our built-in :doc:`viz <modules/viz>` tool.
+ * For more advice, consult our :doc:`FAQs <faqs>`.
 
 Resources
 ---------
@@ -308,6 +314,7 @@ Please read our LICENSE_ and CONTRIBUTING_ files.
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
 .. _pandas: https://pandas.pydata.org
+.. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _plotly: https://plotly.com/python
 .. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
