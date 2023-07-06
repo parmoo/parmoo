@@ -9,7 +9,7 @@ https://github.com/parmoo/parmoo/issues
 Release 0.3.0
 -------------
 
-:Date: Jul 5, 2023
+:Date: Jul 6, 2023
 
 Significant structural changes for long-term support of future solvers,
 bug-fixes, and significant improvements to documentation.
