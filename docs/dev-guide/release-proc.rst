@@ -14,7 +14,7 @@ Before release
 - Release notes for this version are added to the ``CHANGELOG.rst`` file.
 
 - Version number is updated wherever it appears and ``+dev`` suffix is removed
-  (in ``parmoo/version.py`` and ``README.rst``).
+  (in ``parmoo/version.py``, ``README.rst``, and ``docs/refs.rst``).
 
 - Check ``README.rst`` *Citing ParMOO* and ``docs/refs.rst`` for correctness.
 
@@ -24,6 +24,9 @@ Before release
 - ``MANIFEST.in`` is checked. Locally, try out ``python setup.py sdist`` and
   check created tarball contains correct files and directories for PyPI
   package.
+
+- Check that ``parmoo`` requirements (in ``REQUIREMENTS.txt``)
+  are compatible with ``readthedocs.io`` (in ``.readthedocs.yml``)
 
 - Tests are run with source to be released (this may iterate):
 
@@ -48,7 +51,8 @@ An administrator will take the following steps.
 
   - A GitHub release will be taken from the main
 
-  - A tarball (source distribution) will be uploaded to PyPI
+  - A tarball (source distribution) will be uploaded to PyPI (should be done
+    via ``twine`` by an admin using PyPI-API-token authentication)
 
 - If the merge was made from a release branch (instead of develop), merge this
   branch into develop.
@@ -60,5 +64,7 @@ After release
 -------------
 
 - Ensure all relevant GitHub issues are closed.
+
 - Check that the conda-forge package has tracked latest release
-  and update dependency list if needed.
+  and update dependency list if needed -- an admin will need to approve the
+  automatically generated PR on https://github.com/conda-forge/parmoo-feedstock
