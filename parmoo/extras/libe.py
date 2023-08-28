@@ -774,7 +774,7 @@ class libE_MOOP(MOOP):
         # Set the input dictionaries
         if self.moop.use_names:
             x_type = self.moop.des_names.copy()
-            x_type.append(('sim_name', 'a10'))
+            x_type.append(('sim_name', 'a40'))
             f_type = self.moop.sim_names.copy()
             all_types = x_type.copy()
             for name in f_type:
