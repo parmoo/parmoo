@@ -64,7 +64,7 @@ class MOOP:
      * ``MOOP.update_sim_db(x, sx, s_name)``
      * ``MOOP.evaluateSimulation(x, s_name)``
      * ``MOOP.addData(x, sx)``
-     * ``MOOP.iterate(k)``
+     * ``MOOP.iterate(k, ib)``
      * ``MOOP.updateAll(k, batch)``
 
     Finally, the following methods are used to retrieve data after the
@@ -2054,27 +2054,35 @@ class MOOP:
             self.n_dat += 1
         return
 
-    def iterate(self, k):
+    def iterate(self, k, ib=None):
         """ Perform an iteration of ParMOO's solver and generate candidates.
 
-        Generates a batch of suggested candidate points
-        (design point, simulation name) pairs, for the caller to evaluate
-        (externally if needed).
+        Generates a batch of suggested candidate points (design points)
+        or (candidate point, simulation name) pairs and returns to the
+        user for further processing. Note, this method may produce
+        duplicates.
 
         Args:
             k (int): The iteration counter (corresponding to MOOP.iteration).
 
+            ib (int, optional): The index of the acquisition function to
+                optimize and add to the current batch. Defaults to None,
+                which optimizes all acquisition functions and adds all
+                resulting candidates to the batch.
+
         Returns:
-            (list): A list of ordered pairs (tuples), specifying the
-            (design points, simulation name) that ParMOO suggests for
-            evaluation. Specifically:
-             * The first entry in each tuple is either a numpy structured
-               array (when operating with named variables) or a 1D
-               numpy.ndarray (in unnamed mode). When operating with unnamed
-               variables, the indices were assigned in the order that
-               the design variables were added to the MOOP using
+            (list): A list of design points (numpy structured or 1D arrays) or
+            tuples (design points, simulation name) specifying the unfiltered
+            list of candidates that ParMOO recommends for true simulation
+            evaluations. Specifically:
+             * Each item or the first entry in tuple is either a numpy
+               structured array (when operating with named variables) or a
+               1D numpy.ndarray (in unnamed mode). When operating with
+               unnamed variables, the indices were assigned in the order
+               that the design variables were added to the MOOP using
                `MOOP.addDesign(*args)`.
-             * The second entry is either the (str) name of the simulation to
+             * If the item is a tuple, then the second entry in the tuple
+               is either the (str) name of the simulation to
                evaluate (when operating with named variables) or the (int)
                index of the simulation to evaluate (when operating in
                unnamed mode). Note, in unnamed mode, simulation indices
@@ -2089,6 +2097,15 @@ class MOOP:
                 raise ValueError("k must be nonnegative")
         else:
             raise TypeError("k must be an int type")
+        # Check that ib is a list of legal integers or None
+        if isinstance(ib, list) and all([isinstance(ibj, int) for ibj in ib]):
+            for ibj in ib:
+                if ibj < 0 or ibj >= len(self.acquisitions):
+                    raise ValueError(f"invalid index found in ib: {ibj}")
+        elif ib is not None:
+            raise TypeError("when present, ib must be a list of int types")
+        else:
+            ib = [i for i in range(len(self.acquisitions))]
         # Check that there are design variables for this problem
         if self.n == 0:
             raise AttributeError("there are no design vars for this problem")
@@ -2097,7 +2114,7 @@ class MOOP:
             raise AttributeError("there are no objectives for this problem")
 
         # Prepare a batch to return
-        batch = []
+        xbatch = []
         # Special rule for the k=0 iteration
         if k == 0:
             # Initialize the database
@@ -2110,10 +2127,10 @@ class MOOP:
                 des = search.startSearch(self.scaled_lb, self.scaled_ub)
                 for xi in des:
                     if self.use_names:
-                        batch.append((self.__extract__(xi),
-                                      self.sim_names[j][0]))
+                        xbatch.append((self.__extract__(xi),
+                                       self.sim_names[j][0]))
                     else:
-                        batch.append((self.__extract__(xi), j))
+                        xbatch.append((self.__extract__(xi), j))
         # Now the main loop
         else:
             x0 = np.zeros((len(self.acquisitions), self.n))
@@ -2130,33 +2147,104 @@ class MOOP:
                               self.surrogateUncertainty)
             opt.setPenalty(self.evaluatePenalty, self.evaluateGradients)
             opt.setConstraints(self.evaluateConstraints)
-            opt.addAcquisition(*self.acquisitions)
+            for i, acquisition in enumerate(self.acquisitions):
+                if i in ib:
+                    opt.addAcquisition(acquisition)
             opt.setReset(self.resetSurrogates)
             # Solve the surrogate problem
-            x_vals = opt.solve(x0)
+            x_candidates = opt.solve(x0)
+            for xi in x_candidates:
+                xbatch.append(self.__extract__(xi))
+        return xbatch
+
+    def filterBatch(self, *args):
+        """ Filter a batch produced by ParMOO's MOOP.iterate method.
+
+        Accepts one or more batches of candidate design points, produced
+        by the MOOP.iterate() method and checks both the batch and ParMOO's
+        database for redundancies. Any redundant points (up to the design
+        tolerance) are replaced by model improving points, using each
+        surrogate's Surrogate.improve() method.
+
+        Args:
+            *args (list of numpy.ndarrays or tuples): The list of
+            unfiltered candidates returned by the MOOP.iterate() method.
+            A list of design points (numpy structured or 1D arrays) or
+            tuples (design points, simulation name) specifying the unfiltered
+            list of candidates that ParMOO recommends for true simulation
+            evaluations. Specifically:
+             * Each item or the first entry in tuple is either a numpy
+               structured array (when operating with named variables) or a
+               1D numpy.ndarray (in unnamed mode). When operating with
+               unnamed variables, the indices were assigned in the order
+               that the design variables were added to the MOOP using
+               `MOOP.addDesign(*args)`.
+             * If the item is a tuple, then the second entry in the tuple
+               is either the (str) name of the simulation to
+               evaluate (when operating with named variables) or the (int)
+               index of the simulation to evaluate (when operating in
+               unnamed mode). Note, in unnamed mode, simulation indices
+               were assigned in the order that they were added using
+               `MOOP.addSimulation(*args)`.
+
+        Returns:
+            (list): A filtered list of ordered pairs (tuples), specifying
+            the (design points, simulation name) that ParMOO suggests for
+            evaluation. Specifically:
+             * The first entry in each tuple is either a numpy structured
+               array (when operating with named variables) or a 1D
+               numpy.ndarray (in unnamed mode). When operating with unnamed
+               variables, the indices were assigned in the order that
+               the design variables were added to the MOOP using
+               `MOOP.addDesign(*args)`.
+             * The second entry is either the (str) name of the simulation to
+               evaluate (when operating with named variables) or the (int)
+               index of the simulation to evaluate (when operating in
+               unnamed mode). Note, in unnamed mode, simulation indices
+               were assigned in the order that they were added using
+               `MOOP.addSimulation(*args)`.
+
+        """
+
+        # Create an empty list to store the filtered batch
+        fbatch = []
+        for xbatch in args:
             # Evaluate all of the simulations at the candidate solutions
             if self.s > 0:
                 # For each design in the database
-                for xi in x_vals:
+                for xtuple in xbatch:
+                    # Extract the xtuple into xi/si pair if needed
+                    if isinstance(xtuple, tuple):
+                        xi = xtuple[0]
+                        si = []
+                        if self.use_names:
+                            for i, ssi in enumerate(self.sim_names):
+                                if ssi[0] == xtuple[1]:
+                                    si.append(i)
+                                    break
+                        else:
+                            si.append(xtuple[1])
+                    else:
+                        xi = xtuple
+                        si = [i for i in range(self.s)]
+                    # This 2nd extract/embed, while redundant, is necessary
+                    # for categorical variables to be processed correctly
+                    xxi = self.__embed__(xi)
                     # Check whether it has been evaluated by any simulation
-                    for i in range(self.s):
-                        xxi = self.__extract__(xi)
-                        # This extract embed, while redundant, is necessarry
-                        # for categorical variables to be processed correctly
-                        xxxi = self.__embed__(xxi)
+                    for i in si:
                         if self.use_names:
                             namei = self.sim_names[i][0]
                         else:
                             namei = i
-                        if any([np.all(np.abs(xxxi - self.__embed__(xj)) <
+                        if all([np.any(np.abs(xxi - self.__embed__(xj)) >
                                        self.scaled_des_tols)
-                                and namei == j for (xj, j) in batch]) \
-                           and self.check_sim_db(xxi, i) is None:
-                            # If not, add it to the batch
-                            batch.append((xxi, namei))
+                                or namei != j for (xj, j) in fbatch]) \
+                           and self.check_sim_db(xi, namei) is None:
+                            # If not, add it to the fbatch
+                            fbatch.append((xi, namei))
                         else:
                             # Try to improve surrogate (locally then globally)
-                            x_improv = self.surrogates[i].improve(xxxi, False)
+                            x_improv = self.surrogates[i].improve(xxi, False)
                             # Again, this is needed to handle categorical vars
                             ibatch = [self.__embed__(self.__extract__(xk))
                                       for xk in x_improv]
@@ -2164,26 +2252,29 @@ class MOOP:
                                                            - xk) <
                                                     self.scaled_des_tols)
                                              and namei == j for (xj, j)
-                                             in batch])
+                                             in fbatch])
                                         for xk in ibatch]) or
                                    any([self.check_sim_db(self.__extract__(xk),
-                                                          i)
+                                                          namei)
                                         is not None for xk in ibatch])):
-                                x_improv = self.surrogates[i].improve(xxxi,
+                                x_improv = self.surrogates[i].improve(xxi,
                                                                       True)
                                 ibatch = [self.__embed__(self.__extract__(xk))
                                           for xk in x_improv]
-                            # Add improvement points to the batch
+                            # Add improvement points to the fbatch
                             for xj in ibatch:
-                                batch.append((self.__extract__(xj), namei))
+                                fbatch.append((self.__extract__(xj), namei))
             else:
-                # If there were no simulations, just add all points to batch
-                for xi in x_vals:
-                    xxi = self.__extract__(xi)
-                    if not any([np.all(np.abs(xxi - xj) < self.des_tols)
-                                for (xj, j) in batch]):
-                        batch.append((xxi, -1))
-        return batch
+                # If there were no simulations, just add all points to fbatch
+                for xi in xbatch:
+                    # This 2nd extract/embed, while redundant, is necessary
+                    # for categorical variables to be processed correctly
+                    xxi = self.__embed__(xi)
+                    if all([np.any(np.abs(xxi - self.__embed__(xj))
+                            > self.scaled_des_tols)
+                            for (xj, j) in fbatch]):
+                        fbatch.append((xi, -1))
+        return fbatch
 
     def updateAll(self, k, batch):
         """ Update all surrogates given a batch of freshly evaluated data.
@@ -2383,15 +2474,16 @@ class MOOP:
                 break
             # Track iteration counter
             self.iteration = k
-            # Generate a batch by running one iteration
+            # Generate a batch by running one iteration and filtering results
             logging.info(f"   Iteration {self.iteration: >4}:")
             logging.info("     generating batch...")
-            batch = self.iterate(self.iteration)
-            logging.info(f"     {len(batch)} candidate designs generated.")
+            xbatch = self.iterate(self.iteration)
+            fbatch = self.filterBatch(xbatch)
+            logging.info(f"     {len(fbatch)} candidate designs generated.")
             if self.s > 0:
                 # Evaluate the batch
                 logging.info("     evaluating batch...")
-                for xi in batch:
+                for xi in fbatch:
                     (x, i) = xi
                     logging.info(f"       evaluating design: {x}" +
                                  f" for simulation: {i}...")
@@ -2401,11 +2493,11 @@ class MOOP:
                     total_sims += 1
                     if total_sims >= sim_max:
                         logging.info(f"   sim_max of {sim_max} reached")
-                logging.info(f"     finished evaluating {len(batch)}" +
+                logging.info(f"     finished evaluating {len(fbatch)}" +
                              " simulations.")
             logging.info("     updating models and internal databases...")
             # Update the database
-            self.updateAll(self.iteration, batch)
+            self.updateAll(self.iteration, fbatch)
             logging.info("   Done.")
         logging.info(" Done.")
         logging.info(f" ParMOO has successfully completed {self.iteration} " +

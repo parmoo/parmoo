@@ -1053,10 +1053,12 @@ def test_MOOP_iterate():
         moop1.iterate(2.0)
     # Solve the MOOP with 1 iteration
     batch = moop1.iterate(0)
+    batch = moop1.filterBatch(batch)
     for (x, i) in batch:
         moop1.evaluateSimulation(x, i)
     moop1.updateAll(0, batch)
     batch = moop1.iterate(1)
+    batch = moop1.filterBatch(batch)
     for (x, i) in batch:
         moop1.evaluateSimulation(x, i)
     moop1.updateAll(1, batch)
@@ -1132,6 +1134,7 @@ def test_MOOP_iterate():
         moop2.evaluateSimulation(x, i)
     moop2.updateAll(0, batch)
     batch = moop2.iterate(1)
+    batch = moop2.filterBatch(batch)
     for (x, i) in batch:
         moop2.evaluateSimulation(x, i)
     moop2.updateAll(1, batch)
@@ -1213,6 +1216,7 @@ def test_MOOP_iterate():
         moop3.evaluateSimulation(x, i)
     moop3.updateAll(0, batch)
     batch = moop3.iterate(1)
+    batch = moop3.filterBatch(batch)
     for (x, i) in batch:
         moop3.evaluateSimulation(x, i)
     moop3.updateAll(1, batch)
@@ -1281,10 +1285,12 @@ def test_MOOP_iterate():
         moop4.addAcquisition({'acquisition': UniformWeights})
     # Do 2 iterates of the MOOP and extract the final database
     batch = moop4.iterate(0)
+    batch = moop4.filterBatch(batch)
     for (x, i) in batch:
         moop4.evaluateSimulation(x, i)
     moop4.updateAll(0, batch)
     batch = moop4.iterate(1)
+    batch = moop4.filterBatch(batch)
     for (x, i) in batch:
         moop4.evaluateSimulation(x, i)
     moop4.updateAll(1, batch)
@@ -1856,6 +1862,7 @@ def test_MOOP_save_load1():
     for i in range(3):
         moop1.addAcquisition({'acquisition': UniformWeights})
     batch = moop1.iterate(0)
+    batch = moop1.filterBatch(batch)
     for (xi, i) in batch:
         moop1.evaluateSimulation(xi, i)
     moop1.updateAll(0, batch)
@@ -2010,6 +2017,7 @@ def test_MOOP_checkpoint():
     moop1.setCheckpoint(True)
     # One iteration
     batch = moop1.iterate(0)
+    batch = moop1.filterBatch(batch)
     for (xi, i) in batch:
         moop1.evaluateSimulation(xi, i)
     moop1.updateAll(0, batch)

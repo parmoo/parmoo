@@ -139,21 +139,30 @@ class RandomConstraint(AcquisitionFunction):
         else:
             # Get the Pareto front
             pf = updatePF(data, {})
-        # If pf is empty, randomly select weights and starting point
-        if pf['x_vals'].shape[0] == 0:
-            self.f_ub[:] = np.inf
+        # If data is empty, randomly select weights and starting point
+        if no_data:
             self.weights = -np.log(1.0 - np.random.random_sample(self.o))
-            self.weights = self.weights[:] / sum(self.weights[:])
-            # Randomly select a feasible starting point
-            x_min = (np.random.random_sample(self.n) * (self.ub - self.lb)
-                     + self.lb)
-            for count in range(1000):
-                x = (np.random.random_sample(self.n) * (self.ub - self.lb)
-                     + self.lb)
-                if np.dot(self.weights, penalty_func(x)) \
-                   < np.dot(self.weights, penalty_func(x_min)):
-                    x_min[:] = x[:]
-            return x_min
+            self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
+            self.f_ub[:] = np.inf
+            # Randomly select a starting point
+            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+                       + self.lb)
+            return x_start
+        # If data is nonempty but pf is empty, use a penalty to select
+        elif pf is None or pf['x_vals'].shape[0] == 0:
+            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
+            self.f_ub[:] = np.inf
+            # Check for "most feasible" starting x
+            x_best = np.zeros(data['x_vals'].shape[1])
+            p_best = np.infty
+            for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
+                                  data['c_vals']):
+                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                if p_temp < p_best:
+                    x_best = xi
+                    p_best = p_temp
+            return x_best
         else:
             # Randomly select pts in the convex hull of the nondominate pts
             ipts = np.random.randint(0, pf['f_vals'].shape[0], size=self.o)
@@ -381,23 +390,30 @@ class EI_RandomConstraint(AcquisitionFunction):
         else:
             # Get the Pareto front
             pf = updatePF(data, {})
-        # If pf is empty, randomly select weights and starting point
-        if pf['x_vals'].shape[0] == 0:
-            self.f_ub[:] = np.inf
+        # If data is empty, randomly select weights and starting point
+        if no_data:
             self.weights = -np.log(1.0 - np.random.random_sample(self.o))
-            self.weights = self.weights[:] / sum(self.weights[:])
-            # Randomly select a feasible starting point
-            x_min = np.random.random_sample(self.n) * (self.ub - self.lb) \
-                    + self.lb
-            for count in range(1000):
-                x = np.random.random_sample(self.n) * (self.ub - self.lb) \
-                    + self.lb
-                if np.dot(self.weights, penalty_func(x)) \
-                   < np.dot(self.weights, penalty_func(x_min)):
-                    x_min[:] = x[:]
-            # No point is feasible, so there is no limit
-            self.best = None
-            return x_min
+            self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
+            self.f_ub[:] = np.inf
+            # Randomly select a starting point
+            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+                       + self.lb)
+            return x_start
+        # If data is nonempty but pf is empty, use a penalty to select
+        elif pf is None or pf['x_vals'].shape[0] == 0:
+            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
+            self.f_ub[:] = np.inf
+            # Check for "most feasible" starting x
+            x_best = np.zeros(data['x_vals'].shape[1])
+            p_best = np.infty
+            for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
+                                  data['c_vals']):
+                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                if p_temp < p_best:
+                    x_best = xi
+                    p_best = p_temp
+            return x_best
         else:
             # Randomly select pts in the convex hull of the nondominate pts
             ipts = np.random.randint(0, pf['f_vals'].shape[0], size=self.o)

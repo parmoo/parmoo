@@ -65,12 +65,12 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
         # Generate a batch by running one iteration
         x_out = moop.iterate(k)
         # Check for duplicates in simulation databases
+        x_out = moop.filterBatch(x_out)
         xbatch = []
         ibatch = []
         for (xi, i) in x_out:
-            if moop.check_sim_db(xi, i) is None:
-                xbatch.append(xi)
-                ibatch.append(i)
+            xbatch.append(xi)
+            ibatch.append(i)
         # Get the batch size and allocate the H_o structured array
         b = len(xbatch)
         H_o = np.zeros(b, dtype=gen_specs['out'])
@@ -201,7 +201,7 @@ class libE_MOOP(MOOP):
      * ``libE_MOOP.update_sim_db(x, sx, s_name)``
      * ``libE_MOOP.evaluateSimulation(x, s_name)``
      * ``libE_MOOP.addData(x, sx)``
-     * ``libE_MOOP.iterate(k)``
+     * ``libE_MOOP.iterate(k, ib)``
      * ``libE_MOOP.updateAll(k, batch)``
 
     Finally, the following methods are used to retrieve data after the
@@ -583,19 +583,78 @@ class libE_MOOP(MOOP):
         self.moop.addData(x, sx)
         return
 
-    def iterate(self, k):
+    def iterate(self, k, ib=None):
         """ Perform an iteration of ParMOO's solver and generate candidates.
 
-        Generates a batch of suggested candidate points
-        (design point, simulation name) pairs, for the caller to evaluate
-        (externally if needed).
+        Generates a batch of suggested candidate points (design points)
+        or (candidate point, simulation name) pairs and returns to the
+        user for further processing. Note, this method may produce
+        duplicates.
 
         Args:
             k (int): The iteration counter (corresponding to MOOP.iteration).
 
+            ib (int, optional): The index of the acquisition function to
+                optimize and add to the current batch. Defaults to None,
+                which optimizes all acquisition functions and adds all
+                resulting candidates to the batch.
+
         Returns:
-            (list): A list of ordered pairs (tuples), specifying the
-            (design points, simulation name) that ParMOO suggests for
+            (list): A list of design points (numpy structured or 1D arrays) or
+            tuples (design points, simulation name) specifying the unfiltered
+            list of candidates that ParMOO recommends for true simulation
+            evaluations. Specifically:
+             * Each item or the first entry in tuple is either a numpy
+               structured array (when operating with named variables) or a
+               1D numpy.ndarray (in unnamed mode). When operating with
+               unnamed variables, the indices were assigned in the order
+               that the design variables were added to the MOOP using
+               `MOOP.addDesign(*args)`.
+             * If the item is a tuple, then the second entry in the tuple
+               is either the (str) name of the simulation to
+               evaluate (when operating with named variables) or the (int)
+               index of the simulation to evaluate (when operating in
+               unnamed mode). Note, in unnamed mode, simulation indices
+               were assigned in the order that they were added using
+               `MOOP.addSimulation(*args)`.
+
+        """
+
+        return self.moop.iterate(k, ib=ib)
+
+    def filterBatch(self, *xbatch):
+        """ Filter a batch produced by ParMOO's MOOP.iterate method.
+
+        Accepts one or more batches of candidate design points, produced
+        by the MOOP.iterate() method and checks both the batch and ParMOO's
+        database for redundancies. Any redundant points (up to the design
+        tolerance) are replaced by model improving points, using each
+        surrogate's Surrogate.improve() method.
+
+        Args:
+            *xbatch (list of numpy.ndarrays or tuples): The list of
+            unfiltered candidates returned by the MOOP.iterate() method.
+            A list of design points (numpy structured or 1D arrays) or
+            tuples (design points, simulation name) specifying the unfiltered
+            list of candidates that ParMOO recommends for true simulation
+            evaluations. Specifically:
+             * Each item or the first entry in tuple is either a numpy
+               structured array (when operating with named variables) or a
+               1D numpy.ndarray (in unnamed mode). When operating with
+               unnamed variables, the indices were assigned in the order
+               that the design variables were added to the MOOP using
+               `MOOP.addDesign(*args)`.
+             * If the item is a tuple, then the second entry in the tuple
+               is either the (str) name of the simulation to
+               evaluate (when operating with named variables) or the (int)
+               index of the simulation to evaluate (when operating in
+               unnamed mode). Note, in unnamed mode, simulation indices
+               were assigned in the order that they were added using
+               `MOOP.addSimulation(*args)`.
+
+        Returns:
+            (list): A filtered list of ordered pairs (tuples), specifying
+            the (design points, simulation name) that ParMOO suggests for
             evaluation. Specifically:
              * The first entry in each tuple is either a numpy structured
                array (when operating with named variables) or a 1D
@@ -612,7 +671,7 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.iterate(k)
+        return self.moop.filterBatch(*xbatch)
 
     def updateAll(self, k, batch):
         """ Update all surrogates given a batch of freshly evaluated data.
@@ -774,7 +833,7 @@ class libE_MOOP(MOOP):
         # Set the input dictionaries
         if self.moop.use_names:
             x_type = self.moop.des_names.copy()
-            x_type.append(('sim_name', 'a10'))
+            x_type.append(('sim_name', 'a40'))
             f_type = self.moop.sim_names.copy()
             all_types = x_type.copy()
             for name in f_type:

@@ -43,10 +43,6 @@ def test_RandomConstraint():
         acqu.setTarget(data, 5, {})
     with pytest.raises(ValueError):
         acqu.setTarget(data, lambda x, y, z: np.zeros(0), {})
-    with pytest.raises(ValueError):
-        acqu.setTarget({}, lambda x: np.ones(1), {})
-    with pytest.raises(ValueError):
-        acqu.setTarget(data, lambda x: np.ones(1), {})
     data['c_vals'] = np.zeros((10, 1))
     # Set a few good target
     assert (np.all(acqu.setTarget({}, lambda x: np.zeros(3), {}) < 1.0))
@@ -134,10 +130,6 @@ def test_EI_RandomConstraint():
         acqu.setTarget(data, 5, {})
     with pytest.raises(ValueError):
         acqu.setTarget(data, lambda x, y, z: np.zeros(0), {})
-    with pytest.raises(ValueError):
-        acqu.setTarget({}, lambda x: np.ones(1), {})
-    with pytest.raises(ValueError):
-        acqu.setTarget(data, lambda x: np.ones(1), {})
     data['c_vals'] = np.zeros((10, 1))
     # Set a few good target
     assert (np.all(acqu.setTarget({}, lambda x, sx=0: np.zeros(3), {}) < 1.0))
