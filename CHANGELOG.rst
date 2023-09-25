@@ -17,14 +17,14 @@ Fixed several serious bugs/limitations:
 
  - Introduced in v0.3.0: when generating batches, a bug was introduced into
    the lines of code that filter out duplicate candidates, resulting in
-   significantly decreased performance but no errors being raise
+   significantly decreased performance but no errors being raised
  - Allow for ParMOO to still generate target points for the
    ``AcqusitionFunction``, even when there are no feasible points in the
    database
  - Increase the number of characters allowed in a name when working with
-   libEnsemble from 10 -> 40 chars
- - Broke the ``MOOP.iterate()`` method apart into 2 functions (``iterate``)
-   and ``filterBatch``, which makes the code more maintainable and allows
+   libEnsemble from 10 to 40 characters
+ - Broke the ``MOOP.iterate()`` method apart into 2 functions (``iterate``
+   and ``filterBatch``), which makes the code more maintainable and allows
    for future improvements to the ``libE_MOOP`` parallelism
  - Updated deprecated keys in ``.readthedocs.yml`` config file
 
