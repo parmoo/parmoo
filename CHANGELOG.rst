@@ -26,6 +26,7 @@ Fixed several serious bugs/limitations:
  - Broke the ``MOOP.iterate()`` method apart into 2 functions (``iterate``)
    and ``filterBatch``, which makes the code more maintainable and allows
    for future improvements to the ``libE_MOOP`` parallelism
+ - Updated deprecated keys in ``.readthedocs.yml`` config file
 
 Release 0.3.0
 -------------
