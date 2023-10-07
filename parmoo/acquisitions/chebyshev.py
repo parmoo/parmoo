@@ -172,7 +172,7 @@ class UniformAugChebyshev(AcquisitionFunction):
             x = pf['x_vals'][i, :]
             return x
 
-    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd, manifold=None):
         """ Scalarize a vector of function values using the current weights.
 
         Args:
@@ -204,7 +204,10 @@ class UniformAugChebyshev(AcquisitionFunction):
         # Compute augmented Chebyshev scalarization
         fx = np.zeros(f_vals.shape)
         fx[:] = f_vals * self.weights
-        return np.max(fx) + self.alpha * np.sum(fx)
+        if not isinstance(manifold, int):
+            return np.max(fx) + self.alpha * np.sum(fx)
+        else:
+            return fx[manifold] + self.alpha * np.sum(fx)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -235,9 +238,9 @@ class UniformAugChebyshev(AcquisitionFunction):
         # Compute augmented Chebyshev scalarization
         fx = np.zeros(f_vals.shape[0])
         fx[:] = f_vals * self.weights
-        return np.eye(f_vals.shape[0], dtype=int)[np.argmax(fx)]
+        return np.isclose(fx, fx.max(), atol=1.0e-8).astype(int)
 
-    def scalarizeGrad(self, f_vals, g_vals):
+    def scalarizeGrad(self, f_vals, g_vals, manifold=None):
         """ Scalarize a Jacobian of gradients using the current weights.
 
         Args:
@@ -265,8 +268,12 @@ class UniformAugChebyshev(AcquisitionFunction):
         else:
             raise TypeError("g_vals must be a numpy array")
         # Compute the gradient of the augmented Chebyshev scalarization
-        return np.dot(self.weights * (self.getManifold(f_vals) + self.alpha),
-                      g_vals)
+        if not isinstance(manifold, int):
+            return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
+                          g_vals)
+        else:
+            return np.dot(self.weights * np.eye(self.o)[manifold, :] + self.alpha,
+                          g_vals)
 
 
 class FixedAugChebyshev(AcquisitionFunction):
@@ -438,7 +445,7 @@ class FixedAugChebyshev(AcquisitionFunction):
             x = pf['x_vals'][i, :]
             return x
 
-    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd, manifold=None):
         """ Scalarize a vector of function values using the current weights.
 
         Args:
@@ -470,7 +477,10 @@ class FixedAugChebyshev(AcquisitionFunction):
         # Compute augmented Chebyshev scalarization
         fx = np.zeros(f_vals.shape)
         fx[:] = f_vals * self.weights
-        return np.max(fx) + self.alpha * np.sum(fx)
+        if not isinstance(manifold, int):
+            return np.max(fx) + self.alpha * np.sum(fx)
+        else:
+            return fx[manifold] + self.alpha * np.sum(fx)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -501,9 +511,9 @@ class FixedAugChebyshev(AcquisitionFunction):
         # Compute augmented Chebyshev scalarization
         fx = np.zeros(f_vals.shape[0])
         fx[:] = f_vals * self.weights
-        return np.eye(f_vals.shape[0], dtype=int)[np.argmax(fx)]
+        return np.isclose(fx, fx.max(), atol=1.0e-8).astype(int)
 
-    def scalarizeGrad(self, f_vals, g_vals):
+    def scalarizeGrad(self, f_vals, g_vals, manifold=None):
         """ Scalarize a Jacobian of gradients using the current weights.
 
         Args:
@@ -531,5 +541,9 @@ class FixedAugChebyshev(AcquisitionFunction):
         else:
             raise TypeError("g_vals must be a numpy array")
         # Compute the gradient of the augmented Chebyshev scalarization
-        return np.dot(self.weights * (self.getManifold(f_vals) + self.alpha),
-                      g_vals)
+        if not isinstance(manifold, int):
+            return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
+                          g_vals)
+        else:
+            return np.dot(self.weights * np.eye(self.o)[manifold, :] + self.alpha,
+                          g_vals)

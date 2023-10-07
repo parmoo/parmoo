@@ -514,6 +514,7 @@ class MOOP:
         except BaseException:
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")
+        # Set up the surrogate optimizer
         if not isinstance(opt, structs.SurrogateOptimizer):
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")

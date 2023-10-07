@@ -86,11 +86,11 @@ def test_UniformAugChebyshev():
     maxind2 = np.argmax(acqu2.weights)
     maxind3 = np.argmax(acqu3.weights)
     assert (np.abs(np.sum(acqu1.scalarizeGrad(np.ones(3), np.ones((3,4))))
-                   - 4.0 * acqu1.weights[maxind1]) < 12.0e-3)
+                   - 4.0 * np.max(acqu1.weights) - 12.0e-3) < 1.0e-8)
     assert (np.abs(np.sum(acqu2.scalarizeGrad(np.ones(3), np.ones((3,4))))
-                   - 4.0 * acqu2.weights[maxind2]) < 12.0e-3)
+                   - 4.0 * np.max(acqu2.weights) - 12.0e-3) < 1.0e-8)
     assert (np.abs(np.sum(acqu3.scalarizeGrad(np.ones(3), np.ones((3,4))))
-                   - 4.0 * acqu3.weights[maxind3]) < 12.0e-3)
+                   - 4.0 * np.max(acqu3.weights) - 12.0e-3) < 1.0e-8)
     return
 
 
