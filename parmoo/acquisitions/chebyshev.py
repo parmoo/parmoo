@@ -43,7 +43,8 @@ class UniformAugChebyshev(AcquisitionFunction):
             hyperparams (dict): A dictionary of hyperparameters for tuning
                 the acquisition function. May include:
                  * 'alpha' (float): The weight to place on the linear
-                   term. When not present, defaults to 1e-3.
+                   term. When not present, defaults to
+                   1e-4 / number of objectives.
 
         Returns:
             UniformAugChebyshev: A new UniformAugChebyshev generator.
@@ -62,7 +63,7 @@ class UniformAugChebyshev(AcquisitionFunction):
         # Initialize the weights array
         self.weights = np.zeros(o)
         # Check hyperparameters
-        self.alpha = 1.0e-3
+        self.alpha = 1.0e-4 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
                 if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
@@ -167,7 +168,10 @@ class UniformAugChebyshev(AcquisitionFunction):
                     p_best = p_temp
             return x_best
         else:
-            i = np.argmin(np.asarray([np.dot(self.weights, fi)
+            xx = np.zeros(1)
+            sx = np.zeros(1)
+            sdx = np.zeros(1)
+            i = np.argmin(np.asarray([self.scalarize(fi, xx, sx, sdx)
                                       for fi in pf['f_vals']]))
             x = pf['x_vals'][i, :]
             return x
@@ -205,9 +209,9 @@ class UniformAugChebyshev(AcquisitionFunction):
         fx = np.zeros(f_vals.shape)
         fx[:] = f_vals * self.weights
         if not isinstance(manifold, int):
-            return np.max(fx) + self.alpha * np.sum(fx)
+            return np.max(fx) + self.alpha * np.sum(f_vals)
         else:
-            return fx[manifold] + self.alpha * np.sum(fx)
+            return fx[manifold] + self.alpha * np.sum(f_vals)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -305,7 +309,8 @@ class FixedAugChebyshev(AcquisitionFunction):
                    when present, specifies the scalarization weights to use.
                    When absent, the default weights are w = [1/o, ..., 1/o].
                  * 'alpha' (float): The weight to place on the linear
-                   term. When not present, defaults to 1e-3.
+                   term. When not present, defaults to
+                   1e-4 / number of objectives.
 
         Returns:
             FixedAugChebyshev: A new FixedAugChebyshev generator.
@@ -338,7 +343,7 @@ class FixedAugChebyshev(AcquisitionFunction):
             # If no weights were provided, use an even weighting
             self.weights = np.ones(self.o) / float(self.o)
         # Check hyperparameters dictionary for alpha
-        self.alpha = 1.0e-3
+        self.alpha = 1.0e-4 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
                 if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
@@ -440,7 +445,10 @@ class FixedAugChebyshev(AcquisitionFunction):
                     p_best = p_temp
             return x_best
         else:
-            i = np.argmin(np.asarray([np.dot(self.weights, fi)
+            xx = np.zeros(1)
+            sx = np.zeros(1)
+            sdx = np.zeros(1)
+            i = np.argmin(np.asarray([self.scalarize(fi, xx, sx, sdx)
                                       for fi in pf['f_vals']]))
             x = pf['x_vals'][i, :]
             return x
@@ -478,9 +486,9 @@ class FixedAugChebyshev(AcquisitionFunction):
         fx = np.zeros(f_vals.shape)
         fx[:] = f_vals * self.weights
         if not isinstance(manifold, int):
-            return np.max(fx) + self.alpha * np.sum(fx)
+            return np.max(fx) + self.alpha * np.sum(f_vals)
         else:
-            return fx[manifold] + self.alpha * np.sum(fx)
+            return fx[manifold] + self.alpha * np.sum(f_vals)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
