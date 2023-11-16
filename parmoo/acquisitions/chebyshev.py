@@ -276,7 +276,7 @@ class UniformAugChebyshev(AcquisitionFunction):
             return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
                           g_vals)
         else:
-            return np.dot(self.weights * np.eye(self.o)[manifold, :] + self.alpha,
+            return np.dot(self.weights * np.identity(self.o)[manifold, :] + self.alpha,
                           g_vals)
 
 
@@ -553,5 +553,5 @@ class FixedAugChebyshev(AcquisitionFunction):
             return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
                           g_vals)
         else:
-            return np.dot(self.weights * np.eye(self.o)[manifold, :] + self.alpha,
+            return np.dot(self.weights * np.identity(self.o)[manifold, :] + self.alpha,
                           g_vals)
