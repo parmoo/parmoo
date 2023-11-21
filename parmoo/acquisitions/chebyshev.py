@@ -176,6 +176,7 @@ class UniformAugChebyshev(AcquisitionFunction):
             x = pf['x_vals'][i, :]
             return x
 
+    @profile
     def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd, manifold=None):
         """ Scalarize a vector of function values using the current weights.
 
@@ -199,19 +200,10 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Compute augmented Chebyshev scalarization
-        fx = np.zeros(f_vals.shape)
-        fx[:] = f_vals * self.weights
         if not isinstance(manifold, int):
-            return np.max(fx) + self.alpha * np.sum(f_vals)
+            return np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
         else:
-            return fx[manifold] + self.alpha * np.sum(f_vals)
+            return (f_vals * self.weights)[manifold] + self.alpha * np.sum(f_vals)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -233,16 +225,9 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Compute augmented Chebyshev scalarization
-        fx = np.zeros(f_vals.shape[0])
-        fx[:] = f_vals * self.weights
-        return np.isclose(fx, fx.max(), atol=1.0e-8).astype(int)
+        return np.isclose(f_vals * self.weights,
+                          (f_vals * self.weights).max(),
+                          atol=1.0e-8).astype(int)
 
     def scalarizeGrad(self, f_vals, g_vals, manifold=None):
         """ Scalarize a Jacobian of gradients using the current weights.
@@ -259,25 +244,13 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Check that the gradient values are legal
-        if isinstance(g_vals, np.ndarray):
-            if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
-                raise ValueError("g_vals must have shape o-by-n")
-        else:
-            raise TypeError("g_vals must be a numpy array")
-        # Compute the gradient of the augmented Chebyshev scalarization
         if not isinstance(manifold, int):
             return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
                           g_vals)
         else:
-            return np.dot(self.weights * np.identity(self.o)[manifold, :] + self.alpha,
-                          g_vals)
+            wv = np.zeros(self.o)
+            wv[manifold] = self.weights[manifold]
+            return np.dot(wv + self.alpha, g_vals)
 
 
 class FixedAugChebyshev(AcquisitionFunction):
@@ -476,19 +449,10 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Compute augmented Chebyshev scalarization
-        fx = np.zeros(f_vals.shape)
-        fx[:] = f_vals * self.weights
         if not isinstance(manifold, int):
-            return np.max(fx) + self.alpha * np.sum(f_vals)
+            return np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
         else:
-            return fx[manifold] + self.alpha * np.sum(f_vals)
+            return (f_vals * self.weights)[manifold] + self.alpha * np.sum(f_vals)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -510,16 +474,9 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Compute augmented Chebyshev scalarization
-        fx = np.zeros(f_vals.shape[0])
-        fx[:] = f_vals * self.weights
-        return np.isclose(fx, fx.max(), atol=1.0e-8).astype(int)
+        return np.isclose(f_vals * self.weights,
+                          (f_vals * self.weights).max(),
+                          atol=1.0e-8).astype(int)
 
     def scalarizeGrad(self, f_vals, g_vals, manifold=None):
         """ Scalarize a Jacobian of gradients using the current weights.
@@ -536,22 +493,10 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Check that the gradient values are legal
-        if isinstance(g_vals, np.ndarray):
-            if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
-                raise ValueError("g_vals must have shape o-by-n")
-        else:
-            raise TypeError("g_vals must be a numpy array")
-        # Compute the gradient of the augmented Chebyshev scalarization
         if not isinstance(manifold, int):
             return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
                           g_vals)
         else:
-            return np.dot(self.weights * np.identity(self.o)[manifold, :] + self.alpha,
-                          g_vals)
+            wv = np.zeros(self.o)
+            wv[manifold] = self.weights[manifold]
+            return np.dot(wv + self.alpha, g_vals)
