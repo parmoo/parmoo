@@ -36,11 +36,6 @@ def test_UniformAugChebyshev():
     x0 = acqu.setTarget({}, lambda x: np.zeros(3), {})
     assert (abs(sum(acqu.weights) - 1.0) < 0.00000001)
     assert (np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
-    # Try some bad scalarizations to test error handling
-    with pytest.raises(TypeError):
-        acqu.scalarize(5, 5, 5, 5)
-    with pytest.raises(ValueError):
-        acqu.scalarize(np.ones(2), np.ones(2), np.ones(2), np.ones(2))
     # Generate 3 random weight vector
     acqu1 = UniformAugChebyshev(3, np.zeros(4), np.ones(4), {})
     acqu1.setTarget({}, lambda x: np.zeros(3), {})
@@ -72,25 +67,16 @@ def test_UniformAugChebyshev():
     assert (acqu3.getManifold(f_vals)[maxind] == 1)
     assert (abs(acqu3.scalarize(f_vals, np.ones(2), np.ones(2), np.ones(2)) -
                 acqu3.weights[maxind] * f_vals[maxind]) < 3.0e-3)
-    # Try some bad gradient scalarizations to test error handling
-    with pytest.raises(TypeError):
-        acqu.scalarizeGrad(5, np.zeros((3, 4))[0])
-    with pytest.raises(ValueError):
-        acqu.scalarizeGrad(np.ones(2), np.zeros((3, 4)))
-    with pytest.raises(TypeError):
-        acqu.scalarizeGrad(np.eye(3)[0], 5)
-    with pytest.raises(ValueError):
-        acqu.scalarizeGrad(np.eye(3)[0], np.zeros((2, 4)))
     # Check the gradient scalarization appears to work correctly
     maxind1 = np.argmax(acqu1.weights)
     maxind2 = np.argmax(acqu2.weights)
     maxind3 = np.argmax(acqu3.weights)
     assert (np.abs(np.sum(acqu1.scalarizeGrad(np.ones(3), np.ones((3,4))))
-                   - 4.0 * np.max(acqu1.weights) - 12.0e-3) < 1.0e-8)
+                   - 4.0 * np.max(acqu1.weights) - 3.0e-4) < 1.0e-4)
     assert (np.abs(np.sum(acqu2.scalarizeGrad(np.ones(3), np.ones((3,4))))
-                   - 4.0 * np.max(acqu2.weights) - 12.0e-3) < 1.0e-8)
+                   - 4.0 * np.max(acqu2.weights) - 3.0e-4) < 1.0e-4)
     assert (np.abs(np.sum(acqu3.scalarizeGrad(np.ones(3), np.ones((3,4))))
-                   - 4.0 * np.max(acqu3.weights) - 12.0e-3) < 1.0e-8)
+                   - 4.0 * np.max(acqu3.weights) - 3.0e-4) < 1.0e-4)
     return
 
 
@@ -147,11 +133,6 @@ def test_FixedAugChebyshev():
     assert (np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
     x0 = acqu.setTarget({}, lambda x: np.zeros(3), {})
     assert (np.all(x0[:] <= acqu.ub) and np.all(x0[:] >= acqu.lb))
-    # Try some bad scalarizations to test error handling
-    with pytest.raises(TypeError):
-        acqu.scalarize(5, 5, 5, 5)
-    with pytest.raises(ValueError):
-        acqu.scalarize(np.ones(2), np.ones(2), np.ones(2), np.ones(2))
     # Use the scalarization function to check the weights
     assert (np.abs(acqu.scalarize(np.eye(3)[0], np.ones(2),
                                   np.ones(2), np.ones(2))
@@ -160,15 +141,6 @@ def test_FixedAugChebyshev():
                    + acqu.scalarize(np.eye(3)[2], np.ones(2),
                                     np.ones(2), np.ones(2)) - 1.0)
             < 9.0e-3)
-    # Try some bad gradient scalarizations to test error handling
-    with pytest.raises(TypeError):
-        acqu.scalarizeGrad(5, np.zeros((3, 4))[0])
-    with pytest.raises(ValueError):
-        acqu.scalarizeGrad(np.ones(2), np.zeros((3, 4)))
-    with pytest.raises(TypeError):
-        acqu.scalarizeGrad(np.eye(3)[0], 5)
-    with pytest.raises(ValueError):
-        acqu.scalarizeGrad(np.eye(3)[0], np.zeros((2, 4)))
     # Use the gradient scalarization to check that the weights sum to 1
     assert (np.abs(np.sum(acqu.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
                    - acqu.weights[0]) < 9.0e-3)

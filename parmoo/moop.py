@@ -1369,9 +1369,10 @@ class MOOP:
         if i < 0 or i > self.s - 1:
             raise ValueError("s_name did not contain a legal name/index")
         # Check the database for previous evaluations of x
+        xx = self.__embed__(x)
         for j in range(self.sim_db[i]['n']):
-            if all(abs(self.sim_db[i]['x_vals'][j, :] - self.__embed__(x)) <
-                   self.scaled_des_tols):
+            if np.all(np.abs(self.sim_db[i]['x_vals'][j, :] - xx) <
+                      self.scaled_des_tols):
                 # If found, return the sim value
                 return self.sim_db[i]['s_vals'][j, :]
         # Nothing found, return None
@@ -1639,15 +1640,16 @@ class MOOP:
                 sim_std_dev[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
             m_count += self.m[i]
         # Evaluate the objective functions
+        xx = self.__extract__(x)
+        sx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
         fx = np.zeros(self.o)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
-                fx[i] = obj_func(self.__extract__(x),
-                                 self.__unpack_sim__(sim),
-                                 self.__unpack_sim__(sim_std_dev))
+                fx[i] = obj_func(xx, sx, sdx)
             else:
-                fx[i] = obj_func(self.__extract__(x),
-                                 self.__unpack_sim__(sim))
+                fx[i] = obj_func(xx, sx)
         # Return the result
         return fx
 
@@ -1688,15 +1690,16 @@ class MOOP:
                                                     surrogate.stdDev(x)
                 m_count += self.m[i]
             # Evaluate the constraint functions
+            xx = self.__extract__(x)
+            sx = self.__unpack_sim__(sim)
+            if any(self.c_exp_vals):
+                sdx = self.__unpack_sim__(sim_std_dev)
             cx = np.zeros(self.p)
             for i, constraint_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
-                    cx[i] = constraint_func(self.__extract__(x),
-                                            self.__unpack_sim__(sim),
-                                            self.__unpack_sim__(sim_std_dev))
+                    cx[i] = constraint_func(xx, sx, sdx)
                 else:
-                    cx[i] = constraint_func(self.__extract__(x),
-                                            self.__unpack_sim__(sim))
+                    cx[i] = constraint_func(xx, sx)
             # Return the constraint violations
             return cx
 
@@ -1740,26 +1743,24 @@ class MOOP:
                 raise TypeError("sx must be a numpy array when present")
             sim[:] = sx[:]
         # Evaluate the objective functions
+        xx = self.__extract__(x)
+        ssx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals) or any(self.c_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
         fx = np.zeros(self.o)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
-                fx[i] = obj_func(self.__extract__(x),
-                                 self.__unpack_sim__(sim),
-                                 self.__unpack_sim__(sim_std_dev))
+                fx[i] = obj_func(xx, ssx, sdx)
             else:
-                fx[i] = obj_func(self.__extract__(x),
-                                 self.__unpack_sim__(sim))
+                fx[i] = obj_func(xx, ssx)
         # Evaluate the constraint functions
         Lx = np.zeros(self.o)
         if self.p > 0:
             for i, constraint_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
-                    cx = constraint_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         self.__unpack_sim__(sim_std_dev))
+                    cx = constraint_func(xx, ssx, sdx)
                 else:
-                    cx = constraint_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim))
+                    cx = constraint_func(xx, ssx)
                 if cx > 0.0:
                     Lx[:] = Lx[:] + cx
         # Compute the penalized objective score
@@ -1811,19 +1812,18 @@ class MOOP:
                         surrogate.stdDevGrad(x)
                 m_count += self.m[i]
         # Evaluate the gradients of the objective functions
+        xx = self.__extract__(x)
+        ssx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals) or any(self.c_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
         df_dx = np.zeros((self.o, self.n))
         for i, obj_func in enumerate(self.objectives):
             # If names are used, unpack the derivative
             if self.use_names:
                 if self.obj_exp_vals[i]:
-                    df_dx_tmp = obj_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         self.__unpack_sim__(sim_std_dev),
-                                         der=1)
+                    df_dx_tmp = obj_func(xx, ssx, sdx, der=1)
                 else:
-                    df_dx_tmp = obj_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         der=1)
+                    df_dx_tmp = obj_func(xx, ssx, der=1)
                 for j, d_name in enumerate(self.des_names):
                     if self.des_order[j] < self.n_cont:
                         df_dx[i, j] = df_dx_tmp[d_name[0]]
@@ -1834,14 +1834,11 @@ class MOOP:
             else:
                 nn = self.n_cont
                 if self.obj_exp_vals[i]:
-                    df_dx[i, :nn] = (obj_func(self.__extract__(x),
-                                              self.__unpack_sim__(sim),
-                                              self.__unpack_sim__(sim_std_dev),
+                    df_dx[i, :nn] = (obj_func(xx, ssx, sdx,
                                               der=1)[:self.n_cont] /
                                      self.scale[:self.n_cont])
                 else:
-                    df_dx[i, :nn] = (obj_func(self.__extract__(x),
-                                              self.__unpack_sim__(sim),
+                    df_dx[i, :nn] = (obj_func(xx, ssx,
                                               der=1)[:self.n_cont] /
                                      self.scale[:self.n_cont])
         # Now evaluate wrt the sims
@@ -1849,14 +1846,9 @@ class MOOP:
             df_dsim = np.zeros((self.o, self.m_total))
             for i, obj_func in enumerate(self.objectives):
                 if self.obj_exp_vals[i]:
-                    df_ds_tmp = obj_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         self.__unpack_sim__(sim_std_dev),
-                                         der=2)
+                    df_ds_tmp = obj_func(xx, ssx, sdx, der=2)
                 else:
-                    df_ds_tmp = obj_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         der=2)
+                    df_ds_tmp = obj_func(xx, ssx, der=2)
                 # If names are used, pack the sims
                 if self.use_names:
                     df_dsim[i, :] = self.__pack_sim__(df_ds_tmp)
@@ -1867,10 +1859,7 @@ class MOOP:
             df_dstdD = np.zeros((self.o, self.m_total))
             for i, obj_func in enumerate(self.objectives):
                 if self.obj_exp_vals[i]:
-                    df_dsd_tmp = obj_func(self.__extract__(x),
-                                          self.__unpack_sim__(sim),
-                                          self.__unpack_sim__(sim_std_dev),
-                                          der=3)
+                    df_dsd_tmp = obj_func(xx, ssx, sdx, der=3)
                     # If names are used, pack the sims
                     if self.use_names:
                         df_dstdD[i, :] = self.__pack_sim__(df_dsd_tmp)
@@ -1891,24 +1880,16 @@ class MOOP:
             cx = np.zeros(self.p)
             for i, const_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
-                    cx[i] = const_func(self.__extract__(x),
-                                       self.__unpack_sim__(sim),
-                                       self.__unpack_sim__(sim_std_dev))
+                    cx[i] = const_func(xx, ssx, sdx)
                 else:
-                    cx[i] = const_func(self.__extract__(x),
-                                       self.__unpack_sim__(sim))
+                    cx[i] = const_func(xx, ssx)
             # Evaluate the gradients of the constraint functions
             dc_dx = np.zeros((self.p, self.n))
             for i, const_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
-                    dc_dx_tmp = const_func(self.__extract__(x),
-                                           self.__unpack_sim__(sim),
-                                           self.__unpack_sim__(sim_std_dev),
-                                           der=1)
+                    dc_dx_tmp = const_func(xx, ssx, sdx, der=1)
                 else:
-                    dc_dx_tmp = const_func(self.__extract__(x),
-                                           self.__unpack_sim__(sim),
-                                           der=1)
+                    dc_dx_tmp = const_func(xx, ssx, der=1)
                 # If names are used, unpack the derivative
                 if self.use_names:
                     for j, d_name in enumerate(self.des_names):
@@ -1926,38 +1907,25 @@ class MOOP:
                 dc_dsim = np.zeros((self.p, self.m_total))
                 # If names are used, sims need to be packed
                 if self.use_names:
-                    sxx = self.__unpack_sim__(sim)
-                    if any(self.c_exp_vals):
-                        sdxx = self.__unpack_sim__(sim_std_dev)
                     for i, const_func in enumerate(self.constraints):
                         if self.c_exp_vals[i]:
-                            dc_dsim_tmp = const_func(self.__extract__(x),
-                                                     sxx, sdxx, der=2)
+                            dc_dsim_tmp = const_func(xx, ssx, sdx, der=2)
                         else:
-                            dc_dsim_tmp = const_func(self.__extract__(x),
-                                                     sxx, der=2)
+                            dc_dsim_tmp = const_func(xx, ssx, der=2)
                         dc_dsim[i, :] = self.__pack_sim__(dc_dsim_tmp)
                 # Otherwise, evaluate normally
                 else:
-                    sxx = self.__unpack_sim__(sim)
-                    if any(self.c_exp_vals):
-                        sdxx = self.__unpack_sim__(sim_std_dev)
                     for i, const_func in enumerate(self.constraints):
                         if self.c_exp_vals[i]:
-                            dc_dsim[i, :] = const_func(self.__extract__(x),
-                                                       sxx, sdxx, der=2)
+                            dc_dsim[i, :] = const_func(xx, ssx, sdx, der=2)
                         else:
-                            dc_dsim[i, :] = const_func(self.__extract__(x),
-                                                       sxx, der=2)
+                            dc_dsim[i, :] = const_func(xx, ssx, der=2)
             # Now evaluate wrt the std deviations
             if any(self.c_exp_vals):
                 dc_dstdD = np.zeros((self.p, self.m_total))
                 for i, const_func in enumerate(self.constraints):
                     if self.c_exp_vals[i]:
-                        sxx = self.__unpack_sim__(sim)
-                        sdxx = self.__unpack_sim__(sim_std_dev)
-                        dc_dsd_tmp = const_func(self.__extract__(x),
-                                                sxx, sdxx, der=3)
+                        dc_dsd_tmp = const_func(xx, ssx, sdx, der=3)
                         # If names are used, pack the sims
                         if self.use_names:
                             dc_dstdD[i, :] = self.__pack_sim__(dc_dsd_tmp)
@@ -2010,8 +1978,10 @@ class MOOP:
         # Initialize the database if needed
         if any(self.obj_exp_vals):
             sdx = np.zeros(sx.dtype)
+        # Pre-embed x
+        xx = self.__embed__(x)
         if self.n_dat == 0:
-            self.data['x_vals'][0, :] = self.__embed__(x)
+            self.data['x_vals'][0, :] = xx
             self.data['f_vals'] = np.zeros((1, self.o))
             for i, obj_func in enumerate(self.objectives):
                 if self.obj_exp_vals[i]:
@@ -2027,13 +1997,12 @@ class MOOP:
                 self.data['c_vals'] = np.zeros((1, 1))
             self.n_dat = 1
         # Check for duplicate values (up to the design tolerance)
-        elif any([np.all(np.abs(self.__embed__(x) - xj) < self.scaled_des_tols)
+        elif any([np.all(np.abs(xx - xj) < self.scaled_des_tols)
                   for xj in self.data['x_vals']]):
             return
         # Otherwise append the objectives
         else:
-            self.data['x_vals'] = np.append(self.data['x_vals'],
-                                            [self.__embed__(x)], axis=0)
+            self.data['x_vals'] = np.append(self.data['x_vals'], [xx], axis=0)
             fx = np.zeros(self.o)
             for i, obj_func in enumerate(self.objectives):
                 if self.obj_exp_vals[i]:
@@ -2055,6 +2024,7 @@ class MOOP:
             self.n_dat += 1
         return
 
+    @profile
     def iterate(self, k, ib=None):
         """ Perform an iteration of ParMOO's solver and generate candidates.
 
@@ -2207,8 +2177,9 @@ class MOOP:
 
         """
 
-        # Create an empty list to store the filtered batch
+        # Create an empty list to store the filtered and embedded batches
         fbatch = []
+        ebatch = []
         for xbatch in args:
             # Evaluate all of the simulations at the candidate solutions
             if self.s > 0:
@@ -2237,23 +2208,22 @@ class MOOP:
                             namei = self.sim_names[i][0]
                         else:
                             namei = i
-                        if all([np.any(np.abs(xxi - self.__embed__(xj)) >
-                                       self.scaled_des_tols)
-                                or namei != j for (xj, j) in fbatch]) \
+                        if all([np.any(np.abs(xxi - xj) > self.scaled_des_tols)
+                                or namei != j for (xj, j) in ebatch]) \
                            and self.check_sim_db(xi, namei) is None:
-                            # If not, add it to the fbatch
+                            # If not, add it to the fbatch and ebatch
                             fbatch.append((xi, namei))
+                            ebatch.append((xxi, namei))
                         else:
                             # Try to improve surrogate (locally then globally)
                             x_improv = self.surrogates[i].improve(xxi, False)
                             # Again, this is needed to handle categorical vars
                             ibatch = [self.__embed__(self.__extract__(xk))
                                       for xk in x_improv]
-                            while (any([any([np.all(np.abs(self.__embed__(xj)
-                                                           - xk) <
+                            while (any([any([np.all(np.abs(xj - xk) <
                                                     self.scaled_des_tols)
                                              and namei == j for (xj, j)
-                                             in fbatch])
+                                             in ebatch])
                                         for xk in ibatch]) or
                                    any([self.check_sim_db(self.__extract__(xk),
                                                           namei)
@@ -2265,16 +2235,17 @@ class MOOP:
                             # Add improvement points to the fbatch
                             for xj in ibatch:
                                 fbatch.append((self.__extract__(xj), namei))
+                                ebatch.append((xj, namei))
             else:
                 # If there were no simulations, just add all points to fbatch
                 for xi in xbatch:
                     # This 2nd extract/embed, while redundant, is necessary
                     # for categorical variables to be processed correctly
                     xxi = self.__embed__(xi)
-                    if all([np.any(np.abs(xxi - self.__embed__(xj))
-                            > self.scaled_des_tols)
-                            for (xj, j) in fbatch]):
+                    if all([np.any(np.abs(xxi - xj) > self.scaled_des_tols)
+                            for (xj, j) in ebatch]):
                         fbatch.append((xi, -1))
+                        ebatch.append((xxi, -1))
         return fbatch
 
     def updateAll(self, k, batch):
@@ -2337,7 +2308,7 @@ class MOOP:
             # If constraints are violated, increase lam
             if any([np.any(self.evaluateConstraints(self.__embed__(xi))
                            > 1.0e-4) for (xi, i) in batch]):
-                self.lam = self.lam * 2.0
+                self.lam = min(1e4, self.lam * 2.0)
             # Update the surrogates
             self.updateSurrogates()
             # Add new points that have been fully evaluated to the database
@@ -2371,6 +2342,7 @@ class MOOP:
             self.save(filename=self.checkpointfile)
         return
 
+    @profile
     def solve(self, iter_max=None, sim_max=None):
         """ Solve a MOOP using ParMOO.
 

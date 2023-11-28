@@ -176,7 +176,6 @@ class UniformAugChebyshev(AcquisitionFunction):
             x = pf['x_vals'][i, :]
             return x
 
-    @profile
     def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd, manifold=None):
         """ Scalarize a vector of function values using the current weights.
 
