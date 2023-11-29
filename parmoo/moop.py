@@ -127,43 +127,55 @@ class MOOP:
         x_tmp = np.zeros(self.n_cont + self.n_cat + self.n_int + self.n_custom
                          + self.n_raw)
         if self.use_names:
+            # Precompute ranges
+            cat_range_low = self.n_cont + self.n_int
+            cus_range_low = cat_range_low + self.n_cat
+            raw_range_low = cus_range_low + self.n_custom
+            # Extract the labels now for convenience
             x_labels = []
             for d_name in self.des_names:
                 x_labels.append(x[d_name[0]])
+            # Loop over permutation of variables
             for i, j in enumerate(self.des_order):
-                if ((j in range(self.n_cont+self.n_int,
-                                self.n_cont+self.n_int+self.n_cat))
-                    and (len(self.cat_names[j - self.n_cont - self.n_int])
-                         > 0)):
+                # Pack ordinal, raw, and unnamed categorical variables
+                if (j < cat_range_low or j >= raw_range_low or
+                    (j < cus_range_low and
+                     not self.cat_names[j - cat_range_low])):
+                    x_tmp[j] = x_labels[i]
+                # Pack categorical variables when cat_names given
+                elif j < cus_range_low:
                     x_tmp[j] = float(self.cat_names[j - self.n_cont -
                                                     self.n_int].index(
                                                                 x_labels[i]))
-                elif (j in range(self.n_cont+self.n_int+self.n_cat,
-                                 self.n_cont+self.n_int+self.n_cat +
-                                 self.n_custom)):
-                    x_tmp[j] = i
+                # Unpack named custom variables (skipped earlier)
                 else:
-                    x_tmp[j] = x_labels[i]
+                    x_tmp[j] = i
         else:
             x_tmp[self.des_order] = x[:]
         # Create the output array
         xx = np.zeros(self.n)
-        # Rescale the continuous and integer variables
         start = 0
         end = self.n_cont
-        xx[start:end] = ((x_tmp[start:end] - self.cont_lb[:]) /
-                         self.scale[start:end] + self.scaled_lb[start:end])
-        # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.scaled_lb[start:end])
-        xx[start:end] = np.minimum(xx[start:end], self.scaled_ub[start:end])
-        # Rescale the continuous and integer variables
-        start = end
-        end = start + self.n_int
-        xx[start:end] = ((x_tmp[start:end] - self.int_lb[:]) /
-                         self.scale[start:end] + self.scaled_lb[start:end])
-        # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.scaled_lb[start:end])
-        xx[start:end] = np.minimum(xx[start:end], self.scaled_ub[start:end])
+        # Rescale the continuous variables
+        if self.n_cont > 0:
+            xx[start:end] = ((x_tmp[start:end] - self.cont_lb[:]) /
+                             self.scale[start:end] +
+                             self.scaled_lb[start:end])
+            xx[start:end] = np.maximum(xx[start:end],
+                                       self.scaled_lb[start:end])
+            xx[start:end] = np.minimum(xx[start:end],
+                                       self.scaled_ub[start:end])
+        # Rescale the integer variables
+        if self.n_int > 0:
+            start = end
+            end = start + self.n_int
+            xx[start:end] = ((x_tmp[start:end] - self.int_lb[:]) /
+                             self.scale[start:end] +
+                             self.scaled_lb[start:end])
+            xx[start:end] = np.maximum(xx[start:end],
+                                       self.scaled_lb[start:end])
+            xx[start:end] = np.minimum(xx[start:end],
+                                       self.scaled_ub[start:end])
         # Embed the categorical variables
         if self.n_cat_d > 0:
             start = end
@@ -177,34 +189,32 @@ class MOOP:
             xx[start:end] = ((np.matmul(self.RSVT, bvec) - self.cat_lb[:])
                              / self.scale[start:end]
                              + self.scaled_lb[start:end])
-            # Pull inside bounding box, in case perturbed outside
             xx[start:end] = np.maximum(xx[start:end],
                                        self.scaled_lb[start:end])
             xx[start:end] = np.minimum(xx[start:end],
                                        self.scaled_ub[start:end])
         # Embed the custom variables
-        for i, embed_i in enumerate(self.custom_embedders):
-            start = end
-            end = start + self.n_custom_d[i]
-            if self.use_names:
-                if end - start > 1:
-                    xx[start:end] = embed_i(x_labels[int(x_tmp[self.n_cont +
-                                                               self.n_cat +
-                                                               self.n_int +
-                                                               i])])
-                # Special rule for self.n_custom_d = 1
+        if self.n_custom > 0:
+            for i, embed_i in enumerate(self.custom_embedders):
+                start = end
+                end = start + self.n_custom_d[i]
+                if self.use_names:
+                    if end - start > 1:
+                        xx[start:end] = embed_i(x_labels[int(
+                            x_tmp[self.n_cont + self.n_cat + self.n_int + i])])
+                    # Special rule for self.n_custom_d = 1
+                    else:
+                        xx[start] = embed_i(x_labels[int(
+                            x_tmp[self.n_cont + self.n_cat + self.n_int + i])])
                 else:
-                    xx[start] = embed_i(x_labels[int(x_tmp[self.n_cont +
-                                                           self.n_cat +
-                                                           self.n_int + i])])
-            else:
-                xx[start:end] = embed_i(x_tmp[self.n_cont + self.n_cat +
-                                              self.n_int + i])
+                    xx[start:end] = embed_i(x_tmp[self.n_cont + self.n_cat +
+                                                  self.n_int + i])
         # Embed the raw variables
-        start = end
-        end = start + self.n_raw
-        xx[start:end] = x_tmp[self.n_cont + self.n_cat + self.n_int +
-                              self.n_custom:]
+        if self.n_raw > 0:
+            start = end
+            end = start + self.n_raw
+            xx[start:end] = x_tmp[self.n_cont + self.n_cat + self.n_int +
+                                  self.n_custom:]
         return xx
 
     def __extract__(self, x):
@@ -233,7 +243,6 @@ class MOOP:
         if self.n_cont > 0:
             xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
                              * self.scale[start:end] + self.cont_lb[:])
-            # Pull inside bounding box, in case perturbed outside
             xx[start:end] = np.maximum(xx[start:end], self.cont_lb[:])
             xx[start:end] = np.minimum(xx[start:end], self.cont_ub[:])
         # Descale the integer variables
@@ -242,7 +251,6 @@ class MOOP:
             end = start + self.n_int
             xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
                              * self.scale[start:end] + self.int_lb[:])
-            # Pull inside bounding box, in case perturbed outside
             xx[start:end] = np.maximum(xx[start:end], self.int_lb[:])
             xx[start:end] = np.minimum(xx[start:end], self.int_ub[:])
             # Bin the integer variables

@@ -181,13 +181,6 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Compute the dot product between the weights and function values
         return np.dot(f_vals, self.weights)
 
     def scalarizeGrad(self, f_vals, g_vals):
@@ -205,19 +198,6 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Check that the gradient values are legal
-        if isinstance(g_vals, np.ndarray):
-            if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
-                raise ValueError("g_vals must have shape o-by-n")
-        else:
-            raise TypeError("g_vals must be a numpy array")
-        # Compute the dot product between the weights and the gradient values
         return np.dot(np.transpose(g_vals), self.weights)
 
 
@@ -399,13 +379,6 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Compute the dot product between the weights and function values
         return np.dot(f_vals, self.weights)
 
     def scalarizeGrad(self, f_vals, g_vals):
@@ -423,17 +396,4 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Check that the gradient values are legal
-        if isinstance(g_vals, np.ndarray):
-            if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
-                raise ValueError("g_vals must have shape o-by-n")
-        else:
-            raise TypeError("g_vals must be a numpy array")
-        # Compute the dot product between the weights and the gradient values
         return np.dot(np.transpose(g_vals), self.weights)
