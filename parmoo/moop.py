@@ -207,6 +207,7 @@ class MOOP:
                               self.n_custom:]
         return xx
 
+    @profile
     def __extract__(self, x):
         """ Extract a design variable from an n-dimensional vector.
 
@@ -236,60 +237,63 @@ class MOOP:
         xx[start:end] = np.maximum(xx[start:end], self.cont_lb[:])
         xx[start:end] = np.minimum(xx[start:end], self.cont_ub[:])
         # Descale the integer variables
-        start = end
-        end = start + self.n_int
-        xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
-                         * self.scale[start:end] + self.int_lb[:])
-        # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.int_lb[:])
-        xx[start:end] = np.minimum(xx[start:end], self.int_ub[:])
-        # Bin the integer variables
-        for i in range(self.n_cont, self.n_cont + self.n_int):
-            xx[i] = int(xx[i])
-        # Extract categorical variables
-        if self.n_cat_d > 0:
+        if end < xx.size:
             start = end
-            end = start + self.n_cat_d
-            bvec = (np.matmul(np.transpose(self.RSVT),
-                              (x[start:end]
-                               - self.scaled_lb[start:end])
-                              * self.scale[start:end]
-                              + self.cat_lb[:])
-                    + self.mean)
-            count = 0
-            for i, n_lvl in enumerate(self.n_lvls):
-                xx[start+i] = np.argmax(bvec[count:count+n_lvl])
-                count += n_lvl
+            end = start + self.n_int
+            xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
+                             * self.scale[start:end] + self.int_lb[:])
+            # Pull inside bounding box, in case perturbed outside
+            xx[start:end] = np.maximum(xx[start:end], self.int_lb[:])
+            xx[start:end] = np.minimum(xx[start:end], self.int_ub[:])
+            # Bin the integer variables
+            for i in range(self.n_cont, self.n_cont + self.n_int):
+                xx[i] = int(xx[i])
+            # Extract categorical variables
+            if self.n_cat_d > 0:
+                start = end
+                end = start + self.n_cat_d
+                bvec = (np.matmul(np.transpose(self.RSVT),
+                                  (x[start:end]
+                                   - self.scaled_lb[start:end])
+                                  * self.scale[start:end]
+                                  + self.cat_lb[:])
+                        + self.mean)
+                count = 0
+                for i, n_lvl in enumerate(self.n_lvls):
+                    xx[start+i] = np.argmax(bvec[count:count+n_lvl])
+                    count += n_lvl
         # Extract custom variables
-        for i, ex_i in enumerate(self.custom_extracters):
-            start = end
-            end = start + self.n_custom_d[i]
-            if not self.use_names:
-                xx[self.n_cont + self.n_cat + self.n_int + i] = \
-                    ex_i(x[start:end])
+        if end < xx.size:
+            for i, ex_i in enumerate(self.custom_extracters):
+                start = end
+                end = start + self.n_custom_d[i]
+                if not self.use_names:
+                    xx[self.n_cont + self.n_cat + self.n_int + i] = \
+                        ex_i(x[start:end])
         # Extract the raw variables
-        start = end
-        end = start + self.n_raw
-        xx[self.n_cont + self.n_cat + self.n_int + self.n_custom:] = \
-            x[start:end]
+        if end < xx.size:
+            start = end
+            end = start + self.n_raw
+            xx[self.n_cont + self.n_cat + self.n_int + self.n_custom:] = \
+                x[start:end]
         # Unshuffle xx and pack into a numpy structured array
         if self.use_names:
             out = np.zeros(1, dtype=np.dtype(self.des_names))
             n_customs = 0
+            cat_range_low = self.n_cont + self.n_int
+            raw_range_low = cat_range_low + self.n_cat
             for i, j in enumerate(self.des_order):
+                # Unpack ordinal variables
+                if j < cat_range_low:
+                    out[self.des_names[i][0]] = xx[j]
                 # Unpack categorical variables when cat_names given
-                if ((j in range(self.n_cont+self.n_int,
-                                self.n_cont+self.n_int+self.n_cat))
-                    and (len(self.cat_names[j - self.n_cont - self.n_int])
-                         > 0)):
+                elif ((j < raw_range_low)
+                      and (len(self.cat_names[j - cat_range_low]) > 0)):
                     out[self.des_names[i][0]] = (self.cat_names[j -
-                                                                self.n_cont -
-                                                                self.n_int]
+                                                                cat_range_low]
                                                                [int(xx[j])])
                 # Unpack custom variables
-                elif (j in range(self.n_cont + self.n_int + self.n_cat,
-                                 self.n_cont + self.n_int + self.n_cat +
-                                 self.n_custom)):
+                else:
                     start = (self.n_cont + self.n_cat_d + self.n_int +
                              sum(self.n_custom_d[:n_customs]))
                     end = start + self.n_custom_d[n_customs]
@@ -300,8 +304,6 @@ class MOOP:
                     else:
                         out[self.des_names[i][0]] = exi(x[start])
                     n_customs += 1  # increment counter
-                else:
-                    out[self.des_names[i][0]] = xx[j]
             return out[0]
         else:
             return xx[self.des_order]
@@ -1703,6 +1705,7 @@ class MOOP:
             # Return the constraint violations
             return cx
 
+    @profile
     def evaluatePenalty(self, x, sx=None):
         """ Evaluate the penalized objective using the surrogates as needed.
 
@@ -1725,10 +1728,10 @@ class MOOP:
         else:
             raise TypeError("x must be a numpy array")
         # Evaluate the surrogate models to approximate the simulation outputs
-        sim = np.zeros(self.m_total)
         sim_std_dev = np.zeros(self.m_total)
         if sx is None:
             m_count = 0
+            sim = np.zeros(self.m_total)
             for i, surrogate in enumerate(self.surrogates):
                 sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
                 if any(self.obj_exp_vals) or any(self.c_exp_vals):
@@ -1741,20 +1744,20 @@ class MOOP:
                     raise ValueError("sx must have length m when present")
             else:
                 raise TypeError("sx must be a numpy array when present")
-            sim[:] = sx[:]
+            sim = sx
+        # Px is the penalized objective score
+        Px = np.zeros(self.o)
         # Evaluate the objective functions
         xx = self.__extract__(x)
         ssx = self.__unpack_sim__(sim)
         if any(self.obj_exp_vals) or any(self.c_exp_vals):
             sdx = self.__unpack_sim__(sim_std_dev)
-        fx = np.zeros(self.o)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
-                fx[i] = obj_func(xx, ssx, sdx)
+                Px[i] = obj_func(xx, ssx, sdx)
             else:
-                fx[i] = obj_func(xx, ssx)
+                Px[i] = obj_func(xx, ssx)
         # Evaluate the constraint functions
-        Lx = np.zeros(self.o)
         if self.p > 0:
             for i, constraint_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
@@ -1762,11 +1765,10 @@ class MOOP:
                 else:
                     cx = constraint_func(xx, ssx)
                 if cx > 0.0:
-                    Lx[:] = Lx[:] + cx
-        # Compute the penalized objective score
-        Lx[:] = self.lam * Lx[:] + fx[:]
+                    # Add constraint violation penalty
+                    Px[:] = Px[:] + self.lam * cx
         # Return the result
-        return Lx
+        return Px
 
     def evaluateGradients(self, x):
         """ Evaluate the gradient of the penalized objective using surrogates.
