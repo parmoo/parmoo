@@ -68,14 +68,11 @@ def test_UniformAugChebyshev():
     assert (abs(acqu3.scalarize(f_vals, np.ones(2), np.ones(2), np.ones(2)) -
                 acqu3.weights[maxind] * f_vals[maxind]) < 3.0e-3)
     # Check the gradient scalarization appears to work correctly
-    maxind1 = np.argmax(acqu1.weights)
-    maxind2 = np.argmax(acqu2.weights)
-    maxind3 = np.argmax(acqu3.weights)
-    assert (np.abs(np.sum(acqu1.scalarizeGrad(np.ones(3), np.ones((3,4))))
+    assert (np.abs(np.sum(acqu1.scalarizeGrad(np.ones(3), np.ones((3, 4))))
                    - 4.0 * np.max(acqu1.weights) - 3.0e-4) < 1.0e-4)
-    assert (np.abs(np.sum(acqu2.scalarizeGrad(np.ones(3), np.ones((3,4))))
+    assert (np.abs(np.sum(acqu2.scalarizeGrad(np.ones(3), np.ones((3, 4))))
                    - 4.0 * np.max(acqu2.weights) - 3.0e-4) < 1.0e-4)
-    assert (np.abs(np.sum(acqu3.scalarizeGrad(np.ones(3), np.ones((3,4))))
+    assert (np.abs(np.sum(acqu3.scalarizeGrad(np.ones(3), np.ones((3, 4))))
                    - 4.0 * np.max(acqu3.weights) - 3.0e-4) < 1.0e-4)
     return
 

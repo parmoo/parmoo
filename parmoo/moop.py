@@ -207,7 +207,6 @@ class MOOP:
                               self.n_custom:]
         return xx
 
-    @profile
     def __extract__(self, x):
         """ Extract a design variable from an n-dimensional vector.
 
@@ -228,16 +227,17 @@ class MOOP:
         # Create the output array
         xx = np.zeros(self.n_cont + self.n_cat + self.n_int + self.n_custom
                       + self.n_raw)
-        # Descale the continuous variables
         start = 0
         end = self.n_cont
-        xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
-                         * self.scale[start:end] + self.cont_lb[:])
-        # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.cont_lb[:])
-        xx[start:end] = np.minimum(xx[start:end], self.cont_ub[:])
+        # Descale the continuous variables
+        if self.n_cont > 0:
+            xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
+                             * self.scale[start:end] + self.cont_lb[:])
+            # Pull inside bounding box, in case perturbed outside
+            xx[start:end] = np.maximum(xx[start:end], self.cont_lb[:])
+            xx[start:end] = np.minimum(xx[start:end], self.cont_ub[:])
         # Descale the integer variables
-        if end < xx.size:
+        if self.n_int > 0:
             start = end
             end = start + self.n_int
             xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
@@ -248,22 +248,22 @@ class MOOP:
             # Bin the integer variables
             for i in range(self.n_cont, self.n_cont + self.n_int):
                 xx[i] = int(xx[i])
-            # Extract categorical variables
-            if self.n_cat_d > 0:
-                start = end
-                end = start + self.n_cat_d
-                bvec = (np.matmul(np.transpose(self.RSVT),
-                                  (x[start:end]
-                                   - self.scaled_lb[start:end])
-                                  * self.scale[start:end]
-                                  + self.cat_lb[:])
-                        + self.mean)
-                count = 0
-                for i, n_lvl in enumerate(self.n_lvls):
-                    xx[start+i] = np.argmax(bvec[count:count+n_lvl])
-                    count += n_lvl
+        # Extract categorical variables
+        if self.n_cat_d > 0:
+            start = end
+            end = start + self.n_cat_d
+            bvec = (np.matmul(np.transpose(self.RSVT),
+                              (x[start:end]
+                               - self.scaled_lb[start:end])
+                              * self.scale[start:end]
+                              + self.cat_lb[:])
+                    + self.mean)
+            count = 0
+            for i, n_lvl in enumerate(self.n_lvls):
+                xx[start+i] = np.argmax(bvec[count:count+n_lvl])
+                count += n_lvl
         # Extract custom variables
-        if end < xx.size:
+        if self.n_custom > 0:
             for i, ex_i in enumerate(self.custom_extracters):
                 start = end
                 end = start + self.n_custom_d[i]
@@ -271,7 +271,7 @@ class MOOP:
                     xx[self.n_cont + self.n_cat + self.n_int + i] = \
                         ex_i(x[start:end])
         # Extract the raw variables
-        if end < xx.size:
+        if self.n_raw > 0:
             start = end
             end = start + self.n_raw
             xx[self.n_cont + self.n_cat + self.n_int + self.n_custom:] = \
@@ -281,20 +281,22 @@ class MOOP:
             out = np.zeros(1, dtype=np.dtype(self.des_names))
             n_customs = 0
             cat_range_low = self.n_cont + self.n_int
-            raw_range_low = cat_range_low + self.n_cat
+            cus_range_low = cat_range_low + self.n_cat
+            raw_range_low = cus_range_low + self.n_custom
             for i, j in enumerate(self.des_order):
-                # Unpack ordinal variables
-                if j < cat_range_low:
+                # Unpack ordinal, raw, and unnamed categorical variables
+                if (j < cat_range_low or j >= raw_range_low or
+                    (j < cus_range_low and
+                     not self.cat_names[j - cat_range_low])):
                     out[self.des_names[i][0]] = xx[j]
                 # Unpack categorical variables when cat_names given
-                elif ((j < raw_range_low)
-                      and (len(self.cat_names[j - cat_range_low]) > 0)):
+                elif j < cus_range_low:
                     out[self.des_names[i][0]] = (self.cat_names[j -
                                                                 cat_range_low]
                                                                [int(xx[j])])
-                # Unpack custom variables
+                # Unpack named custom variables (skipped earlier)
                 else:
-                    start = (self.n_cont + self.n_cat_d + self.n_int +
+                    start = (self.n_cont + self.n_int + self.n_cat_d +
                              sum(self.n_custom_d[:n_customs]))
                     end = start + self.n_custom_d[n_customs]
                     exi = self.custom_extracters[n_customs]
@@ -1705,7 +1707,6 @@ class MOOP:
             # Return the constraint violations
             return cx
 
-    @profile
     def evaluatePenalty(self, x, sx=None):
         """ Evaluate the penalized objective using the surrogates as needed.
 
@@ -2026,7 +2027,6 @@ class MOOP:
             self.n_dat += 1
         return
 
-    @profile
     def iterate(self, k, ib=None):
         """ Perform an iteration of ParMOO's solver and generate candidates.
 
@@ -2344,7 +2344,6 @@ class MOOP:
             self.save(filename=self.checkpointfile)
         return
 
-    @profile
     def solve(self, iter_max=None, sim_max=None):
         """ Solve a MOOP using ParMOO.
 

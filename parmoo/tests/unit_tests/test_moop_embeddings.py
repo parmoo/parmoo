@@ -533,7 +533,7 @@ def test_MOOP_embed_extract_named1():
     for i in range(5):
         num = np.random.random_sample(4)
         xi = np.zeros(1, dtype=[("x0", float), ("x1", float), ("x2", float),
-                                ("x3", object)])
+                                ("x3", object)])[0]
         xi["x0"] = int(1000.0 * num[0])
         xi["x1"] = num[1] - 1.0
         xi["x2"] = np.round(num[2])

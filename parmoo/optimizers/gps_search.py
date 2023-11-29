@@ -90,7 +90,6 @@ class LocalGPS(SurrogateOptimizer):
         self.acquisitions = []
         return
 
-    @profile
     def solve(self, x):
         """ Solve the surrogate problem using generalized pattern search (GPS).
 
