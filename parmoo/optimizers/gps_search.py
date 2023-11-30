@@ -361,6 +361,7 @@ class QuickGPS(SurrogateOptimizer):
                 mesh = np.vstack((np.zeros((1,self.n)),
                                   np.diag(ub_tmp[:] - lb_tmp[:]),
                                   -np.diag(ub_tmp[:] - lb_tmp[:])))
+                mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
                 # Evaluate the starting point
                 sx = np.asarray(self.simulations(x[j, :]))
                 if acquisition.useSD():
@@ -383,7 +384,7 @@ class QuickGPS(SurrogateOptimizer):
                     for i, mi in enumerate(mesh[1:, :]):
                         # Evaluate x + mi
                         x_tmp[:] = x_center[:] + mi[:] * mesh_size[:]
-                        if np.any(x_tmp > ub_tmp) or np.any(x_tmp < lb_tmp):
+                        if np.any((x_tmp > ub_tmp) + (x_tmp < lb_tmp)):
                             f_tmp = np.inf
                         else:
                             sx = np.asarray(self.simulations(x_tmp))
@@ -406,7 +407,7 @@ class QuickGPS(SurrogateOptimizer):
                         mesh[1, :] = m_tmp[:]
                     # If no improvement, decay the mesh down to the tolerance
                     else:
-                        if np.any(mesh_size[:] < 2.0e-8):
+                        if np.any(mesh_size[:] < mesh_tol):
                             break
                         else:
                             mesh_size[:] = mesh_size[:] * 0.5
@@ -418,7 +419,7 @@ class QuickGPS(SurrogateOptimizer):
                     for i, mi in enumerate(mesh[:, :]):
                         # Evaluate x + mi
                         x_tmp[:] = x_center[:] + np.rint(mi[:]) * mesh_size[:]
-                        if np.any(x_tmp > ub_tmp) or np.any(x_tmp < lb_tmp):
+                        if np.any((x_tmp > ub_tmp) + (x_tmp < lb_tmp)):
                             f_tmp = np.inf
                         else:
                             sx = np.asarray(self.simulations(x_tmp))
@@ -445,7 +446,7 @@ class QuickGPS(SurrogateOptimizer):
                             mesh[1, :] = m_tmp[:]
                     # If no improvement, decay the mesh down to the tolerance
                     else:
-                        if np.any(mesh_size[:] < 2.0e-8):
+                        if np.any(mesh_size[:] < mesh_tol):
                             break
                         else:
                             mesh_size[:] = mesh_size[:] * 0.5
