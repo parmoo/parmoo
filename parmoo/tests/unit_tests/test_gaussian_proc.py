@@ -317,7 +317,7 @@ def test_LocalGaussRBF():
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
     y_vals3 = np.asarray([[np.dot(xi, xi)] for xi in x_vals3])
-    rbf3 = LocalGaussRBF(1, np.zeros(3), np.ones(3), {})
+    rbf3 = LocalGaussRBF(1, np.zeros(3), np.ones(3), {'tail_order': 0})
     rbf3.fit(x_vals3, y_vals3)
     rbf3.setCenter(x_vals3[-1])
     y_grad_vals3 = -0.08798618 * np.ones((1, 3))

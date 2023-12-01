@@ -436,7 +436,7 @@ class LocalGaussRBF(SurrogateFunction):
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'std_dev',
                  'nugget', 'n_loc', 'loc_inds', 'tr_center', 'weights',
-                 'mean', 'v', 'w']
+                 'prior', 'v', 'w', 'order']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the LocalGaussRBF class.
@@ -457,6 +457,8 @@ class LocalGaussRBF(SurrogateFunction):
                    matches lb and ub. Each entry is a number (greater than 0)
                    specifying the design space tolerance for that variable.
                    By default, des_tols = [1.0e-8, ..., 1.0e-8].
+                 * tail_order (int, optional): Order of the polynomial tail.
+                   Can be 0 or 1, defaults to 1.
 
         Returns:
             LocalGaussRBF: A new LocalGaussRBF object.
@@ -475,7 +477,7 @@ class LocalGaussRBF(SurrogateFunction):
         self.x_vals = np.zeros((0, self.n))
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros((0, 0))
-        self.mean = np.zeros(self.m)
+        self.prior = np.zeros(self.m)
         self.v = np.zeros((0, 0))
         self.w = np.zeros((0, 0))
         # Initialize trust-region settings
@@ -523,6 +525,19 @@ class LocalGaussRBF(SurrogateFunction):
         else:
             self.eps = np.zeros(self.n)
             self.eps[:] = 1.0e-8
+        # Check for 'tail_order' optional key in hyperparms
+        if 'tail_order' in hyperparams:
+            if isinstance(hyperparams['tail_order'], int):
+                if hyperparams['tail_order'] in [0, 1]:
+                    self.order = hyperparams['tail_order']
+                else:
+                    raise ValueError("hyperparams['tail_order'] must be "
+                                     + "0 or 1")
+            else:
+                raise ValueError("hyperparams['tail_order'] contained an "
+                                 + "illegal value")
+        else:
+            self.order = 1
         return
 
     def __gaussian(self, r):
@@ -627,6 +642,9 @@ class LocalGaussRBF(SurrogateFunction):
             self.loc_inds = [int(i) for i in idists
                              if np.linalg.norm(center - self.x_vals[i])
                              <= 2.0 * self.std_dev]
+            x_inds = [int(i) for i in idists
+                      if np.linalg.norm(center - self.x_vals[i])
+                      <= self.std_dev + 1.0e-8]
             # Build the Gaussian covariance matrix
             cov = self.__gaussian(cdist(self.x_vals[self.loc_inds, :],
                                         self.x_vals[self.loc_inds, :],
@@ -645,11 +663,21 @@ class LocalGaussRBF(SurrogateFunction):
                 for i in range(len(self.loc_inds)):
                     cov[i, i] = cov[i, i] + 0.00000001 - sigma_n
                 self.w, self.v = np.linalg.eigh(cov)
-            # Calculate RHS
+            # Fit prior weights
             rhs = self.f_vals[self.loc_inds, :].copy()
-            self.mean[:] = np.sum(rhs, axis=0) / rhs.shape[0]
-            for i in range(rhs.shape[0]):
-                rhs[i, :] = rhs[i, :] - self.mean[:]
+            if self.order == 1:
+                b = self.x_vals[x_inds, :].copy()
+                A = np.hstack((self.x_vals[x_inds, :],
+                               np.ones((len(x_inds), 1))))
+                self.prior = np.linalg.lstsq(A, b, rcond=None)[0]
+            else:
+                self.prior = np.sum(rhs, axis=0) / rhs.shape[0]
+            # Calculate RHS
+            if self.order == 1:
+                rhs[:, :] = rhs[:, :] - np.dot(self.x_vals[self.loc_inds, :],
+                                               self.prior[:-1, :]) - self.prior[-1, :]
+            else:
+                rhs[:, :] = rhs[:, :] - self.prior[:]
             # Finish the solve
             self.weights = np.zeros((self.m, rhs.shape[0]))
             for i in range(self.m):
@@ -681,8 +709,12 @@ class LocalGaussRBF(SurrogateFunction):
                 raise ValueError("x cannot be infeasible")
         # Evaluate all m surrogates at x
         dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
-                                      [x])).flatten()
-        return np.dot(self.weights, dists) + self.mean[:]
+                                [x])).flatten()
+        if self.order == 1:
+            mean = np.dot(x, self.prior[:-1, :]) + self.prior[-1, :]
+        else:
+            mean = self.prior[:]
+        return np.dot(self.weights, dists) + mean[:]
 
     def gradient(self, x):
         """ Evaluate the gradients of the Gaussian RBF at a design point.
@@ -712,7 +744,10 @@ class LocalGaussRBF(SurrogateFunction):
                                       [x])).flatten()
         for i, xi in enumerate(self.x_vals[self.loc_inds]):
             outs[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
-        return np.dot(self.weights, outs)
+        if self.order == 1:
+            return np.dot(self.weights, outs) + self.prior[:-1, :].T
+        else:
+            return np.dot(self.weights, outs)
 
     def stdDev(self, x):
         """ Evaluate the standard deviation (uncertainty) of the Gaussian RBF at x.
@@ -889,7 +924,7 @@ class LocalGaussRBF(SurrogateFunction):
         gp_state['eps'] = self.eps.tolist()
         gp_state['tr_center'] = self.tr_center.tolist()
         gp_state['weights'] = self.weights.tolist()
-        gp_state['mean'] = self.mean.tolist()
+        gp_state['prior'] = self.prior.tolist()
         gp_state['v'] = self.v.tolist()
         gp_state['w'] = self.w.tolist()
         # Save file
@@ -926,7 +961,7 @@ class LocalGaussRBF(SurrogateFunction):
         self.eps = np.array(gp_state['eps'])
         self.tr_center = np.array(gp_state['tr_center'])
         self.weights = np.array(gp_state['weights'])
-        self.mean = np.array(gp_state['mean'])
+        self.prior = np.array(gp_state['prior'])
         self.v = np.array(gp_state['v'])
         self.w = np.array(gp_state['w'])
         return

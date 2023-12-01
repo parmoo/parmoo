@@ -149,9 +149,8 @@ class LBFGSB(SurrogateOptimizer):
             # Create a new trust region
             rad = self.resetObjectives(x[j, :])
             bounds = np.zeros((self.n, 2))
-            for i in range(self.n):
-                bounds[i, 0] = max(self.bounds[i, 0], x[j, i] - rad)
-                bounds[i, 1] = min(self.bounds[i, 1], x[j, i] + rad)
+            bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
+            bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
 
             # Get the solution via multistart solve
             soln = x[j, :].copy()
@@ -318,9 +317,8 @@ class TR_LBFGSB(SurrogateOptimizer):
             # Create a new trust region
             rad = self.resetObjectives(x[j, :])
             bounds = np.zeros((self.n, 2))
-            for i in range(self.n):
-                bounds[i, 0] = max(self.bounds[i, 0], x[j, i] - rad)
-                bounds[i, 1] = min(self.bounds[i, 1], x[j, i] + rad)
+            bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
+            bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
 
             # Get the solution via multistart solve
             soln = x[j, :].copy()

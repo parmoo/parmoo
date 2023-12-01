@@ -1534,17 +1534,17 @@ class MOOP:
                 design space.
 
         Returns:
-            float: The minimum over the recommended trust region radius
-            for all surrogates.
+            np.ndarray or float: The suggested trust region radius.
 
         """
 
-        rad = max(self.scaled_ub - self.scaled_lb)
+        rad = np.zeros(self.n)
+        rad[:] = self.scaled_ub - self.scaled_lb
         for si in self.surrogates:
             try:
-                rad = min(si.setCenter(center), rad)
+                rad = np.minimum(si.setCenter(center), rad)
             except NotImplementedError:
-                rad = max(self.scaled_ub - self.scaled_lb)
+                continue
         return rad
 
     def evaluateSurrogates(self, x):

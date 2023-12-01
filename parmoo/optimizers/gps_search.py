@@ -150,15 +150,14 @@ class LocalGPS(SurrogateOptimizer):
             raise TypeError("x must be a numpy array")
         # Initialize an empty list of results
         result = []
+        lb_tmp = np.zeros(self.n)
+        ub_tmp = np.ones(self.n)
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
             # Create a new trust region
             rad = self.resetObjectives(x[j, :])
-            lb_tmp = np.zeros(self.n)
-            ub_tmp = np.ones(self.n)
-            for i in range(self.n):
-                lb_tmp[i] = max(self.lb[i], x[j, i] - rad)
-                ub_tmp[i] = min(self.ub[i], x[j, i] + rad)
+            lb_tmp[:] = np.maximum(self.lb[:], x[j, :] - rad)
+            ub_tmp[:] = np.minimum(self.ub[:], x[j, :] + rad)
             # Get a candidate
             self.q_ind = j
             mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
@@ -322,9 +321,8 @@ class GlobalGPS(SurrogateOptimizer):
             rad = self.resetObjectives(x[j, :])
             lb_old = lb_tmp
             ub_old = ub_tmp
-            for i in range(self.n):
-                lb_tmp[i] = max(self.lb[i], x[j, i] - rad)
-                ub_tmp[i] = min(self.ub[i], x[j, i] + rad)
+            lb_tmp[:] = np.maximum(self.lb[:], x[j, :] - rad)
+            ub_tmp[:] = np.minimum(self.ub[:], x[j, :] + rad)
             # Check if TR has changed
             if j == 0 or np.any(np.abs(lb_old - lb_tmp) +
                                 np.abs(ub_old - ub_tmp) > 1.0e-8):
@@ -384,7 +382,6 @@ class GlobalGPS(SurrogateOptimizer):
         return np.asarray(result)
 
 
-@profile
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                                    mesh_start=0.25, mesh_tol=1.0e-8,
                                    momentum=0.9, istarts=1):

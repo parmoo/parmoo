@@ -340,6 +340,9 @@ class SurrogateFunction(ABC):
             center (numpy.ndarray): A 1d array containing the center for
                 this local fit.
 
+        Returns:
+            np.ndarray or float: The suggested trust region radius.
+
         """
 
         return max(self.ub - self.lb)
