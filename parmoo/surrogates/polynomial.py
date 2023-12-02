@@ -25,7 +25,8 @@ class Linear(SurrogateFunction):
 
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps',
-                 'n_loc', 'loc_inds', 'tr_center', 'rad', 'weights']
+                 'n_loc', 'loc_inds', 'tr_center', 'rad', 'weights',
+                 'prev_centers']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the Linear class.
@@ -64,8 +65,9 @@ class Linear(SurrogateFunction):
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros(self.n + 1)
         # Initialize trust-region settings
+        self.prev_centers = []
         self.tr_center = np.zeros(0)
-        self.rad = np.zeros(0)
+        self.rad = np.zeros(self.n)
         self.loc_inds = []
         # Check for the 'n_loc' optional value in hyperparams
         if 'n_loc' in hyperparams:
@@ -126,7 +128,7 @@ class Linear(SurrogateFunction):
         # Initialize the internal database with x and f
         self.x_vals = x
         self.f_vals = f
-        # Initialize the local indices for future usage
+        # Reset the center to trigger a re-fit of the model
         self.tr_center = self.lb[:] - np.ones(self.n)
         return
 
@@ -158,8 +160,8 @@ class Linear(SurrogateFunction):
         # Update the internal database with x and f
         self.x_vals = np.concatenate((self.x_vals, x), axis=0)
         self.f_vals = np.concatenate((self.f_vals, f), axis=0)
-        # Reinitialize the local indices for future usage
-        self.tr_center = -np.ones(self.n)
+        # Reset the center to trigger a re-fit of the model
+        self.tr_center = self.lb - np.ones(self.n)
         return
 
     def setCenter(self, center):
@@ -184,25 +186,44 @@ class Linear(SurrogateFunction):
             elif (np.any(center < self.lb - self.eps) or
                   np.any(center > self.ub + self.eps)):
                 raise ValueError("center cannot be infeasible")
-        # If the nearest neighbor has changed, refit the model
-        if any(self.tr_center != center):
+        # If the center has changed, refit the model
+        if np.any(np.abs(self.tr_center - center) > self.eps):
+            # Update the center and sort the nearest neighbors
             self.tr_center = center
-            idists = np.argsort(np.asarray([np.linalg.norm(xj - center,
-                                            ord=np.inf)
+            idists = np.argsort(np.asarray([np.linalg.norm(xj - center)
                                             for xj in self.x_vals]))
-            # Update the radius
-            self.rad = np.abs(center - self.x_vals[idists[self.n_loc - 1]])
+            # Check the history to see if this is a repeated iterate
+            rfound = -1
+            for ci, ri in self.prev_centers:
+                if np.all(np.abs(ci - center) < self.eps):
+                    rfound = ri
+                    break
+            # Check the suggested radius
+            xn = self.x_vals[idists[self.n_loc - 1]]
+            r_tmp = np.linalg.norm(center - xn)
             # Get all points within the radius
             self.loc_inds = [int(i) for i in idists
-                             if np.all(center - self.x_vals[i] <=
-                                       self.rad + self.eps)]
+                             if np.linalg.norm(np.maximum(np.abs(center
+                                       - self.x_vals[i]) - self.eps, 0)) <=
+                                       r_tmp]
+            # If found in the history, decay the radius
+            if np.any(rfound > 0):
+                self.rad = rfound * 0.5
+                self.rad = np.maximum(self.rad, np.sqrt(self.eps))
+            else:
+                self.rad = np.minimum(r_tmp, (self.ub - self.lb) * 0.05)
+                self.rad = np.maximum(self.rad, np.sqrt(self.eps))
             # Get (min norm) LS fit
             A = np.hstack((self.x_vals[self.loc_inds],
                            np.ones((len(self.loc_inds), 1))))
             self.weights = np.linalg.lstsq(A, self.f_vals[self.loc_inds],
                                            rcond=None)[0]
-            # This is critical
-            self.rad *= 0.9
+        # Otherwise, just decay the radius
+        else:
+            self.rad *= 0.5
+            self.rad = np.maximum(self.rad, np.sqrt(self.eps))
+        # Update the history
+        self.prev_centers.append((self.tr_center, self.rad))
         return self.rad
 
     def evaluate(self, x):
@@ -258,6 +279,9 @@ class Linear(SurrogateFunction):
         ls_state['eps'] = self.eps.tolist()
         ls_state['tr_center'] = self.tr_center.tolist()
         ls_state['rad'] = self.rad.tolist()
+        ls_state['prev_centers'] = []
+        for ci, ri in self.prev_centers:
+            ls_state['prev_centers'].append([ci.tolist(), ri.tolist()])
         ls_state['weights'] = self.weights.tolist()
         # Save file
         with open(filename, 'w') as fp:
@@ -291,5 +315,8 @@ class Linear(SurrogateFunction):
         self.eps = np.array(ls_state['eps'])
         self.tr_center = np.array(ls_state['tr_center'])
         self.rad = np.array(ls_state['rad'])
+        self.prev_centers = []
+        for ci, ri in ls_state['prev_centers']:
+            self.prev_centers.append([np.array(ci), np.array(ri)])
         self.weights = np.array(ls_state['weights'])
         return

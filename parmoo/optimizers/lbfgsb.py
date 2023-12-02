@@ -179,7 +179,6 @@ class LBFGSB(SurrogateOptimizer):
                                         options={'maxiter': self.budget})
                 if scalar_f(res['x']) < scalar_f(soln):
                     soln = res['x']
-
             # Append the found minima to the results list
             result.append(soln)
         return np.asarray(result)
@@ -322,6 +321,7 @@ class TR_LBFGSB(SurrogateOptimizer):
 
             # Get the solution via multistart solve
             soln = x[j, :].copy()
+            f0 = scalar_f(soln)
             for i in range(self.restarts):
                 if i == 0:
                     # Use center point to warm-start first start

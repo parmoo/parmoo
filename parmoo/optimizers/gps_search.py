@@ -14,6 +14,7 @@ The classes include:
 """
 
 import numpy as np
+from scipy.stats.qmc import LatinHypercube
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
 
@@ -161,14 +162,13 @@ class LocalGPS(SurrogateOptimizer):
             # Get a candidate
             self.q_ind = j
             mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
-            xj = __accelerated_pattern_search__(self.n, lb_tmp, ub_tmp, x[j],
-                                                self.__obj_func__,
-                                                ibudget=self.budget,
-                                                mesh_start=0.25,
-                                                mesh_tol=mesh_tol,
-                                                momentum=self.momentum,
-                                                istarts=self.restarts)
-            # Append the found minima to the results list
+            xj, fj = __accelerated_pattern_search__(self.n, lb_tmp,
+                                                    ub_tmp, x[j],
+                                                    self.__obj_func__,
+                                                    ibudget=self.budget,
+                                                    mesh_tol=mesh_tol,
+                                                    momentum=self.momentum,
+                                                    istarts=self.restarts)
             result.append(xj)
         return np.asarray(result)
 
@@ -370,20 +370,20 @@ class GlobalGPS(SurrogateOptimizer):
             # Get a candidate
             self.q_ind = j
             mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
-            xj = __accelerated_pattern_search__(self.n, lb_tmp, ub_tmp, x0,
-                                                self.__obj_func__,
-                                                ibudget=self.gps_budget,
-                                                mesh_start=0.1,
-                                                mesh_tol=mesh_tol,
-                                                momentum=self.momentum,
-                                                istarts=1)
-            # Append the found minima to the results list
+            xj, fj = __accelerated_pattern_search__(self.n, lb_tmp,
+                                                    ub_tmp, x0,
+                                                    self.__obj_func__,
+                                                    ibudget=self.gps_budget,
+                                                    mesh_start=0.1,
+                                                    mesh_tol=mesh_tol,
+                                                    momentum=self.momentum,
+                                                    istarts=1)
             result.append(xj)
         return np.asarray(result)
 
 
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
-                                   mesh_start=0.25, mesh_tol=1.0e-8,
+                                   mesh_start=None, mesh_tol=1.0e-8,
                                    momentum=0.9, istarts=1):
     """ Solve the optimization problem min obj_func(x) over x in [lb, ub].
 
@@ -411,7 +411,7 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
 
         mesh_start (float or numpy.ndarray, optional): The initial mesh
             spacing. If an array is given, must be 1D of size n. Defaults
-            to 25% of ub-lb.
+            to (ub - lb) / (istarts - 1).
 
         mesh_tol (float or numpy.ndarray, optional): The tolerance for the
             mesh. If an array is given, must be 1D of size n. Defaults to
@@ -435,13 +435,19 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
     x_center = np.zeros(n)
     x_min = np.zeros((istarts, n))
     x_tmp = np.zeros(n)
+    mesh_start_array = np.zeros(n)
+    if mesh_start is None:
+        mesh_start_array[:] = 1 / istarts
+    elif isinstance(mesh_start_array, float):
+        mesh_start_array[:] = mesh_start * (ub[:] - lb[:])
+    else:
+        mesh_start_array[:] = mesh_start
+    if istarts > 1:
+        lhs = LatinHypercube(n).random(istarts - 1)
     # Loop over all starts
     for kk in range(istarts):
         # Reset the mesh dimensions
-        if isinstance(mesh_start, float):
-            mesh_size[:] = mesh_start * (ub[:] - lb[:])
-        else:
-            mesh_size[:] = mesh_start[:]
+        mesh_size[:] = mesh_start_array[:]
         mesh = np.vstack((np.zeros((1, n)),
                           np.diag(ub[:] - lb[:]),
                           -np.diag(ub[:] - lb[:])))
@@ -449,7 +455,7 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
         if kk == 0:
             x_min[kk, :] = x0[:]
         else:
-            x_min[kk, :] = np.random.random_sample(n) * (ub - lb) + lb
+            x_min[kk, :] = lhs[kk - 1] * (ub - lb) + lb
         f_min[kk] = obj_func(x_min[kk])
         # Take n+1 iterations to get "momentum" started
         for k in range(n+1):
@@ -511,5 +517,5 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                     break
                 else:
                     mesh_size[:] *= 0.5
-    # Return the "best" of the multistarts
-    return x_min[np.argmin(f_min), :].copy()
+    imin = np.argmin(f_min)
+    return x_min[imin].copy(), f_min[imin]
