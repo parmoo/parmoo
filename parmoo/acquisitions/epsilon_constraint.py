@@ -453,7 +453,7 @@ class EI_RandomConstraint(AcquisitionFunction):
         # current penalty function
         elif s_vals_mean.size == 1:
             # Construct the distribution for sampling
-            s_cov = stats.Covariance.from_diagonal(s_vals_sd)
+            s_cov = stats.Covariance.from_diagonal(s_vals_sd**2)
             s_dist = stats.multivariate_normal(mean=s_vals_mean, cov=s_cov)
 
             def weighted_f(sx):

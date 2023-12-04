@@ -444,7 +444,7 @@ class LocalGaussRBF(SurrogateFunction):
                    specifying the design space tolerance for that variable.
                    By default, des_tols = [1.0e-8, ..., 1.0e-8].
                  * tail_order (int, optional): Order of the polynomial tail.
-                   Can be 0 or 1, defaults to 1.
+                   Can be 0 or 1, defaults to 0.
 
         Returns:
             LocalGaussRBF: A new LocalGaussRBF object.
@@ -676,7 +676,7 @@ class LocalGaussRBF(SurrogateFunction):
                 tmp = np.dot(self.v.transpose(), rhs[:, i]) / self.w[:]
                 self.weights[i, :] = np.dot(self.v, tmp)
         # Keep the trust region small early on
-        return np.minimum(self.std_dev, (self.ub - self.lb) * 0.05)
+        return np.minimum(self.std_dev, (self.ub - self.lb) * 0.1)
 
     def evaluate(self, x):
         """ Evaluate the Gaussian RBF at a design point.
