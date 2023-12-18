@@ -17,7 +17,7 @@ from parmoo.util import xerror
 
 
 class UniformAugChebyshev(AcquisitionFunction):
-    """ Randomly generate weights and scalarize via Augmented Chebyshev.
+    """ Randomly generate weights and scalarize via augmented Chebyshev.
 
     Generates uniformly distributed scalarization weights, by randomly
     sampling the probability simplex.
@@ -208,7 +208,7 @@ class UniformAugChebyshev(AcquisitionFunction):
         """ Check which manifold is active for a given function value.
 
         Each component of f_vals is its own smooth manifold, but once
-        the max function is applied for the Augmented Chebyshev scalarization,
+        the max function is applied for the augmented Chebyshev scalarization,
         only 1 component is typically active in the surrogate
         minimization problem.
 
@@ -253,7 +253,7 @@ class UniformAugChebyshev(AcquisitionFunction):
 
 
 class FixedAugChebyshev(AcquisitionFunction):
-    """ Use fixed weights with the Augmented Chebyshev scalarization.
+    """ Use fixed weights with the augmented Chebyshev scalarization.
 
     Use a fixed scalarization scheme, based on a fixed weighted sum.
 
@@ -457,7 +457,7 @@ class FixedAugChebyshev(AcquisitionFunction):
         """ Check which manifold is active for a given function value.
 
         Each component of f_vals is its own smooth manifold, but once
-        the max function is applied for the Augmented Chebyshev scalarization,
+        the max function is applied for the augmented Chebyshev scalarization,
         only 1 component is typically active in the surrogate
         minimization problem.
 
