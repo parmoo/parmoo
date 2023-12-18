@@ -123,9 +123,13 @@ class LocalGPS(SurrogateOptimizer):
             for i in range(self.n):
                 lb_tmp[i] = max(self.lb[i], x[j, i] - rad)
                 ub_tmp[i] = min(self.ub[i], x[j, i] + rad)
-            # Loop over restarts
-            x_min = np.zeros((self.restarts, self.n))
+            # Initialize temp arrays
             f_min = np.zeros(self.restarts)
+            x_big = np.zeros(self.n)
+            x_center = np.zeros(self.n)
+            x_min = np.zeros((self.restarts, self.n))
+            x_tmp = np.zeros(self.n)
+            # Loop over restarts
             for kk in range(self.restarts):
                 # Reset the mesh dimensions
                 mesh = np.diag(ub_tmp[:] - lb_tmp[:] * 0.25)
@@ -147,11 +151,15 @@ class LocalGPS(SurrogateOptimizer):
                 for k in range(self.budget):
                     # Track whether or not there is improvement
                     improve = False
+                    # Build an extra accelerating descent step
+                    x_big[:] = 0.0
+                    f_center = f_min[kk]
+                    x_center[:] = x_min[kk, :]
                     for i in range(self.n):
                         # Evaluate x + mesh[:, i]
-                        x_tmp = x_min[kk, :] + mesh[:, i]
+                        x_tmp = x_center[:] + mesh[:, i]
                         if any(x_tmp > ub_tmp):
-                            f_tmp = np.inf
+                            f_plus = np.inf
                         else:
                             sx = np.asarray(self.simulations(x_tmp))
                             if acquisition.useSD():
@@ -159,16 +167,19 @@ class LocalGPS(SurrogateOptimizer):
                             else:
                                 sdx = 0.0
                             fx = self.penalty_func(x_tmp, sx)
-                            f_tmp = acquisition.scalarize(fx, x_tmp, sx, sdx)
+                            f_plus = acquisition.scalarize(fx, x_tmp, sx, sdx)
                         # Check for improvement
-                        if f_tmp + 1.0e-8 < f_min[kk]:
-                            f_min[kk] = f_tmp
-                            x_min[kk, :] = x_tmp
-                            improve = True
+                        if f_plus + 1.0e-8 < f_center:
+                            if f_plus / f_center < 0.999:
+                                x_big[i] = mesh[i, i]
+                            if f_plus + 1.0e-8 < f_min[kk]:
+                                f_min[kk] = f_plus
+                                x_min[kk, :] = x_tmp
+                                improve = True
                         # Evaluate x - mesh[:, i]
-                        x_tmp = x_min[kk, :] - mesh[:, i]
+                        x_tmp = x_center[:] - mesh[:, i]
                         if any(x_tmp < lb_tmp):
-                            f_tmp = np.inf
+                            f_minus = np.inf
                         else:
                             sx = np.asarray(self.simulations(x_tmp))
                             if acquisition.useSD():
@@ -176,14 +187,35 @@ class LocalGPS(SurrogateOptimizer):
                             else:
                                 sdx = 0.0
                             fx = self.penalty_func(x_tmp, sx)
-                            f_tmp = acquisition.scalarize(fx, x_tmp, sx, sdx)
+                            f_minus = acquisition.scalarize(fx, x_tmp, sx, sdx)
                         # Check for improvement
-                        if f_tmp + 1.0e-8 < f_min[kk]:
-                            f_min[kk] = f_tmp
-                            x_min[kk, :] = x_tmp
-                            improve = True
+                        if f_minus + 1.0e-8 < f_center:
+                            if f_minus / f_center < 0.999 and f_minus < f_plus:
+                                x_big[i] = -mesh[i, i]
+                            if f_minus + 1.0e-8 < f_min[kk]:
+                                f_min[kk] = f_minus
+                                x_min[kk, :] = x_tmp
+                                improve = True
+                    # If improvement found, try taking a big step
+                    if improve:
+                        if np.count_nonzero(x_big) > 1:
+                            x_tmp = x_center[:] + x_big[:]
+                            if any(x_tmp > ub_tmp) or any(x_tmp < lb_tmp):
+                                f_tmp = np.inf
+                            else:
+                                sx = np.asarray(self.simulations(x_tmp))
+                                if acquisition.useSD():
+                                    sdx = self.sim_sd(x_tmp)
+                                else:
+                                    sdx = 0.0
+                                fx = self.penalty_func(x_tmp, sx)
+                                f_tmp = acquisition.scalarize(fx, x_tmp,
+                                                              sx, sdx)
+                            if f_tmp + 1.0e-8 < f_min[kk]:
+                                f_min[kk] = f_tmp
+                                x_min[kk, :] = x_tmp
                     # If no improvement, decay the mesh down to the tolerance
-                    if not improve:
+                    else:
                         if any([mesh[i, i] < 1.0e-4 for i in range(self.n)]):
                             break
                         else:

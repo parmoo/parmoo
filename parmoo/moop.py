@@ -127,43 +127,55 @@ class MOOP:
         x_tmp = np.zeros(self.n_cont + self.n_cat + self.n_int + self.n_custom
                          + self.n_raw)
         if self.use_names:
+            # Precompute ranges
+            cat_range_low = self.n_cont + self.n_int
+            cus_range_low = cat_range_low + self.n_cat
+            raw_range_low = cus_range_low + self.n_custom
+            # Extract the labels now for convenience
             x_labels = []
             for d_name in self.des_names:
                 x_labels.append(x[d_name[0]])
+            # Loop over permutation of variables
             for i, j in enumerate(self.des_order):
-                if ((j in range(self.n_cont+self.n_int,
-                                self.n_cont+self.n_int+self.n_cat))
-                    and (len(self.cat_names[j - self.n_cont - self.n_int])
-                         > 0)):
+                # Pack ordinal, raw, and unnamed categorical variables
+                if (j < cat_range_low or j >= raw_range_low or
+                    (j < cus_range_low and
+                     not self.cat_names[j - cat_range_low])):
+                    x_tmp[j] = x_labels[i]
+                # Pack categorical variables when cat_names given
+                elif j < cus_range_low:
                     x_tmp[j] = float(self.cat_names[j - self.n_cont -
                                                     self.n_int].index(
                                                                 x_labels[i]))
-                elif (j in range(self.n_cont+self.n_int+self.n_cat,
-                                 self.n_cont+self.n_int+self.n_cat +
-                                 self.n_custom)):
-                    x_tmp[j] = i
+                # Unpack named custom variables (skipped earlier)
                 else:
-                    x_tmp[j] = x_labels[i]
+                    x_tmp[j] = i
         else:
             x_tmp[self.des_order] = x[:]
         # Create the output array
         xx = np.zeros(self.n)
-        # Rescale the continuous and integer variables
         start = 0
         end = self.n_cont
-        xx[start:end] = ((x_tmp[start:end] - self.cont_lb[:]) /
-                         self.scale[start:end] + self.scaled_lb[start:end])
-        # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.scaled_lb[start:end])
-        xx[start:end] = np.minimum(xx[start:end], self.scaled_ub[start:end])
-        # Rescale the continuous and integer variables
-        start = end
-        end = start + self.n_int
-        xx[start:end] = ((x_tmp[start:end] - self.int_lb[:]) /
-                         self.scale[start:end] + self.scaled_lb[start:end])
-        # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.scaled_lb[start:end])
-        xx[start:end] = np.minimum(xx[start:end], self.scaled_ub[start:end])
+        # Rescale the continuous variables
+        if self.n_cont > 0:
+            xx[start:end] = ((x_tmp[start:end] - self.cont_lb[:]) /
+                             self.scale[start:end] +
+                             self.scaled_lb[start:end])
+            xx[start:end] = np.maximum(xx[start:end],
+                                       self.scaled_lb[start:end])
+            xx[start:end] = np.minimum(xx[start:end],
+                                       self.scaled_ub[start:end])
+        # Rescale the integer variables
+        if self.n_int > 0:
+            start = end
+            end = start + self.n_int
+            xx[start:end] = ((x_tmp[start:end] - self.int_lb[:]) /
+                             self.scale[start:end] +
+                             self.scaled_lb[start:end])
+            xx[start:end] = np.maximum(xx[start:end],
+                                       self.scaled_lb[start:end])
+            xx[start:end] = np.minimum(xx[start:end],
+                                       self.scaled_ub[start:end])
         # Embed the categorical variables
         if self.n_cat_d > 0:
             start = end
@@ -177,34 +189,32 @@ class MOOP:
             xx[start:end] = ((np.matmul(self.RSVT, bvec) - self.cat_lb[:])
                              / self.scale[start:end]
                              + self.scaled_lb[start:end])
-            # Pull inside bounding box, in case perturbed outside
             xx[start:end] = np.maximum(xx[start:end],
                                        self.scaled_lb[start:end])
             xx[start:end] = np.minimum(xx[start:end],
                                        self.scaled_ub[start:end])
         # Embed the custom variables
-        for i, embed_i in enumerate(self.custom_embedders):
-            start = end
-            end = start + self.n_custom_d[i]
-            if self.use_names:
-                if end - start > 1:
-                    xx[start:end] = embed_i(x_labels[int(x_tmp[self.n_cont +
-                                                               self.n_cat +
-                                                               self.n_int +
-                                                               i])])
-                # Special rule for self.n_custom_d = 1
+        if self.n_custom > 0:
+            for i, embed_i in enumerate(self.custom_embedders):
+                start = end
+                end = start + self.n_custom_d[i]
+                if self.use_names:
+                    if end - start > 1:
+                        xx[start:end] = embed_i(x_labels[int(
+                            x_tmp[self.n_cont + self.n_cat + self.n_int + i])])
+                    # Special rule for self.n_custom_d = 1
+                    else:
+                        xx[start] = embed_i(x_labels[int(
+                            x_tmp[self.n_cont + self.n_cat + self.n_int + i])])
                 else:
-                    xx[start] = embed_i(x_labels[int(x_tmp[self.n_cont +
-                                                           self.n_cat +
-                                                           self.n_int + i])])
-            else:
-                xx[start:end] = embed_i(x_tmp[self.n_cont + self.n_cat +
-                                              self.n_int + i])
+                    xx[start:end] = embed_i(x_tmp[self.n_cont + self.n_cat +
+                                                  self.n_int + i])
         # Embed the raw variables
-        start = end
-        end = start + self.n_raw
-        xx[start:end] = x_tmp[self.n_cont + self.n_cat + self.n_int +
-                              self.n_custom:]
+        if self.n_raw > 0:
+            start = end
+            end = start + self.n_raw
+            xx[start:end] = x_tmp[self.n_cont + self.n_cat + self.n_int +
+                                  self.n_custom:]
         return xx
 
     def __extract__(self, x):
@@ -227,25 +237,25 @@ class MOOP:
         # Create the output array
         xx = np.zeros(self.n_cont + self.n_cat + self.n_int + self.n_custom
                       + self.n_raw)
-        # Descale the continuous variables
         start = 0
         end = self.n_cont
-        xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
-                         * self.scale[start:end] + self.cont_lb[:])
-        # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.cont_lb[:])
-        xx[start:end] = np.minimum(xx[start:end], self.cont_ub[:])
+        # Descale the continuous variables
+        if self.n_cont > 0:
+            xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
+                             * self.scale[start:end] + self.cont_lb[:])
+            xx[start:end] = np.maximum(xx[start:end], self.cont_lb[:])
+            xx[start:end] = np.minimum(xx[start:end], self.cont_ub[:])
         # Descale the integer variables
-        start = end
-        end = start + self.n_int
-        xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
-                         * self.scale[start:end] + self.int_lb[:])
-        # Pull inside bounding box, in case perturbed outside
-        xx[start:end] = np.maximum(xx[start:end], self.int_lb[:])
-        xx[start:end] = np.minimum(xx[start:end], self.int_ub[:])
-        # Bin the integer variables
-        for i in range(self.n_cont, self.n_cont + self.n_int):
-            xx[i] = int(xx[i])
+        if self.n_int > 0:
+            start = end
+            end = start + self.n_int
+            xx[start:end] = ((x[start:end] - self.scaled_lb[start:end])
+                             * self.scale[start:end] + self.int_lb[:])
+            xx[start:end] = np.maximum(xx[start:end], self.int_lb[:])
+            xx[start:end] = np.minimum(xx[start:end], self.int_ub[:])
+            # Bin the integer variables
+            for i in range(self.n_cont, self.n_cont + self.n_int):
+                xx[i] = int(xx[i])
         # Extract categorical variables
         if self.n_cat_d > 0:
             start = end
@@ -261,36 +271,40 @@ class MOOP:
                 xx[start+i] = np.argmax(bvec[count:count+n_lvl])
                 count += n_lvl
         # Extract custom variables
-        for i, ex_i in enumerate(self.custom_extracters):
-            start = end
-            end = start + self.n_custom_d[i]
-            if not self.use_names:
-                xx[self.n_cont + self.n_cat + self.n_int + i] = \
-                    ex_i(x[start:end])
+        if self.n_custom > 0:
+            for i, ex_i in enumerate(self.custom_extracters):
+                start = end
+                end = start + self.n_custom_d[i]
+                if not self.use_names:
+                    xx[self.n_cont + self.n_cat + self.n_int + i] = \
+                        ex_i(x[start:end])
         # Extract the raw variables
-        start = end
-        end = start + self.n_raw
-        xx[self.n_cont + self.n_cat + self.n_int + self.n_custom:] = \
-            x[start:end]
+        if self.n_raw > 0:
+            start = end
+            end = start + self.n_raw
+            xx[self.n_cont + self.n_cat + self.n_int + self.n_custom:] = \
+                x[start:end]
         # Unshuffle xx and pack into a numpy structured array
         if self.use_names:
             out = np.zeros(1, dtype=np.dtype(self.des_names))
             n_customs = 0
+            cat_range_low = self.n_cont + self.n_int
+            cus_range_low = cat_range_low + self.n_cat
+            raw_range_low = cus_range_low + self.n_custom
             for i, j in enumerate(self.des_order):
+                # Unpack ordinal, raw, and unnamed categorical variables
+                if (j < cat_range_low or j >= raw_range_low or
+                    (j < cus_range_low and
+                     not self.cat_names[j - cat_range_low])):
+                    out[self.des_names[i][0]] = xx[j]
                 # Unpack categorical variables when cat_names given
-                if ((j in range(self.n_cont+self.n_int,
-                                self.n_cont+self.n_int+self.n_cat))
-                    and (len(self.cat_names[j - self.n_cont - self.n_int])
-                         > 0)):
+                elif j < cus_range_low:
                     out[self.des_names[i][0]] = (self.cat_names[j -
-                                                                self.n_cont -
-                                                                self.n_int]
+                                                                cat_range_low]
                                                                [int(xx[j])])
-                # Unpack custom variables
-                elif (j in range(self.n_cont + self.n_int + self.n_cat,
-                                 self.n_cont + self.n_int + self.n_cat +
-                                 self.n_custom)):
-                    start = (self.n_cont + self.n_cat_d + self.n_int +
+                # Unpack named custom variables (skipped earlier)
+                else:
+                    start = (self.n_cont + self.n_int + self.n_cat_d +
                              sum(self.n_custom_d[:n_customs]))
                     end = start + self.n_custom_d[n_customs]
                     exi = self.custom_extracters[n_customs]
@@ -300,8 +314,6 @@ class MOOP:
                     else:
                         out[self.des_names[i][0]] = exi(x[start])
                     n_customs += 1  # increment counter
-                else:
-                    out[self.des_names[i][0]] = xx[j]
             return out[0]
         else:
             return xx[self.des_order]
@@ -514,6 +526,7 @@ class MOOP:
         except BaseException:
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")
+        # Set up the surrogate optimizer
         if not isinstance(opt, structs.SurrogateOptimizer):
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")
@@ -1368,9 +1381,10 @@ class MOOP:
         if i < 0 or i > self.s - 1:
             raise ValueError("s_name did not contain a legal name/index")
         # Check the database for previous evaluations of x
+        xx = self.__embed__(x)
         for j in range(self.sim_db[i]['n']):
-            if all(abs(self.sim_db[i]['x_vals'][j, :] - self.__embed__(x)) <
-                   self.scaled_des_tols):
+            if np.all(np.abs(self.sim_db[i]['x_vals'][j, :] - xx) <
+                      self.scaled_des_tols):
                 # If found, return the sim value
                 return self.sim_db[i]['s_vals'][j, :]
         # Nothing found, return None
@@ -1638,15 +1652,16 @@ class MOOP:
                 sim_std_dev[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
             m_count += self.m[i]
         # Evaluate the objective functions
+        xx = self.__extract__(x)
+        sx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
         fx = np.zeros(self.o)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
-                fx[i] = obj_func(self.__extract__(x),
-                                 self.__unpack_sim__(sim),
-                                 self.__unpack_sim__(sim_std_dev))
+                fx[i] = obj_func(xx, sx, sdx)
             else:
-                fx[i] = obj_func(self.__extract__(x),
-                                 self.__unpack_sim__(sim))
+                fx[i] = obj_func(xx, sx)
         # Return the result
         return fx
 
@@ -1687,15 +1702,16 @@ class MOOP:
                                                     surrogate.stdDev(x)
                 m_count += self.m[i]
             # Evaluate the constraint functions
+            xx = self.__extract__(x)
+            sx = self.__unpack_sim__(sim)
+            if any(self.c_exp_vals):
+                sdx = self.__unpack_sim__(sim_std_dev)
             cx = np.zeros(self.p)
             for i, constraint_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
-                    cx[i] = constraint_func(self.__extract__(x),
-                                            self.__unpack_sim__(sim),
-                                            self.__unpack_sim__(sim_std_dev))
+                    cx[i] = constraint_func(xx, sx, sdx)
                 else:
-                    cx[i] = constraint_func(self.__extract__(x),
-                                            self.__unpack_sim__(sim))
+                    cx[i] = constraint_func(xx, sx)
             # Return the constraint violations
             return cx
 
@@ -1721,10 +1737,10 @@ class MOOP:
         else:
             raise TypeError("x must be a numpy array")
         # Evaluate the surrogate models to approximate the simulation outputs
-        sim = np.zeros(self.m_total)
         sim_std_dev = np.zeros(self.m_total)
         if sx is None:
             m_count = 0
+            sim = np.zeros(self.m_total)
             for i, surrogate in enumerate(self.surrogates):
                 sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
                 if any(self.obj_exp_vals) or any(self.c_exp_vals):
@@ -1737,34 +1753,31 @@ class MOOP:
                     raise ValueError("sx must have length m when present")
             else:
                 raise TypeError("sx must be a numpy array when present")
-            sim[:] = sx[:]
+            sim = sx
+        # Px is the penalized objective score
+        Px = np.zeros(self.o)
         # Evaluate the objective functions
-        fx = np.zeros(self.o)
+        xx = self.__extract__(x)
+        ssx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals) or any(self.c_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
-                fx[i] = obj_func(self.__extract__(x),
-                                 self.__unpack_sim__(sim),
-                                 self.__unpack_sim__(sim_std_dev))
+                Px[i] = obj_func(xx, ssx, sdx)
             else:
-                fx[i] = obj_func(self.__extract__(x),
-                                 self.__unpack_sim__(sim))
+                Px[i] = obj_func(xx, ssx)
         # Evaluate the constraint functions
-        Lx = np.zeros(self.o)
         if self.p > 0:
             for i, constraint_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
-                    cx = constraint_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         self.__unpack_sim__(sim_std_dev))
+                    cx = constraint_func(xx, ssx, sdx)
                 else:
-                    cx = constraint_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim))
+                    cx = constraint_func(xx, ssx)
                 if cx > 0.0:
-                    Lx[:] = Lx[:] + cx
-        # Compute the penalized objective score
-        Lx[:] = self.lam * Lx[:] + fx[:]
+                    # Add constraint violation penalty
+                    Px[:] = Px[:] + self.lam * cx
         # Return the result
-        return Lx
+        return Px
 
     def evaluateGradients(self, x):
         """ Evaluate the gradient of the penalized objective using surrogates.
@@ -1810,19 +1823,18 @@ class MOOP:
                         surrogate.stdDevGrad(x)
                 m_count += self.m[i]
         # Evaluate the gradients of the objective functions
+        xx = self.__extract__(x)
+        ssx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals) or any(self.c_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
         df_dx = np.zeros((self.o, self.n))
         for i, obj_func in enumerate(self.objectives):
             # If names are used, unpack the derivative
             if self.use_names:
                 if self.obj_exp_vals[i]:
-                    df_dx_tmp = obj_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         self.__unpack_sim__(sim_std_dev),
-                                         der=1)
+                    df_dx_tmp = obj_func(xx, ssx, sdx, der=1)
                 else:
-                    df_dx_tmp = obj_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         der=1)
+                    df_dx_tmp = obj_func(xx, ssx, der=1)
                 for j, d_name in enumerate(self.des_names):
                     if self.des_order[j] < self.n_cont:
                         df_dx[i, j] = df_dx_tmp[d_name[0]]
@@ -1833,14 +1845,11 @@ class MOOP:
             else:
                 nn = self.n_cont
                 if self.obj_exp_vals[i]:
-                    df_dx[i, :nn] = (obj_func(self.__extract__(x),
-                                              self.__unpack_sim__(sim),
-                                              self.__unpack_sim__(sim_std_dev),
+                    df_dx[i, :nn] = (obj_func(xx, ssx, sdx,
                                               der=1)[:self.n_cont] /
                                      self.scale[:self.n_cont])
                 else:
-                    df_dx[i, :nn] = (obj_func(self.__extract__(x),
-                                              self.__unpack_sim__(sim),
+                    df_dx[i, :nn] = (obj_func(xx, ssx,
                                               der=1)[:self.n_cont] /
                                      self.scale[:self.n_cont])
         # Now evaluate wrt the sims
@@ -1848,14 +1857,9 @@ class MOOP:
             df_dsim = np.zeros((self.o, self.m_total))
             for i, obj_func in enumerate(self.objectives):
                 if self.obj_exp_vals[i]:
-                    df_ds_tmp = obj_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         self.__unpack_sim__(sim_std_dev),
-                                         der=2)
+                    df_ds_tmp = obj_func(xx, ssx, sdx, der=2)
                 else:
-                    df_ds_tmp = obj_func(self.__extract__(x),
-                                         self.__unpack_sim__(sim),
-                                         der=2)
+                    df_ds_tmp = obj_func(xx, ssx, der=2)
                 # If names are used, pack the sims
                 if self.use_names:
                     df_dsim[i, :] = self.__pack_sim__(df_ds_tmp)
@@ -1866,10 +1870,7 @@ class MOOP:
             df_dstdD = np.zeros((self.o, self.m_total))
             for i, obj_func in enumerate(self.objectives):
                 if self.obj_exp_vals[i]:
-                    df_dsd_tmp = obj_func(self.__extract__(x),
-                                          self.__unpack_sim__(sim),
-                                          self.__unpack_sim__(sim_std_dev),
-                                          der=3)
+                    df_dsd_tmp = obj_func(xx, ssx, sdx, der=3)
                     # If names are used, pack the sims
                     if self.use_names:
                         df_dstdD[i, :] = self.__pack_sim__(df_dsd_tmp)
@@ -1890,24 +1891,16 @@ class MOOP:
             cx = np.zeros(self.p)
             for i, const_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
-                    cx[i] = const_func(self.__extract__(x),
-                                       self.__unpack_sim__(sim),
-                                       self.__unpack_sim__(sim_std_dev))
+                    cx[i] = const_func(xx, ssx, sdx)
                 else:
-                    cx[i] = const_func(self.__extract__(x),
-                                       self.__unpack_sim__(sim))
+                    cx[i] = const_func(xx, ssx)
             # Evaluate the gradients of the constraint functions
             dc_dx = np.zeros((self.p, self.n))
             for i, const_func in enumerate(self.constraints):
                 if self.c_exp_vals[i]:
-                    dc_dx_tmp = const_func(self.__extract__(x),
-                                           self.__unpack_sim__(sim),
-                                           self.__unpack_sim__(sim_std_dev),
-                                           der=1)
+                    dc_dx_tmp = const_func(xx, ssx, sdx, der=1)
                 else:
-                    dc_dx_tmp = const_func(self.__extract__(x),
-                                           self.__unpack_sim__(sim),
-                                           der=1)
+                    dc_dx_tmp = const_func(xx, ssx, der=1)
                 # If names are used, unpack the derivative
                 if self.use_names:
                     for j, d_name in enumerate(self.des_names):
@@ -1925,38 +1918,25 @@ class MOOP:
                 dc_dsim = np.zeros((self.p, self.m_total))
                 # If names are used, sims need to be packed
                 if self.use_names:
-                    sxx = self.__unpack_sim__(sim)
-                    if any(self.c_exp_vals):
-                        sdxx = self.__unpack_sim__(sim_std_dev)
                     for i, const_func in enumerate(self.constraints):
                         if self.c_exp_vals[i]:
-                            dc_dsim_tmp = const_func(self.__extract__(x),
-                                                     sxx, sdxx, der=2)
+                            dc_dsim_tmp = const_func(xx, ssx, sdx, der=2)
                         else:
-                            dc_dsim_tmp = const_func(self.__extract__(x),
-                                                     sxx, der=2)
+                            dc_dsim_tmp = const_func(xx, ssx, der=2)
                         dc_dsim[i, :] = self.__pack_sim__(dc_dsim_tmp)
                 # Otherwise, evaluate normally
                 else:
-                    sxx = self.__unpack_sim__(sim)
-                    if any(self.c_exp_vals):
-                        sdxx = self.__unpack_sim__(sim_std_dev)
                     for i, const_func in enumerate(self.constraints):
                         if self.c_exp_vals[i]:
-                            dc_dsim[i, :] = const_func(self.__extract__(x),
-                                                       sxx, sdxx, der=2)
+                            dc_dsim[i, :] = const_func(xx, ssx, sdx, der=2)
                         else:
-                            dc_dsim[i, :] = const_func(self.__extract__(x),
-                                                       sxx, der=2)
+                            dc_dsim[i, :] = const_func(xx, ssx, der=2)
             # Now evaluate wrt the std deviations
             if any(self.c_exp_vals):
                 dc_dstdD = np.zeros((self.p, self.m_total))
                 for i, const_func in enumerate(self.constraints):
                     if self.c_exp_vals[i]:
-                        sxx = self.__unpack_sim__(sim)
-                        sdxx = self.__unpack_sim__(sim_std_dev)
-                        dc_dsd_tmp = const_func(self.__extract__(x),
-                                                sxx, sdxx, der=3)
+                        dc_dsd_tmp = const_func(xx, ssx, sdx, der=3)
                         # If names are used, pack the sims
                         if self.use_names:
                             dc_dstdD[i, :] = self.__pack_sim__(dc_dsd_tmp)
@@ -2009,8 +1989,10 @@ class MOOP:
         # Initialize the database if needed
         if any(self.obj_exp_vals):
             sdx = np.zeros(sx.dtype)
+        # Pre-embed x
+        xx = self.__embed__(x)
         if self.n_dat == 0:
-            self.data['x_vals'][0, :] = self.__embed__(x)
+            self.data['x_vals'][0, :] = xx
             self.data['f_vals'] = np.zeros((1, self.o))
             for i, obj_func in enumerate(self.objectives):
                 if self.obj_exp_vals[i]:
@@ -2026,13 +2008,12 @@ class MOOP:
                 self.data['c_vals'] = np.zeros((1, 1))
             self.n_dat = 1
         # Check for duplicate values (up to the design tolerance)
-        elif any([np.all(np.abs(self.__embed__(x) - xj) < self.scaled_des_tols)
+        elif any([np.all(np.abs(xx - xj) < self.scaled_des_tols)
                   for xj in self.data['x_vals']]):
             return
         # Otherwise append the objectives
         else:
-            self.data['x_vals'] = np.append(self.data['x_vals'],
-                                            [self.__embed__(x)], axis=0)
+            self.data['x_vals'] = np.append(self.data['x_vals'], [xx], axis=0)
             fx = np.zeros(self.o)
             for i, obj_func in enumerate(self.objectives):
                 if self.obj_exp_vals[i]:
@@ -2206,8 +2187,9 @@ class MOOP:
 
         """
 
-        # Create an empty list to store the filtered batch
+        # Create an empty list to store the filtered and embedded batches
         fbatch = []
+        ebatch = []
         for xbatch in args:
             # Evaluate all of the simulations at the candidate solutions
             if self.s > 0:
@@ -2236,23 +2218,22 @@ class MOOP:
                             namei = self.sim_names[i][0]
                         else:
                             namei = i
-                        if all([np.any(np.abs(xxi - self.__embed__(xj)) >
-                                       self.scaled_des_tols)
-                                or namei != j for (xj, j) in fbatch]) \
+                        if all([np.any(np.abs(xxi - xj) > self.scaled_des_tols)
+                                or namei != j for (xj, j) in ebatch]) \
                            and self.check_sim_db(xi, namei) is None:
-                            # If not, add it to the fbatch
+                            # If not, add it to the fbatch and ebatch
                             fbatch.append((xi, namei))
+                            ebatch.append((xxi, namei))
                         else:
                             # Try to improve surrogate (locally then globally)
                             x_improv = self.surrogates[i].improve(xxi, False)
                             # Again, this is needed to handle categorical vars
                             ibatch = [self.__embed__(self.__extract__(xk))
                                       for xk in x_improv]
-                            while (any([any([np.all(np.abs(self.__embed__(xj)
-                                                           - xk) <
+                            while (any([any([np.all(np.abs(xj - xk) <
                                                     self.scaled_des_tols)
                                              and namei == j for (xj, j)
-                                             in fbatch])
+                                             in ebatch])
                                         for xk in ibatch]) or
                                    any([self.check_sim_db(self.__extract__(xk),
                                                           namei)
@@ -2264,16 +2245,17 @@ class MOOP:
                             # Add improvement points to the fbatch
                             for xj in ibatch:
                                 fbatch.append((self.__extract__(xj), namei))
+                                ebatch.append((xj, namei))
             else:
                 # If there were no simulations, just add all points to fbatch
                 for xi in xbatch:
                     # This 2nd extract/embed, while redundant, is necessary
                     # for categorical variables to be processed correctly
                     xxi = self.__embed__(xi)
-                    if all([np.any(np.abs(xxi - self.__embed__(xj))
-                            > self.scaled_des_tols)
-                            for (xj, j) in fbatch]):
+                    if all([np.any(np.abs(xxi - xj) > self.scaled_des_tols)
+                            for (xj, j) in ebatch]):
                         fbatch.append((xi, -1))
+                        ebatch.append((xxi, -1))
         return fbatch
 
     def updateAll(self, k, batch):
@@ -2336,7 +2318,7 @@ class MOOP:
             # If constraints are violated, increase lam
             if any([np.any(self.evaluateConstraints(self.__embed__(xi))
                            > 1.0e-4) for (xi, i) in batch]):
-                self.lam = self.lam * 2.0
+                self.lam = min(1e4, self.lam * 2.0)
             # Update the surrogates
             self.updateSurrogates()
             # Add new points that have been fully evaluated to the database

@@ -208,13 +208,6 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Return the weighted sum of objectives, if the bounds are satisfied
         result = np.dot(f_vals, self.weights)
         for i in range(self.o):
             if f_vals[i] > self.f_ub[i]:
@@ -237,18 +230,6 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Check that the gradient values are legal
-        if isinstance(g_vals, np.ndarray):
-            if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
-                raise ValueError("g_vals must have shape o-by-n")
-        else:
-            raise TypeError("g_vals must be a numpy array")
         # Compute the dot product between the weights and the gradient values
         result = np.dot(np.transpose(g_vals), self.weights)
         # Add the gradient of the penalty for any bound violations
@@ -460,12 +441,6 @@ class EI_RandomConstraint(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
         # If the feasible set was empty, just use the given fi
         if self.best is None:
             result = np.dot(f_vals, self.weights)

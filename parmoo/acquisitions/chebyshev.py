@@ -1,12 +1,12 @@
 
-""" Implementations of the weighted-sum scalarization technique.
+""" Implementations of the (augmented) Chebyshev scalarization technique.
 
 This module contains implementations of the AcquisitionFunction ABC, which
 use the weighted-sum technique.
 
 The classes include:
- * ``UniformWeights`` (sample convex weights from a uniform distribution)
- * ``FixedWeights`` (uses a fixed scalarization, which can be set upon init)
+ * ``UniformAugChebyshev`` (sample Chebyshev weights uniformly)
+ * ``FixedAugChebyshev`` (uses a fixed weights, which can be set upon init)
 
 """
 
@@ -16,19 +16,19 @@ from parmoo.structs import AcquisitionFunction
 from parmoo.util import xerror
 
 
-class UniformWeights(AcquisitionFunction):
-    """ Randomly generate scalarizing weights.
+class UniformAugChebyshev(AcquisitionFunction):
+    """ Randomly generate weights and scalarize via augmented Chebyshev.
 
     Generates uniformly distributed scalarization weights, by randomly
     sampling the probability simplex.
 
     """
 
-    # Slots for the UniformWeights class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights']
+    # Slots for the UniformAugChebyshev class
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha']
 
     def __init__(self, o, lb, ub, hyperparams):
-        """ Constructor for the UniformWeights class.
+        """ Constructor for the UniformAugChebyshev class.
 
         Args:
             o (int): The number of objectives.
@@ -41,10 +41,13 @@ class UniformWeights(AcquisitionFunction):
                 region. The dimension must match ub.
 
             hyperparams (dict): A dictionary of hyperparameters for tuning
-                the acquisition function.
+                the acquisition function. May include:
+                 * 'alpha' (float): The weight to place on the linear
+                   term. When not present, defaults to
+                   1e-4 / number of objectives.
 
         Returns:
-            UniformWeights: A new UniformWeights generator.
+            UniformAugChebyshev: A new UniformAugChebyshev generator.
 
         """
 
@@ -59,6 +62,18 @@ class UniformWeights(AcquisitionFunction):
         self.ub = ub
         # Initialize the weights array
         self.weights = np.zeros(o)
+        # Check hyperparameters
+        self.alpha = 1.0e-4 / self.o
+        if 'alpha' in hyperparams.keys():
+            if isinstance(hyperparams['alpha'], float):
+                if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
+                    self.alpha = hyperparams['alpha']
+                else:
+                    raise ValueError("When present, hyperparams['alpha'] " +
+                                     "must be in the range [0, 1]")
+            else:
+                raise TypeError("When present, hyperparams['alpha'] " +
+                                "must be a float type")
         return
 
     def useSD(self):
@@ -153,12 +168,15 @@ class UniformWeights(AcquisitionFunction):
                     p_best = p_temp
             return x_best
         else:
-            i = np.argmin(np.asarray([np.dot(self.weights, fi)
+            xx = np.zeros(1)
+            sx = np.zeros(1)
+            sdx = np.zeros(1)
+            i = np.argmin(np.asarray([self.scalarize(fi, xx, sx, sdx)
                                       for fi in pf['f_vals']]))
             x = pf['x_vals'][i, :]
             return x
 
-    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd, manifold=None):
         """ Scalarize a vector of function values using the current weights.
 
         Args:
@@ -181,9 +199,36 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        return np.dot(f_vals, self.weights)
+        if not isinstance(manifold, int):
+            return np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
+        else:
+            return (f_vals * self.weights)[manifold] + self.alpha * np.sum(f_vals)
 
-    def scalarizeGrad(self, f_vals, g_vals):
+    def getManifold(self, f_vals):
+        """ Check which manifold is active for a given function value.
+
+        Each component of f_vals is its own smooth manifold, but once
+        the max function is applied for the augmented Chebyshev scalarization,
+        only 1 component is typically active in the surrogate
+        minimization problem.
+
+        Args:
+            f_vals (numpy.ndarray): A 1d array specifying the function
+                values to be scalarized.
+
+        Returns:
+            numpy.ndarray, dtype=int: A 1d array of integers, matching the
+            length of f_vals, where
+             - 0 indicates that this component of the manifold is inactive and
+             - 1 indicates that this component of the manifold is active.
+
+        """
+
+        return np.isclose(f_vals * self.weights,
+                          (f_vals * self.weights).max(),
+                          atol=1.0e-8).astype(int)
+
+    def scalarizeGrad(self, f_vals, g_vals, manifold=None):
         """ Scalarize a Jacobian of gradients using the current weights.
 
         Args:
@@ -198,21 +243,27 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        return np.dot(np.transpose(g_vals), self.weights)
+        if not isinstance(manifold, int):
+            return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
+                          g_vals)
+        else:
+            wv = np.zeros(self.o)
+            wv[manifold] = self.weights[manifold]
+            return np.dot(wv + self.alpha, g_vals)
 
 
-class FixedWeights(AcquisitionFunction):
-    """ Use fixed scalarizing weights.
+class FixedAugChebyshev(AcquisitionFunction):
+    """ Use fixed weights with the augmented Chebyshev scalarization.
 
     Use a fixed scalarization scheme, based on a fixed weighted sum.
 
     """
 
-    # Slots for the FixedWeights class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights']
+    # Slots for the FixedAugChebyshev class
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha']
 
     def __init__(self, o, lb, ub, hyperparams):
-        """ Constructor for the FixedWeights class.
+        """ Constructor for the FixedAugChebyshev class.
 
         Args:
             o (int): The number of objectives.
@@ -229,9 +280,12 @@ class FixedWeights(AcquisitionFunction):
                  * 'weights' (numpy.ndarray): A 1d array of length o that,
                    when present, specifies the scalarization weights to use.
                    When absent, the default weights are w = [1/o, ..., 1/o].
+                 * 'alpha' (float): The weight to place on the linear
+                   term. When not present, defaults to
+                   1e-4 / number of objectives.
 
         Returns:
-            FixedWeights: A new FixedWeights generator.
+            FixedAugChebyshev: A new FixedAugChebyshev generator.
 
         """
 
@@ -260,6 +314,18 @@ class FixedWeights(AcquisitionFunction):
         else:
             # If no weights were provided, use an even weighting
             self.weights = np.ones(self.o) / float(self.o)
+        # Check hyperparameters dictionary for alpha
+        self.alpha = 1.0e-4 / self.o
+        if 'alpha' in hyperparams.keys():
+            if isinstance(hyperparams['alpha'], float):
+                if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
+                    self.alpha = hyperparams['alpha']
+                else:
+                    raise ValueError("When present, hyperparams['alpha'] " +
+                                     "must be in the range [0, 1]")
+            else:
+                raise TypeError("When present, hyperparams['alpha'] " +
+                                "must be a float type")
         return
 
     def useSD(self):
@@ -351,12 +417,15 @@ class FixedWeights(AcquisitionFunction):
                     p_best = p_temp
             return x_best
         else:
-            i = np.argmin(np.asarray([np.dot(self.weights, fi)
+            xx = np.zeros(1)
+            sx = np.zeros(1)
+            sdx = np.zeros(1)
+            i = np.argmin(np.asarray([self.scalarize(fi, xx, sx, sdx)
                                       for fi in pf['f_vals']]))
             x = pf['x_vals'][i, :]
             return x
 
-    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd, manifold=None):
         """ Scalarize a vector of function values using the current weights.
 
         Args:
@@ -379,9 +448,36 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        return np.dot(f_vals, self.weights)
+        if not isinstance(manifold, int):
+            return np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
+        else:
+            return (f_vals * self.weights)[manifold] + self.alpha * np.sum(f_vals)
 
-    def scalarizeGrad(self, f_vals, g_vals):
+    def getManifold(self, f_vals):
+        """ Check which manifold is active for a given function value.
+
+        Each component of f_vals is its own smooth manifold, but once
+        the max function is applied for the augmented Chebyshev scalarization,
+        only 1 component is typically active in the surrogate
+        minimization problem.
+
+        Args:
+            f_vals (numpy.ndarray): A 1d array specifying the function
+                values to be scalarized.
+
+        Returns:
+            numpy.ndarray, dtype=int: A 1d array of integers, matching the
+            length of f_vals, where
+             - 0 indicates that this component of the manifold is inactive and
+             - 1 indicates that this component of the manifold is active.
+
+        """
+
+        return np.isclose(f_vals * self.weights,
+                          (f_vals * self.weights).max(),
+                          atol=1.0e-8).astype(int)
+
+    def scalarizeGrad(self, f_vals, g_vals, manifold=None):
         """ Scalarize a Jacobian of gradients using the current weights.
 
         Args:
@@ -396,4 +492,10 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        return np.dot(np.transpose(g_vals), self.weights)
+        if not isinstance(manifold, int):
+            return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
+                          g_vals)
+        else:
+            wv = np.zeros(self.o)
+            wv[manifold] = self.weights[manifold]
+            return np.dot(wv + self.alpha, g_vals)

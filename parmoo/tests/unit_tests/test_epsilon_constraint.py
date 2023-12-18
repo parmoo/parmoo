@@ -53,11 +53,6 @@ def test_RandomConstraint():
                                   lambda x: np.ones(3) * (0.01 - sum(x)),
                                   {}) < 1.0))
     assert (acqu.setTarget(data, lambda x: np.zeros(3), {}) in data['x_vals'])
-    # Try some bad scalarizations to test error handling
-    with pytest.raises(TypeError):
-        acqu.scalarize(5, 1, 2, 3)
-    with pytest.raises(ValueError):
-        acqu.scalarize(np.ones(2), np.ones(2), np.ones(2), np.ones(2))
     # Generate a random scalarization target and check the scalarization
     acqu = RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
@@ -69,15 +64,6 @@ def test_RandomConstraint():
     for fi in pf['f_vals']:
         assert (acqu.scalarize(fi, np.zeros(3), np.zeros(3), np.zeros(3))
                 <= np.sum(fi) or np.any(fi > acqu.f_ub))
-    # Try some bad gradient scalarizations to test error handling
-    with pytest.raises(TypeError):
-        acqu.scalarizeGrad(5, np.zeros((3, 4))[0])
-    with pytest.raises(ValueError):
-        acqu.scalarizeGrad(np.ones(2), np.zeros((3, 4)))
-    with pytest.raises(TypeError):
-        acqu.scalarizeGrad(np.eye(3)[0], 5)
-    with pytest.raises(ValueError):
-        acqu.scalarizeGrad(np.eye(3)[0], np.zeros((2, 4)))
     # Check that the scalar grad is either less than the sum of fi or bad
     for fi in pf['f_vals']:
         gi = np.random.random_sample((3, 3))
@@ -141,11 +127,6 @@ def test_EI_RandomConstraint():
                                   {}) < 1.0))
     assert (acqu.setTarget(data, lambda x, sx=0: np.zeros(3), {})
             in data['x_vals'])
-    # Try some bad scalarizations to test error handling
-    with pytest.raises(TypeError):
-        acqu.scalarize(5, 1, 2, 3)
-    with pytest.raises(ValueError):
-        acqu.scalarize(np.ones(2), np.ones(2), np.ones(2), np.ones(2))
     # Generate a random 1D scalarization target and check the scalarization
     acqu = EI_RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
