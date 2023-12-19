@@ -63,7 +63,7 @@ class LocalGPS(SurrogateOptimizer):
         self.lb = lb
         self.ub = ub
         self.q_ind = 0
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_restarts' in hyperparams:
             if isinstance(hyperparams['opt_restarts'], int):
                 if hyperparams['opt_restarts'] < 1:
@@ -76,7 +76,7 @@ class LocalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.restarts = self.n + 1
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_budget' in hyperparams:
             if isinstance(hyperparams['opt_budget'], int):
                 if hyperparams['opt_budget'] < 1:
@@ -89,7 +89,7 @@ class LocalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.budget = 1000
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_momentum' in hyperparams:
             if isinstance(hyperparams['opt_momentum'], float):
                 if 0 <= hyperparams['opt_momentum'] < 1:
@@ -221,7 +221,7 @@ class GlobalGPS(SurrogateOptimizer):
         self.o = o
         self.lb = lb
         self.ub = ub
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_budget' in hyperparams:
             if isinstance(hyperparams['opt_budget'], int):
                 if hyperparams['opt_budget'] < 1:
@@ -234,7 +234,7 @@ class GlobalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.opt_budget = 1500
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'gps_budget' in hyperparams:
             if isinstance(hyperparams['gps_budget'], int):
                 if hyperparams['gps_budget'] < 1 or \
@@ -249,7 +249,7 @@ class GlobalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.gps_budget = int(2 * self.opt_budget / 3)
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_momentum' in hyperparams:
             if isinstance(hyperparams['opt_momentum'], float):
                 if 0 <= hyperparams['opt_momentum'] < 1:
