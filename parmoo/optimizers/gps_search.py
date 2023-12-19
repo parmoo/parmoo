@@ -384,7 +384,6 @@ class GlobalGPS(SurrogateOptimizer):
         return np.asarray(result)
 
 
-@profile
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                                    mesh_start=0.25, mesh_tol=1.0e-8,
                                    momentum=0.9, istarts=1):
