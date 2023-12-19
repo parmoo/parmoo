@@ -452,7 +452,9 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
             x_min[kk, :] = x0[:]
         else:
             x_min[kk, :] = np.random.random_sample(n) * (ub - lb) + lb
-        f_min[kk] = obj_func(x_min[kk])
+        f0 = obj_func(x_min[kk])
+        f_tol = max(min(abs(f0), 1.0e-8), 1.0e-16)
+        f_min[kk] = f0
         # Take n+1 iterations to get "momentum" started
         for k in range(n+1):
             improve = False
@@ -465,7 +467,7 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                 else:
                     f_tmp = obj_func(x_tmp)
                 # Check for improvement
-                if f_tmp + 1.0e-8 < f_min[kk]:
+                if f_min[kk] - f_tmp > f_tol:
                     f_min[kk] = f_tmp
                     x_min[kk, :] = x_tmp[:]
                     m_min = i + 1
@@ -493,7 +495,7 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                 else:
                     f_tmp = obj_func(x_tmp)
                 # Check for improvement
-                if f_tmp + 1.0e-8 < f_min[kk]:
+                if f_min[kk] - f_tmp > f_tol:
                     f_min[kk] = f_tmp
                     x_min[kk, :] = x_tmp[:]
                     m_min = i
