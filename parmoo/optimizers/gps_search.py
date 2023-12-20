@@ -64,7 +64,7 @@ class LocalGPS(SurrogateOptimizer):
         self.lb = lb
         self.ub = ub
         self.q_ind = 0
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_restarts' in hyperparams:
             if isinstance(hyperparams['opt_restarts'], int):
                 if hyperparams['opt_restarts'] < 1:
@@ -77,7 +77,7 @@ class LocalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.restarts = self.n + 1
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_budget' in hyperparams:
             if isinstance(hyperparams['opt_budget'], int):
                 if hyperparams['opt_budget'] < 1:
@@ -90,7 +90,7 @@ class LocalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.budget = 1000
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_momentum' in hyperparams:
             if isinstance(hyperparams['opt_momentum'], float):
                 if 0 <= hyperparams['opt_momentum'] < 1:
@@ -220,7 +220,7 @@ class GlobalGPS(SurrogateOptimizer):
         self.o = o
         self.lb = lb
         self.ub = ub
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_budget' in hyperparams:
             if isinstance(hyperparams['opt_budget'], int):
                 if hyperparams['opt_budget'] < 1:
@@ -233,7 +233,7 @@ class GlobalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.opt_budget = 1500
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'gps_budget' in hyperparams:
             if isinstance(hyperparams['gps_budget'], int):
                 if hyperparams['gps_budget'] < 1 or \
@@ -248,7 +248,7 @@ class GlobalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.gps_budget = int(2 * self.opt_budget / 3)
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_momentum' in hyperparams:
             if isinstance(hyperparams['opt_momentum'], float):
                 if 0 <= hyperparams['opt_momentum'] < 1:
@@ -456,9 +456,12 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
             x_min[kk, :] = x0[:]
         else:
             x_min[kk, :] = lhs[kk - 1] * (ub - lb) + lb
-        f_min[kk] = obj_func(x_min[kk])
+        f0 = obj_func(x_min[kk])
+        f_tol = max(min(abs(f0)**2, 1.0e-8), 1.0e-16)
+        f_min[kk] = f0
         # Take n+1 iterations to get "momentum" started
-        for k in range(n+1):
+        k_start = 0
+        for k in range(ibudget):
             improve = False
             x_center[:] = x_min[kk, :]
             for i, mi in enumerate(mesh[1:, :]):
@@ -469,16 +472,23 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                 else:
                     f_tmp = obj_func(x_tmp)
                 # Check for improvement
-                if f_tmp + 1.0e-8 < f_min[kk]:
+                if f_min[kk] - f_tmp > f_tol:
                     f_min[kk] = f_tmp
                     x_min[kk, :] = x_tmp[:]
                     m_min = i + 1
                     improve = True
             # If there was improvement, shuffle the directions
             if improve:
+                iswitch = np.where(np.abs(mesh[m_min, :]) > 1.0e-8)[0]
+                mesh[0, :] *= momentum
+                mesh[0, iswitch] = mesh[m_min, iswitch]
                 m_tmp[:] = mesh[m_min, :]
-                mesh[2:m_min, :] = mesh[1:m_min-1, :]
+                mesh[2:m_min+1, :] = mesh[1:m_min, :]
                 mesh[1, :] = m_tmp[:]
+                # Update k_start and break the "warm-up" loop
+                k_start += 1
+                if k_start >= n+1:
+                    break
             # If no improvement, decay the mesh down to the tolerance
             else:
                 if np.any(mesh_size[:] < mesh_tol):
@@ -486,7 +496,7 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                 else:
                     mesh_size[:] *= 0.5
         # Take the remaining iterations
-        for k in range(n+1, ibudget):
+        for k in range(k_start, ibudget):
             improve = False
             x_center[:] = x_min[kk, :]
             for i, mi in enumerate(mesh[:, :]):
@@ -497,7 +507,7 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                 else:
                     f_tmp = obj_func(x_tmp)
                 # Check for improvement
-                if f_tmp + 1.0e-8 < f_min[kk]:
+                if f_min[kk] - f_tmp > f_tol:
                     f_min[kk] = f_tmp
                     x_min[kk, :] = x_tmp[:]
                     m_min = i
@@ -505,11 +515,12 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                     break
             # If there was improvement, update moment and shuffle directions
             if improve:
-                mesh[0, :] *= (1 - momentum)
-                mesh[0, :] += (mesh[m_min, :] * momentum)
                 if m_min > 0:
+                    iswitch = np.where(np.abs(mesh[m_min, :]) > 1.0e-8)[0]
+                    mesh[0, :] *= momentum
+                    mesh[0, iswitch] = mesh[m_min, iswitch]
                     m_tmp[:] = mesh[m_min, :]
-                    mesh[2:m_min, :] = mesh[1:m_min-1, :]
+                    mesh[2:m_min+1, :] = mesh[1:m_min, :]
                     mesh[1, :] = m_tmp[:]
             # If no improvement, decay the mesh down to the tolerance
             else:
