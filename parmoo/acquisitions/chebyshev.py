@@ -5,12 +5,14 @@ This module contains implementations of the AcquisitionFunction ABC, which
 use the weighted-sum technique.
 
 The classes include:
- * ``UniformAugChebyshev`` (sample Chebyshev weights uniformly)
  * ``FixedAugChebyshev`` (uses a fixed weights, which can be set upon init)
+ * ``UniformAugChebyshev`` (sample Chebyshev weights uniformly)
+ * ``ParEGO`` (UnivormAugChebyshev scalarization + Expected Improvement)
 
 """
 
 import numpy as np
+from scipy import stats
 import inspect
 from parmoo.structs import AcquisitionFunction
 from parmoo.util import xerror
@@ -499,3 +501,271 @@ class FixedAugChebyshev(AcquisitionFunction):
             wv = np.zeros(self.o)
             wv[manifold] = self.weights[manifold]
             return np.dot(wv + self.alpha, g_vals)
+
+
+class ParEGO(AcquisitionFunction):
+    """ Scalarize with Uniform Chebyshev weighting, then apply EI.
+
+    Generates uniformly distributed scalarization weights, by randomly
+    sampling the probability simplex.
+
+    Then calculate the Expected Improvement of the scalarized function.
+
+    Warning: This function assumes that there is only 1 simulation function
+    and that all objectives are either the identity or negative identity
+    mappings for exactly one output of that simulation function.
+    Composite and heterogeneous objectives are not supported.
+
+    Consequently, this class exists primarily for baseline comparisons.
+
+    """
+
+    # Slots for the ParEGO class
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'y_best', 'use_sd']
+
+    def __init__(self, o, lb, ub, hyperparams):
+        """ Constructor for the ParEGO class.
+
+        Args:
+            o (int): The number of objectives.
+
+            lb (numpy.ndarray): A 1d array of lower bounds for the design
+                region. The number of design variables is inferred from the
+                dimension of lb.
+
+            ub (numpy.ndarray): A 1d array of upper bounds for the design
+                region. The dimension must match ub.
+
+            hyperparams (dict): A dictionary of hyperparameters for tuning
+                the acquisition function. May include:
+                 * 'alpha' (float): The weight to place on the linear
+                   term. When not present, defaults to
+                   1e-4 / number of objectives.
+
+        Returns:
+            ParEGO: A new ParEGO acquisition function object.
+
+        """
+
+        # Check inputs
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
+        # Set the objective count
+        self.o = o
+        # Set the design variable count
+        self.n = np.size(lb)
+        # Set the bound constraints
+        self.lb = lb
+        self.ub = ub
+        # Initialize the weights array and value of y_best
+        self.weights = np.zeros(o)
+        self.y_best = 0.0
+        self.use_sd = True
+        # Check hyperparameters
+        self.alpha = 1.0e-4 / self.o
+        if 'alpha' in hyperparams.keys():
+            if isinstance(hyperparams['alpha'], float):
+                if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
+                    self.alpha = hyperparams['alpha']
+                else:
+                    raise ValueError("When present, hyperparams['alpha'] " +
+                                     "must be in the range [0, 1]")
+            else:
+                raise TypeError("When present, hyperparams['alpha'] " +
+                                "must be a float type")
+        return
+
+    def __gauss_grad(self, x, sdx):
+        """ Gradient of the Gaussian bump """
+        return 2 * (self.y_best - x) * self.__gaussian(x, sdx) / (sdx ** 2)
+
+    def useSD(self):
+        """ Query whether this method uses uncertainties.
+
+        When False, allows users to shortcut expensive uncertainty
+        computations.
+
+        For ParEGO, standard deviations are needed (if constraints
+        are satisfied).
+
+        """
+
+        return self.use_sd
+
+    def setTarget(self, data, penalty_func, history):
+        """ Randomly generate a new vector of scalarizing weights.
+
+        Args:
+            data (dict): A dictionary specifying the current function
+                evaluation database.
+
+            penalty_func (function): A function of one (x) or two (x, sx)
+                inputs that evaluates the (penalized) objectives.
+
+            history (dict): Another unused argument for this function.
+
+        Returns:
+            numpy.ndarray: A 1d array containing the 'best' feasible starting
+            point for the scalarized problem (if any previous evaluations
+            were feasible) or the point in the existing database that is
+            most nearly feasible.
+
+        """
+
+        from parmoo.util import updatePF
+
+        # Check whether any data was given
+        no_data = False
+        # Check for illegal input from data
+        if not isinstance(data, dict):
+            raise TypeError("data must be a dict")
+        else:
+            if ('x_vals' in data) != ('f_vals' in data):
+                raise AttributeError("if x_vals is a key in data, then " +
+                                     "f_vals must also appear")
+            elif 'x_vals' in data:
+                if data['x_vals'] is not None and data['f_vals'] is not None:
+                    if data['x_vals'].shape[0] != data['f_vals'].shape[0]:
+                        raise ValueError("x_vals and f_vals must be equal " +
+                                         "length")
+                    if data['x_vals'].shape[1] != self.n:
+                        raise ValueError("The rows of x_vals must have " +
+                                         "length n")
+                    if data['f_vals'].shape[1] != self.o:
+                        raise ValueError("The rows of f_vals must have " +
+                                         "length o")
+                else:
+                    no_data = True
+            else:
+                no_data = True
+        # Check whether penalty_func() has an appropriate signature
+        if callable(penalty_func):
+            if len(inspect.signature(penalty_func).parameters) not in [1, 2]:
+                raise ValueError("penalty_func() must accept exactly one"
+                                 + " input")
+        else:
+            raise TypeError("penalty_func() must be callable")
+        if no_data:
+            # If data is empty, then the Pareto front is empty
+            pf = {'x_vals': np.zeros((0, self.n)),
+                  'f_vals': np.zeros((0, self.o)),
+                  'c_vals': np.zeros((0, 1))}
+        else:
+            # Get the Pareto front
+            pf = updatePF(data, {})
+        # Sample the weights uniformly from the unit simplex
+        self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+        self.weights = self.weights[:] / sum(self.weights[:])
+        # If data is empty, randomly select weights and starting point
+        if no_data:
+            # Randomly select a starting point
+            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+                       + self.lb)
+            self.use_sd = False
+            self.y_best = np.infty
+            return x_start
+        # If data is nonempty but pf is empty, use a penalty to select
+        elif pf is None or pf['x_vals'].shape[0] == 0:
+            x_best = np.zeros(data['x_vals'].shape[1])
+            p_best = np.infty
+            for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
+                                  data['c_vals']):
+                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                if p_temp < p_best:
+                    x_best = xi
+                    p_best = p_temp
+            self.use_sd = False
+            self.y_best = np.infty
+            return x_best
+        else:
+            xx = np.zeros(1)
+            sx = np.zeros(1)
+            sdx = np.zeros(1)
+            self.use_sd = False
+            i = np.argmin(np.asarray([self.scalarize(fi, xx, sx, sdx)
+                                      for fi in pf['f_vals']]))
+            x = pf['x_vals'][i, :]
+            self.y_best = self.scalarize(fi, xx, sx, sdx)
+            self.use_sd = True
+            return x
+
+    def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd, manifold=None):
+        """ Scalarize a vector of function values using the current weights.
+
+        Args:
+            f_vals (numpy.ndarray): A 1d array specifying the function
+                values to be scalarized.
+
+            x_vals (np.ndarray): A 1D array specifying a vector the design
+                point corresponding to f_vals (unused by this method).
+
+            s_vals_mean (np.ndarray): A 1D array specifying the expected
+                simulation outputs for the x value being scalarized
+                (unused by this method).
+
+            s_vals_sd (np.ndarray): A 1D array specifying the standard
+                deviation for each of the simulation outputs (unused by
+                this method).
+
+        Returns:
+            float: The scalarized value.
+
+        """
+
+        if not isinstance(manifold, int):
+            ai = np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
+        else:
+            ai = (f_vals * self.weights)[manifold] + \
+                 self.alpha * np.sum(f_vals)
+        if self.use_sd:
+            ai_norm = (self.best - ai) / s_vals_sd[0]
+            return -s_vals_sd[0] * (stats.norm(ai_norm) +
+                                    ai_norm * stats.norm.cdf(ai_norm))
+        else:
+            return ai
+
+    def getManifold(self, f_vals):
+        """ Check which manifold is active for a given function value.
+
+        Each component of f_vals is its own smooth manifold, but once
+        the max function is applied for the Augmented Chebyshev scalarization,
+        only 1 component is typically active in the surrogate
+        minimization problem.
+
+        Args:
+            f_vals (numpy.ndarray): A 1d array specifying the function
+                values to be scalarized.
+
+        Returns:
+            numpy.ndarray, dtype=int: A 1d array of integers, matching the
+            length of f_vals, where
+             - 0 indicates that this component of the manifold is inactive and
+             - 1 indicates that this component of the manifold is active.
+
+        """
+
+        return np.isclose(f_vals * self.weights,
+                          (f_vals * self.weights).max(),
+                          atol=1.0e-8).astype(int)
+
+    def scalarizeGrad(self, f_vals, g_vals, manifold=None, dg_ds=0):
+        """ Scalarize a Jacobian of gradients using the current weights.
+
+        Args:
+            f_vals (numpy.ndarray): A 1d array specifying the function
+                values for the scalarized gradient (not used here).
+
+            g_vals (numpy.ndarray): A 2d array specifying the gradient
+                values to be scalarized.
+
+        Returns:
+            np.ndarray: The 1d array for the scalarized gradient.
+
+        """
+
+        if not isinstance(manifold, int):
+            gx = np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
+                        g_vals)
+        else:
+            wv = np.zeros(self.o)
+            wv[manifold] = self.weights[manifold]
+            gx = np.dot(wv + self.alpha, g_vals)
