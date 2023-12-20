@@ -164,8 +164,8 @@ def test_GlobalGPS():
                               'gps_budget': 1000})
     # Initialize the problem correctly, with and without an optional budget
     GlobalGPS(o, lb, ub, {'opt_budget': 200})
-    GlobalGPS(o, lb, ub, {'opt_budget': 200, 'gps_budget': 100})
-    opt = GlobalGPS(o, lb, ub, {'opt_budget': 5000, 'gps_budget': 2000})
+    GlobalGPS(o, lb, ub, {'opt_budget': 5000, 'gps_budget': 2000})
+    opt = GlobalGPS(o, lb, ub, {})
     # Try to add some bad objectives, constraints, and acquisitions
     with pytest.raises(TypeError):
         opt.setObjective(5)
@@ -201,7 +201,7 @@ def test_GlobalGPS():
     x2_soln = np.eye(n)[1]
     x2_soln[n-1] = 0.1
     # eps is the tolerance for rejecting a solution as incorrect
-    eps = 0.05 # need a larger tolerance in case starting f0 is already small
+    eps = 0.01
     # Check that the computed solutions are within eps of the truth
     assert (np.linalg.norm(x1 - x1_soln) < eps)
     assert (np.linalg.norm(x2 - x2_soln) < eps)

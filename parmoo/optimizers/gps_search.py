@@ -453,10 +453,11 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
         else:
             x_min[kk, :] = np.random.random_sample(n) * (ub - lb) + lb
         f0 = obj_func(x_min[kk])
-        f_tol = max(min(abs(f0), 1.0e-8), 1.0e-16)
+        f_tol = max(min(abs(f0)**2, 1.0e-8), 1.0e-16)
         f_min[kk] = f0
         # Take n+1 iterations to get "momentum" started
-        for k in range(n+1):
+        k_start = 0
+        for k in range(ibudget):
             improve = False
             x_center[:] = x_min[kk, :]
             for i, mi in enumerate(mesh[1:, :]):
@@ -474,9 +475,16 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                     improve = True
             # If there was improvement, shuffle the directions
             if improve:
+                iswitch = np.where(np.abs(mesh[m_min, :]) > 1.0e-8)[0]
+                mesh[0, :] *= momentum
+                mesh[0, iswitch] = mesh[m_min, iswitch]
                 m_tmp[:] = mesh[m_min, :]
-                mesh[2:m_min, :] = mesh[1:m_min-1, :]
+                mesh[2:m_min+1, :] = mesh[1:m_min, :]
                 mesh[1, :] = m_tmp[:]
+                # Update k_start and break the "warm-up" loop
+                k_start += 1
+                if k_start >= n+1:
+                    break
             # If no improvement, decay the mesh down to the tolerance
             else:
                 if np.any(mesh_size[:] < mesh_tol):
@@ -484,7 +492,7 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                 else:
                     mesh_size[:] *= 0.5
         # Take the remaining iterations
-        for k in range(n+1, ibudget):
+        for k in range(k_start, ibudget):
             improve = False
             x_center[:] = x_min[kk, :]
             for i, mi in enumerate(mesh[:, :]):
@@ -503,11 +511,12 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                     break
             # If there was improvement, update moment and shuffle directions
             if improve:
-                mesh[0, :] *= (1 - momentum)
-                mesh[0, :] += (mesh[m_min, :] * momentum)
                 if m_min > 0:
+                    iswitch = np.where(np.abs(mesh[m_min, :]) > 1.0e-8)[0]
+                    mesh[0, :] *= momentum
+                    mesh[0, iswitch] = mesh[m_min, iswitch]
                     m_tmp[:] = mesh[m_min, :]
-                    mesh[2:m_min, :] = mesh[1:m_min-1, :]
+                    mesh[2:m_min+1, :] = mesh[1:m_min, :]
                     mesh[1, :] = m_tmp[:]
             # If no improvement, decay the mesh down to the tolerance
             else:
