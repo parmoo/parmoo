@@ -164,7 +164,7 @@ def test_GlobalGPS():
                               'gps_budget': 1000})
     # Initialize the problem correctly, with and without an optional budget
     GlobalGPS(o, lb, ub, {'opt_budget': 200})
-    GlobalGPS(o, lb, ub, {'opt_budget': 200, 'gps_budget': 100})
+    GlobalGPS(o, lb, ub, {'opt_budget': 5000, 'gps_budget': 2000})
     opt = GlobalGPS(o, lb, ub, {})
     # Try to add some bad objectives, constraints, and acquisitions
     with pytest.raises(TypeError):

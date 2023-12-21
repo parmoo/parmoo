@@ -23,14 +23,15 @@ class LocalGPS(SurrogateOptimizer):
 
     Applies GPS to the surrogate problem, in order to identify design
     points that are locally Pareto optimal, with respect to the surrogate
-    problem.
+    problem. Sorts poll directions by most recently used and attempts to
+    step in promising directions in late iterations.
 
     """
 
     # Slots for the LocalGPS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'simulations', 'gradients', 'resetObjectives',
-                 'penalty_func', 'sim_sd', 'restarts']
+                 'penalty_func', 'sim_sd', 'restarts', 'momentum', 'q_ind']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalGPS class.
@@ -61,7 +62,8 @@ class LocalGPS(SurrogateOptimizer):
         self.n = lb.size
         self.lb = lb
         self.ub = ub
-        # Check that the contents of hyperparams is legal
+        self.q_ind = 0
+        # Check that the contents of hyperparams are legal
         if 'opt_restarts' in hyperparams:
             if isinstance(hyperparams['opt_restarts'], int):
                 if hyperparams['opt_restarts'] < 1:
@@ -74,7 +76,7 @@ class LocalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.restarts = self.n + 1
-        # Check that the contents of hyperparams is legal
+        # Check that the contents of hyperparams are legal
         if 'opt_budget' in hyperparams:
             if isinstance(hyperparams['opt_budget'], int):
                 if hyperparams['opt_budget'] < 1:
@@ -87,11 +89,45 @@ class LocalGPS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.budget = 1000
+        # Check that the contents of hyperparams are legal
+        if 'opt_momentum' in hyperparams:
+            if isinstance(hyperparams['opt_momentum'], float):
+                if 0 <= hyperparams['opt_momentum'] < 1:
+                    self.momentum = hyperparams['opt_momentum']
+                else:
+                    raise ValueError("hyperparams['opt_momentum'] "
+                                     "must be in [0, 1)")
+            else:
+                raise TypeError("hyperparams['opt_momentum'] "
+                                 "must be a float")
+        else:
+            self.momentum = 9e-1
         self.acquisitions = []
         return
 
+    def __obj_func__(self, x_in):
+        """ A wrapper for the objective function and acquisition.
+
+        Args:
+            x_in (np.ndarray): A 1d array with the design point to evaluate.
+
+        Returns:
+            float: The result of acquisition.scalarize(f(x_in, sim(x_in))).
+
+        """
+
+        sx_in = np.asarray(self.simulations(x_in))
+        if self.acquisitions[self.q_ind].useSD():
+            sdx_in = np.asarray(self.sim_sd(x_in))
+        else:
+            sdx_in = np.zeros(sx_in.size)
+        fx_in = np.asarray(self.penalty_func(x_in, sx_in)).flatten()
+        ax = self.acquisitions[self.q_ind].scalarize(fx_in, x_in,
+                                                     sx_in, sdx_in)
+        return ax
+
     def solve(self, x):
-        """ Solve the surrogate problem using generalized pattern search (GPS).
+        """ Solve the surrogate problem using a generalized pattern search.
 
         Args:
             x (np.ndarray): A 2d array containing a list of feasible
@@ -123,106 +159,18 @@ class LocalGPS(SurrogateOptimizer):
             for i in range(self.n):
                 lb_tmp[i] = max(self.lb[i], x[j, i] - rad)
                 ub_tmp[i] = min(self.ub[i], x[j, i] + rad)
-            # Initialize temp arrays
-            f_min = np.zeros(self.restarts)
-            x_big = np.zeros(self.n)
-            x_center = np.zeros(self.n)
-            x_min = np.zeros((self.restarts, self.n))
-            x_tmp = np.zeros(self.n)
-            # Loop over restarts
-            for kk in range(self.restarts):
-                # Reset the mesh dimensions
-                mesh = np.diag(ub_tmp[:] - lb_tmp[:] * 0.25)
-                # Evaluate the starting point
-                sx = np.asarray(self.simulations(x[j, :]))
-                if acquisition.useSD():
-                    sdx = np.asarray(self.sim_sd(x[j, :]))
-                else:
-                    sdx = np.zeros(sx.size)
-                if kk == 0:
-                    x_min[kk, :] = x[j, :]
-                else:
-                    x_min[kk, :] = (np.random.random_sample(self.n) *
-                                    (ub_tmp - lb_tmp) + lb_tmp)
-                fx = np.asarray(self.penalty_func(x_min[kk, :], sx))
-                f_min[kk] = acquisition.scalarize(fx.flatten(), x_min[kk, :],
-                                                  sx, sdx)
-                # Loop over the budget
-                for k in range(self.budget):
-                    # Track whether or not there is improvement
-                    improve = False
-                    # Build an extra accelerating descent step
-                    x_big[:] = 0.0
-                    f_center = f_min[kk]
-                    x_center[:] = x_min[kk, :]
-                    for i in range(self.n):
-                        # Evaluate x + mesh[:, i]
-                        x_tmp = x_center[:] + mesh[:, i]
-                        if any(x_tmp > ub_tmp):
-                            f_plus = np.inf
-                        else:
-                            sx = np.asarray(self.simulations(x_tmp))
-                            if acquisition.useSD():
-                                sdx = self.sim_sd(x_tmp)
-                            else:
-                                sdx = 0.0
-                            fx = self.penalty_func(x_tmp, sx)
-                            f_plus = acquisition.scalarize(fx, x_tmp, sx, sdx)
-                        # Check for improvement
-                        if f_plus + 1.0e-8 < f_center:
-                            if f_plus / f_center < 0.999:
-                                x_big[i] = mesh[i, i]
-                            if f_plus + 1.0e-8 < f_min[kk]:
-                                f_min[kk] = f_plus
-                                x_min[kk, :] = x_tmp
-                                improve = True
-                        # Evaluate x - mesh[:, i]
-                        x_tmp = x_center[:] - mesh[:, i]
-                        if any(x_tmp < lb_tmp):
-                            f_minus = np.inf
-                        else:
-                            sx = np.asarray(self.simulations(x_tmp))
-                            if acquisition.useSD():
-                                sdx = self.sim_sd(x_tmp)
-                            else:
-                                sdx = 0.0
-                            fx = self.penalty_func(x_tmp, sx)
-                            f_minus = acquisition.scalarize(fx, x_tmp, sx, sdx)
-                        # Check for improvement
-                        if f_minus + 1.0e-8 < f_center:
-                            if f_minus / f_center < 0.999 and f_minus < f_plus:
-                                x_big[i] = -mesh[i, i]
-                            if f_minus + 1.0e-8 < f_min[kk]:
-                                f_min[kk] = f_minus
-                                x_min[kk, :] = x_tmp
-                                improve = True
-                    # If improvement found, try taking a big step
-                    if improve:
-                        if np.count_nonzero(x_big) > 1:
-                            x_tmp = x_center[:] + x_big[:]
-                            if any(x_tmp > ub_tmp) or any(x_tmp < lb_tmp):
-                                f_tmp = np.inf
-                            else:
-                                sx = np.asarray(self.simulations(x_tmp))
-                                if acquisition.useSD():
-                                    sdx = self.sim_sd(x_tmp)
-                                else:
-                                    sdx = 0.0
-                                fx = self.penalty_func(x_tmp, sx)
-                                f_tmp = acquisition.scalarize(fx, x_tmp,
-                                                              sx, sdx)
-                            if f_tmp + 1.0e-8 < f_min[kk]:
-                                f_min[kk] = f_tmp
-                                x_min[kk, :] = x_tmp
-                    # If no improvement, decay the mesh down to the tolerance
-                    else:
-                        if any([mesh[i, i] < 1.0e-4 for i in range(self.n)]):
-                            break
-                        else:
-                            mesh = mesh * 0.5
+            # Get a candidate
+            self.q_ind = j
+            mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
+            xj = __accelerated_pattern_search__(self.n, lb_tmp, ub_tmp, x[j],
+                                                self.__obj_func__,
+                                                ibudget=self.budget,
+                                                mesh_start=0.25,
+                                                mesh_tol=mesh_tol,
+                                                momentum=self.momentum,
+                                                istarts=self.restarts)
             # Append the found minima to the results list
-            x_cand_ind = np.argmin(f_min)
-            result.append(x_min[x_cand_ind, :].copy())
+            result.append(xj)
         return np.asarray(result)
 
 
@@ -236,9 +184,10 @@ class GlobalGPS(SurrogateOptimizer):
     """
 
     # Slots for the GlobalGPS class
-    __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'constraints', 'objectives',
-                 'simulations', 'gradients', 'resetObjectives', 'penalty_func',
-                 'search_budget', 'gps_budget', 'sim_sd']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints',
+                 'objectives', 'simulations', 'gradients', 'resetObjectives',
+                 'penalty_func', 'opt_budget', 'gps_budget', 'sim_sd',
+                 'momentum']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the GlobalGPS class.
@@ -256,9 +205,9 @@ class GlobalGPS(SurrogateOptimizer):
             hyperparams (dict): A dictionary of hyperparameters for the
                 optimization procedure. It may contain the following:
                  * opt_budget (int): The function evaluation budget
-                   (default: 10,000)
+                   (default: 1500)
                  * gps_budget (int): The number of the total opt_budget
-                   evaluations that will be used by GPS (default: half
+                   evaluations that will be used by GPS (default: 2/3
                    of opt_budget).
 
         Returns:
@@ -269,6 +218,7 @@ class GlobalGPS(SurrogateOptimizer):
         # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
+        self.o = o
         self.lb = lb
         self.ub = ub
         # Check that the contents of hyperparams are legal
@@ -278,33 +228,63 @@ class GlobalGPS(SurrogateOptimizer):
                     raise ValueError("hyperparams['opt_budget'] "
                                      "must be positive")
                 else:
-                    budget = hyperparams['opt_budget']
+                    self.opt_budget = hyperparams['opt_budget']
             else:
                 raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
-            budget = 1000
-        # Check the GPS budget
+            self.opt_budget = 1500
+        # Check that the contents of hyperparams are legal
         if 'gps_budget' in hyperparams:
             if isinstance(hyperparams['gps_budget'], int):
-                if hyperparams['gps_budget'] < 1:
+                if hyperparams['gps_budget'] < 1 or \
+                   hyperparams['gps_budget'] >= self.opt_budget:
                     raise ValueError("hyperparams['gps_budget'] "
-                                     "must be positive")
-                elif hyperparams['gps_budget'] > budget:
-                    raise ValueError("hyperparams['gps_budget'] "
-                                     "must be less than "
+                                     "must be between 1 and "
                                      "hyperparams['opt_budget']")
                 else:
                     self.gps_budget = hyperparams['gps_budget']
             else:
-                raise TypeError("hyperparams['gps_budget'] "
+                raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
-            self.gps_budget = 1000
-        self.search_budget = budget
-        # Initialize the list of acquisition functions
+            self.gps_budget = int(2 * self.opt_budget / 3)
+        # Check that the contents of hyperparams are legal
+        if 'opt_momentum' in hyperparams:
+            if isinstance(hyperparams['opt_momentum'], float):
+                if 0 <= hyperparams['opt_momentum'] < 1:
+                    self.momentum = hyperparams['opt_momentum']
+                else:
+                    raise ValueError("hyperparams['opt_momentum'] "
+                                     "must be in [0, 1)")
+            else:
+                raise TypeError("hyperparams['opt_momentum'] "
+                                 "must be a float")
+        else:
+            self.momentum = 9e-1
         self.acquisitions = []
         return
+
+    def __obj_func__(self, x_in):
+        """ A wrapper for the objective function and acquisition.
+
+        Args:
+            x_in (np.ndarray): A 1d array with the design point to evaluate.
+
+        Returns:
+            float: The result of acquisition.scalarize(f(x_in, sim(x_in))).
+
+        """
+
+        sx_in = np.asarray(self.simulations(x_in))
+        if self.acquisitions[self.q_ind].useSD():
+            sdx_in = np.asarray(self.sim_sd(x_in))
+        else:
+            sdx_in = np.zeros(sx_in.size)
+        fx_in = np.asarray(self.penalty_func(x_in, sx_in)).flatten()
+        ax = self.acquisitions[self.q_ind].scalarize(fx_in, x_in,
+                                                     sx_in, sdx_in)
+        return ax
 
     def solve(self, x):
         """ Solve the surrogate problem by using random search followed by GPS.
@@ -319,7 +299,7 @@ class GlobalGPS(SurrogateOptimizer):
 
         """
 
-        from .random_search import RandomSearch
+        from parmoo.util import updatePF
 
         # Check that x is legal
         if isinstance(x, np.ndarray):
@@ -330,25 +310,219 @@ class GlobalGPS(SurrogateOptimizer):
                                  "of acquisition functions")
         else:
             raise TypeError("x must be a numpy array")
-        # Do a global search to get global solutions
-        gs = RandomSearch(self.n, self.lb, self.ub,
-                          {'opt_budget': self.search_budget})
-        gs.setObjective(self.objectives)
-        gs.setSimulation(self.simulations, self.sim_sd)
-        gs.setPenalty(self.penalty_func, self.gradients)
-        gs.setConstraints(self.constraints)
-        gs.addAcquisition(*self.acquisitions)
-        gs_soln = gs.solve(x)
-        gps_budget_loc = int(self.gps_budget / gs_soln.shape[0])
-        # Do a local search to refine the global solution
-        ls = LocalGPS(self.n, self.lb, self.ub,
-                      {'opt_budget': gps_budget_loc})
-        ls.setObjective(self.objectives)
-        ls.setSimulation(self.simulations, self.sim_sd)
-        ls.setPenalty(self.penalty_func, self.gradients)
-        ls.setConstraints(self.constraints)
-        ls.addAcquisition(*self.acquisitions)
-        ls.setReset(self.resetObjectives)
-        ls_soln = ls.solve(gs_soln)
-        # Return the list of local solutions
-        return ls_soln
+        # Set the batch size
+        batch_size = 1000
+        # Initialize lists/arrays
+        result = []
+        lb_tmp = np.zeros(self.n)
+        ub_tmp = np.ones(self.n)
+        # For each acquisition function
+        for j, acq in enumerate(self.acquisitions):
+            # Create a new trust region
+            rad = self.resetObjectives(x[j, :])
+            lb_old = lb_tmp
+            ub_old = ub_tmp
+            for i in range(self.n):
+                lb_tmp[i] = max(self.lb[i], x[j, i] - rad)
+                ub_tmp[i] = min(self.ub[i], x[j, i] + rad)
+            # Check if TR has changed
+            if j == 0 or np.any(np.abs(lb_old - lb_tmp) +
+                                np.abs(ub_old - ub_tmp) > 1.0e-8):
+                # Initialize the database
+                data = {'x_vals': np.zeros((batch_size, self.n)),
+                        'f_vals': np.zeros((batch_size, self.o)),
+                        'c_vals': np.zeros((batch_size, 0))}
+                # Loop over batch size until k == budget
+                k = 0
+                nondom = {}
+                search_budget = self.opt_budget = self.gps_budget
+                while (k < search_budget):
+                    # Check how many new points to generate
+                    k_new = min(search_budget, k + batch_size) - k
+                    if k_new < batch_size:
+                        data['x_vals'] = np.zeros((k_new, self.n))
+                        data['f_vals'] = np.zeros((k_new, self.o))
+                        data['c_vals'] = np.zeros((k_new, 0))
+                    # Randomly generate k_new new points
+                    for i in range(k_new):
+                        if i == 0:
+                            xi = x[j, :]
+                        else:
+                            xi = (np.random.sample(self.n) *
+                                  (ub_tmp[:] - lb_tmp[:]) + lb_tmp[:])
+                        data['x_vals'][i, :] = xi[:]
+                        data['f_vals'][i, :] = self.penalty_func(xi)
+                    # Update the PF
+                    nondom = updatePF(data, nondom)
+                    k += k_new
+            f_vals = []
+            if acq.useSD():
+                f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
+                                        self.sim_sd(xi))
+                          for fi, xi in zip(nondom['f_vals'],
+                                            nondom['x_vals'])]
+            else:
+                m = self.simulations(nondom['x_vals'][0]).size
+                f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
+                                        np.zeros(m))
+                          for fi, xi in zip(nondom['f_vals'],
+                                            nondom['x_vals'])]
+            imin = np.argmin(np.asarray([f_vals]))
+            x0 = nondom['x_vals'][imin, :].copy()
+            # Get a candidate
+            self.q_ind = j
+            mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
+            xj = __accelerated_pattern_search__(self.n, lb_tmp, ub_tmp, x0,
+                                                self.__obj_func__,
+                                                ibudget=self.gps_budget,
+                                                mesh_start=0.1,
+                                                mesh_tol=mesh_tol,
+                                                momentum=self.momentum,
+                                                istarts=1)
+            # Append the found minima to the results list
+            result.append(xj)
+        return np.asarray(result)
+
+
+def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
+                                   mesh_start=0.25, mesh_tol=1.0e-8,
+                                   momentum=0.9, istarts=1):
+    """ Solve the optimization problem min obj_func(x) over x in [lb, ub].
+
+    Uses pattern search with 1 additional poll direction inspired by
+    Nesterov's momentum.
+
+    Args:
+        n (int): The dimension of the search space.
+
+        lb (np.ndarray): A 1D array of length n specifying lower bounds on
+            the search space.
+
+        ub (np.ndarray): A 1D array of length n specifying upper bounds on
+            the search space.
+
+        x0 (np.ndarray): A 1D array of length n specifying the initial
+            location to sample when warm-starting search.
+
+        obj_func (function): A function that takes a 1D numpy.ndarray of
+            size n as input (x) and returns the value of f(x).
+
+        ibudget (int): The iteration limit for pattern search. The total
+            number of calls to obj_func could be up to 2n * ibudget + 1,
+            but typically will be much less.
+
+        mesh_start (float or numpy.ndarray, optional): The initial mesh
+            spacing. If an array is given, must be 1D of size n. Defaults
+            to 25% of ub-lb.
+
+        mesh_tol (float or numpy.ndarray, optional): The tolerance for the
+            mesh. If an array is given, must be 1D of size n. Defaults to
+            1.0e-8.
+
+        momentum (float, optional): The decay rate on the momentum term in
+            the accelerated poll direction. Defaults to 0.9.
+
+        istarts (int, optional): Number of times to (re)start if
+            using the multistart option. Defaults to 1 (no restarts).
+
+    Returns:
+        numpy.ndarray(n): The best x observed so far (minimizer of obj_func).
+
+    """
+
+    # Initialize O(n)-sized work arrays and constants
+    f_min = np.zeros(istarts)
+    m_tmp = np.zeros(n)
+    mesh_size = np.zeros(n)
+    x_center = np.zeros(n)
+    x_min = np.zeros((istarts, n))
+    x_tmp = np.zeros(n)
+    # Loop over all starts
+    for kk in range(istarts):
+        # Reset the mesh dimensions
+        if isinstance(mesh_start, float):
+            mesh_size[:] = mesh_start * (ub[:] - lb[:])
+        else:
+            mesh_size[:] = mesh_start[:]
+        mesh = np.vstack((np.zeros((1, n)),
+                          np.diag(ub[:] - lb[:]),
+                          -np.diag(ub[:] - lb[:])))
+        # Evaluate the starting point or random point
+        if kk == 0:
+            x_min[kk, :] = x0[:]
+        else:
+            x_min[kk, :] = np.random.random_sample(n) * (ub - lb) + lb
+        f0 = obj_func(x_min[kk])
+        f_tol = max(min(abs(f0)**2, 1.0e-8), 1.0e-16)
+        f_min[kk] = f0
+        # Take n+1 iterations to get "momentum" started
+        k_start = 0
+        for k in range(ibudget):
+            improve = False
+            x_center[:] = x_min[kk, :]
+            for i, mi in enumerate(mesh[1:, :]):
+                # Evaluate x + mi
+                x_tmp[:] = x_center[:] + mi[:] * mesh_size[:]
+                if np.any((x_tmp > ub) + (x_tmp < lb)):
+                    f_tmp = np.inf
+                else:
+                    f_tmp = obj_func(x_tmp)
+                # Check for improvement
+                if f_min[kk] - f_tmp > f_tol:
+                    f_min[kk] = f_tmp
+                    x_min[kk, :] = x_tmp[:]
+                    m_min = i + 1
+                    improve = True
+            # If there was improvement, shuffle the directions
+            if improve:
+                iswitch = np.where(np.abs(mesh[m_min, :]) > 1.0e-8)[0]
+                mesh[0, :] *= momentum
+                mesh[0, iswitch] = mesh[m_min, iswitch]
+                m_tmp[:] = mesh[m_min, :]
+                mesh[2:m_min+1, :] = mesh[1:m_min, :]
+                mesh[1, :] = m_tmp[:]
+                # Update k_start and break the "warm-up" loop
+                k_start += 1
+                if k_start >= n+1:
+                    break
+            # If no improvement, decay the mesh down to the tolerance
+            else:
+                if np.any(mesh_size[:] < mesh_tol):
+                    break
+                else:
+                    mesh_size[:] *= 0.5
+        # Take the remaining iterations
+        for k in range(k_start, ibudget):
+            improve = False
+            x_center[:] = x_min[kk, :]
+            for i, mi in enumerate(mesh[:, :]):
+                # Evaluate x + mi
+                x_tmp[:] = x_center[:] + np.rint(mi[:]) * mesh_size[:]
+                if np.any((x_tmp > ub) + (x_tmp < lb)):
+                    f_tmp = np.inf
+                else:
+                    f_tmp = obj_func(x_tmp)
+                # Check for improvement
+                if f_min[kk] - f_tmp > f_tol:
+                    f_min[kk] = f_tmp
+                    x_min[kk, :] = x_tmp[:]
+                    m_min = i
+                    improve = True
+                    break
+            # If there was improvement, update moment and shuffle directions
+            if improve:
+                if m_min > 0:
+                    iswitch = np.where(np.abs(mesh[m_min, :]) > 1.0e-8)[0]
+                    mesh[0, :] *= momentum
+                    mesh[0, iswitch] = mesh[m_min, iswitch]
+                    m_tmp[:] = mesh[m_min, :]
+                    mesh[2:m_min+1, :] = mesh[1:m_min, :]
+                    mesh[1, :] = m_tmp[:]
+            # If no improvement, decay the mesh down to the tolerance
+            else:
+                if np.any(mesh_size[:] < mesh_tol):
+                    break
+                else:
+                    mesh_size[:] *= 0.5
+    # Return the "best" of the multistarts
+    return x_min[np.argmin(f_min), :].copy()
