@@ -100,7 +100,7 @@ def test_FixedAugChebyshev():
     assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
     acqu = FixedAugChebyshev(3, np.zeros(4), np.ones(4), {})
     assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
-    assert (np.all(acqu.weights[:] - (1.0 / 3.0) < 0.00000001))
+    assert (np.sum(acqu.weights[:]) - 1.0 < 0.00000001)
     # Set some bad targets to check error handling
     with pytest.raises(TypeError):
         acqu.setTarget(5, lambda x: np.zeros(3), {})
