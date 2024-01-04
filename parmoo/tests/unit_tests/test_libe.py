@@ -117,10 +117,10 @@ def test_libE_MOOP():
         moop.addAcquisition({'acquisition': RandomConstraint})
     assert (len(moop.moop.acquisitions) == 4)
     # Perform 0 iteration manually
-    batch = moop.iterate(0)
-    for (xi, i) in batch:
+    batchx, batchq = moop.iterate(0)
+    for (xi, i) in batchx:
         moop.evaluateSimulation(xi, i)
-    moop.updateAll(0, batch)
+    moop.updateAll(0, batchx, batchq)
     # Add a value in the simulation database
     x_val = np.zeros(1, dtype=moop.getDesignType())[0]
     sx_val = np.zeros(1, dtype=moop.getSimulationType())[0]

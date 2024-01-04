@@ -84,7 +84,7 @@ def test_RandomSearch():
     # Solve the surrogate problem with RandomSearch, starting from the centroid
     x = np.zeros((3, n))
     x[:] = 0.5
-    (x1, x2, x3) = opt.solve(x)
+    (x1, x2, x3), fbatch = opt.solve(x)
     # Define the solution
     x1_soln = np.eye(n)[0]
     x1_soln[n-1] = 0.1

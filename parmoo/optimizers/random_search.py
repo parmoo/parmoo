@@ -102,7 +102,8 @@ class RandomSearch(SurrogateOptimizer):
         # Set the batch size
         batch_size = 1000
         # Use acquisition functions to extract array of results
-        results = []
+        resultx = []
+        resultf = []
         lb_tmp = np.zeros(self.n)
         ub_tmp = np.ones(self.n)
         for iq, acq in enumerate(self.acquisitions):
@@ -151,5 +152,6 @@ class RandomSearch(SurrogateOptimizer):
                           for fi, xi in zip(nondom['f_vals'],
                                             nondom['x_vals'])]
             imin = np.argmin(np.asarray([f_vals]))
-            results.append(nondom['x_vals'][imin, :])
-        return np.asarray(results)
+            resultx.append(nondom['x_vals'][imin, :])
+            resultf.append(f_vals[imin])
+        return np.asarray(resultx), np.asarray(resultf)

@@ -121,7 +121,8 @@ class LBFGSB(SurrogateOptimizer):
                np.any(xj[:] > self.bounds[:, 1]):
                 raise ValueError("some of starting points (x) are infeasible")
         # Initialize an empty list of results
-        result = []
+        resultx = []
+        resultf = []
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
 
@@ -153,7 +154,8 @@ class LBFGSB(SurrogateOptimizer):
             bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
 
             # Get the solution via multistart solve
-            soln = x[j, :].copy()
+            solnx = x[j, :].copy()
+            solnf = scalar_f(solnx)
             for i in range(self.restarts):
                 if i == 0:
                     # Use center point to warm-start first start
@@ -177,11 +179,13 @@ class LBFGSB(SurrogateOptimizer):
                 res = optimize.minimize(scalar_f, x0, method='L-BFGS-B',
                                         jac=scalar_g, bounds=bounds,
                                         options={'maxiter': self.budget})
-                if scalar_f(res['x']) < scalar_f(soln):
-                    soln = res['x']
+                if scalar_f(res['x']) < solnf:
+                    solnx = res['x']
+                    solnf = scalar_f(solnx)
             # Append the found minima to the results list
-            result.append(soln)
-        return np.asarray(result)
+            resultx.append(solnx)
+            resultf.append(solnf)
+        return np.asarray(resultx), np.asarray(resultf)
 
 
 class TR_LBFGSB(SurrogateOptimizer):
@@ -288,7 +292,8 @@ class TR_LBFGSB(SurrogateOptimizer):
                np.any(xj[:] > self.bounds[:, 1]):
                 raise ValueError("some of starting points (x) are infeasible")
         # Initialize an empty list of results
-        result = []
+        resultx = []
+        resultf = []
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
 
@@ -320,8 +325,8 @@ class TR_LBFGSB(SurrogateOptimizer):
             bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
 
             # Get the solution via multistart solve
-            soln = x[j, :].copy()
-            f0 = scalar_f(soln)
+            solnx = x[j, :].copy()
+            solnf = scalar_f(solnx)
             for i in range(self.restarts):
                 if i == 0:
                     # Use center point to warm-start first start
@@ -344,8 +349,10 @@ class TR_LBFGSB(SurrogateOptimizer):
                 res = optimize.minimize(scalar_f, x0, method='L-BFGS-B',
                                         jac=scalar_g, bounds=bounds,
                                         options={'maxiter': self.budget})
-                if scalar_f(res['x']) < scalar_f(soln):
-                    soln = res['x']
+                if scalar_f(res['x']) < solnf:
+                    solnx = res['x']
+                    solnf = scalar_f(solnx)
             # Append the found minima to the results list
-            result.append(soln)
-        return np.asarray(result)
+            resultx.append(solnx)
+            resultf.append(solnf)
+        return np.asarray(resultx), np.asarray(resultf)
