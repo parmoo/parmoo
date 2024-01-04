@@ -1052,16 +1052,16 @@ def test_MOOP_iterate():
     with pytest.raises(TypeError):
         moop1.iterate(2.0)
     # Solve the MOOP with 1 iteration
-    batchx, batchq = moop1.iterate(0)
-    batchx = moop1.filterBatch(batchx)
-    for (x, i) in batchx:
+    batch = moop1.iterate(0)
+    batch = moop1.filterBatch(batch)
+    for (x, i) in batch:
         moop1.evaluateSimulation(x, i)
-    moop1.updateAll(0, batchx, batchq)
-    batchx, batchq = moop1.iterate(1)
-    batchx = moop1.filterBatch(batchx)
-    for (x, i) in batchx:
+    moop1.updateAll(0, batch)
+    batch = moop1.iterate(1)
+    batch = moop1.filterBatch(batch)
+    for (x, i) in batch:
         moop1.evaluateSimulation(x, i)
-    moop1.updateAll(1, batchx, batchq)
+    moop1.updateAll(1, batch)
     soln = moop1.getPF()
     # Assert that solutions were found
     assert (np.size(soln['x_vals']) > 0)
@@ -1128,17 +1128,16 @@ def test_MOOP_iterate():
         moop2.addAcquisition({'acquisition': UniformWeights})
     # Do 2 iterates of the MOOP and extract the final database
     moop2.iterate(0)
-    batchx = [(0.1 * xi, 0) for xi in np.eye(4)]
-    batchx.append((0.1 * np.ones(4), 0))
-    batchq = [0.0 for xi in batchx]
-    for (x, i) in batchx:
+    batch = [(0.1 * xi, 0) for xi in np.eye(4)]
+    batch.append((0.1 * np.ones(4), 0))
+    for (x, i) in batch:
         moop2.evaluateSimulation(x, i)
-    moop2.updateAll(0, batchx, batchq)
-    batchx, batchq = moop2.iterate(1)
-    batchx = moop2.filterBatch(batchx)
-    for (x, i) in batchx:
+    moop2.updateAll(0, batch)
+    batch = moop2.iterate(1)
+    batch = moop2.filterBatch(batch)
+    for (x, i) in batch:
         moop2.evaluateSimulation(x, i)
-    moop2.updateAll(1, batchx, batchq)
+    moop2.updateAll(1, batch)
     soln = moop2.getPF()
     # Assert that solutions were found
     assert (np.size(soln['x_vals']) > 0)
@@ -1211,17 +1210,16 @@ def test_MOOP_iterate():
         moop3.addAcquisition({'acquisition': UniformWeights})
     # Do 2 iterates of the MOOP and extract the final database
     moop3.iterate(0)
-    batchx = [(xi, 0) for xi in np.eye(5)]
-    batchx.append((np.ones(5), 0))
-    batchq = [0.0 for xi in batchx]
-    for (x, i) in batchx:
+    batch = [(xi, 0) for xi in np.eye(5)]
+    batch.append((np.ones(5), 0))
+    for (x, i) in batch:
         moop3.evaluateSimulation(x, i)
-    moop3.updateAll(0, batchx, batchq)
-    batchx, batchq = moop3.iterate(1)
-    batchx = moop3.filterBatch(batchx)
-    for (x, i) in batchx:
+    moop3.updateAll(0, batch)
+    batch = moop3.iterate(1)
+    batch = moop3.filterBatch(batch)
+    for (x, i) in batch:
         moop3.evaluateSimulation(x, i)
-    moop3.updateAll(1, batchx, batchq)
+    moop3.updateAll(1, batch)
     soln = moop3.getPF()
     # Assert that solutions were found
     assert (np.size(soln['x_vals']) > 0)
@@ -1286,16 +1284,16 @@ def test_MOOP_iterate():
     for i in range(3):
         moop4.addAcquisition({'acquisition': UniformWeights})
     # Do 2 iterates of the MOOP and extract the final database
-    batchx, batchq = moop4.iterate(0)
-    batchx = moop4.filterBatch(batchx)
-    for (x, i) in batchx:
+    batch = moop4.iterate(0)
+    batch = moop4.filterBatch(batch)
+    for (x, i) in batch:
         moop4.evaluateSimulation(x, i)
-    moop4.updateAll(0, batchx, batchq)
-    batchx, batchq = moop4.iterate(1)
-    batchx = moop4.filterBatch(batchx)
-    for (x, i) in batchx:
+    moop4.updateAll(0, batch)
+    batch = moop4.iterate(1)
+    batch = moop4.filterBatch(batch)
+    for (x, i) in batch:
         moop4.evaluateSimulation(x, i)
-    moop4.updateAll(1, batchx, batchq)
+    moop4.updateAll(1, batch)
     soln = moop4.getPF()
     # Assert that solutions were found
     assert (soln.size > 0)
@@ -1863,11 +1861,11 @@ def test_MOOP_save_load1():
     # Add 3 acquisition functions
     for i in range(3):
         moop1.addAcquisition({'acquisition': UniformWeights})
-    batchx, batchq = moop1.iterate(0)
-    batchx = moop1.filterBatch(batchx)
-    for (xi, i) in batchx:
+    batch = moop1.iterate(0)
+    batch = moop1.filterBatch(batch)
+    for (xi, i) in batch:
         moop1.evaluateSimulation(xi, i)
-    moop1.updateAll(0, batchx, batchq)
+    moop1.updateAll(0, batch)
     # Test save
     moop1.save()
     # Test load
@@ -2018,11 +2016,11 @@ def test_MOOP_checkpoint():
     # Turn on checkpointing
     moop1.setCheckpoint(True)
     # One iteration
-    batchx, batchq = moop1.iterate(0)
-    batchx = moop1.filterBatch(batchx)
-    for (xi, i) in batchx:
+    batch = moop1.iterate(0)
+    batch = moop1.filterBatch(batch)
+    for (xi, i) in batch:
         moop1.evaluateSimulation(xi, i)
-    moop1.updateAll(0, batchx, batchq)
+    moop1.updateAll(0, batch)
     # Test load
     moop2 = MOOP(LocalGPS)
     moop2.load()

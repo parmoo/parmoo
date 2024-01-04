@@ -63,7 +63,7 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
     # Iterate until the termination condition is reached
     while tag not in [STOP_TAG, PERSIS_STOP]:
         # Generate a batch by running one iteration
-        x_out, q_out = moop.iterate(k)
+        x_out = moop.iterate(k)
         # Check for duplicates in simulation databases
         x_out = moop.filterBatch(x_out)
         xbatch = []
@@ -142,7 +142,7 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
                     new_count += 1
                 sim_count += new_count
         # Update the ParMOO databases
-        moop.updateAll(k, batch, q_out)
+        moop.updateAll(k, batch)
         k += 1
     # Return the results
     persis_info['moop'] = moop
@@ -202,7 +202,7 @@ class libE_MOOP(MOOP):
      * ``libE_MOOP.evaluateSimulation(x, s_name)``
      * ``libE_MOOP.addData(x, sx)``
      * ``libE_MOOP.iterate(k, ib)``
-     * ``libE_MOOP.updateAll(k, batchx, batchq)``
+     * ``libE_MOOP.updateAll(k, batch)``
 
     Finally, the following methods are used to retrieve data after the
     problem has been solved:
@@ -673,7 +673,7 @@ class libE_MOOP(MOOP):
 
         return self.moop.filterBatch(*xbatch)
 
-    def updateAll(self, k, batchx, batchq):
+    def updateAll(self, k, batch):
         """ Update all surrogates given a batch of freshly evaluated data.
 
         Args:
@@ -698,7 +698,7 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.updateAll(k, batchx, batchq)
+        return self.moop.updateAll(k, batch)
 
     def moop_sim(self, H, persis_info, sim_specs, _):
         """ Evaluates the sim function for a collection of points given in

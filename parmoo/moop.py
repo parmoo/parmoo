@@ -65,7 +65,7 @@ class MOOP:
      * ``MOOP.evaluateSimulation(x, s_name)``
      * ``MOOP.addData(x, sx)``
      * ``MOOP.iterate(k, ib)``
-     * ``MOOP.updateAll(k, batchx, batchq)``
+     * ``MOOP.updateAll(k, batch)``
 
     Finally, the following methods are used to retrieve data after the
     problem has been solved:
@@ -1401,6 +1401,7 @@ class MOOP:
         x (np.ndarray or numpy structured array): A 1d numpy.ndarray or numpy
             structured array specifying the design point to add.
 
+
         sx (np.ndarray): A 1d numpy.ndarray containing the corresponding
             simulation output.
 
@@ -2100,7 +2101,6 @@ class MOOP:
 
         # Prepare a batch to return
         xbatch = []
-        qbatch = []
         # Special rule for the k=0 iteration
         if k == 0:
             # Initialize the database
@@ -2141,12 +2141,32 @@ class MOOP:
                                           self.evaluatePenalty,
                                           self.history)
             # Solve the surrogate problem
-            x_cands, f_cands = self.optimizer_obj.solve(x0)
+            x_candidates = self.optimizer_obj.solve(x0)
             # Create a batch for filter method
             for i, acqi in enumerate(self.acquisitions):
-                xbatch.append(self.__extract__(x_cands[i, :]))
-                qbatch.append(f_cands)
-        return xbatch, qbatch
+                # If acqi uses uncertainties, just add xi to the batch
+                if acqi.useSD():
+                    xbatch.append(self.__extract__(x_candidates[i, :]))
+                # Otherwise we need to check for sufficient decrease
+                else:
+                    si = np.zeros(self.m_total)
+                    sdi = np.zeros(self.m_total)
+                    # Get the new value of qi for this iteration
+                    x_new = x_candidates[i, :].copy()
+                    si = self.evaluateSurrogates(x_new)
+                    fi = self.evaluatePenalty(x_new, si)
+                    q_new = acqi.scalarize(fi, x_new, si, sdi)
+                    # Get the original value
+                    x_old = x0[i, :].copy()
+                    si = self.evaluateSurrogates(x_old)
+                    fi = self.evaluatePenalty(x_old, si)
+                    q_old = acqi.scalarize(fi, x_old, si, sdi)
+                    # Sufficient decrease check
+                    if abs(q_old - q_new) / abs(q_old) < self.epsilon:
+                        xbatch.append(self.__extract__(x_old))
+                    else:
+                        xbatch.append(self.__extract__(x_new))
+        return xbatch
 
     def filterBatch(self, *args):
         """ Filter a batch produced by ParMOO's MOOP.iterate method.
@@ -2268,13 +2288,13 @@ class MOOP:
                         ebatch.append((xxi, -1))
         return fbatch
 
-    def updateAll(self, k, batchx, batchq):
+    def updateAll(self, k, batch):
         """ Update all surrogates given a batch of freshly evaluated data.
 
         Args:
             k (int): The iteration counter (corresponding to MOOP.iteration).
 
-            batchx (list): A list of ordered pairs (tuples), each specifying
+            batch (list): A list of ordered pairs (tuples), each specifying
                 a design point that was evaluated in this iteration.
                 For each tuple in the list:
                  * The first entry in each tuple is either a numpy structured
@@ -2327,12 +2347,12 @@ class MOOP:
         else:
             # If constraints are violated, increase lam
             if any([np.any(self.evaluateConstraints(self.__embed__(xi))
-                           > 1.0e-4) for (xi, i) in batchx]):
+                           > 1.0e-4) for (xi, i) in batch]):
                 self.lam = min(1e4, self.lam * 2.0)
             # Update the surrogates
             self.updateSurrogates()
             # Add new points that have been fully evaluated to the database
-            for ii, xi in enumerate(batchx):
+            for xi in batch:
                 (x, i) = xi
                 xx = self.__embed__(x)
                 is_shared = True
@@ -2357,8 +2377,6 @@ class MOOP:
                 # If xi was in every sim_db, add it to the database
                 if is_shared:
                     self.addData(x, self.__unpack_sim__(sim))
-                    # Check for sufficient decrease
-                    # TODO
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpointfile)
@@ -2471,7 +2489,7 @@ class MOOP:
             # Generate a batch by running one iteration and filtering results
             logging.info(f"   Iteration {self.iteration: >4}:")
             logging.info("     generating batch...")
-            xbatch, qbatch = self.iterate(self.iteration)
+            xbatch = self.iterate(self.iteration)
             fbatch = self.filterBatch(xbatch)
             logging.info(f"     {len(fbatch)} candidate designs generated.")
             if self.s > 0:
@@ -2491,7 +2509,7 @@ class MOOP:
                              " simulations.")
             logging.info("     updating models and internal databases...")
             # Update the database
-            self.updateAll(self.iteration, fbatch, qbatch)
+            self.updateAll(self.iteration, fbatch)
             logging.info("   Done.")
         logging.info(" Done.")
         logging.info(f" ParMOO has successfully completed {self.iteration} " +

@@ -2,14 +2,14 @@
 """ Implementations of the SurrogateOptimizer class.
 
 This module contains implementations of the SurrogateOptimizer ABC, which
-are based on GPS direct search.
+are based on the GPS polling strategy for direct search.
 
 Note that these strategies are all gradient-free, and therefore does not
 require objective, constraint, or surrogate gradients methods to be defined.
 
 The classes include:
- * ``LocalGPS`` -- generalized pattern search with coordinate polling
- * ``GlobalGPS`` -- global random search, followed by LocalGPS
+ * ``LocalGPS`` -- Generalized Pattern Search (GPS) algorithm
+ * ``GlobalGPS`` -- global random search, followed by GPS
 
 """
 
@@ -22,10 +22,10 @@ from parmoo.util import xerror
 class LocalGPS(SurrogateOptimizer):
     """ Use Generalized Pattern Search (GPS) to identify local solutions.
 
-    Applies pattern search to the surrogate problem, in order to identify
-    design points that are locally Pareto optimal, with respect to the
-    surrogate problem. Sorts poll directions by most recently used and
-    attempts to step in promising directions in late iterations.
+    Applies GPS to the surrogate problem, in order to identify design
+    points that are locally Pareto optimal, with respect to the surrogate
+    problem. Sorts poll directions by most recently used and attempts to
+    step in promising directions in late iterations.
 
     """
 
@@ -150,8 +150,7 @@ class LocalGPS(SurrogateOptimizer):
         else:
             raise TypeError("x must be a numpy array")
         # Initialize an empty list of results
-        resultx = []
-        resultf = []
+        result = []
         lb_tmp = np.zeros(self.n)
         ub_tmp = np.ones(self.n)
         # For each acqusisition function
@@ -170,16 +169,16 @@ class LocalGPS(SurrogateOptimizer):
                                                     mesh_tol=mesh_tol,
                                                     momentum=self.momentum,
                                                     istarts=self.restarts)
-            resultx.append(xj)
-            resultf.append(fj)
-        return np.asarray(resultx), np.asarray(resultf)
+            result.append(xj)
+        return np.asarray(result)
 
 
 class GlobalGPS(SurrogateOptimizer):
     """ Use randomized search globally followed by GPS locally.
 
-    Perform a random search to globally search the design space
-    followed by ``LocalGPS`` to refine the potentially efficient solutions.
+    Use ``RandomSearch`` to globally search the design space (search phase)
+    followed by ``LocalGPS`` to refine the potentially efficient solutions
+    (poll phase).
 
     """
 
@@ -313,8 +312,7 @@ class GlobalGPS(SurrogateOptimizer):
         # Set the batch size
         batch_size = 1000
         # Initialize lists/arrays
-        resultx = []
-        resultf = []
+        result = []
         lb_tmp = np.zeros(self.n)
         ub_tmp = np.ones(self.n)
         # For each acquisition function
@@ -380,9 +378,8 @@ class GlobalGPS(SurrogateOptimizer):
                                                     mesh_tol=mesh_tol,
                                                     momentum=self.momentum,
                                                     istarts=1)
-            resultx.append(xj)
-            resultf.append(fj)
-        return np.asarray(resultx), np.asarray(resultf)
+            result.append(xj)
+        return np.asarray(result)
 
 
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
