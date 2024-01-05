@@ -2374,9 +2374,19 @@ class MOOP:
                         # If not found, stop checking
                         if not is_shared:
                             break
-                # If xi was in every sim_db, add it to the database
+                # If xi was in every sim_db, add it to the database and report
+                # to the optimizer
                 if is_shared:
+                    fx = np.zeros(self.o)
+                    sx = self.__unpack_sim__(sim)
+                    sdx = np.zeros(sx.size)
+                    for i, obj_func in enumerate(self.objectives):
+                        if self.obj_exp_vals[i]:
+                            fx[i] = obj_func(x, sx, sdx)
+                        else:
+                            fx[i] = obj_func(x, sx)
                     self.addData(x, self.__unpack_sim__(sim))
+                    self.optimizer.returnResults(x, fx, sx, sdx)
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpointfile)

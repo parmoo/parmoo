@@ -528,6 +528,7 @@ class SurrogateOptimizer(ABC):
      * ``setPenalty(penaltyFunc, gradFunc)`` (default implementation provided)
      * ``setReset(reset)`` (default implementation provided)
      * ``addAcquisition(*args)`` (default implementation provided)
+     * ``returnResults(x, fx, sx, sdx)``
      * ``solve(x)``
      * ``save(filename)``
      * ``load(filename)``
@@ -682,6 +683,23 @@ class SurrogateOptimizer(ABC):
                 self.resetObjectives = reset
         else:
             raise TypeError("reset() must be callable")
+        return
+
+    def returnResults(x, fx, sx, sdx):
+        """ Collect the results of a function evaluation.
+
+        Args:
+            x (np.ndarray): The design point evaluated.
+
+            fx (np.ndarray): The objective function values at x.
+
+            sx (np.ndarray): The simulation function values at x.
+
+            sdx (np.ndarray): The standard deviation in the simulation
+                outputs at x.
+
+        """
+
         return
 
     def addAcquisition(self, *args):
