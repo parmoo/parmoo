@@ -218,8 +218,9 @@ def test_LocalGaussRBF():
         LocalGaussRBF(2, np.zeros(3), np.ones(3),
                       {'nugget': 0.1, 'des_tols': 0.1})
     # Create 2 identical RBFs
-    rbf1 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {})
-    rbf2 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {'n_loc': 4})
+    rbf1 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {'tail_order': 1})
+    rbf2 = LocalGaussRBF(2, np.zeros(3), np.ones(3),
+                         {'n_loc': 4, 'tail_order': 1})
     # Generate some random data with 3 design variables and 2 outputs
     x_vals1 = np.random.random_sample((10, 3))
     y_vals1 = np.random.random_sample((10, 2))

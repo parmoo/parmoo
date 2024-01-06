@@ -2144,28 +2144,7 @@ class MOOP:
             x_candidates = self.optimizer_obj.solve(x0)
             # Create a batch for filter method
             for i, acqi in enumerate(self.acquisitions):
-                # If acqi uses uncertainties, just add xi to the batch
-                if acqi.useSD():
-                    xbatch.append(self.__extract__(x_candidates[i, :]))
-                # Otherwise we need to check for sufficient decrease
-                else:
-                    si = np.zeros(self.m_total)
-                    sdi = np.zeros(self.m_total)
-                    # Get the new value of qi for this iteration
-                    x_new = x_candidates[i, :].copy()
-                    si = self.evaluateSurrogates(x_new)
-                    fi = self.evaluatePenalty(x_new, si)
-                    q_new = acqi.scalarize(fi, x_new, si, sdi)
-                    # Get the original value
-                    x_old = x0[i, :].copy()
-                    si = self.evaluateSurrogates(x_old)
-                    fi = self.evaluatePenalty(x_old, si)
-                    q_old = acqi.scalarize(fi, x_old, si, sdi)
-                    # Sufficient decrease check
-                    if abs(q_old - q_new) / abs(q_old) < self.epsilon:
-                        xbatch.append(self.__extract__(x_old))
-                    else:
-                        xbatch.append(self.__extract__(x_new))
+                xbatch.append(self.__extract__(x_candidates[i, :]))
         return xbatch
 
     def filterBatch(self, *args):

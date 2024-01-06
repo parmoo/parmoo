@@ -12,7 +12,6 @@ The classes include:
 
 import numpy as np
 from parmoo.structs import SurrogateFunction
-from scipy.optimize import lsq_linear
 from scipy.spatial.distance import cdist
 from scipy.stats import tstd
 from parmoo.util import xerror
@@ -652,21 +651,13 @@ class LocalGaussRBF(SurrogateFunction):
             self.prior[-1, :] = np.sum(rhs, axis=0) / rhs.shape[0]
             rhs[:, :] = rhs[:, :] - self.prior[-1, :]
             if self.order == 1:
-                self.y_std_dev = tstd(rhs, axis=0)
                 x_inds = [int(i) for i in self.loc_inds
                           if np.linalg.norm(center - self.x_vals[i])
                           <= self.std_dev + 1.0e-8]
                 A = self.x_vals[x_inds, :].copy()
                 b = self.f_vals[x_inds, :].copy()
                 b -= self.prior[-1, :]
-                for i in range(self.m):
-                    if self.y_std_dev[i] > 1.0e-4:
-                        bounds = (-self.y_std_dev[i] * 0.1,
-                                  self.y_std_dev[i] * 0.1)
-                        self.prior[:-1, i] = lsq_linear(A, b[:, i],
-                                                        bounds=bounds)["x"]
-                    else:
-                        self.prior[:-1, i] = 0
+                self.prior[:-1, :] = np.linalg.lstsq(A, b, rcond=None)[0]
                 rhs[:, :] = rhs[:, :] - np.dot(self.x_vals[self.loc_inds],
                                                self.prior[:-1])
             self.y_std_dev = np.maximum(tstd(rhs, axis=0), 0.01)
