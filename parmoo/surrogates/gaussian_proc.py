@@ -493,7 +493,7 @@ class LocalGaussRBF(SurrogateFunction):
                                  + " value")
         else:
             self.n_loc = self.n + 1
-        # Check for 'des_tols' optional key in hyperparms
+        # Check for 'des_tols' optional key in hyperparams
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
@@ -511,7 +511,7 @@ class LocalGaussRBF(SurrogateFunction):
         else:
             self.eps = np.zeros(self.n)
             self.eps[:] = 1.0e-8
-        # Check for 'tail_order' optional key in hyperparms
+        # Check for 'tail_order' optional key in hyperparams
         if 'tail_order' in hyperparams:
             if isinstance(hyperparams['tail_order'], int):
                 if hyperparams['tail_order'] in [0, 1]:

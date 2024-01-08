@@ -81,7 +81,7 @@ class Linear(SurrogateFunction):
                                  + " value")
         else:
             self.n_loc = self.n + 1
-        # Check for 'des_tols' optional key in hyperparms
+        # Check for 'des_tols' optional key in hyperparams
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
@@ -102,7 +102,7 @@ class Linear(SurrogateFunction):
         return
 
     def fit(self, x, f):
-        """ Fit a new Linear model to the given data.
+        """ Fit a new linear model to the given data.
 
         Args:
              x (numpy.ndarray): A 2d array containing the list of
@@ -133,7 +133,7 @@ class Linear(SurrogateFunction):
         return
 
     def update(self, x, f):
-        """ Update an existing Linear model using new data.
+        """ Update an existing linear model using new data.
 
         Args:
              x (numpy.ndarray): A 2d array containing the list of
@@ -165,15 +165,15 @@ class Linear(SurrogateFunction):
         return
 
     def setCenter(self, center):
-        """ Set the new trust region center and refit the local linear model.
+        """ Set the new trust-region center and refit the local linear model.
 
         Args:
-            center (numpy.ndarray): A 1d array containing the new trust region
+            center (numpy.ndarray): A 1d array containing the new trust-region
                 center.
 
         Returns:
             float: The distance to the n+1 nearest point, which should be used
-            as the trust region radius for a local optimizer.
+            as the trust-region radius for a local optimizer.
 
         """
 
@@ -227,11 +227,11 @@ class Linear(SurrogateFunction):
         return self.rad
 
     def evaluate(self, x):
-        """ Evaluate the Linear model at a design point.
+        """ Evaluate the linear model at a design point.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
-                which to the Linear model should be evaluated.
+                which the linear model should be evaluated.
 
         Returns:
             numpy.ndarray: A 1d array containing the predicted objective value

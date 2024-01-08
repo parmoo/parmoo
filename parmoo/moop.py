@@ -572,7 +572,7 @@ class MOOP:
                    specifies the tolerance, i.e., the minimum spacing along
                    this dimension, before two design values are considered to
                    have equal values in this dimension. If not specified, the
-                   default value is 1.0e-8 * (ub - lb).
+                   default value is epsilon * max(ub - lb, 1.0e-4).
                  * 'levels' (int or list): When des_type is 'categorical', this
                    specifies the number of levels for the variable (when int)
                    or the names of each valid category (when a list).
@@ -1539,7 +1539,7 @@ class MOOP:
                 design space.
 
         Returns:
-            np.ndarray or float: The suggested trust region radius.
+            np.ndarray or float: The suggested trust-region radius.
 
         """
 
