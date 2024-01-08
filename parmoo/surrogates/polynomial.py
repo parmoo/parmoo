@@ -81,7 +81,7 @@ class Linear(SurrogateFunction):
                                  + " value")
         else:
             self.n_loc = self.n + 1
-        # Check for 'des_tols' optional key in hyperparms
+        # Check for 'des_tols' optional key in hyperparams
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
