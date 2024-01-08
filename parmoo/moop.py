@@ -81,7 +81,7 @@ class MOOP:
      * ``MOOP.__pack_sim__(sx)``
      * ``MOOP.fitSurrogates()``
      * ``MOOP.updateSurrogates()``
-     * ``MOOP.resetSurrogates(center)``
+     * ``MOOP.setSurrogateTR(center, radius)``
      * ``MOOP.evaluateSurrogates(x)``
      * ``MOOP.surrogateUncertainty(x)``
      * ``MOOP.evaluateObjectives(x)``
@@ -1528,8 +1528,8 @@ class MOOP:
             self.sim_db[i]['old'] = self.sim_db[i]['n']
         return
 
-    def resetSurrogates(self, center):
-        """ Reset the surrogates using SurrogateFunction.setCenter(center).
+    def setSurrogateTR(self, center, radius):
+        """ Alert the surrogate functions of the trust region.
 
         Warning: Not recommended for external usage!
 
@@ -1538,19 +1538,13 @@ class MOOP:
                 (embedded) coordinates of the new center in the rescaled
                 design space.
 
-        Returns:
-            np.ndarray or float: The suggested trust-region radius.
+            radius (np.ndarray or float): The trust region radius.
 
         """
 
-        rad = np.zeros(self.n)
-        rad[:] = self.scaled_ub - self.scaled_lb
         for si in self.surrogates:
-            try:
-                rad = np.minimum(si.setCenter(center), rad)
-            except NotImplementedError:
-                continue
-        return rad
+            si.setCenter(center, radius)
+        return
 
     def evaluateSurrogates(self, x):
         """ Evaluate all simulation surrogates.
@@ -2122,7 +2116,7 @@ class MOOP:
             for i, acquisition in enumerate(self.acquisitions):
                 if i in ib:
                     self.optimizer_obj.addAcquisition(acquisition)
-            self.optimizer_obj.setReset(self.resetSurrogates)
+            self.optimizer_obj.setReset(self.setSurrogateTR)
             # Generate search data
             for j, search in enumerate(self.searches):
                 des = search.startSearch(self.scaled_lb, self.scaled_ub)

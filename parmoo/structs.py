@@ -265,7 +265,7 @@ class SurrogateFunction(ABC):
     This class contains the following methods.
      * ``fit(x, f)``
      * ``update(x, f)``
-     * ``setCenter(x)`` (default implementation provided)
+     * ``setTrustRegion(center, radius)`` (default implementation provided)
      * ``evaluate(x)``
      * ``gradient(x)``
      * ``stdDev(x)``
@@ -330,22 +330,21 @@ class SurrogateFunction(ABC):
 
         """
 
-    def setCenter(self, center):
-        """ Set the center for the fit, if this is a local method.
+    def setTrustRegion(self, center, radius):
+        """ Alert the surrogate of the trust region center and radius.
 
-        Default implementation returns the diameter of the design
-        space, resulting in a nonbinding trust region.
+        Default implementation does nothing, which would be the case for a
+        global surrogate model.
 
         Args:
             center (numpy.ndarray): A 1d array containing the center for
                 this local fit.
 
-        Returns:
-            np.ndarray or float: The suggested trust-region radius.
+            radius (np.ndarray or float): The trust-region radius.
 
         """
 
-        return max(self.ub - self.lb)
+        return
 
     @abstractmethod
     def evaluate(self, x):
@@ -526,7 +525,7 @@ class SurrogateOptimizer(ABC):
      * ``setSimulation(sim_func, sd_func)`` (default implementation provided)
      * ``setConstraints(constraint_func)`` (default implementation provided)
      * ``setPenalty(penaltyFunc, gradFunc)`` (default implementation provided)
-     * ``setReset(reset)`` (default implementation provided)
+     * ``setTR(trFunc)`` (default implementation provided)
      * ``addAcquisition(*args)`` (default implementation provided)
      * ``returnResults(x, fx, sx, sdx)``
      * ``solve(x)``
@@ -664,25 +663,26 @@ class SurrogateOptimizer(ABC):
             raise TypeError("constraint_func() must be callable")
         return
 
-    def setReset(self, reset):
-        """ Add a reset function for resetting surrogate updates.
+    def setTR(self, trFunc):
+        """ Add a TR setter function for alerting surrogates.
 
         Args:
-            reset (function): A function with one input, which will be
+            trFunc (function): A function with 2 inputs, which will be
                 called prior to solving the surrogate optimization
-                problem with each acquisition function.
+                problem with each acquisition function in order to set
+                the surrogate trust region center and radius.
 
         """
 
-        # Check whether reset() has an appropriate signature
-        if callable(reset):
-            if len(inspect.signature(reset).parameters) != 1:
-                raise ValueError("reset() must accept exactly one input")
+        # Check whether trFunc() has an appropriate signature
+        if callable(trFunc):
+            if len(inspect.signature(trFunc).parameters) != 2:
+                raise ValueError("trFunc() must accept exactly 2 inputs")
             else:
                 # Add obj_func to the problem
-                self.resetObjectives = reset
+                self.setTR = trFunc
         else:
-            raise TypeError("reset() must be callable")
+            raise TypeError("trFunc() must be callable")
         return
 
     def returnResults(x, fx, sx, sdx):

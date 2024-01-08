@@ -19,10 +19,10 @@ from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
 
 
-class LocalGPS(SurrogateOptimizer):
-    """ Use Generalized Pattern Search (GPS) to identify local solutions.
+class LocalMultiStartPS(SurrogateOptimizer):
+    """ Use multi-start Pattern Search to solve surrogate problem locally.
 
-    Applies GPS to the surrogate problem, in order to identify design
+    Applies PS to the surrogate problem, in order to identify design
     points that are locally Pareto optimal, with respect to the surrogate
     problem. Sorts poll directions by most recently used and attempts to
     step in promising directions in late iterations.
@@ -31,7 +31,7 @@ class LocalGPS(SurrogateOptimizer):
 
     # Slots for the LocalGPS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'resetObjectives',
+                 'objectives', 'simulations', 'gradients', 'setTR',
                  'penalty_func', 'sim_sd', 'restarts', 'momentum', 'q_ind']
 
     def __init__(self, o, lb, ub, hyperparams):
@@ -156,7 +156,7 @@ class LocalGPS(SurrogateOptimizer):
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
             # Create a new trust region
-            rad = self.resetObjectives(x[j, :])
+            self.setTR(x[j, :], rad)
             lb_tmp[:] = np.maximum(self.lb[:], x[j, :] - rad)
             ub_tmp[:] = np.minimum(self.ub[:], x[j, :] + rad)
             # Get a candidate
@@ -184,7 +184,7 @@ class GlobalGPS(SurrogateOptimizer):
 
     # Slots for the GlobalGPS class
     __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'resetObjectives',
+                 'objectives', 'simulations', 'gradients', 'setTR',
                  'penalty_func', 'opt_budget', 'gps_budget', 'sim_sd',
                  'momentum']
 
@@ -318,7 +318,7 @@ class GlobalGPS(SurrogateOptimizer):
         # For each acquisition function
         for j, acq in enumerate(self.acquisitions):
             # Create a new trust region
-            rad = self.resetObjectives(x[j, :])
+            self.setTR(x[j, :], rad)
             lb_old = lb_tmp
             ub_old = ub_tmp
             lb_tmp[:] = np.maximum(self.lb[:], x[j, :] - rad)
