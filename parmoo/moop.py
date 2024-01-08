@@ -1539,7 +1539,7 @@ class MOOP:
                 design space.
 
         Returns:
-            np.ndarray or float: The suggested trust region radius.
+            np.ndarray or float: The suggested trust-region radius.
 
         """
 
