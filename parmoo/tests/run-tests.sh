@@ -27,6 +27,7 @@ if [ $CHECK_PARMOO_SYNTAX == true ]; then
   echo
 
   flake8 parmoo/*.py --per-file-ignores="__init__.py:F401";
+  flake8 parmoo/*/*.py --per-file-ignores="__init__.py:F401";
   flake8 parmoo/tests/unit_tests/*.py;
 
   echo

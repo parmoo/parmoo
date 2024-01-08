@@ -110,9 +110,8 @@ class RandomSearch(SurrogateOptimizer):
             rad = self.resetObjectives(x[iq, :])
             lb_old = lb_tmp
             ub_old = ub_tmp
-            for i in range(self.n):
-                lb_tmp[i] = max(self.lb[i], x[iq, i] - rad)
-                ub_tmp[i] = min(self.ub[i], x[iq, i] + rad)
+            lb_tmp[:] = np.maximum(self.lb[:], x[iq, :] - rad)
+            ub_tmp[:] = np.minimum(self.ub[:], x[iq, :] + rad)
             # Check if TR has changed
             if iq == 0 or np.any(np.abs(lb_old - lb_tmp) +
                                  np.abs(ub_old - ub_tmp) > 1.0e-8):

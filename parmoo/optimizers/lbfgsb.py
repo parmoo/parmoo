@@ -149,9 +149,8 @@ class LBFGSB(SurrogateOptimizer):
             # Create a new trust region
             rad = self.resetObjectives(x[j, :])
             bounds = np.zeros((self.n, 2))
-            for i in range(self.n):
-                bounds[i, 0] = max(self.bounds[i, 0], x[j, i] - rad)
-                bounds[i, 1] = min(self.bounds[i, 1], x[j, i] + rad)
+            bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
+            bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
 
             # Get the solution via multistart solve
             soln = x[j, :].copy()
@@ -180,7 +179,6 @@ class LBFGSB(SurrogateOptimizer):
                                         options={'maxiter': self.budget})
                 if scalar_f(res['x']) < scalar_f(soln):
                     soln = res['x']
-
             # Append the found minima to the results list
             result.append(soln)
         return np.asarray(result)
@@ -318,12 +316,12 @@ class TR_LBFGSB(SurrogateOptimizer):
             # Create a new trust region
             rad = self.resetObjectives(x[j, :])
             bounds = np.zeros((self.n, 2))
-            for i in range(self.n):
-                bounds[i, 0] = max(self.bounds[i, 0], x[j, i] - rad)
-                bounds[i, 1] = min(self.bounds[i, 1], x[j, i] + rad)
+            bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
+            bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
 
             # Get the solution via multistart solve
             soln = x[j, :].copy()
+            f0 = scalar_f(soln)
             for i in range(self.restarts):
                 if i == 0:
                     # Use center point to warm-start first start
