@@ -440,7 +440,8 @@ def test_MOOP_evaluateGradients_3():
     moop1.addObjective({'obj_func': f2})
     moop1.addConstraint({'constraint': c1})
     moop1.addConstraint({'constraint': c2})
-    moop1.addAcquisition({'acquisition': FixedWeights})
+    moop1.addAcquisition({'acquisition': FixedWeights,
+                          'hyperparams': {'weights': np.ones(2) / 2}})
     np.random.seed(0)
     moop1.solve(0)
     # Adjust the scaling and try again
@@ -451,7 +452,8 @@ def test_MOOP_evaluateGradients_3():
     moop2.addObjective({'obj_func': f2})
     moop2.addConstraint({'constraint': c1})
     moop2.addConstraint({'constraint': c2})
-    moop2.addAcquisition({'acquisition': FixedWeights})
+    moop2.addAcquisition({'acquisition': FixedWeights,
+                          'hyperparams': {'weights': np.ones(2) / 2}})
     np.random.seed(0)
     moop2.solve(0)
     np.random.seed(0)
