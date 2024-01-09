@@ -101,6 +101,7 @@ class MOOP:
                  'des_names', 'obj_names', 'const_names',
                  'lam', 'epsilon', 'objectives', 'data', 'sim_funcs',
                  'sim_db', 'des_tols', 'searches', 'surrogates', 'optimizer',
+                 'optimizer_obj',
                  'constraints', 'hyperparams', 'acquisitions', 'history',
                  'scale', 'scaled_lb', 'scaled_ub', 'scaled_des_tols',
                  'cat_des_tols', 'custom_des_tols', 'use_names', 'iteration',
@@ -341,7 +342,7 @@ class MOOP:
         U, S, VT = np.linalg.svd(codex)
         self.n_cat_d = 0
         for si in S:
-            if si > 1.0e-8:
+            if si > self.epsilon:
                 self.n_cat_d += 1
         # Store transposed right singular vectors for encoding/decoding
         self.RSVT = VT[:self.n_cat_d, :]
@@ -522,12 +523,15 @@ class MOOP:
         # Set up the surrogate optimizer
         try:
             # Try initializing the optimizer, to check that it can be done
-            opt = opt_func(1, np.zeros(1), np.ones(1), self.hyperparams)
+            self.optimizer_obj = opt_func(1,
+                                          np.zeros(1),
+                                          np.ones(1),
+                                          self.hyperparams)
         except BaseException:
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")
         # Set up the surrogate optimizer
-        if not isinstance(opt, structs.SurrogateOptimizer):
+        if not isinstance(self.optimizer_obj, structs.SurrogateOptimizer):
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")
         self.optimizer = opt_func
@@ -568,7 +572,7 @@ class MOOP:
                    specifies the tolerance, i.e., the minimum spacing along
                    this dimension, before two design values are considered to
                    have equal values in this dimension. If not specified, the
-                   default value is 1.0e-8 * (ub - lb).
+                   default value is epsilon * max(ub - lb, 1.0e-4).
                  * 'levels' (int or list): When des_type is 'categorical', this
                    specifies the number of levels for the variable (when int)
                    or the names of each valid category (when a list).
@@ -619,9 +623,10 @@ class MOOP:
                     if 'lb' in arg and 'ub' in arg and \
                        isinstance(arg['lb'], float) and \
                        isinstance(arg['ub'], float):
-                        des_tol = 1.0e-8 * max(arg['ub'] - arg['lb'], 1.0e-4)
+                        des_tol = self.epsilon * max(arg['ub'] -
+                                                     arg['lb'], 1.0e-4)
                     else:
-                        des_tol = 1.0e-8
+                        des_tol = self.epsilon
                 if 'lb' in arg and 'ub' in arg:
                     if not (isinstance(arg['lb'], float) and
                             isinstance(arg['ub'], float)):
@@ -811,9 +816,9 @@ class MOOP:
                                       self.n_cat + self.n_custom)
                 self.n_custom += 1
                 self.n_custom_d.append(arg["embedding_size"])
-                self.des_tols.append(1.0e-8)
+                self.des_tols.append(self.epsilon)
                 for i in range(arg["embedding_size"]):
-                    self.custom_des_tols.append(1.0e-8)
+                    self.custom_des_tols.append(self.epsilon)
             # Append a new raw design variable to the list
             elif arg['des_type'] in ["raw"]:
                 if 'name' in arg:
@@ -836,7 +841,7 @@ class MOOP:
                 self.des_order.append(self.n_cont + self.n_int +
                                       self.n_cat + self.n_custom + self.n_raw)
                 self.n_raw += 1
-                self.des_tols.append(1.0e-8)
+                self.des_tols.append(self.epsilon)
             else:
                 raise ValueError("des_type=" + arg['des_type'] +
                                  " is not a recognized value")
@@ -873,7 +878,7 @@ class MOOP:
         n_total += sum(self.n_custom_d)
         # Calculate scaling for raw variables
         self.scale[n_total:n_total+self.n_raw] = 1.0
-        self.scaled_des_tols[n_total:n_total+self.n_raw] = 1.0e-8
+        self.scaled_des_tols[n_total:n_total+self.n_raw] = self.epsilon
         self.scaled_lb[n_total:n_total+self.n_raw] = -np.inf
         self.scaled_ub[n_total:n_total+self.n_raw] = np.inf
         n_total += self.n_raw
@@ -1534,17 +1539,17 @@ class MOOP:
                 design space.
 
         Returns:
-            float: The minimum over the recommended trust region radius
-            for all surrogates.
+            np.ndarray or float: The suggested trust-region radius.
 
         """
 
-        rad = max(self.scaled_ub - self.scaled_lb)
+        rad = np.zeros(self.n)
+        rad[:] = self.scaled_ub - self.scaled_lb
         for si in self.surrogates:
             try:
-                rad = min(si.setCenter(center), rad)
+                rad = np.minimum(si.setCenter(center), rad)
             except NotImplementedError:
-                rad = max(self.scaled_ub - self.scaled_lb)
+                continue
         return rad
 
     def evaluateSurrogates(self, x):
@@ -2103,6 +2108,21 @@ class MOOP:
             self.data = {'x_vals': np.zeros((1, self.n)),
                          'f_vals': np.zeros((1, self.o)),
                          'c_vals': np.zeros((1, 1))}
+            # Initialize the surrogate optimizer
+            self.optimizer_obj = self.optimizer(self.o,
+                                                self.scaled_lb,
+                                                self.scaled_ub,
+                                                self.hyperparams)
+            self.optimizer_obj.setObjective(self.evaluateObjectives)
+            self.optimizer_obj.setSimulation(self.evaluateSurrogates,
+                                             self.surrogateUncertainty)
+            self.optimizer_obj.setPenalty(self.evaluatePenalty,
+                                          self.evaluateGradients)
+            self.optimizer_obj.setConstraints(self.evaluateConstraints)
+            for i, acquisition in enumerate(self.acquisitions):
+                if i in ib:
+                    self.optimizer_obj.addAcquisition(acquisition)
+            self.optimizer_obj.setReset(self.resetSurrogates)
             # Generate search data
             for j, search in enumerate(self.searches):
                 des = search.startSearch(self.scaled_lb, self.scaled_ub)
@@ -2115,27 +2135,16 @@ class MOOP:
         # Now the main loop
         else:
             x0 = np.zeros((len(self.acquisitions), self.n))
-            # Add acquisition functions
-            for i, acquisition in enumerate(self.acquisitions):
-                x0[i, :] = acquisition.setTarget(self.data,
-                                                 self.evaluatePenalty,
-                                                 self.history)
-            # Set up the surrogate problem
-            opt = self.optimizer(self.o, self.scaled_lb, self.scaled_ub,
-                                 self.hyperparams)
-            opt.setObjective(self.evaluateObjectives)
-            opt.setSimulation(self.evaluateSurrogates,
-                              self.surrogateUncertainty)
-            opt.setPenalty(self.evaluatePenalty, self.evaluateGradients)
-            opt.setConstraints(self.evaluateConstraints)
-            for i, acquisition in enumerate(self.acquisitions):
-                if i in ib:
-                    opt.addAcquisition(acquisition)
-            opt.setReset(self.resetSurrogates)
+            # Set acquisition functions
+            for i, acqi in enumerate(self.acquisitions):
+                x0[i, :] = acqi.setTarget(self.data,
+                                          self.evaluatePenalty,
+                                          self.history)
             # Solve the surrogate problem
-            x_candidates = opt.solve(x0)
-            for xi in x_candidates:
-                xbatch.append(self.__extract__(xi))
+            x_candidates = self.optimizer_obj.solve(x0)
+            # Create a batch for filter method
+            for i, acqi in enumerate(self.acquisitions):
+                xbatch.append(self.__extract__(x_candidates[i, :]))
         return xbatch
 
     def filterBatch(self, *args):
@@ -2344,9 +2353,19 @@ class MOOP:
                         # If not found, stop checking
                         if not is_shared:
                             break
-                # If xi was in every sim_db, add it to the database
+                # If xi was in every sim_db, add it to the database and report
+                # to the optimizer
                 if is_shared:
+                    fx = np.zeros(self.o)
+                    sx = self.__unpack_sim__(sim)
+                    sdx = np.zeros(sx.size)
+                    for i, obj_func in enumerate(self.objectives):
+                        if self.obj_exp_vals[i]:
+                            fx[i] = obj_func(x, sx, sdx)
+                        else:
+                            fx[i] = obj_func(x, sx)
                     self.addData(x, self.__unpack_sim__(sim))
+                    self.optimizer.returnResults(x, fx, sx, sdx)
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpointfile)
@@ -2896,7 +2915,6 @@ class MOOP:
         # Store names/modules of object classes
         parmoo_state['optimizer'] = (self.optimizer.__name__,
                                      self.optimizer.__module__)
-        # Store names/modules of object instances
         parmoo_state['searches'] = [(search.__class__.__name__,
                                      search.__class__.__module__)
                                     for search in self.searches]
@@ -2906,6 +2924,14 @@ class MOOP:
         parmoo_state['acquisitions'] = [(acq.__class__.__name__,
                                          acq.__class__.__module__)
                                         for acq in self.acquisitions]
+        # Try to save optimizer object state
+        try:
+            fname = filename + ".optimizer"
+            fname_tmp = "." + fname + ".swap"
+            self.optimizer_obj.save(fname_tmp)
+            shutil.move(fname_tmp, fname)
+        except NotImplementedError:
+            pass
         # Try to save search states
         for i, search in enumerate(self.searches):
             try:
@@ -3125,10 +3151,18 @@ class MOOP:
             mod = import_module(e_mod)
             new_em = getattr(mod, e_name)
             self.custom_extracters.append(new_em)
-        # Recover object classes
+        # Recover object classes and instances
         mod = import_module(parmoo_state['optimizer'][1])
         self.optimizer = getattr(mod, parmoo_state['optimizer'][0])
-        # Recover names/modules of object instances
+        self.optimizer_obj = self.optimizer(self.o,
+                                            self.scaled_lb,
+                                            self.scaled_ub,
+                                            self.hyperparams)
+        try:
+            fname = filename + ".optimizer"
+            self.optimizer_obj.load(fname)
+        except NotImplementedError:
+            pass
         self.searches = []
         for i, (search_name, search_mod) in enumerate(
                                                 parmoo_state['searches']):

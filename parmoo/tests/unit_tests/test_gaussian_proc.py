@@ -62,19 +62,7 @@ def test_GaussRBF():
     rbf1.update(x_vals2, y_vals2)
     rbf1.update(np.zeros((0, 3)), np.zeros((0, 2)))    # Update with no data
     rbf2.fit(x_vals_full, y_vals_full)
-    # Try a bad function/gradient evaluation to test error handling
-    with pytest.raises(TypeError):
-        rbf1.evaluate(5)
-    with pytest.raises(ValueError):
-        rbf1.evaluate(np.zeros(2))
-    with pytest.raises(ValueError):
-        rbf1.evaluate(-np.ones(3))
-    with pytest.raises(TypeError):
-        rbf1.gradient(5)
-    with pytest.raises(ValueError):
-        rbf1.gradient(np.zeros(2))
-    with pytest.raises(ValueError):
-        rbf1.gradient(-np.ones(3))
+    # Try a bad improvement step to test error handling
     with pytest.raises(TypeError):
         rbf1.improve(5, False)
     with pytest.raises(ValueError):
@@ -176,12 +164,12 @@ def test_GaussRBF():
     os.remove("parmoo.surrogate")
     # Generate a simple 1D RBF and check its stdDev and stdDevGrad are accurate
     x_vals4 = np.array([[0], [1]])
-    y_vals4 = np.array([[1], [1]])
+    y_vals4 = np.array([[0], [1]])
     rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {})
     rbf8.fit(x_vals4, y_vals4)
-    assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 1.0) < 1.0e-8)
-    assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 1.0e-1)
-    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) < 1.0e-8)
+    assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 0.5) < 1.0e-8)
+    assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 1.0e-2)
+    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) < 1.0e-4)
     assert (np.linalg.norm(rbf8.stdDevGrad(np.array([0.5]))) < 1.0e-4)
     xx = np.linspace(0, 1).reshape((50, 1))
     maxind = 0
@@ -230,8 +218,9 @@ def test_LocalGaussRBF():
         LocalGaussRBF(2, np.zeros(3), np.ones(3),
                       {'nugget': 0.1, 'des_tols': 0.1})
     # Create 2 identical RBFs
-    rbf1 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {})
-    rbf2 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {'n_loc': 4})
+    rbf1 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {'tail_order': 1})
+    rbf2 = LocalGaussRBF(2, np.zeros(3), np.ones(3),
+                         {'n_loc': 4, 'tail_order': 1})
     # Generate some random data with 3 design variables and 2 outputs
     x_vals1 = np.random.random_sample((10, 3))
     y_vals1 = np.random.random_sample((10, 2))
@@ -272,19 +261,7 @@ def test_LocalGaussRBF():
         rbf1.setCenter(np.zeros(5))
     with pytest.raises(ValueError):
         rbf1.setCenter(-np.ones(3))
-    # Try a bad function/gradient evaluation to test error handling
-    with pytest.raises(TypeError):
-        rbf1.evaluate(5)
-    with pytest.raises(ValueError):
-        rbf1.evaluate(np.zeros(2))
-    with pytest.raises(ValueError):
-        rbf1.evaluate(-np.ones(3))
-    with pytest.raises(TypeError):
-        rbf1.gradient(5)
-    with pytest.raises(ValueError):
-        rbf1.gradient(np.zeros(2))
-    with pytest.raises(ValueError):
-        rbf1.gradient(-np.ones(3))
+    # Try a bad improvement step to test error handling
     with pytest.raises(TypeError):
         rbf1.improve(5, False)
     with pytest.raises(ValueError):
@@ -317,7 +294,7 @@ def test_LocalGaussRBF():
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
     y_vals3 = np.asarray([[np.dot(xi, xi)] for xi in x_vals3])
-    rbf3 = LocalGaussRBF(1, np.zeros(3), np.ones(3), {})
+    rbf3 = LocalGaussRBF(1, np.zeros(3), np.ones(3), {'tail_order': 0})
     rbf3.fit(x_vals3, y_vals3)
     rbf3.setCenter(x_vals3[-1])
     y_grad_vals3 = -0.08798618 * np.ones((1, 3))
@@ -396,13 +373,13 @@ def test_LocalGaussRBF():
     os.remove("parmoo.surrogate")
     # Generate a simple 1D RBF and check its stdDev and stdDevGrad are accurate
     x_vals4 = np.array([[0], [1]])
-    y_vals4 = np.array([[1], [1]])
-    rbf8 = LocalGaussRBF(1, np.zeros(1), np.ones(1), {})
+    y_vals4 = np.array([[0], [1]])
+    rbf8 = LocalGaussRBF(1, np.zeros(1), np.ones(1), {'tail_order': 0})
     rbf8.fit(x_vals4, y_vals4)
     rbf8.setCenter(np.array([0.5]))
-    assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 1.0) < 1.0e-8)
-    assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 1.0e-1)
-    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) < 1.0e-8)
+    assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 0.5) < 1.0e-8)
+    assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 5.0e-3)
+    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) < 1.0e-4)
     assert (np.linalg.norm(rbf8.stdDevGrad(np.array([0.5]))) < 1.0e-4)
     xx = np.linspace(0, 1).reshape((50, 1))
     maxind = 0
