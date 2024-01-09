@@ -258,8 +258,9 @@ class FixedWeights(AcquisitionFunction):
                     # Assign the weights
                     self.weights = hyperparams['weights'].flatten()
         else:
-            # If no weights were provided, use an even weighting
-            self.weights = np.ones(self.o) / float(self.o)
+            # If no weights provided, sample from the unit simplex
+            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = self.weights[:] / sum(self.weights[:])
         return
 
     def useSD(self):

@@ -172,7 +172,7 @@ class RandomConstraint(AcquisitionFunction):
             fi = pf['f_vals'][ipts[0], :]
             # Set the bounds
             self.f_ub[:] = np.inf
-            self.weights[:] = 0.0001
+            self.weights[:] = 1.0e-4
             for j in range(self.o):
                 # If fi[j] is less than target[j], this is a bound
                 if fi[j] + 0.00000001 < target[j]:
