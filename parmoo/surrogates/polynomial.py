@@ -25,8 +25,7 @@ class Linear(SurrogateFunction):
 
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps',
-                 'loc_inds', 'tr_center', 'rad', 'weights',
-                 'prev_centers']
+                 'loc_inds', 'tr_center', 'rad', 'weights']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the Linear class.
@@ -65,7 +64,6 @@ class Linear(SurrogateFunction):
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros(self.n + 1)
         # Initialize trust-region settings
-        self.prev_centers = []
         self.tr_center = np.zeros(0)
         self.rad = np.zeros(self.n)
         self.loc_inds = []
@@ -189,12 +187,6 @@ class Linear(SurrogateFunction):
             self.tr_center = center
             idists = np.argsort(np.asarray([np.linalg.norm(xj - center)
                                             for xj in self.x_vals]))
-            # Check the history to see if this is a repeated iterate
-            rfound = -1
-            for ci, ri in self.prev_centers:
-                if np.all(np.abs(ci - center) < self.eps):
-                    rfound = ri
-                    break
             # Check the n nearest neighbors
             xn = self.x_vals[idists[self.n]]
             r_tmp = np.linalg.norm(center - xn)
@@ -208,22 +200,6 @@ class Linear(SurrogateFunction):
                            np.ones((len(self.loc_inds), 1))))
             self.weights = np.linalg.lstsq(A, self.f_vals[self.loc_inds],
                                            rcond=None)[0]
-
-        # TODO: move to another place
-        if np.any(np.abs(self.tr_center - center) > self.eps):
-            # If found in the history, decay the radius
-            if np.any(rfound > 0):
-                self.rad = rfound * 0.5
-                self.rad = np.maximum(self.rad, np.sqrt(self.eps))
-            else:
-                self.rad = np.minimum(r_tmp, (self.ub - self.lb) * 0.05)
-                self.rad = np.maximum(self.rad, np.sqrt(self.eps))
-        # Otherwise, just decay the radius
-        else:
-            self.rad *= 0.5
-            self.rad = np.maximum(self.rad, np.sqrt(self.eps))
-        # Update the history
-        self.prev_centers.append((self.tr_center, self.rad))
         return
 
     def evaluate(self, x):
@@ -278,9 +254,6 @@ class Linear(SurrogateFunction):
         ls_state['eps'] = self.eps.tolist()
         ls_state['tr_center'] = self.tr_center.tolist()
         ls_state['rad'] = self.rad.tolist()
-        ls_state['prev_centers'] = []
-        for ci, ri in self.prev_centers:
-            ls_state['prev_centers'].append([ci.tolist(), ri.tolist()])
         ls_state['weights'] = self.weights.tolist()
         # Save file
         with open(filename, 'w') as fp:
@@ -313,8 +286,5 @@ class Linear(SurrogateFunction):
         self.eps = np.array(ls_state['eps'])
         self.tr_center = np.array(ls_state['tr_center'])
         self.rad = np.array(ls_state['rad'])
-        self.prev_centers = []
-        for ci, ri in ls_state['prev_centers']:
-            self.prev_centers.append([np.array(ci), np.array(ri)])
         self.weights = np.array(ls_state['weights'])
         return

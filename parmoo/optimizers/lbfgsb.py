@@ -1,5 +1,5 @@
 
-""" Implementations of the SurrogateOptimizer class.
+""" Optimization methods based on limited-memory BFGS-B (L-BFGS-B).
 
 This module contains implementations of the SurrogateOptimizer ABC, which
 are based on the L-BFGS-B quasi-Newton algorithm.
@@ -8,8 +8,8 @@ Note that all of these methods are gradient based, and therefore require
 objective, constraint, and surrogate gradient methods to be defined.
 
 The classes include:
- * ``LBFGSB`` -- Limited-memory bound-constrained BFGS (L-BFGS-B) method
- * ``TR_LBFGSB`` -- L-BFGS-B is applied within a trust region
+ * ``GlobalSurrogate_BFGS`` -- Minimize the surrogate globally via L-BFGS-B
+ * ``LocalSurrogate_BFGS`` -- Minimize surrogate in trust region via L-BFGS-B
 
 """
 
@@ -18,7 +18,7 @@ from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
 
 
-class LBFGSB(SurrogateOptimizer):
+class GlobalSurrogate_BFGS(SurrogateOptimizer):
     """ Use L-BFGS-B and gradients to identify local solutions.
 
     Applies L-BFGS-B to the surrogate problem, in order to identify design
@@ -27,13 +27,13 @@ class LBFGSB(SurrogateOptimizer):
 
     """
 
-    # Slots for the LBFGSB class
+    # Slots for the GlobalSurrogate_BFGS class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'resetObjectives',
+                 'objectives', 'simulations', 'gradients', 'setTR',
                  'penalty_func', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
-        """ Constructor for the LBFGSB class.
+        """ Constructor for the GlobalSurrogate_BFGS class.
 
         Args:
             o (int): The number of objectives.
@@ -120,9 +120,11 @@ class LBFGSB(SurrogateOptimizer):
             if np.any(xj[:] < self.bounds[:, 0]) or \
                np.any(xj[:] > self.bounds[:, 1]):
                 raise ValueError("some of starting points (x) are infeasible")
-        # Initialize an empty list of results
+        # Create an infinite trust region
+        rad = np.ones(self.n) * np.infty
+        self.setTR(x[j, :], rad)
+        # Loop over and solve acqusisition functions
         result = []
-        # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
 
             # Define the scalarized wrapper functions
@@ -146,12 +148,6 @@ class LBFGSB(SurrogateOptimizer):
                 return acquisition.scalarizeGrad(self.penalty_func(x),
                                                  self.gradients(x))
 
-            # Create a new trust region
-            rad = self.resetObjectives(x[j, :])
-            bounds = np.zeros((self.n, 2))
-            bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
-            bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
-
             # Get the solution via multistart solve
             soln = x[j, :].copy()
             for i in range(self.restarts):
@@ -164,18 +160,18 @@ class LBFGSB(SurrogateOptimizer):
                     gg = scalar_g(x0)
                     for ii in range(self.n):
                         if gg[ii] < 0:
-                            x0[ii] = bounds[ii, 1]
+                            x0[ii] = self.bounds[ii, 1]
                         elif gg[ii] > 0:
-                            x0[ii] = bounds[ii, 0]
+                            x0[ii] = self.bounds[ii, 0]
                 else:
                     # Random starting point within bounds for all other starts
                     x0 = (np.random.random_sample(self.n) *
-                          (bounds[:, 1] - bounds[:, 0]) +
-                          bounds[:, 0])
+                          (self.bounds[:, 1] - self.bounds[:, 0]) +
+                          self.bounds[:, 0])
 
                 # Solve the problem globally within bound constraints
                 res = optimize.minimize(scalar_f, x0, method='L-BFGS-B',
-                                        jac=scalar_g, bounds=bounds,
+                                        jac=scalar_g, bounds=self.bounds,
                                         options={'maxiter': self.budget})
                 if scalar_f(res['x']) < scalar_f(soln):
                     soln = res['x']
@@ -184,7 +180,7 @@ class LBFGSB(SurrogateOptimizer):
         return np.asarray(result)
 
 
-class TR_LBFGSB(SurrogateOptimizer):
+class LocalSurrogate_BFGS(SurrogateOptimizer):
     """ Use L-BFGS-B and gradients to identify solutions within a trust region.
 
     Applies L-BFGS-B to the surrogate problem, in order to identify design
@@ -195,11 +191,11 @@ class TR_LBFGSB(SurrogateOptimizer):
 
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'gradients', 'penalty_func', 'resetObjectives',
+                 'objectives', 'gradients', 'penalty_func', 'setTR',
                  'restarts', 'simulations', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
-        """ Constructor for the TR_LBFGSB class.
+        """ Constructor for the LocalSurrogate_BFGS class.
 
         Args:
             o (int): The number of objectives.
@@ -258,6 +254,26 @@ class TR_LBFGSB(SurrogateOptimizer):
         self.acquisitions = []
         return
 
+    def __checkTR(self, center):
+        """ Check the recommended trust region for a new center. """
+
+        # Search the history for the given radius
+        rad = np.zeros(self.n)
+        for (ci, ri) in self.prev_centers:
+            if np.all(center - ci < self.des_tol):
+                rad[:] = ri[:]
+                break
+        # If found in the history, decay the radius
+        if np.any(rad > 0):
+            rad = rad * 0.5
+            rad = np.maximum(rad, self.des_tol)
+        else:
+            rad = np.minimum(rad, (self.ub - self.lb) * 0.05)
+            rad = np.maximum(rad, self.des_tol)
+        # Update the history
+        self.prev_centers.append((center, rad))
+        return rad
+
     def solve(self, x):
         """ Solve the surrogate problem using L-BFGS-B.
 
@@ -314,7 +330,8 @@ class TR_LBFGSB(SurrogateOptimizer):
                                                  self.gradients(x))
 
             # Create a new trust region
-            rad = self.resetObjectives(x[j, :])
+            rad = self.__checkTR(x[j, :], rad)
+            self.resetTR(x[j, :], rad)
             bounds = np.zeros((self.n, 2))
             bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
             bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
