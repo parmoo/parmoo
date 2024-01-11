@@ -513,7 +513,7 @@ class FixedAugChebyshev(AcquisitionFunction):
         import json
 
         # Serialize RBF object in dictionary
-        ac_state = {'o': self.m,
+        ac_state = {'o': self.o,
                     'n': self.n,
                     'alpha': self.alpha}
         # Serialize numpy.ndarray objects

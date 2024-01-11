@@ -460,7 +460,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
             raise TypeError("x must be a numpy array")
         # Create an infinite trust region
         rad = np.ones(self.n) * np.infty
-        self.setTR(self.lb(self.n), rad)
+        self.setTR(self.lb, rad)
         # Perform a random search globally
         batch_size = 1000
         data = {'x_vals': np.zeros((batch_size, self.n)),
@@ -479,11 +479,11 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                 data['c_vals'] = np.zeros((k_new, 0))
             # Randomly generate k_new new points
             for i in range(k_new):
-                if i == 0:
-                    xi = x[j, :]
+                if i < len(self.acquisitions):
+                    xi = x[i, :]
                 else:
                     xi = (np.random.sample(self.n) *
-                          (ub_tmp[:] - lb_tmp[:]) + lb_tmp[:])
+                          (self.ub[:] - self.lb[:]) + self.lb[:])
                 data['x_vals'][i, :] = xi[:]
                 data['f_vals'][i, :] = self.penalty_func(xi)
             # Update the PF
@@ -508,9 +508,9 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
             x0 = nondom['x_vals'][imin, :].copy()
             # Get a candidate
             self.q_ind = j
-            mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
-            xj, fj = __accelerated_pattern_search__(self.n, lb_tmp,
-                                                    ub_tmp, x0,
+            mesh_tol = max(1.0e-8, np.min((self.ub - self.lb) * 1.0e-4))
+            xj, fj = __accelerated_pattern_search__(self.n, self.lb,
+                                                    self.ub, x0,
                                                     self.__obj_func__,
                                                     ibudget=self.gps_budget,
                                                     mesh_start=0.1,

@@ -7,7 +7,7 @@ Uses named variables and public function definitions to define the problem.
 """
 
 from parmoo import MOOP
-from parmoo.optimizers import GlobalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
@@ -39,7 +39,7 @@ def obj2(x, sx):
     return sx["my sim"][1]
 
 # Create a MOOP
-moop = MOOP(GlobalGPS)
+moop = MOOP(GlobalSurrogate_PS)
 
 # Add design variables
 moop.addDesign({'name': "cont var", 'ub': 1.0, 'lb': 0.0,

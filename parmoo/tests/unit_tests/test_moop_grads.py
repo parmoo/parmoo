@@ -78,6 +78,7 @@ def test_MOOP_evaluatePenalty():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
+    moop1.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     moop1.addObjective({'obj_func': f1})
     moop1.addObjective({'obj_func': f1})
     assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
@@ -99,6 +100,7 @@ def test_MOOP_evaluatePenalty():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
+    moop2.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     moop2.addObjective({'obj_func': f1})
     moop2.addObjective({'obj_func': f1})
     moop2.addConstraint({'constraint': c1})
@@ -190,6 +192,7 @@ def test_MOOP_evaluateGradients_1():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
+    moop1.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     moop1.addObjective({'obj_func': f1})
     assert (np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
     assert (np.all(moop1.evaluateGradients(np.ones(3)) ==
@@ -219,6 +222,7 @@ def test_MOOP_evaluateGradients_1():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
+    moop2.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     moop2.addObjective({'obj_func': f1})
     moop2.addConstraint({'constraint': c1})
     moop2.addObjective({'obj_func': f2})
@@ -331,6 +335,7 @@ def test_MOOP_evaluateGradients_2():
     moop3.evaluateSimulation(np.ones(1, dtype=[("x1", float), ("x2", float),
                                                ("x3", float)]), 1)
     moop3.fitSurrogates()
+    moop3.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     moop3.addObjective({'obj_func': f3})
     assert (np.all(moop3.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
     assert (np.all(moop3.evaluateGradients(np.ones(3)) ==
@@ -357,6 +362,7 @@ def test_MOOP_evaluateGradients_2():
     moop4.evaluateSimulation(np.ones(1, dtype=[("x1", float), ("x2", float),
                                                ("x3", float)]), 1)
     moop4.fitSurrogates()
+    moop4.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     moop4.addObjective({'obj_func': f3})
     moop4.addConstraint({'constraint': c3})
     moop4.addObjective({'obj_func': f4})

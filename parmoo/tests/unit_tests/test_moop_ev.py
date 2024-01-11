@@ -80,7 +80,7 @@ def test_MOOP_evaluateExpectedValue_unnamed():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -107,7 +107,7 @@ def test_MOOP_evaluateExpectedValue_unnamed():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateObjectives(np.zeros(3)) -
                            np.asarray([0.0, 0.0, 3.75])) < 1.0e-4)
@@ -215,7 +215,7 @@ def test_MOOP_evaluateExpectedValuePenalty_unnamed():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -240,7 +240,7 @@ def test_MOOP_evaluateExpectedValuePenalty_unnamed():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluatePenalty(np.zeros(3)) -
                            np.asarray([3.75, 3.75])) < 1.0e-4)
@@ -342,7 +342,7 @@ def test_MOOP_expectedValueGradient_unnamed():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -369,7 +369,7 @@ def test_MOOP_expectedValueGradient_unnamed():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateGradients(np.zeros(3)) -
                            moop2.evaluateGradients(np.zeros(3))) < 1.0e-4)
@@ -479,7 +479,7 @@ def test_MOOP_evaluateConstraintExpectedValue_unnamed():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -506,7 +506,7 @@ def test_MOOP_evaluateConstraintExpectedValue_unnamed():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateConstraints(np.zeros(3)) -
                            np.asarray([0.0, 3.75])) < 1.0e-4)
@@ -612,7 +612,7 @@ def test_MOOP_expectedValueConstraintGradient_unnamed():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -639,7 +639,7 @@ def test_MOOP_expectedValueConstraintGradient_unnamed():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateGradients(np.zeros(3)) -
                            moop2.evaluateGradients(np.zeros(3))) < 1.0e-4)
@@ -796,7 +796,7 @@ def test_MOOP_evaluateExpectedValue_named():
     moop1.evaluateSimulation(xi, 0)
     moop1.evaluateSimulation(xi, 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -840,7 +840,7 @@ def test_MOOP_evaluateExpectedValue_named():
     moop2.evaluateSimulation(xi, 0)
     moop2.evaluateSimulation(xi, 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateObjectives(np.zeros(3)) -
                            np.asarray([0.0, 0.0, 3.75])) < 1.0e-4)
@@ -993,7 +993,7 @@ def test_MOOP_evaluateExpectedValuePenalty_named():
     moop1.evaluateSimulation(xi, 0)
     moop1.evaluateSimulation(xi, 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -1035,7 +1035,7 @@ def test_MOOP_evaluateExpectedValuePenalty_named():
     moop2.evaluateSimulation(xi, 0)
     moop2.evaluateSimulation(xi, 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluatePenalty(np.zeros(3)) -
                            np.asarray([3.75, 3.75])) < 1.0e-4)
@@ -1182,7 +1182,7 @@ def test_MOOP_expectedValueGradient_named():
     moop1.evaluateSimulation(xi, 0)
     moop1.evaluateSimulation(xi, 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -1226,7 +1226,7 @@ def test_MOOP_expectedValueGradient_named():
     moop2.evaluateSimulation(xi, 0)
     moop2.evaluateSimulation(xi, 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
 
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateGradients(np.zeros(3)) -
@@ -1386,7 +1386,7 @@ def test_MOOP_evaluateConstraintExpectedValue_named():
     moop1.evaluateSimulation(xi, 0)
     moop1.evaluateSimulation(xi, 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -1430,7 +1430,7 @@ def test_MOOP_evaluateConstraintExpectedValue_named():
     moop2.evaluateSimulation(xi, 0)
     moop2.evaluateSimulation(xi, 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
 
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateConstraints(np.zeros(3)) -
@@ -1582,7 +1582,7 @@ def test_MOOP_expectedValueConstraintGradient_named():
     moop1.evaluateSimulation(xi, 0)
     moop1.evaluateSimulation(xi, 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -1626,7 +1626,7 @@ def test_MOOP_expectedValueConstraintGradient_named():
     moop2.evaluateSimulation(xi, 0)
     moop2.evaluateSimulation(xi, 1)
     moop2.fitSurrogates()
-    moop2.resetSurrogates(np.ones(3) * 0.5)
+    moop2.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
 
     # Do some objective evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateGradients(np.zeros(3)) -

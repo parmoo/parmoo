@@ -411,7 +411,7 @@ class FixedWeights(AcquisitionFunction):
         import json
 
         # Serialize WS object in dictionary
-        ws_state = {'o': self.m,
+        ws_state = {'o': self.o,
                     'n': self.n}
         # Serialize numpy.ndarray objects
         ws_state['lb'] = self.lb.tolist()

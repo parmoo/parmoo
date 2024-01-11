@@ -73,7 +73,7 @@ def test_GlobalSurrogate_RS():
     opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setReset(lambda x: 100.0)
+    opt.setTrFunc(lambda x, r: 100)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(TypeError):
         opt.solve(5)

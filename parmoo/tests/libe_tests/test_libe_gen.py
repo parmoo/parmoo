@@ -20,7 +20,7 @@ Create a libEnsemble run and test the parmoo generator.
 
 import numpy as np
 from parmoo.extras.libe import libE_MOOP
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 from parmoo.surrogates import GaussRBF
 from parmoo.searches import LatinHypercube
 from parmoo.acquisitions import RandomConstraint
@@ -30,7 +30,7 @@ from parmoo.tests.libe_tests.libe_funcs import *
 # enclosed in an "if __name__ == '__main__':" block, as below
 if __name__ == "__main__":
     # Create a libE_MOOP
-    moop = libE_MOOP(LocalGPS, hyperparams={})
+    moop = libE_MOOP(GlobalSurrogate_PS, hyperparams={})
     # Add n design vars
     for i in range(n):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     #print(moop.getPF())
     
     # Create a libE_MOOP with named variables
-    moop = libE_MOOP(LocalGPS, hyperparams={})
+    moop = libE_MOOP(GlobalSurrogate_PS, hyperparams={})
     # Add n design vars
     for i in range(n):
         moop.addDesign({'name': "x" + str(i + 1), 'lb': 0.0, 'ub': 1.0})

@@ -495,7 +495,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
         # Flatten arrays
         bfgs_state['prev_centers'] = []
         for (ci, ri) in self.prev_centers:
-            bfgs_state['rev_centers'].append([ci.tolist(), ri.tolist()])
+            bfgs_state['prev_centers'].append([ci.tolist(), ri.tolist()])
         bfgs_state['targets'] = []
         for ti in self.targets:
             bfgs_state['targets'].append([ti[0].tolist(), ti[1].tolist(), ti[2], ti[3]])

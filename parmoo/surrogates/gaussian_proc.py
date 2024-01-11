@@ -281,16 +281,12 @@ class GaussRBF(SurrogateFunction):
                 self.prior[-1, :] = np.sum(rhs, axis=0) / rhs.shape[0]
                 rhs[:, :] = rhs[:, :] - self.prior[-1, :]
                 if self.order >= 1:
-                    x_inds = [int(i) for i in self.loc_inds
-                              if np.linalg.norm(center - self.x_vals[i])
-                              <= self.std_dev + 1.0e-8]
-                    A = self.x_vals[x_inds, :].copy()
-                    b = self.f_vals[x_inds, :].copy()
-                    b -= self.prior[-1, :]
+                    A = self.x_vals[self.loc_inds, :].copy()
+                    b = rhs.copy()
                     self.prior[:-1, :] = np.linalg.lstsq(A, b, rcond=None)[0]
                     rhs[:, :] = rhs[:, :] - np.dot(self.x_vals[self.loc_inds],
                                                    self.prior[:-1])
-            self.y_std_dev = np.maximum(tstd(rhs, axis=0), 0.01)
+            self.y_std_dev = tstd(rhs, axis=0)
             # Finish the solve
             self.weights = np.zeros((self.m, rhs.shape[0]))
             for i in range(self.m):

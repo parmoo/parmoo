@@ -1903,6 +1903,9 @@ def test_MOOP_save_load1():
     os.remove("parmoo.simdb.json")
     os.remove("parmoo.surrogate.1")
     os.remove("parmoo.surrogate.2")
+    os.remove("parmoo.search.1")
+    os.remove("parmoo.search.2")
+    os.remove("parmoo.optimizer")
 
 
 def test_MOOP_save_load2():
@@ -1962,6 +1965,8 @@ def test_MOOP_save_load2():
     # Clean up test directory
     os.remove("parmoo.moop")
     os.remove("parmoo.surrogate.1")
+    os.remove("parmoo.search.1")
+    os.remove("parmoo.optimizer")
 
 
 def test_MOOP_checkpoint():
@@ -2035,6 +2040,9 @@ def test_MOOP_checkpoint():
     os.remove("parmoo.simdb.json")
     os.remove("parmoo.surrogate.1")
     os.remove("parmoo.surrogate.2")
+    os.remove("parmoo.search.1")
+    os.remove("parmoo.search.2")
+    os.remove("parmoo.optimizer")
 
 
 def check_moops(moop1, moop2):

@@ -138,6 +138,8 @@ def test_libE_MOOP():
     # Clean up test directory
     os.remove("parmoo.moop")
     os.remove("parmoo.surrogate.1")
+    os.remove("parmoo.search.1")
+    os.remove("parmoo.optimizer")
 
 
 # @pytest.mark.extra

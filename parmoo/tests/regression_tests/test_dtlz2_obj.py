@@ -7,8 +7,8 @@ dtlz2_obj objective functions to define the problem.
 """
 
 from parmoo import MOOP
-from parmoo.optimizers import TR_LBFGSB
-from parmoo.surrogates import LocalGaussRBF
+from parmoo.optimizers import LocalSurrogate_BFGS
+from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
 from parmoo.simulations.dtlz import g2_sim as sim_func
@@ -21,7 +21,7 @@ NUM_DES = 3
 NUM_OBJ = 3
 
 # Create a MOOP
-moop = MOOP(TR_LBFGSB)
+moop = MOOP(LocalSurrogate_BFGS)
 
 # Add NUM_DES continuous design variables
 for i in range(NUM_DES):
@@ -35,7 +35,7 @@ moop.addSimulation({'name': "g2",
                                          num_obj=NUM_OBJ,
                                          offset=0.6),
                     'search': LatinHypercube,
-                    'surrogate': LocalGaussRBF,
+                    'surrogate': GaussRBF,
                     'hyperparams': {}})
 
 # Add NUM_OBJ objective functions

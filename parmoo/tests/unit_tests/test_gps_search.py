@@ -73,7 +73,7 @@ def test_LocalSurrogate_PS():
     opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setReset(lambda x: 100.0)
+    opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(TypeError):
         opt.solve(5)
@@ -81,15 +81,21 @@ def test_LocalSurrogate_PS():
         opt.solve(np.zeros((3, n-1)))
     with pytest.raises(ValueError):
         opt.solve(np.zeros((4, n)))
-    # Solve the surrogate problem with LocalSurrogate_PS, starting from the centroid
-    x = np.zeros((3, n))
-    x[:] = 0.5
-    (x1, x2, x3) = opt.solve(x)
     # Define the solution
     x1_soln = np.eye(n)[0]
     x1_soln[n-1] = 0.1
     x2_soln = np.eye(n)[1]
     x2_soln[n-1] = 0.1
+    # Solve the surrogate problem with LocalSurrogate_PS, starting from the centroid
+    x = np.zeros((3, n))
+    x[:] = 0.5
+    for i in range(10):
+        (x1, x2, x3) = opt.solve(x)
+        x[0] = x1
+        x[1] = x2
+        x[2] = x3
+        for j in range(3):
+            opt.returnResults(x[j], np.ones(2) * -10, np.zeros(1), np.zeros(1))
     # eps is the tolerance for rejecting a solution as incorrect
     eps = 0.01
     # Check that the computed solutions are within eps of the truth
@@ -183,7 +189,7 @@ def test_GlobalSurrogate_PS():
     opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setReset(lambda x: 100.0)
+    opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(TypeError):
         opt.solve(5)

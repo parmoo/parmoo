@@ -2115,8 +2115,7 @@ class MOOP:
                                           self.evaluateGradients)
             self.optimizer_obj.setConstraints(self.evaluateConstraints)
             for i, acquisition in enumerate(self.acquisitions):
-                if i in ib:
-                    self.optimizer_obj.addAcquisition(acquisition)
+                self.optimizer_obj.addAcquisition(acquisition)
             self.optimizer_obj.setTrFunc(self.setSurrogateTR)
             # Generate search data
             for j, search in enumerate(self.searches):
@@ -3149,12 +3148,6 @@ class MOOP:
         # Recover object classes and instances
         mod = import_module(parmoo_state['optimizer'][1])
         self.optimizer = getattr(mod, parmoo_state['optimizer'][0])
-        self.optimizer_obj = self.optimizer(self.o, self.scaled_lb, self.scaled_ub, {})
-        try:
-            fname = filename + ".optimizer"
-            self.optimizer_obj.load(fname)
-        except NotImplementedError:
-            pass
         self.searches = []
         for i, (search_name, search_mod) in enumerate(
                                                 parmoo_state['searches']):
@@ -3189,6 +3182,22 @@ class MOOP:
             except NotImplementedError:
                 pass
             self.acquisitions.append(toadd)
+        # Rebuild the optimizer object
+        self.optimizer_obj = self.optimizer(self.o, self.scaled_lb, self.scaled_ub, {})
+        self.optimizer_obj.setObjective(self.evaluateObjectives)
+        self.optimizer_obj.setSimulation(self.evaluateSurrogates,
+                                         self.surrogateUncertainty)
+        self.optimizer_obj.setPenalty(self.evaluatePenalty,
+                                      self.evaluateGradients)
+        self.optimizer_obj.setConstraints(self.evaluateConstraints)
+        for i, acquisition in enumerate(self.acquisitions):
+            self.optimizer_obj.addAcquisition(acquisition)
+        self.optimizer_obj.setTrFunc(self.setSurrogateTR)
+        try:
+            fname = filename + ".optimizer"
+            self.optimizer_obj.load(fname)
+        except NotImplementedError:
+            pass
         self.new_checkpoint = False
         self.new_data = False
         return

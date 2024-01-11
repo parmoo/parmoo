@@ -853,7 +853,7 @@ def run_dtlz2():
     from parmoo.acquisitions import RandomConstraint
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
-    from parmoo.optimizers import LBFGSB
+    from parmoo.optimizers import GlobalSurrogate_BFGS
     from parmoo.objectives.dtlz import dtlz2_obj
     from parmoo.simulations.dtlz import g2_sim
 
@@ -862,7 +862,7 @@ def run_dtlz2():
     q = 4  # batch size (number of acquisitions)
 
     # Create MOOP
-    moop = MOOP(LBFGSB)
+    moop = MOOP(GlobalSurrogate_BFGS)
     # Add n design variables
     for i in range(n):
         moop.addDesign({
