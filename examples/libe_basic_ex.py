@@ -4,7 +4,7 @@ from parmoo.extras.libe import libE_MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 
 # When running with MPI, we need to keep track of which thread is the manager
 # using libensemble.tools.parse_args()
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     np.random.seed(0)
 
     # Create a libE_MOOP
-    my_moop = libE_MOOP(LocalGPS)
+    my_moop = libE_MOOP(GlobalSurrogate_PS)
     
     # Add 2 design variables (one continuous and one categorical)
     my_moop.addDesign({'name': "x1",
