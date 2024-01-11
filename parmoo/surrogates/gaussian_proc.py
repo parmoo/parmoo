@@ -26,7 +26,7 @@ class GaussRBF(SurrogateFunction):
 
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'std_dev',
-                 'nugget', 'loc_inds', 'tr_center', 'tr_radius',
+                 'nugget', 'loc_inds', 'tr_center',
                  'weights', 'prior', 'v', 'w', 'order', 'y_std_dev']
 
     def __init__(self, m, lb, ub, hyperparams):
@@ -74,7 +74,6 @@ class GaussRBF(SurrogateFunction):
         self.y_std_dev = np.ones(self.m)
         # Initialize trust region settings
         self.tr_center = np.zeros(0)
-        self.tr_radius = np.zeros(0)
         self.loc_inds = []
         # Check for the 'nugget' optional value in hyperparams
         if 'nugget' in hyperparams:
@@ -153,8 +152,7 @@ class GaussRBF(SurrogateFunction):
         self.x_vals = x
         self.f_vals = f
         # Initialize the local indices for future usage
-        self.tr_center = self.lb[:] - np.ones(self.n)
-        self.tr_radius = np.zeros(self.n)
+        self.tr_center = self.lb.copy() - 1
         return
 
     def update(self, x, f):
@@ -186,8 +184,7 @@ class GaussRBF(SurrogateFunction):
         self.x_vals = np.concatenate((self.x_vals, x), axis=0)
         self.f_vals = np.concatenate((self.f_vals, f), axis=0)
         # Reinitialize the local indices for future usage
-        self.tr_center = -np.ones(self.n)
-        self.tr_radius = np.zeros(self.n)
+        self.tr_center = self.lb.copy() - 1
         return
 
     def setTrustRegion(self, center, radius):
@@ -225,26 +222,27 @@ class GaussRBF(SurrogateFunction):
         rad_tmp = np.zeros(self.n)
         rad_tmp[:] = radius
         refit = False
-        # If the radius is infinite, there is no need to fit more than once
-        if np.all(rad_tmp == np.infty) and np.all(self.tr_radius == 0):
-            # Set the trust region center and radius to large values
-            self.tr_center = (self.ub + self.lb) / 2.0
-            self.tr_radius = (self.ub - self.lb) / 2.0
-            # Compute the standard deviation for the Gaussian bubbles
-            self.std_dev = np.power(np.prod(self.tr_radius * 2.0) /
-                                    float(self.x_vals.shape[0]),
-                                    1.0 / float(self.n))
-            # Use all points in the current database
-            self.loc_inds = [i for i in range(self.x_vals.shape[0])]
-            refit = True
+        # If the radius is infinite, fit with all data
+        if np.all(rad_tmp == np.infty):
+            # Only need to refit once after an update
+            if np.all(self.tr_center < self.lb):
+                # Set the trust region center and radius to large values
+                self.tr_center = (self.ub + self.lb) / 2.0
+                tr_radius = (self.ub - self.lb) / 2.0
+                # Compute the standard deviation for the Gaussian bubbles
+                self.std_dev = np.power(np.prod(tr_radius * 2.0) /
+                                        float(self.x_vals.shape[0]),
+                                        1.0 / float(self.n))
+                # Use all points in the current database
+                self.loc_inds = [i for i in range(self.x_vals.shape[0])]
+                refit = True
         # Otherwise, if the nearest neighbor has changed, refit the RBF
-        elif np.any(self.tr_center != center) or np.any(self.tr_radius
-                                                        != rad_tmp):
+        elif np.any(self.tr_center != center):
             # Update the trust region center and radius
             self.tr_center = center
-            self.tr_radius = rad_tmp
+            tr_radius = rad_tmp
             # Update the standard deviation for the Gaussian bubbles
-            self.std_dev = np.linalg.norm(self.tr_radius * 2)
+            self.std_dev = np.linalg.norm(tr_radius * 2)
             # Get points in the new trust region
             self.loc_inds = []
             rdists = np.asarray([np.linalg.norm((xj - center))
@@ -438,21 +436,21 @@ class GaussRBF(SurrogateFunction):
         gp_state = {'m': self.m,
                     'n': self.n,
                     'std_dev': self.std_dev,
-                    'loc_inds': self.loc_inds,
                     'nugget': self.nugget,
+                    'loc_inds': self.loc_inds,
                     'order': self.order}
         # Serialize numpy.ndarray objects
         gp_state['lb'] = self.lb.tolist()
         gp_state['ub'] = self.ub.tolist()
         gp_state['x_vals'] = self.x_vals.tolist()
         gp_state['f_vals'] = self.f_vals.tolist()
-        gp_state['y_std_dev'] = self.y_std_dev.tolist()
         gp_state['eps'] = self.eps.tolist()
         gp_state['tr_center'] = self.tr_center.tolist()
         gp_state['weights'] = self.weights.tolist()
         gp_state['prior'] = self.prior.tolist()
         gp_state['v'] = self.v.tolist()
         gp_state['w'] = self.w.tolist()
+        gp_state['y_std_dev'] = self.y_std_dev.tolist()
         # Save file
         with open(filename, 'w') as fp:
             json.dump(gp_state, fp)
@@ -484,11 +482,11 @@ class GaussRBF(SurrogateFunction):
         self.ub = np.array(gp_state['ub'])
         self.x_vals = np.array(gp_state['x_vals'])
         self.f_vals = np.array(gp_state['f_vals'])
-        self.y_std_dev = np.array(gp_state['y_std_dev'])
         self.eps = np.array(gp_state['eps'])
         self.tr_center = np.array(gp_state['tr_center'])
         self.weights = np.array(gp_state['weights'])
         self.prior = np.array(gp_state['prior'])
         self.v = np.array(gp_state['v'])
         self.w = np.array(gp_state['w'])
+        self.y_std_dev = np.array(gp_state['y_std_dev'])
         return

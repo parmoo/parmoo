@@ -52,7 +52,7 @@ def test_libE_MOOP():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import RandomConstraint
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     try:
@@ -82,9 +82,9 @@ def test_libE_MOOP():
         return xx[:3]
 
     # Create a libE_MOOP with named variables
-    moop = libE_MOOP(LocalGPS)
+    moop = libE_MOOP(LocalSurrogate_PS)
     assert (isinstance(moop.moop, MOOP))
-    moop = libE_MOOP(LocalGPS, hyperparams={})
+    moop = libE_MOOP(LocalSurrogate_PS, hyperparams={})
     assert (isinstance(moop.moop, MOOP))
     # Add n design vars
     for i in range(n):
@@ -151,7 +151,7 @@ def test_libE_MOOP_bad_solve():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import RandomConstraint
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import pytest
 
     try:
@@ -161,7 +161,7 @@ def test_libE_MOOP_bad_solve():
                     "Skipping.")
 
     # Create a libE_MOOP
-    moop = libE_MOOP(LocalGPS)
+    moop = libE_MOOP(LocalSurrogate_PS)
 
     # Add 1 design var
     moop.addDesign({'lb': 0.0, 'ub': 1.0})

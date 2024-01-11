@@ -10,7 +10,7 @@ def test_MOOP_evaluatePenalty():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import GlobalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -62,7 +62,7 @@ def test_MOOP_evaluatePenalty():
             return np.ones(s.size)
 
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(GlobalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addObjective({'obj_func': f1})
@@ -71,7 +71,7 @@ def test_MOOP_evaluatePenalty():
     moop1.addConstraint({'constraint': c1})
     assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
     assert (np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(GlobalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -91,7 +91,7 @@ def test_MOOP_evaluatePenalty():
     with pytest.raises(ValueError):
         moop1.evaluatePenalty(np.zeros(1))
     # Adjust the scaling and compare
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(GlobalSurrogate_PS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
                     {'lb': 0.0, 'ub': 2.0},
                     {'lb': -0.5, 'ub': 1.5})
@@ -119,7 +119,7 @@ def test_MOOP_evaluateGradients_1():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import GlobalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -171,7 +171,7 @@ def test_MOOP_evaluateGradients_1():
             return np.eye(s.size)[0]
 
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(GlobalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addObjective({'obj_func': f1})
@@ -183,7 +183,7 @@ def test_MOOP_evaluateGradients_1():
     result = 2.0 * np.ones((1, 3))
     result[0, 0] = 3.0
     assert (np.all(moop1.evaluateGradients(np.ones(3)) == result))
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(GlobalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -211,7 +211,7 @@ def test_MOOP_evaluateGradients_1():
     with pytest.raises(ValueError):
         moop1.evaluateGradients(np.zeros(1))
     # Adjust the scaling and try again
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(GlobalSurrogate_PS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
                     {'lb': 0.0, 'ub': 2.0},
                     {'lb': -0.5, 'ub': 1.5})
@@ -240,7 +240,7 @@ def test_MOOP_evaluateGradients_2():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import GlobalSurrogate_PS
     import numpy as np
 
     # Initialize a MOOP with 2 SimGroups and 3 objectives with named designs
@@ -310,7 +310,7 @@ def test_MOOP_evaluateGradients_2():
             result['sim1'] = 1.0
             return result[0]
 
-    moop3 = MOOP(LocalGPS)
+    moop3 = MOOP(GlobalSurrogate_PS)
     for i in range(3):
         moop3.addDesign({'name': ('x' + str(i + 1)), 'lb': 0.0, 'ub': 1.0})
     moop3.addObjective({'obj_func': f3})
@@ -322,7 +322,7 @@ def test_MOOP_evaluateGradients_2():
     result = 2.0 * np.ones((1, 3))
     result[0, 0] = 3.0
     assert (np.all(moop3.evaluateGradients(np.ones(3)) == result))
-    moop3 = MOOP(LocalGPS)
+    moop3 = MOOP(GlobalSurrogate_PS)
     for i in range(3):
         moop3.addDesign({'name': ('x' + str(i + 1)), 'lb': 0.0, 'ub': 1.0})
     moop3.addSimulation(g3, g4)
@@ -347,7 +347,7 @@ def test_MOOP_evaluateGradients_2():
     moop3.addConstraint({'constraint': c4})
     assert (np.all(moop3.evaluateGradients(np.ones(3)) == result))
     # Adjust the scaling and try again
-    moop4 = MOOP(LocalGPS)
+    moop4 = MOOP(GlobalSurrogate_PS)
     moop4.addDesign({'name': "x1", 'lb': -1.0, 'ub': 1.0},
                     {'name': "x2", 'lb': 0.0, 'ub': 2.0},
                     {'name': "x3", 'lb': -0.5, 'ub': 1.5})
@@ -381,7 +381,7 @@ def test_MOOP_evaluateGradients_3():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LBFGSB, LocalGPS
+    from parmoo.optimizers import GlobalSurrogate_BFGS, GlobalSurrogate_PS
     from parmoo.acquisitions import FixedWeights
     import numpy as np
 
@@ -433,7 +433,7 @@ def test_MOOP_evaluateGradients_3():
             return np.eye(s.size)[0]
 
     # Initialize a MOOP with 1 design var, 2 SimGroups, and 3 objectives
-    moop1 = MOOP(LBFGSB, hyperparams={'opt_restarts': 20})
+    moop1 = MOOP(GlobalSurrogate_BFGS, hyperparams={'opt_restarts': 20})
     moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
     moop1.addObjective({'obj_func': f1})
@@ -445,7 +445,7 @@ def test_MOOP_evaluateGradients_3():
     np.random.seed(0)
     moop1.solve(0)
     # Adjust the scaling and try again
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(GlobalSurrogate_PS)
     moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
     moop2.addObjective({'obj_func': f1})

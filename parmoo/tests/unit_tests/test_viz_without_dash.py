@@ -791,9 +791,9 @@ def run_quickstart():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import GlobalSurrogate_PS
 
-    my_moop = MOOP(LocalGPS)
+    my_moop = MOOP(GlobalSurrogate_PS)
 
     my_moop.addDesign({
         'name': "x1",

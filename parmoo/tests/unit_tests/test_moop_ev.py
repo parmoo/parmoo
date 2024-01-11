@@ -10,7 +10,7 @@ def test_MOOP_evaluateExpectedValue_unnamed():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -59,7 +59,7 @@ def test_MOOP_evaluateExpectedValue_unnamed():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -82,7 +82,7 @@ def test_MOOP_evaluateExpectedValue_unnamed():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -143,7 +143,7 @@ def test_MOOP_evaluateExpectedValuePenalty_unnamed():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -194,7 +194,7 @@ def test_MOOP_evaluateExpectedValuePenalty_unnamed():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -217,7 +217,7 @@ def test_MOOP_evaluateExpectedValuePenalty_unnamed():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -272,7 +272,7 @@ def test_MOOP_expectedValueGradient_unnamed():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -321,7 +321,7 @@ def test_MOOP_expectedValueGradient_unnamed():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -344,7 +344,7 @@ def test_MOOP_expectedValueGradient_unnamed():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -409,7 +409,7 @@ def test_MOOP_evaluateConstraintExpectedValue_unnamed():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -458,7 +458,7 @@ def test_MOOP_evaluateConstraintExpectedValue_unnamed():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -481,7 +481,7 @@ def test_MOOP_evaluateConstraintExpectedValue_unnamed():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -542,7 +542,7 @@ def test_MOOP_expectedValueConstraintGradient_unnamed():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -591,7 +591,7 @@ def test_MOOP_expectedValueConstraintGradient_unnamed():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -614,7 +614,7 @@ def test_MOOP_expectedValueConstraintGradient_unnamed():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -681,7 +681,7 @@ def test_MOOP_evaluateExpectedValue_named():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -759,7 +759,7 @@ def test_MOOP_evaluateExpectedValue_named():
           'sim_func': sim2,
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -798,7 +798,7 @@ def test_MOOP_evaluateExpectedValue_named():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -876,7 +876,7 @@ def test_MOOP_evaluateExpectedValuePenalty_named():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -956,7 +956,7 @@ def test_MOOP_evaluateExpectedValuePenalty_named():
           'sim_func': sim2,
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -995,7 +995,7 @@ def test_MOOP_evaluateExpectedValuePenalty_named():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -1067,7 +1067,7 @@ def test_MOOP_expectedValueGradient_named():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -1145,7 +1145,7 @@ def test_MOOP_expectedValueGradient_named():
           'sim_func': sim2,
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -1184,7 +1184,7 @@ def test_MOOP_expectedValueGradient_named():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -1271,7 +1271,7 @@ def test_MOOP_evaluateConstraintExpectedValue_named():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -1349,7 +1349,7 @@ def test_MOOP_evaluateConstraintExpectedValue_named():
           'sim_func': sim2,
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -1388,7 +1388,7 @@ def test_MOOP_evaluateConstraintExpectedValue_named():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -1467,7 +1467,7 @@ def test_MOOP_expectedValueConstraintGradient_named():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 3 objectives for later
@@ -1545,7 +1545,7 @@ def test_MOOP_expectedValueConstraintGradient_named():
           'sim_func': sim2,
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -1584,7 +1584,7 @@ def test_MOOP_expectedValueConstraintGradient_named():
     moop1.fitSurrogates()
     moop1.resetSurrogates(np.ones(3) * 0.5)
     # Initialize a second identical MOOP without UQ functions for comparison
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)

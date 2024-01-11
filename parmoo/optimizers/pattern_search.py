@@ -34,7 +34,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'simulations', 'gradients', 'setTR',
                  'penalty_func', 'sim_sd', 'restarts', 'momentum', 'q_ind',
-                 'prev_centers', 'des_tol']
+                 'prev_centers', 'des_tols', 'targets']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalSurrogate_PS class.
@@ -105,9 +105,27 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                                  "must be a float")
         else:
             self.momentum = 9e-1
-        self.des_tol = 1.0e-8
+        if 'des_tols' in hyperparams:
+            if isinstance(hyperparams['des_tols'], list):
+                if len(hyperparams['des_tols']) != self.n:
+                    raise ValueError("the length of hyperparpams['des_tols']"
+                                     " must match the length of lb and ub")
+                if not all(hyperparams['des_tols']):
+                    raise ValueError("all entries in hyperparams['des_tols']"
+                                     " must be greater than 0")
+                for di in hyperparams['des_tols']:
+                    if not isinstance(di, float):
+                        raise TypeError("hyperparams['des_tols'] must "
+                                        "contain a list of float types")
+            else:
+                raise TypeError("hyperparams['des_tols'] must contain a list "
+                                "of float types")
+            self.des_tols = np.asarray(hyperparams['des_tols'])
+        else:
+            self.des_tols = np.ones(self.n) * 1.0e-8
         self.acquisitions = []
         self.prev_centers = []
+        self.targets = []
         return
 
     def __obj_func__(self, x_in):
@@ -136,20 +154,58 @@ class LocalSurrogate_PS(SurrogateOptimizer):
 
         # Search the history for the given radius
         rad = np.zeros(self.n)
-        for (ci, ri) in self.prev_centers:
-            if np.all(center - ci < self.des_tol):
-                rad[:] = ri[:]
+        for (ci, ri) in reversed(self.prev_centers):
+            if np.all(np.abs(center - np.asarray(ci)) < self.des_tols):
+                rad[:] = np.asarray(ri)
                 break
-        # If found in the history, decay the radius
-        if np.any(rad > 0):
-            rad = rad * 0.5
-            rad = np.maximum(rad, self.des_tol)
-        else:
-            rad = np.minimum(rad, (self.ub - self.lb) * 0.05)
-            rad = np.maximum(rad, self.des_tol)
-        # Update the history
-        self.prev_centers.append((center, rad))
+        # If not found in the history initialize
+        if np.all(rad == 0):
+            rad = (self.ub - self.lb) * 0.1
+            rad = np.maximum(rad, self.des_tols)
         return rad
+
+    def __checkTargets(self):
+        """ Use internal list of targets to check and update the TR radii """
+
+        for ti in self.targets:
+            # Decay all "missed" targets' TR radii
+            ci, ri, _, _ = ti
+            ri = np.maximum(ri * 0.5, self.des_tols)
+            # Update the TR history
+            found = False
+            j = 0
+            for (cj, rj) in reversed(self.prev_centers):
+                j -= 1
+                if np.all(np.abs(cj - ci) < self.des_tols):
+                    self.prev_centers[j][-1] = ri
+            if not found:
+                self.prev_centers.append([ci, ri])
+        # Reset the list of targets for next iteration
+        self.targets = []
+        return
+
+    def returnResults(self, x, fx, sx, sdx):
+        """ Collect the results of a function evaluation.
+
+        Args:
+            x (np.ndarray): The design point evaluated.
+
+            fx (np.ndarray): The objective function values at x.
+
+            sx (np.ndarray): The simulation function values at x.
+
+            sdx (np.ndarray): The standard deviation in the simulation
+                outputs at x.
+
+        """
+
+        for i, ti in enumerate(self.targets):
+            j = ti[3]
+            fxj = self.acquisitions[j].scalarize(fx, x, sx, sdx)
+            # Remove any targets that have been "hit"
+            if fxj < ti[2]:
+                del self.targets[i]
+        return
 
     def solve(self, x):
         """ Solve the surrogate problem in a trust region via pattern search.
@@ -177,6 +233,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         result = []
         lb_tmp = np.zeros(self.n)
         ub_tmp = np.ones(self.n)
+        self.__checkTargets()
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
             # Create a new trust region
@@ -195,7 +252,75 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                                                     momentum=self.momentum,
                                                     istarts=self.restarts)
             result.append(xj)
+            # We need to remember this "target" for later
+            self.targets.append([x[j, :], rad, fj, j])
         return np.asarray(result)
+
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        import json
+
+        # Serialize PS object in dictionary
+        ps_state = {'n': self.n,
+                    'budget': self.budget,
+                    'restarts': self.restarts,
+                    'momentum': self.momentum,
+                    'q_ind': self.q_ind}
+        # Serialize numpy.ndarray objects
+        ps_state['lb'] = self.lb.tolist()
+        ps_state['ub'] = self.ub.tolist()
+        ps_state['des_tols'] = self.des_tols.tolist()
+        # Flatten arrays
+        ps_state['prev_centers'] = []
+        for (ci, ri) in self.prev_centers:
+            ps_state['rev_centers'].append([ci.tolist(), ri.tolist()])
+        ps_state['targets'] = []
+        for ti in self.targets:
+            ps_state['targets'].append([ti[0].tolist(), ti[1].tolist(), ti[2], ti[3]])
+        # Save file
+        with open(filename, 'w') as fp:
+            json.dump(ps_state, fp)
+        return
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        import json
+
+        # Load file
+        with open(filename, 'r') as fp:
+            ps_state = json.load(fp)
+        # Deserialize PS object from dictionary
+        self.n = ps_state['n']
+        self.budget = ps_state['budget']
+        self.restarts = ps_state['restarts']
+        self.momentum = ps_state['momentum']
+        self.q_ind = ps_state['q_ind']
+        # Deserialize numpy.ndarray objects
+        self.lb = np.array(ps_state['lb'])
+        self.ub = np.array(ps_state['ub'])
+        self.des_tols = np.array(ps_state['des_tols'])
+        # Extract history arrays
+        self.prev_centers = []
+        for (ci, ri) in ps_state['prev_centers']:
+            self.prev_centers.append([np.array(ci), np.array(ri)])
+        self.targets = []
+        for ti in ps_state['targets']:
+            self.targets.append([np.array(ti[0]), np.array(ti[1]), ti[2], ti[3]])
+        return
 
 
 class GlobalSurrogate_PS(SurrogateOptimizer):
@@ -335,7 +460,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
             raise TypeError("x must be a numpy array")
         # Create an infinite trust region
         rad = np.ones(self.n) * np.infty
-        self.setTR(x[j, :], rad)
+        self.setTR(self.lb(self.n), rad)
         # Perform a random search globally
         batch_size = 1000
         data = {'x_vals': np.zeros((batch_size, self.n)),
@@ -394,6 +519,56 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                                                     istarts=1)
             result.append(xj)
         return np.asarray(result)
+
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        import json
+
+        # Serialize PS object in dictionary
+        ps_state = {'n': self.n,
+                    'o': self.o,
+                    'opt_budget': self.opt_budget,
+                    'gps_budget': self.gps_budget,
+                    'momentum': self.momentum}
+        # Serialize numpy.ndarray objects
+        ps_state['lb'] = self.lb.tolist()
+        ps_state['ub'] = self.ub.tolist()
+        # Save file
+        with open(filename, 'w') as fp:
+            json.dump(ps_state, fp)
+        return
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        import json
+
+        # Load file
+        with open(filename, 'r') as fp:
+            ps_state = json.load(fp)
+        # Deserialize PS object from dictionary
+        self.n = ps_state['n']
+        self.o = ps_state['o']
+        self.opt_budget = ps_state['opt_budget']
+        self.gps_budget = ps_state['gps_budget']
+        self.momentum = ps_state['momentum']
+        # Deserialize numpy.ndarray objects
+        self.lb = np.array(ps_state['lb'])
+        self.ub = np.array(ps_state['ub'])
+        return
 
 
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,

@@ -1543,7 +1543,7 @@ class MOOP:
         """
 
         for si in self.surrogates:
-            si.setCenter(center, radius)
+            si.setTrustRegion(center, radius)
         return
 
     def evaluateSurrogates(self, x):
@@ -2103,6 +2103,7 @@ class MOOP:
                          'f_vals': np.zeros((1, self.o)),
                          'c_vals': np.zeros((1, 1))}
             # Initialize the surrogate optimizer
+            self.hyperparams['des_tols'] = self.scaled_des_tols.tolist()
             self.optimizer_obj = self.optimizer(self.o,
                                                 self.scaled_lb,
                                                 self.scaled_ub,
@@ -2116,7 +2117,7 @@ class MOOP:
             for i, acquisition in enumerate(self.acquisitions):
                 if i in ib:
                     self.optimizer_obj.addAcquisition(acquisition)
-            self.optimizer_obj.setReset(self.setSurrogateTR)
+            self.optimizer_obj.setTrFunc(self.setSurrogateTR)
             # Generate search data
             for j, search in enumerate(self.searches):
                 des = search.startSearch(self.scaled_lb, self.scaled_ub)
@@ -2359,7 +2360,7 @@ class MOOP:
                         else:
                             fx[i] = obj_func(x, sx)
                     self.addData(x, self.__unpack_sim__(sim))
-                    self.optimizer.returnResults(x, fx, sx, sdx)
+                    self.optimizer_obj.returnResults(x, fx, sx, sdx)
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpointfile)
@@ -3148,10 +3149,7 @@ class MOOP:
         # Recover object classes and instances
         mod = import_module(parmoo_state['optimizer'][1])
         self.optimizer = getattr(mod, parmoo_state['optimizer'][0])
-        self.optimizer_obj = self.optimizer(self.o,
-                                            self.scaled_lb,
-                                            self.scaled_ub,
-                                            self.hyperparams)
+        self.optimizer_obj = self.optimizer(self.o, self.scaled_lb, self.scaled_ub, {})
         try:
             fname = filename + ".optimizer"
             self.optimizer_obj.load(fname)
@@ -3162,8 +3160,7 @@ class MOOP:
                                                 parmoo_state['searches']):
             mod = import_module(search_mod)
             new_search = getattr(mod, search_name)
-            toadd = new_search(self.m[i], self.scaled_lb, self.scaled_ub,
-                               self.hyperparams)
+            toadd = new_search(self.m[i], self.scaled_lb, self.scaled_ub, {})
             try:
                 fname = filename + ".search." + str(i + 1)
                 toadd.load(fname)
@@ -3174,8 +3171,7 @@ class MOOP:
         for i, (sur_name, sur_mod) in enumerate(parmoo_state['surrogates']):
             mod = import_module(sur_mod)
             new_sur = getattr(mod, sur_name)
-            toadd = new_sur(self.m[i], self.scaled_lb, self.scaled_ub,
-                            self.hyperparams)
+            toadd = new_sur(self.m[i], self.scaled_lb, self.scaled_ub, {})
             try:
                 fname = filename + ".surrogate." + str(i + 1)
                 toadd.load(fname)
@@ -3186,8 +3182,7 @@ class MOOP:
         for i, (acq_name, acq_mod) in enumerate(parmoo_state['acquisitions']):
             mod = import_module(acq_mod)
             new_acq = getattr(mod, acq_name)
-            toadd = new_acq(self.o, self.scaled_lb, self.scaled_ub,
-                            self.hyperparams)
+            toadd = new_acq(self.o, self.scaled_lb, self.scaled_ub, {})
             try:
                 fname = filename + ".acquisition." + str(i + 1)
                 toadd.load(fname)

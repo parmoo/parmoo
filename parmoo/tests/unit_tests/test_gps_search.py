@@ -1,8 +1,8 @@
 
-def test_LocalGPS():
-    """ Test the LocalGPS class in optimizers.py.
+def test_LocalSurrogate_PS():
+    """ Test the LocalSurrogate_PS class in optimizers.py.
 
-    Perform a test of the LocalGPS class by minimizing the three variable,
+    Perform a test of the LocalSurrogate_PS class by minimizing the three variable,
     biobjective function
 
     $$
@@ -20,7 +20,7 @@ def test_LocalGPS():
     """
 
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -50,12 +50,12 @@ def test_LocalGPS():
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(TypeError):
-        LocalGPS(o, lb, ub, {'opt_budget': 2.0})
+        LocalSurrogate_PS(o, lb, ub, {'opt_budget': 2.0})
     with pytest.raises(ValueError):
-        LocalGPS(o, lb, ub, {'opt_budget': 0})
+        LocalSurrogate_PS(o, lb, ub, {'opt_budget': 0})
     # Initialize the problem correctly, with and without an optional budget
-    LocalGPS(o, lb, ub, {'opt_budget': 100})
-    opt = LocalGPS(o, lb, ub, {})
+    LocalSurrogate_PS(o, lb, ub, {'opt_budget': 100})
+    opt = LocalSurrogate_PS(o, lb, ub, {})
     # Try to add some bad objectives, constraints, and acquisitions
     with pytest.raises(TypeError):
         opt.setObjective(5)
@@ -81,7 +81,7 @@ def test_LocalGPS():
         opt.solve(np.zeros((3, n-1)))
     with pytest.raises(ValueError):
         opt.solve(np.zeros((4, n)))
-    # Solve the surrogate problem with LocalGPS, starting from the centroid
+    # Solve the surrogate problem with LocalSurrogate_PS, starting from the centroid
     x = np.zeros((3, n))
     x[:] = 0.5
     (x1, x2, x3) = opt.solve(x)
@@ -99,8 +99,8 @@ def test_LocalGPS():
     return
 
 
-def test_GlobalGPS():
-    """ Test the GlobalGPS class in optimizers.py.
+def test_GlobalSurrogate_PS():
+    """ Test the GlobalSurrogate_PS class in optimizers.py.
 
     Perform a test of the globalGPS class by minimizing the three variable,
     biobjective function
@@ -120,7 +120,7 @@ def test_GlobalGPS():
     """
 
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import GlobalGPS
+    from parmoo.optimizers import GlobalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -150,22 +150,22 @@ def test_GlobalGPS():
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(TypeError):
-        GlobalGPS(o, lb, ub, {'opt_budget': 2.0})
+        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 2.0})
     with pytest.raises(ValueError):
-        GlobalGPS(o, lb, ub, {'opt_budget': 0})
+        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 0})
     with pytest.raises(TypeError):
-        GlobalGPS(o, lb, ub, {'opt_budget': 500,
+        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500,
                               'gps_budget': 2.0})
     with pytest.raises(ValueError):
-        GlobalGPS(o, lb, ub, {'opt_budget': 500,
+        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500,
                               'gps_budget': 0})
     with pytest.raises(ValueError):
-        GlobalGPS(o, lb, ub, {'opt_budget': 500,
+        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500,
                               'gps_budget': 1000})
     # Initialize the problem correctly, with and without an optional budget
-    GlobalGPS(o, lb, ub, {'opt_budget': 200})
-    GlobalGPS(o, lb, ub, {'opt_budget': 200, 'gps_budget': 100})
-    opt = GlobalGPS(o, lb, ub, {})
+    GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 200})
+    GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 200, 'gps_budget': 100})
+    opt = GlobalSurrogate_PS(o, lb, ub, {})
     # Try to add some bad objectives, constraints, and acquisitions
     with pytest.raises(TypeError):
         opt.setObjective(5)
@@ -191,7 +191,7 @@ def test_GlobalGPS():
         opt.solve(np.zeros((3, n-1)))
     with pytest.raises(ValueError):
         opt.solve(np.zeros((4, n)))
-    # Solve the surrogate problem with GlobalGPS, starting from the centroid
+    # Solve the surrogate problem with GlobalSurrogate_PS, starting from the centroid
     x = np.zeros((3, n))
     x[:, :] = 0.5
     (x1, x2, x3) = opt.solve(x)
@@ -210,5 +210,5 @@ def test_GlobalGPS():
 
 
 if __name__ == "__main__":
-    test_LocalGPS()
-    test_GlobalGPS()
+    test_LocalSurrogate_PS()
+    test_GlobalSurrogate_PS()

@@ -8,7 +8,7 @@ def test_MOOP_init():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import pytest
 
     # Try providing invalid SurrogateOptimizer objects
@@ -18,14 +18,14 @@ def test_MOOP_init():
         MOOP(lambda w, x, y, z: 0.0)
     # Test bad hyperparams dictionary
     with pytest.raises(TypeError):
-        MOOP(LocalGPS, hyperparams=[])
+        MOOP(LocalSurrogate_PS, hyperparams=[])
     # Initialize a MOOP with no hyperparameters
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     assert (moop.n == 0 and moop.n_cont == 0 and moop.n_cat == 0 and
             moop.n_cat_d == 0 and moop.s == 0 and moop.m_total == 0 and
             moop.o == 0 and moop.p == 0)
     # Initialize a MOOP with a hyperparameter list
-    moop = MOOP(LocalGPS, hyperparams={'test': 0})
+    moop = MOOP(LocalSurrogate_PS, hyperparams={'test': 0})
     assert (moop.n == 0 and moop.n_cont == 0 and moop.n_cat == 0 and
             moop.n_cat_d == 0 and moop.s == 0 and moop.m_total == 0 and
             moop.o == 0 and moop.p == 0)
@@ -41,7 +41,7 @@ def test_MOOP_addSimulation():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     import numpy as np
@@ -69,7 +69,7 @@ def test_MOOP_addSimulation():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP and add 3 design variables
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
@@ -84,7 +84,7 @@ def test_MOOP_addSimulation():
     assert (moop.n == 3 and moop.s == 1 and moop.m_total == 1
             and moop.o == 0 and moop.p == 0)
     # Initialize another MOOP with 3 design variables
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
@@ -99,7 +99,7 @@ def test_MOOP_addSimulation():
             and moop.o == 0 and moop.p == 0)
     # Now test adding simulations with empty precomputed databases
     g1['sim_db'] = {}
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
@@ -115,7 +115,7 @@ def test_MOOP_addSimulation():
     assert (moop.sim_db[0]['n'] == 0)
     # Now test adding a simulation with nonempty database, but empty lists
     g1['sim_db'] = {'x_vals': [], 's_vals': []}
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
@@ -131,7 +131,7 @@ def test_MOOP_addSimulation():
     assert (moop.sim_db[0]['n'] == 0)
     # Now try a simulation with some data
     g1['sim_db'] = {'x_vals': [[0.0, 0.0, 0.0]], 's_vals': [[0.0]]}
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     moop.addDesign({'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0})
@@ -164,7 +164,7 @@ def test_pack_unpack_sim():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     import numpy as np
@@ -185,7 +185,7 @@ def test_pack_unpack_sim():
     sx[1] = 2.0
     sx[2] = 3.0
     # Create a MOOP without named variables and test simulation unpacking
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Add two continuous variables and two simulations
     moop.addDesign({'lb': 0.0, 'ub': 1000.0},
                    {'lb': -1.0, 'ub': 0.0})
@@ -193,7 +193,7 @@ def test_pack_unpack_sim():
     assert (all(moop.__pack_sim__(sx)[:] == sx[:]))
     assert (all(moop.__unpack_sim__(sx)[:] == sx[:]))
     # Create a MOOP with named variables and test simulation unpacking
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Add two continuous variables and two simulations
     moop.addDesign({'name': "x0", 'lb': 0.0, 'ub': 1000.0},
                    {'name': "x1", 'lb': -1.0, 'ub': 0.0})
@@ -221,7 +221,7 @@ def test_MOOP_addObjective():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -239,7 +239,7 @@ def test_MOOP_addObjective():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups, one of which has 2 outputs
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     moop.addSimulation(g1, g2)
@@ -256,7 +256,7 @@ def test_MOOP_addObjective():
         moop.addObjective({'name': 5, 'obj_func': lambda x, s: 0.0})
     # Add an objective after an acquisition
     with pytest.raises(RuntimeError):
-        moop1 = MOOP(LocalGPS)
+        moop1 = MOOP(LocalSurrogate_PS)
         moop1.acquisitions.append(0)
         moop1.addObjective({'obj_func': lambda x, s: 0.0})
     # Check that no objectives were added yet
@@ -289,7 +289,7 @@ def test_MOOP_addConstraint():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -307,7 +307,7 @@ def test_MOOP_addConstraint():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups, one of which has 2 outputs
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     moop.addSimulation(g1, g2)
@@ -352,7 +352,7 @@ def test_MOOP_addAcquisition():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.acquisitions import UniformWeights
     import numpy as np
     import pytest
@@ -371,7 +371,7 @@ def test_MOOP_addAcquisition():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups, one of which has 2 outputs
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Try to add acquisition functions without design variables
     with pytest.raises(ValueError):
         moop.addAcquisition({'acquisition': UniformWeights})
@@ -419,7 +419,7 @@ def test_MOOP_getTypes():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create a simulation for later
@@ -430,7 +430,7 @@ def test_MOOP_getTypes():
           'surrogate': GaussRBF}
 
     # Create a new MOOP
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Check that all types are None
     assert (moop.getDesignType() is None)
     assert (moop.getSimulationType() is None)
@@ -447,7 +447,7 @@ def test_MOOP_getTypes():
     assert (np.zeros(1, dtype=moop.getObjectiveType()).size == 1)
     assert (np.zeros(1, dtype=moop.getConstraintType()).size == 1)
     # Add some named variables, simulations, objectives, and constraints
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     moop.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
     moop.addDesign({'name': "x2", 'des_type': "categorical", 'levels': 3})
     moop.addSimulation(g1)
@@ -470,7 +470,7 @@ def test_MOOP_evaluateSimulation():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -490,11 +490,11 @@ def test_MOOP_evaluateSimulation():
           'sim_func': lambda x: [sum([(xi-1.0)**2 for xi in x])],
           'surrogate': GaussRBF}
     # Initialize 2 MOOPs with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1)
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'name': "x" + str(i+1), 'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g2)
@@ -546,7 +546,7 @@ def test_MOOP_evaluateSurrogates():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -564,7 +564,7 @@ def test_MOOP_evaluateSurrogates():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -590,7 +590,7 @@ def test_MOOP_evaluateSurrogates():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Now try some bad evaluations
     with pytest.raises(TypeError):
         moop1.evaluateSurrogates(10.0)
@@ -637,7 +637,7 @@ def test_MOOP_evaluateSurrogates():
     xi = np.random.random_sample(3)
     assert (np.linalg.norm(moop1.surrogateUncertainty(xi)) > 1.0e-4)
     # Adjust the scale and try again
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
                     {'lb': 0.0, 'ub': 2.0},
                     {'lb': -0.5, 'ub': 1.5})
@@ -659,6 +659,7 @@ def test_MOOP_evaluateSurrogates():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
+    moop2.setSurrogateTR(np.zeros(3), np.infty)
     # Now compare evaluations against the original surrogate
     x = moop1.__embed__(np.zeros(3))
     xx = moop2.__embed__(np.zeros(3))
@@ -681,7 +682,7 @@ def test_MOOP_evaluateObjectives():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -699,7 +700,7 @@ def test_MOOP_evaluateObjectives():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -725,7 +726,7 @@ def test_MOOP_evaluateObjectives():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
-    moop1.resetSurrogates(np.ones(3) * 0.5)
+    moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Now try some bad evaluations
     with pytest.raises(TypeError):
         moop1.evaluateObjectives(10.0)
@@ -759,7 +760,7 @@ def test_MOOP_evaluateObjectives():
                            np.asarray([1.0, np.sqrt(3.0), np.sqrt(0.75)]))
             < 0.00000001)
     # Adjust the scale and try again
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
                     {'lb': 0.0, 'ub': 2.0},
                     {'lb': -0.5, 'ub': 1.5})
@@ -781,6 +782,7 @@ def test_MOOP_evaluateObjectives():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
+    moop2.setSurrogateTR(np.zeros(3), np.infty)
     # Now compare evaluations against the original surrogate
     x = moop1.__embed__(np.zeros(3))
     xx = moop2.__embed__(np.zeros(3))
@@ -803,7 +805,7 @@ def test_MOOP_evaluateConstraints():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import pytest
 
@@ -821,7 +823,7 @@ def test_MOOP_evaluateConstraints():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 3 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -845,6 +847,7 @@ def test_MOOP_evaluateConstraints():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
+    moop1.setSurrogateTR(np.zeros(3), np.infty)
     # Now try some bad evaluations
     with pytest.raises(TypeError):
         moop1.evaluateConstraints(10.0)
@@ -878,7 +881,7 @@ def test_MOOP_evaluateConstraints():
                            np.asarray([1.0, np.sqrt(3.0), np.sqrt(0.75)]))
             < 0.00000001)
     # Adjust the scale and try again
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},
                     {'lb': 0.0, 'ub': 2.0},
                     {'lb': -0.5, 'ub': 1.5})
@@ -900,6 +903,7 @@ def test_MOOP_evaluateConstraints():
     moop2.evaluateSimulation(np.ones(3), 0)
     moop2.evaluateSimulation(np.ones(3), 1)
     moop2.fitSurrogates()
+    moop2.setSurrogateTR(np.zeros(3), np.infty)
     # Now compare evaluations against the original surrogate
     x = moop1.__embed__(np.zeros(3))
     xx = moop2.__embed__(np.zeros(3))
@@ -922,7 +926,7 @@ def test_MOOP_addData():
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 2 SimGroups for later
@@ -939,7 +943,7 @@ def test_MOOP_addData():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     # Initialize a MOOP with 2 SimGroups and 2 objectives
-    moop1 = MOOP(LocalGPS)
+    moop1 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -955,7 +959,7 @@ def test_MOOP_addData():
     assert (moop1.data['c_vals'].shape == (2, 1))
     assert (moop1.n_dat == 2)
     # Initialize a new MOOP with 2 SimGroups and 2 objectives
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
@@ -976,7 +980,7 @@ def test_MOOP_addData():
     assert (moop2.data['c_vals'].shape == (3, 3))
     assert (moop2.n_dat == 3)
     # Initialize a new MOOP with 2 SimGroups and 2 objectives
-    moop3 = MOOP(LocalGPS)
+    moop3 = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop3.addDesign({'lb': 0.0, 'ub': 1.0})
     moop3.addDesign({'des_type': "categorical", 'levels': 3})
@@ -1006,9 +1010,9 @@ def test_MOOP_iterate():
 
     from parmoo import MOOP
     from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF, LocalGaussRBF
+    from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS, TR_LBFGSB
+    from parmoo.optimizers import LocalSurrogate_PS, LocalSurrogate_BFGS
     import numpy as np
     import pytest
 
@@ -1030,7 +1034,7 @@ def test_MOOP_iterate():
           'sim_db': {'x_vals': [[0.0, 0.0, 0.0]],
                      's_vals': [[np.sqrt(3.0)]]}}
     # Create a MOOP with 3 design variables and 2 simulations
-    moop1 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
     with pytest.raises(AttributeError):
         moop1.iterate(1)
     for i in range(3):
@@ -1076,12 +1080,12 @@ def test_MOOP_iterate():
           'hyperparams': {},
           'search': LatinHypercube,
           'sim_func': lambda x: x[0:4],
-          'surrogate': LocalGaussRBF,
+          'surrogate': GaussRBF,
           'search_budget': 500,
           'sim_db': {'x_vals': [[0.0, 0.0, 0.0, 0.0]],
                      's_vals': [[0.0, 0.0, 0.0, 0.0]]}}
     # Create a three objective toy problem, with one simulation
-    moop2 = MOOP(TR_LBFGSB, hyperparams={'opt_budget': 100})
+    moop2 = MOOP(LocalSurrogate_BFGS, hyperparams={'opt_budget': 100})
     for i in range(4):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0, 'des_tol': 0.1})
     moop2.addSimulation(g3)
@@ -1157,12 +1161,12 @@ def test_MOOP_iterate():
           'hyperparams': {},
           'search': LatinHypercube,
           'sim_func': lambda x: x[0:4] + abs(x[4] - 1.0),
-          'surrogate': LocalGaussRBF,
+          'surrogate': GaussRBF,
           'search_budget': 500,
           'sim_db': {'x_vals': [[0.0, 0.0, 0.0, 0.0, 0.0]],
                      's_vals': [[1.0, 1.0, 1.0, 1.0]]}}
     # Create a three objective toy problem, with one simulation
-    moop3 = MOOP(TR_LBFGSB, hyperparams={})
+    moop3 = MOOP(LocalSurrogate_BFGS, hyperparams={})
     for i in range(4):
         moop3.addDesign({'lb': 0.0, 'ub': 1.0})
     moop3.addDesign({'des_type': "categorical", 'levels': 3})
@@ -1243,12 +1247,12 @@ def test_MOOP_iterate():
           'search': LatinHypercube,
           'sim_func': lambda x: [(x["x0"] - 1.0) * (x["x0"] - 1.0) +
                                  (x["x1"]) * (x["x1"]) + float(x["x2"])],
-          'surrogate': LocalGaussRBF,
+          'surrogate': GaussRBF,
           'search_budget': 100,
           'sim_db': {'x_vals': x_entry,
                      's_vals': np.asarray([[1.0]])}}
     # Solve a MOOP with categorical variables
-    moop4 = MOOP(TR_LBFGSB, hyperparams={})
+    moop4 = MOOP(LocalSurrogate_BFGS, hyperparams={})
     moop4.addDesign({'name': "x0", 'lb': 0.0, 'ub': 1.0})
     moop4.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
     moop4.addDesign({'name': "x2", 'des_type': "categorical",
@@ -1323,7 +1327,7 @@ def test_MOOP_solve():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import UniformWeights, RandomConstraint
-    from parmoo.optimizers import LocalGPS, LBFGSB
+    from parmoo.optimizers import LocalSurrogate_PS, GlobalSurrogate_BFGS
     import numpy as np
     import pytest
 
@@ -1345,7 +1349,7 @@ def test_MOOP_solve():
           'sim_db': {'x_vals': [[0.0, 0.0, 0.0, 0.0]],
                      's_vals': [[2.0]]}}
     # Create a MOOP with 4 design variables and 2 simulations
-    moop1 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
     for i in range(4):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
@@ -1384,7 +1388,7 @@ def test_MOOP_solve():
           'surrogate': GaussRBF,
           'search': LatinHypercube,
           'hyperparams': {'search_budget': 20}}
-    moop2 = MOOP(LocalGPS, hyperparams={})
+    moop2 = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g3, g4)
@@ -1406,7 +1410,7 @@ def test_MOOP_solve():
                                soln['f_vals'][i]) < 0.00000001)
 
     # Create a 3 objective toy problem, with no simulations
-    moop3 = MOOP(LBFGSB, hyperparams={})
+    moop3 = MOOP(GlobalSurrogate_BFGS, hyperparams={})
     for i in range(4):
         moop3.addDesign({'lb': 0.0, 'ub': 1.0})
 
@@ -1467,7 +1471,7 @@ def test_MOOP_solve():
                 < 0.00000001)
 
     # Create a 3 objective toy problem, with no simulations and 1 categorical
-    moop4 = MOOP(LBFGSB, hyperparams={})
+    moop4 = MOOP(GlobalSurrogate_BFGS, hyperparams={})
     for i in range(3):
         moop4.addDesign({'lb': 0.0, 'ub': 1.0})
     moop4.addDesign({'des_type': "categorical", 'levels': 3})
@@ -1503,11 +1507,11 @@ def test_MOOP_getPF():
 
     from parmoo import MOOP
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create a toy problem with 4 design variables
-    moop = MOOP(LocalGPS, hyperparams={})
+    moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     # Now add three objectives
@@ -1544,7 +1548,7 @@ def test_MOOP_getPF():
     soln = moop.getPF()
     assert (soln['f_vals'].shape == (4, 3))
     # Create a toy problem with 4 design variables
-    moop = MOOP(LocalGPS, hyperparams={})
+    moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'name': ('x' + str(i+1)), 'lb': 0.0, 'ub': 1.0})
 
@@ -1608,7 +1612,7 @@ def test_MOOP_getSimulationData():
     from parmoo import MOOP
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create 4 SimGroups for later
@@ -1637,7 +1641,7 @@ def test_MOOP_getSimulationData():
                                       for name in x.dtype.names])],
           'surrogate': GaussRBF}
     # Create a toy problem with 4 design variables
-    moop = MOOP(LocalGPS, hyperparams={})
+    moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     moop.addSimulation(g1, g2)
@@ -1659,7 +1663,7 @@ def test_MOOP_getSimulationData():
     assert (soln[0]['s_vals'].shape == (5, 1))
     assert (soln[1]['s_vals'].shape == (5, 2))
     # Create a toy problem with 4 design variables
-    moop = MOOP(LocalGPS, hyperparams={})
+    moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'name': ("x" + str(i + 1)), 'lb': 0.0, 'ub': 1.0})
     moop.addSimulation(g3, g4)
@@ -1700,11 +1704,11 @@ def test_MOOP_getObjectiveData():
 
     from parmoo import MOOP
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Create a toy problem with 4 design variables
-    moop = MOOP(LocalGPS, hyperparams={})
+    moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     # Now add three objectives
@@ -1751,7 +1755,7 @@ def test_MOOP_getObjectiveData():
     soln = moop.getObjectiveData()
     assert (soln['f_vals'].shape == (5, 3))
     # Create a toy problem with 4 design variables
-    moop = MOOP(LocalGPS, hyperparams={})
+    moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'name': ('x' + str(i+1)), 'lb': 0.0, 'ub': 1.0})
 
@@ -1816,7 +1820,7 @@ def test_MOOP_save_load1():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import pytest
     import os
@@ -1845,7 +1849,7 @@ def test_MOOP_save_load1():
     # Create a simulation for later
     def c1(x, sim): return x[0] - 0.5
     # Create a MOOP with 3 design variables and 2 simulations
-    moop1 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
     # Empty save
     moop1.save()
     # Add design variables
@@ -1869,12 +1873,12 @@ def test_MOOP_save_load1():
     # Test save
     moop1.save()
     # Test load
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     moop2.load()
     # Check that save/load are correct
     check_moops(moop1, moop2)
     # Create a new MOOP with same specs
-    moop3 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    moop3 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
     for i in range(2):
         moop3.addDesign({'lb': 0.0, 'ub': 1.0})
     moop3.addDesign({'des_type': "categorical", 'levels': 3})
@@ -1914,7 +1918,7 @@ def test_MOOP_save_load2():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.simulations.dtlz import dtlz2_sim
     from parmoo.objectives import single_sim_out
     from parmoo.constraints import single_sim_bound
@@ -1932,7 +1936,7 @@ def test_MOOP_save_load2():
     f2 = single_sim_out(3, 2, 1)
     c1 = single_sim_bound(3, 2, 1)
     # Create a MOOP with 3 design variables and 2 simulations
-    moop1 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
     # Test empty save
     moop1.save()
     # Add design variables
@@ -1951,7 +1955,7 @@ def test_MOOP_save_load2():
     # Test save
     moop1.save()
     # Test load
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     moop2.load()
     # Check that save/load are correct
     check_moops(moop1, moop2)
@@ -1971,7 +1975,7 @@ def test_MOOP_checkpoint():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import os
 
@@ -1999,7 +2003,7 @@ def test_MOOP_checkpoint():
     # Create a simulation for later
     def c1(x, sim): return x[0] - 0.5
     # Create a MOOP with 3 design variables and 2 simulations
-    moop1 = MOOP(LocalGPS, hyperparams={'opt_budget': 100})
+    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
     # Add design variables
     for i in range(2):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
@@ -2022,7 +2026,7 @@ def test_MOOP_checkpoint():
         moop1.evaluateSimulation(xi, i)
     moop1.updateAll(0, batch)
     # Test load
-    moop2 = MOOP(LocalGPS)
+    moop2 = MOOP(LocalSurrogate_PS)
     moop2.load()
     # Check that save/load are correct
     check_moops(moop1, moop2)

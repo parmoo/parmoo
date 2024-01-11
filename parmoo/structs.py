@@ -525,7 +525,7 @@ class SurrogateOptimizer(ABC):
      * ``setSimulation(sim_func, sd_func)`` (default implementation provided)
      * ``setConstraints(constraint_func)`` (default implementation provided)
      * ``setPenalty(penaltyFunc, gradFunc)`` (default implementation provided)
-     * ``setTR(trFunc)`` (default implementation provided)
+     * ``setTrFunc(trFunc)`` (default implementation provided)
      * ``addAcquisition(*args)`` (default implementation provided)
      * ``returnResults(x, fx, sx, sdx)``
      * ``solve(x)``
@@ -663,7 +663,7 @@ class SurrogateOptimizer(ABC):
             raise TypeError("constraint_func() must be callable")
         return
 
-    def setTR(self, trFunc):
+    def setTrFunc(self, trFunc):
         """ Add a TR setter function for alerting surrogates.
 
         Args:
@@ -685,7 +685,7 @@ class SurrogateOptimizer(ABC):
             raise TypeError("trFunc() must be callable")
         return
 
-    def returnResults(x, fx, sx, sdx):
+    def returnResults(self, x, fx, sx, sdx):
         """ Collect the results of a function evaluation.
 
         Args:

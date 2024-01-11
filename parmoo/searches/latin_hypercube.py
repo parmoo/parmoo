@@ -114,3 +114,47 @@ class LatinHypercube(GlobalSearch):
         else:
             return np.asarray([self.lb + (self.ub - self.lb) * xi
                                for xi in lhs(self.n, samples=self.budget)])
+
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        import json
+
+        # Serialize LH object in dictionary
+        lh_state = {'n': self.n,
+                    'budget': self.budget}
+        # Serialize numpy.ndarray objects
+        lh_state['lb'] = self.lb.tolist()
+        lh_state['ub'] = self.ub.tolist()
+        # Save file
+        with open(filename, 'w') as fp:
+            json.dump(lh_state, fp)
+        return
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        import json
+
+        # Load file
+        with open(filename, 'r') as fp:
+            lh_state = json.load(fp)
+        # Deserialize LH object from dictionary
+        self.n = lh_state['n']
+        self.budget = lh_state['budget']
+        # Deserialize numpy.ndarray objects
+        self.lb = np.array(lh_state['lb'])
+        self.ub = np.array(lh_state['ub'])
+        return

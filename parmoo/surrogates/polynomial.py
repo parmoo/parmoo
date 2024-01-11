@@ -25,7 +25,7 @@ class Linear(SurrogateFunction):
 
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps',
-                 'loc_inds', 'tr_center', 'rad', 'weights']
+                 'loc_inds', 'tr_center', 'weights']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the Linear class.
@@ -65,7 +65,6 @@ class Linear(SurrogateFunction):
         self.weights = np.zeros(self.n + 1)
         # Initialize trust-region settings
         self.tr_center = np.zeros(0)
-        self.rad = np.zeros(self.n)
         self.loc_inds = []
         # Check for 'des_tols' optional key in hyperparams
         if 'des_tols' in hyperparams:
@@ -253,7 +252,6 @@ class Linear(SurrogateFunction):
         ls_state['f_vals'] = self.f_vals.tolist()
         ls_state['eps'] = self.eps.tolist()
         ls_state['tr_center'] = self.tr_center.tolist()
-        ls_state['rad'] = self.rad.tolist()
         ls_state['weights'] = self.weights.tolist()
         # Save file
         with open(filename, 'w') as fp:
@@ -285,6 +283,5 @@ class Linear(SurrogateFunction):
         self.f_vals = np.array(ls_state['f_vals'])
         self.eps = np.array(ls_state['eps'])
         self.tr_center = np.array(ls_state['tr_center'])
-        self.rad = np.array(ls_state['rad'])
         self.weights = np.array(ls_state['weights'])
         return
