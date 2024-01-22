@@ -331,7 +331,7 @@ class SurrogateFunction(ABC):
         """
 
     def setTrustRegion(self, center, radius):
-        """ Alert the surrogate of the trust region center and radius.
+        """ Alert the surrogate of the trust-region center and radius.
 
         Default implementation does nothing, which would be the case for a
         global surrogate model.
@@ -670,7 +670,7 @@ class SurrogateOptimizer(ABC):
             trFunc (function): A function with 2 inputs, which will be
                 called prior to solving the surrogate optimization
                 problem with each acquisition function in order to set
-                the surrogate trust region center and radius.
+                the surrogate trust-region center and radius.
 
         """
 
