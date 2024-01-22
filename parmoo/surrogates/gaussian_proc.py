@@ -72,7 +72,7 @@ class GaussRBF(SurrogateFunction):
         self.v = np.zeros((0, 0))
         self.w = np.zeros((0, 0))
         self.y_std_dev = np.ones(self.m)
-        # Initialize trust region settings
+        # Initialize trust-region settings
         self.tr_center = np.zeros(0)
         self.loc_inds = []
         # Check for the 'nugget' optional value in hyperparams
@@ -188,13 +188,13 @@ class GaussRBF(SurrogateFunction):
         return
 
     def setTrustRegion(self, center, radius):
-        """ Set the new trust region center and refit the local RBF.
+        """ Set the new trust-region center and refit the local RBF.
 
         Args:
-            center (numpy.ndarray): A 1d array containing the new trust
+            center (numpy.ndarray): A 1d array containing the new trust-
                 region center.
 
-            radius (numpy.ndarray or float): The trust region radius.
+            radius (numpy.ndarray or float): The trust-region radius.
 
         """
 
@@ -226,7 +226,7 @@ class GaussRBF(SurrogateFunction):
         if np.all(rad_tmp == np.infty):
             # Only need to refit once after an update
             if np.all(self.tr_center < self.lb):
-                # Set the trust region center and radius to large values
+                # Set the trust-region center and radius to large values
                 self.tr_center = (self.ub + self.lb) / 2.0
                 tr_radius = (self.ub - self.lb) / 2.0
                 # Compute the standard deviation for the Gaussian bubbles
@@ -238,7 +238,7 @@ class GaussRBF(SurrogateFunction):
                 refit = True
         # Otherwise, if the nearest neighbor has changed, refit the RBF
         elif np.any(self.tr_center != center):
-            # Update the trust region center and radius
+            # Update the trust-region center and radius
             self.tr_center = center
             tr_radius = rad_tmp
             # Update the standard deviation for the Gaussian bubbles
