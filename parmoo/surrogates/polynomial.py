@@ -156,7 +156,7 @@ class Linear(SurrogateFunction):
             center (numpy.ndarray): A 1d array containing the new trust-region
                 center.
 
-            radius (numpy.ndarray or float): The trust region radius.
+            radius (numpy.ndarray or float): The trust-region radius.
 
         """
 
