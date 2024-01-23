@@ -10,9 +10,14 @@ def test_GaussRBF():
     """
 
     from parmoo.surrogates import GaussRBF
+    from jax import config
+    config.update("jax_enable_x64", True)
+    from jax import jacfwd
+    from jax import numpy as jnp
+    from jax.tree_util import Partial
     import numpy as np
-    import pytest
     import os
+    import pytest
 
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -78,15 +83,24 @@ def test_GaussRBF():
     # Check that the RBFs interpolate, up to 8 decimal digits of precision
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
-                < 0.00000001)
+                < 1.0e-8)
         assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
-                < 0.00000001)
+                < 1.0e-8)
         assert (np.max(rbf1.stdDev(x_vals_full[i])) < 1.0e-4)
         assert (np.max(rbf2.stdDev(x_vals_full[i])) < 1.0e-4)
     # Check that the RBFs compute the same grad, up to 8 digits of precision
     for i in range(x_vals_full.shape[0]):
-        assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
-                               rbf2.gradient(x_vals_full[i])) < 0.00000001)
+        xi = x_vals_full[i].copy()
+        assert (np.linalg.norm(rbf1.gradient(xi) - rbf2.gradient(xi)) < 1.0e-8)
+        #print(jacfwd(rbf1.evaluate)(xi))
+        #print(jacfwd(rbf2.evaluate)(xi))
+        #print(rbf1.gradient(xi))
+        assert (np.linalg.norm(jacfwd(rbf1.evaluate)(xi) - jacfwd(rbf2.evaluate)(xi)) < 1.0e-8)
+        assert (np.linalg.norm(jacfwd(rbf1.evaluate)(xi) - rbf1.gradient(xi)) < 1.0e-8)
+    #for i in range(10):
+    #    xi = np.random.sample(3)
+    #    print(rbf1.gradient(xi))
+    #    print(jacfwd(rbf1.evaluate)(xi))
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(rbf1.stdDevGrad(x_vals_full[i]) -
                                rbf2.stdDevGrad(x_vals_full[i])) < 1.0e-4)
@@ -125,7 +139,7 @@ def test_GaussRBF():
     assert (np.all(x_improv[0] <= np.ones(3)) and
             np.all(x_improv[0] >= np.zeros(3)))
     assert (np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
-            > 0.00000001))
+            > 1.0e-8))
     # Now fit redundant data points using a nugget
     x_vals1 = np.append(x_vals1, np.asarray([x_vals1[0, :]]), axis=0)
     y_vals1 = np.append(y_vals1, np.asarray([y_vals1[0, :]]), axis=0)
@@ -286,9 +300,9 @@ def test_LocalGaussRBF():
         rbf1.setTrustRegion(x_vals_full[i], np.ones(3) * 0.1)
         rbf2.setTrustRegion(x_vals_full[i], np.ones(3) * 0.1)
         assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
-                < 0.00000001)
+                < 1.0e-8)
         assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
-                < 0.00000001)
+                < 1.0e-8)
         assert (np.linalg.norm(rbf1.stdDev(x_vals_full[i]) < 1.0e-4))
         assert (np.linalg.norm(rbf2.stdDev(x_vals_full[i]) < 1.0e-4))
     # Check that the RBFs compute the same grad, up to 8 digits of precision
@@ -296,7 +310,7 @@ def test_LocalGaussRBF():
     rbf2.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.1)
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
-                               rbf2.gradient(x_vals_full[i])) < 0.00000001)
+                               rbf2.gradient(x_vals_full[i])) < 1.0e-8)
         assert (np.linalg.norm(rbf1.stdDevGrad(x_vals_full[i]) -
                                rbf2.stdDevGrad(x_vals_full[i])) < 1.0e-4)
     # Check that the RBF gradient evaluates correctly on a known dataset
@@ -336,7 +350,7 @@ def test_LocalGaussRBF():
     assert (np.all(x_improv[0] <= np.ones(3)) and
             np.all(x_improv[0] >= np.zeros(3)))
     assert (np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
-            > 0.00000001))
+            > 1.0e-8))
     # Now fit redundant data points using a nugget
     x_vals1 = np.append(x_vals1, np.asarray([x_vals1[0, :]]), axis=0)
     y_vals1 = np.append(y_vals1, np.asarray([y_vals1[0, :]]), axis=0)
