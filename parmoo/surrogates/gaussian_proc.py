@@ -298,8 +298,15 @@ class GaussRBF(SurrogateFunction):
 
         """
 
-        return _evaluate(self.x_vals[self.loc_inds], self.std_dev,
-                         self.weights, self.prior, x)
+        if self.order == 0:
+            return _evaluate_0(self.x_vals[self.loc_inds], self.std_dev,
+                               self.weights, self.prior, x)
+        elif self.order > 0:
+            return _evaluate_1(self.x_vals[self.loc_inds], self.std_dev,
+                               self.weights, self.prior, x)
+        else:
+            return _evaluate_n(self.x_vals[self.loc_inds], self.std_dev,
+                               self.weights, self.prior, x)
 
     def gradient(self, x):
         """ Evaluate the gradients of the Gaussian RBF at a design point.
@@ -499,9 +506,22 @@ def _pdist(x_vals):
     return vmap(lambda x: _cdist(x_vals, x))(x_vals)
 
 @jit
-def _evaluate(x_vals, std_dev, weights, prior, x):
+def _evaluate_n(x_vals, std_dev, weights, prior, x):
     """ Evaluate a Gaussian RBF at a design point x. """
 
-    cov = _gaussian(_cdist(x_vals, x), std_dev)
-    p_tmp = jnp.dot(x, prior[:-1, :]) + prior[-1, :]
-    return jnp.dot(weights, cov) + p_tmp
+    return jnp.dot(weights, _gaussian(_cdist(x_vals, x), std_dev))
+
+@jit
+def _evaluate_0(x_vals, std_dev, weights, prior, x):
+    """ Evaluate a Gaussian RBF at a design point x. """
+
+    return jnp.dot(weights, _gaussian(_cdist(x_vals, x),
+                                      std_dev)) + prior[-1, :]
+
+@jit
+def _evaluate_1(x_vals, std_dev, weights, prior, x):
+    """ Evaluate a Gaussian RBF at a design point x. """
+
+    post_tmp = jnp.dot(weights, _gaussian(_cdist(x_vals, x), std_dev))
+    pre_tmp = jnp.dot(x, prior[:-1, :]) + prior[-1, :]
+    return post_tmp + pre_tmp
