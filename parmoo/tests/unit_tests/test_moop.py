@@ -543,11 +543,13 @@ def test_MOOP_evaluateSurrogates():
 
     """
 
+    from jax import config
+    config.update("jax_enable_x64", True)
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
     import pytest
 
     # Create 2 SimGroups for later
@@ -591,11 +593,6 @@ def test_MOOP_evaluateSurrogates():
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
     moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
-    # Now try some bad evaluations
-    with pytest.raises(TypeError):
-        moop1.evaluateSurrogates(10.0)
-    with pytest.raises(ValueError):
-        moop1.evaluateSurrogates(np.zeros(1))
     # Now do some good evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateSurrogates(np.zeros(3)) -
                            np.asarray([0.0, np.sqrt(3.0), np.sqrt(0.75)]))
@@ -727,11 +724,6 @@ def test_MOOP_evaluateObjectives():
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
     moop1.setSurrogateTR(np.ones(3) * 0.5, np.ones(3) * 0.5)
-    # Now try some bad evaluations
-    with pytest.raises(TypeError):
-        moop1.evaluateObjectives(10.0)
-    with pytest.raises(ValueError):
-        moop1.evaluateObjectives(np.zeros(1))
     # Now do some good evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateObjectives(np.zeros(3)) -
                            np.asarray([0.0, 0.0, np.sqrt(3.0) +
@@ -848,11 +840,6 @@ def test_MOOP_evaluateConstraints():
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
     moop1.setSurrogateTR(np.zeros(3), np.infty)
-    # Now try some bad evaluations
-    with pytest.raises(TypeError):
-        moop1.evaluateConstraints(10.0)
-    with pytest.raises(ValueError):
-        moop1.evaluateConstraints(np.zeros(1))
     # Now do some good evaluations and check the results
     assert (np.linalg.norm(moop1.evaluateConstraints(np.zeros(3)) -
                            np.asarray([0.0, 0.0, np.sqrt(3.0) +

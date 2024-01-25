@@ -7,11 +7,13 @@ simulations, specified using dictionaries.
 
 """
 
+import inspect
+from jax import jacfwd
+from jax import numpy as jnp
+import json
 import numpy as np
 import pandas as pd
 from parmoo import structs
-import inspect
-import json
 import warnings
 
 
@@ -1546,7 +1548,7 @@ class MOOP:
             si.setTrustRegion(center, radius)
         return
 
-    def evaluateSurrogates(self, x):
+    def evaluateSurrogates_old(self, x):
         """ Evaluate all simulation surrogates.
 
         Warning: Not recommended for external usage!
@@ -1575,7 +1577,7 @@ class MOOP:
             m_count += self.m[i]
         return sim
 
-    def surrogateUncertainty(self, x, grad=False):
+    def surrogateUncertainty_old(self, x, grad=False):
         """ Evaluate uncertainty (standard deviation) of all surrogates.
 
         Assumes a Gaussian distribution on simulation outputs.
@@ -1620,7 +1622,7 @@ class MOOP:
                 m_count += self.m[i]
             return sim_stdD
 
-    def evaluateObjectives(self, x):
+    def evaluateObjectives_old(self, x):
         """ Evaluate all objectives using the simulation surrogates as needed.
 
         Warning: Not recommended for external usage!
@@ -1664,7 +1666,7 @@ class MOOP:
         # Return the result
         return fx
 
-    def evaluateConstraints(self, x):
+    def evaluateConstraints_old(self, x):
         """ Evaluate the constraints using the simulation surrogates as needed.
 
         Warning: Not recommended for external usage!
@@ -1714,7 +1716,7 @@ class MOOP:
             # Return the constraint violations
             return cx
 
-    def evaluatePenalty(self, x, sx=None):
+    def evaluatePenalty_old(self, x, sx=None):
         """ Evaluate the penalized objective using the surrogates as needed.
 
         Warning: Not recommended for external usage!
@@ -1752,6 +1754,376 @@ class MOOP:
                     raise ValueError("sx must have length m when present")
             else:
                 raise TypeError("sx must be a numpy array when present")
+            sim = sx
+        # Px is the penalized objective score
+        Px = np.zeros(self.o)
+        # Evaluate the objective functions
+        xx = self.__extract__(x)
+        ssx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals) or any(self.c_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
+        for i, obj_func in enumerate(self.objectives):
+            if self.obj_exp_vals[i]:
+                Px[i] = obj_func(xx, ssx, sdx)
+            else:
+                Px[i] = obj_func(xx, ssx)
+        # Evaluate the constraint functions
+        if self.p > 0:
+            for i, constraint_func in enumerate(self.constraints):
+                if self.c_exp_vals[i]:
+                    cx = constraint_func(xx, ssx, sdx)
+                else:
+                    cx = constraint_func(xx, ssx)
+                if cx > 0.0:
+                    # Add constraint violation penalty
+                    Px[:] = Px[:] + self.lam * cx
+        # Return the result
+        return Px
+
+    def evaluateGradients_old(self, x):
+        """ Evaluate the gradient of the penalized objective using surrogates.
+
+        Warning: Not recommended for external usage!
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the result of the
+            evaluation.
+
+        """
+
+        # Check for illegal input
+        if isinstance(x, np.ndarray):
+            if x.shape[0] != self.n:
+                raise ValueError("x must have length n")
+        else:
+            raise TypeError("x must be a numpy array")
+        # Evaluate the surrogate models to approximate the simulation outputs
+        sim = np.zeros(self.m_total)
+        sim_std_dev = np.zeros(self.m_total)
+        m_count = 0
+        for i, surrogate in enumerate(self.surrogates):
+            sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
+            if any(self.obj_exp_vals) or any(self.c_exp_vals):
+                sim_std_dev[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
+            m_count += self.m[i]
+        # Evaluate the gradients of the surrogates
+        if self.m_total > 0:
+            dsim_dx = np.zeros((self.m_total, self.n))
+            dstdD_dx = np.zeros((self.m_total, self.n))
+            m_count = 0
+            for i, surrogate in enumerate(self.surrogates):
+                dsim_dx[m_count:m_count+self.m[i], :] = \
+                        surrogate.gradient(x)
+                # Also standard deviation gradients
+                if any(self.obj_exp_vals) or any(self.c_exp_vals):
+                    dstdD_dx[m_count:m_count+self.m[i]] = \
+                        surrogate.stdDevGrad(x)
+                m_count += self.m[i]
+        # Evaluate the gradients of the objective functions
+        xx = self.__extract__(x)
+        ssx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals) or any(self.c_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
+        df_dx = np.zeros((self.o, self.n))
+        for i, obj_func in enumerate(self.objectives):
+            # If names are used, unpack the derivative
+            if self.use_names:
+                if self.obj_exp_vals[i]:
+                    df_dx_tmp = obj_func(xx, ssx, sdx, der=1)
+                else:
+                    df_dx_tmp = obj_func(xx, ssx, der=1)
+                for j, d_name in enumerate(self.des_names):
+                    if self.des_order[j] < self.n_cont:
+                        df_dx[i, j] = df_dx_tmp[d_name[0]]
+                df_dx[i, :self.n_cont] = ((df_dx[i, self.des_order])
+                                          [:self.n_cont] /
+                                          self.scale[:self.n_cont])
+            # Otherwise, evaluate normally
+            else:
+                nn = self.n_cont
+                if self.obj_exp_vals[i]:
+                    df_dx[i, :nn] = (obj_func(xx, ssx, sdx,
+                                              der=1)[:self.n_cont] /
+                                     self.scale[:self.n_cont])
+                else:
+                    df_dx[i, :nn] = (obj_func(xx, ssx,
+                                              der=1)[:self.n_cont] /
+                                     self.scale[:self.n_cont])
+        # Now evaluate wrt the sims
+        if self.m_total > 0:
+            df_dsim = np.zeros((self.o, self.m_total))
+            for i, obj_func in enumerate(self.objectives):
+                if self.obj_exp_vals[i]:
+                    df_ds_tmp = obj_func(xx, ssx, sdx, der=2)
+                else:
+                    df_ds_tmp = obj_func(xx, ssx, der=2)
+                # If names are used, pack the sims
+                if self.use_names:
+                    df_dsim[i, :] = self.__pack_sim__(df_ds_tmp)
+                else:
+                    df_dsim[i, :] = df_ds_tmp
+        # Now evaluate wrt the std deviations
+        if any(self.obj_exp_vals):
+            df_dstdD = np.zeros((self.o, self.m_total))
+            for i, obj_func in enumerate(self.objectives):
+                if self.obj_exp_vals[i]:
+                    df_dsd_tmp = obj_func(xx, ssx, sdx, der=3)
+                    # If names are used, pack the sims
+                    if self.use_names:
+                        df_dstdD[i, :] = self.__pack_sim__(df_dsd_tmp)
+                    else:
+                        df_dstdD[i, :] = df_dsd_tmp
+        # Finally, evaluate the full objective Jacobian
+        dfx = np.zeros((self.o, self.n))
+        dfx = df_dx
+        if self.m_total > 0:
+            dfx = dfx + np.dot(df_dsim, dsim_dx)
+        if any(self.obj_exp_vals):
+            dfx = dfx + np.dot(df_dstdD, dstdD_dx)
+        # If there are no constraints, just return zeros
+        dcx = np.zeros(self.n)
+        # Otherwise, calculate the constraint violation Jacobian
+        if self.p > 0:
+            # Evaluate the constraint functions
+            cx = np.zeros(self.p)
+            for i, const_func in enumerate(self.constraints):
+                if self.c_exp_vals[i]:
+                    cx[i] = const_func(xx, ssx, sdx)
+                else:
+                    cx[i] = const_func(xx, ssx)
+            # Evaluate the gradients of the constraint functions
+            dc_dx = np.zeros((self.p, self.n))
+            for i, const_func in enumerate(self.constraints):
+                if self.c_exp_vals[i]:
+                    dc_dx_tmp = const_func(xx, ssx, sdx, der=1)
+                else:
+                    dc_dx_tmp = const_func(xx, ssx, der=1)
+                # If names are used, unpack the derivative
+                if self.use_names:
+                    for j, d_name in enumerate(self.des_names):
+                        if self.des_order[j] < self.n_cont:
+                            dc_dx[i, j] = dc_dx_tmp[d_name[0]]
+                    dc_dx[i, :self.n_cont] = ((dc_dx[i, self.des_order])
+                                              [:self.n_cont] /
+                                              self.scale[:self.n_cont])
+                # Otherwise, evaluate normally
+                else:
+                    dc_dx[i, :self.n_cont] = (dc_dx_tmp[:self.n_cont]
+                                              / self.scale[:self.n_cont])
+            # Now evaluate wrt the sims
+            if self.m_total > 0:
+                dc_dsim = np.zeros((self.p, self.m_total))
+                # If names are used, sims need to be packed
+                if self.use_names:
+                    for i, const_func in enumerate(self.constraints):
+                        if self.c_exp_vals[i]:
+                            dc_dsim_tmp = const_func(xx, ssx, sdx, der=2)
+                        else:
+                            dc_dsim_tmp = const_func(xx, ssx, der=2)
+                        dc_dsim[i, :] = self.__pack_sim__(dc_dsim_tmp)
+                # Otherwise, evaluate normally
+                else:
+                    for i, const_func in enumerate(self.constraints):
+                        if self.c_exp_vals[i]:
+                            dc_dsim[i, :] = const_func(xx, ssx, sdx, der=2)
+                        else:
+                            dc_dsim[i, :] = const_func(xx, ssx, der=2)
+            # Now evaluate wrt the std deviations
+            if any(self.c_exp_vals):
+                dc_dstdD = np.zeros((self.p, self.m_total))
+                for i, const_func in enumerate(self.constraints):
+                    if self.c_exp_vals[i]:
+                        dc_dsd_tmp = const_func(xx, ssx, sdx, der=3)
+                        # If names are used, pack the sims
+                        if self.use_names:
+                            dc_dstdD[i, :] = self.__pack_sim__(dc_dsd_tmp)
+                        else:
+                            dc_dstdD[i, :] = dc_dsd_tmp
+            # Finally, evaluate the full Jacobian of the constraints
+            for i in range(len(self.constraints)):
+                if cx[i] > 0:
+                    dcx[:] = dcx[:] + dc_dx[i, :]
+                    if self.m_total > 0:
+                        dcx[:] = dcx[:] + np.dot(dc_dsim[i, :], dsim_dx[:, :])
+                    if self.c_exp_vals[i]:
+                        dcx[:] = dcx[:] + np.dot(dc_dstdD[i, :],
+                                                 dstdD_dx[:, :])
+        # Construct the Jacobian of the penalized objective function
+        dLx = np.zeros((self.o, self.n))
+        for i in range(self.o):
+            dLx[i, :] = dfx[i, :] + self.lam * dcx[:]
+        # Return the result
+        return dLx
+
+    def evaluateSurrogates(self, x):
+        """ Evaluate all simulation surrogates.
+
+        Warning: Not recommended for external usage!
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the (embedded) result
+            of the surrogate model evaluations.
+
+        """
+
+        sx_list = [jnp.zeros(0)]
+        for si in self.surrogates:
+            sx_list.append(si.evaluate(x))
+        return jnp.concatenate(sx_list)
+
+        #sim = jnp.zeros(self.m_total)
+        #m_count = 0
+        #for i, surrogate in enumerate(self.surrogates):
+        #    m_end = m_count + self.m[i]
+        #    sim = sim.at[m_count:m_end].set(surrogate.evaluate(x))
+        #    m_count = m_end
+        #return sim
+
+    def surrogateUncertainty(self, x):
+        """ Evaluate uncertainty (standard deviation) of all surrogates.
+
+        Assumes a Gaussian distribution on simulation outputs.
+
+        Warning: Not recommended for external usage!
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the standard
+            deviation of the surrogates at x.
+
+        """
+
+        sdx_list = [jnp.zeros(0)]
+        for si in self.surrogates:
+            sdx_list.append(si.stdDev(x))
+        return jnp.concatenate(sdx_list)
+
+        #sim_stdD = jnp.zeros(self.m_total)
+        #m_count = 0
+        #for i, surrogate in enumerate(self.surrogates):
+        #    m_end = m_count + self.m[i]
+        #    sim_stdD = sim_stdD.at[m_count:m_end].set(surrogate.stdDev(x))
+        #    m_count = m_end
+        #return sim_stdD
+
+    def evaluateObjectives(self, x):
+        """ Evaluate all objectives using the simulation surrogates as needed.
+
+        Warning: Not recommended for external usage!
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the result of the
+            evaluation.
+
+        """
+
+        sim = np.zeros(self.m_total)
+        sim_std_dev = np.zeros(self.m_total)
+        m_count = 0
+        for i, surrogate in enumerate(self.surrogates):
+            sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
+            if any(self.obj_exp_vals):
+                sim_std_dev[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
+            m_count += self.m[i]
+        # Evaluate the objective functions
+        xx = self.__extract__(x)
+        sx = self.__unpack_sim__(sim)
+        if any(self.obj_exp_vals):
+            sdx = self.__unpack_sim__(sim_std_dev)
+        fx = np.zeros(self.o)
+        for i, obj_func in enumerate(self.objectives):
+            if self.obj_exp_vals[i]:
+                fx[i] = obj_func(xx, sx, sdx)
+            else:
+                fx[i] = obj_func(xx, sx)
+        return fx
+
+    def evaluateConstraints(self, x):
+        """ Evaluate the constraints using the simulation surrogates as needed.
+
+        Warning: Not recommended for external usage!
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the list of constraint
+            violations at x (zero if no violation).
+
+        """
+
+        # Special case if there are no constraints, just return [0]
+        if self.p == 0:
+            return np.zeros(1)
+        # Otherwise, calculate the constraint violations
+        else:
+            # Evaluate the surrogate models to approximate the sim outputs
+            sim = np.zeros(self.m_total)
+            sim_std_dev = np.zeros(self.m_total)
+            m_count = 0
+            for i, surrogate in enumerate(self.surrogates):
+                sim[m_count:m_count + self.m[i]] = surrogate.evaluate(x)
+                if any(self.c_exp_vals):
+                    sim_std_dev[m_count:m_count+self.m[i]] = \
+                                                    surrogate.stdDev(x)
+                m_count += self.m[i]
+            # Evaluate the constraint functions
+            xx = self.__extract__(x)
+            sx = self.__unpack_sim__(sim)
+            if any(self.c_exp_vals):
+                sdx = self.__unpack_sim__(sim_std_dev)
+            cx = np.zeros(self.p)
+            for i, constraint_func in enumerate(self.constraints):
+                if self.c_exp_vals[i]:
+                    cx[i] = constraint_func(xx, sx, sdx)
+                else:
+                    cx[i] = constraint_func(xx, sx)
+            # Return the constraint violations
+            return cx
+
+    def evaluatePenalty(self, x, sx=None):
+        """ Evaluate the penalized objective using the surrogates as needed.
+
+        Warning: Not recommended for external usage!
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the result of the
+            evaluation.
+
+        """
+
+        # Evaluate the surrogate models to approximate the simulation outputs
+        sim_std_dev = np.zeros(self.m_total)
+        if sx is None:
+            m_count = 0
+            sim = np.zeros(self.m_total)
+            for i, surrogate in enumerate(self.surrogates):
+                sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
+                if any(self.obj_exp_vals) or any(self.c_exp_vals):
+                    sim_std_dev[m_count:m_count+self.m[i]] = \
+                                                    surrogate.stdDev(x)
+                m_count += self.m[i]
+        else:
             sim = sx
         # Px is the penalized objective score
         Px = np.zeros(self.o)

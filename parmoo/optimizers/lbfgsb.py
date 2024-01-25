@@ -107,14 +107,11 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
         from scipy import optimize
 
         # Check that x is legal
-        if isinstance(x, np.ndarray):
-            if self.n != x.shape[1]:
-                raise ValueError("The columns of x must match n")
-            elif len(self.acquisitions) != x.shape[0]:
-                raise ValueError("The rows of x must match the number " +
-                                 "of acquisition functions")
-        else:
-            raise TypeError("x must be a numpy array")
+        if self.n != x.shape[1]:
+            raise ValueError("The columns of x must match n")
+        elif len(self.acquisitions) != x.shape[0]:
+            raise ValueError("The rows of x must match the number " +
+                             "of acquisition functions")
         # Check that x is feasible.
         for xj in x:
             if np.any(xj[:] < self.bounds[:, 0]) or \
@@ -391,14 +388,11 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
         from scipy import optimize
 
         # Check that x is legal
-        if isinstance(x, np.ndarray):
-            if self.n != x.shape[1]:
-                raise ValueError("The columns of x must match n")
-            elif len(self.acquisitions) != x.shape[0]:
-                raise ValueError("The rows of x must match the number " +
-                                 "of acquisition functions")
-        else:
-            raise TypeError("x must be a numpy array")
+        if self.n != x.shape[1]:
+            raise ValueError("The columns of x must match n")
+        elif len(self.acquisitions) != x.shape[0]:
+            raise ValueError("The rows of x must match the number " +
+                             "of acquisition functions")
         # Check that x is feasible.
         for xj in x:
             if np.any(xj[:] < self.bounds[:, 0]) or \

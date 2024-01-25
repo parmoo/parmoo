@@ -221,14 +221,11 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         """
 
         # Check that x is legal
-        if isinstance(x, np.ndarray):
-            if self.n != x.shape[1]:
-                raise ValueError("The columns of x must match n")
-            elif len(self.acquisitions) != x.shape[0]:
-                raise ValueError("The rows of x must match the number " +
-                                 "of acquisition functions")
-        else:
-            raise TypeError("x must be a numpy array")
+        if self.n != x.shape[1]:
+            raise ValueError("The columns of x must match n")
+        elif len(self.acquisitions) != x.shape[0]:
+            raise ValueError("The rows of x must match the number " +
+                             "of acquisition functions")
         # Initialize an empty list of results
         result = []
         lb_tmp = np.zeros(self.n)
@@ -450,14 +447,11 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
         from parmoo.util import updatePF
 
         # Check that x is legal
-        if isinstance(x, np.ndarray):
-            if self.n != x.shape[1]:
-                raise ValueError("The columns of x must match n")
-            elif len(self.acquisitions) != x.shape[0]:
-                raise ValueError("The rows of x must match the number " +
-                                 "of acquisition functions")
-        else:
-            raise TypeError("x must be a numpy array")
+        if self.n != x.shape[1]:
+            raise ValueError("The columns of x must match n")
+        elif len(self.acquisitions) != x.shape[0]:
+            raise ValueError("The rows of x must match the number " +
+                             "of acquisition functions")
         # Create an infinite trust region
         rad = np.ones(self.n) * np.infty
         self.setTR(self.lb, rad)
@@ -571,7 +565,6 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
         return
 
 
-@profile
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                                    mesh_start=None, mesh_tol=1.0e-8,
                                    momentum=0.9, istarts=1):
