@@ -12,7 +12,6 @@ def test_MOOP_evaluatePenalty():
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import GlobalSurrogate_PS
     import numpy as np
-    import pytest
 
     # Create 2 SimGroups for later
     g1 = {'n': 3,
@@ -78,12 +77,13 @@ def test_MOOP_evaluatePenalty():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
+    moop1.addObjective({'obj_func': f1})
+    moop1.addObjective({'obj_func': f1})
     moop1.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
-    moop1.addObjective({'obj_func': f1})
-    moop1.addObjective({'obj_func': f1})
     assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
     assert (np.all(moop1.evaluatePenalty(np.ones(3)) == 3.0 * np.ones(1)))
     moop1.addConstraint({'constraint': c1})
+    moop1.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
     assert (np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
     # Adjust the scaling and compare
@@ -187,12 +187,13 @@ def test_MOOP_evaluateGradients_1():
     moop1.evaluateSimulation(np.ones(3), 0)
     moop1.evaluateSimulation(np.ones(3), 1)
     moop1.fitSurrogates()
-    moop1.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     moop1.addObjective({'obj_func': f1})
+    moop1.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     assert (np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
     assert (np.all(moop1.evaluateGradients(np.ones(3)) ==
                    2.0 * np.ones((1, 3))))
     moop1.addConstraint({'constraint': c1})
+    moop1.setSurrogateTR(np.zeros(3), np.ones(3) * np.infty)
     assert (np.all(moop1.evaluateGradients(np.zeros(3)) == np.zeros((1, 3))))
     assert (np.all(moop1.evaluateGradients(np.ones(3)) == result))
     result = np.zeros((2, 3))

@@ -108,7 +108,8 @@ class MOOP:
                  'scale', 'scaled_lb', 'scaled_ub', 'scaled_des_tols',
                  'cat_des_tols', 'custom_des_tols', 'use_names', 'iteration',
                  'checkpoint', 'checkpointfile', 'checkpoint_data',
-                 'new_checkpoint', 'new_data', 'obj_exp_vals', 'c_exp_vals']
+                 'new_checkpoint', 'new_data', 'obj_exp_vals', 'c_exp_vals',
+                 'empty']
 
     def __embed__(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
@@ -531,6 +532,7 @@ class MOOP:
             raise TypeError("opt_func must be a derivative of the "
                             + "SurrogateOptimizer abstract class")
         self.optimizer = opt_func
+        self.empty = jnp.zeros(0)
         return
 
     def addDesign(self, *args):
@@ -1266,7 +1268,6 @@ class MOOP:
             raise TypeError("checkpoint must have the bool type")
         if not isinstance(filename, str):
             raise TypeError("filename must have the string type")
-        # Set internal checkpointing variables
         self.checkpoint = checkpoint
         self.checkpoint_data = checkpoint_data
         self.checkpointfile = filename
@@ -1470,7 +1471,6 @@ class MOOP:
 
         """
 
-        # Extract the simulation name
         if isinstance(s_name, str):
             i = -1
             for j, sj in enumerate(self.sim_names):
@@ -1481,16 +1481,12 @@ class MOOP:
             i = s_name
         else:
             raise TypeError("s_name must be a string or int")
-        # Check for errors
         if i < 0 or i > self.s - 1:
             raise ValueError("s_name did not contain a legal name/index")
-        # Check the sim database for x
         sx = self.check_sim_db(x, s_name)
-        # If not found, evaluate the sim and add to the database
         if sx is None:
             sx = np.asarray(self.sim_funcs[i](x))
             self.update_sim_db(x, sx, s_name)
-        # Return the result
         return sx
 
     def fitSurrogates(self):
@@ -1500,7 +1496,6 @@ class MOOP:
 
         """
 
-        # Call self.surrogates.fit() to fit the surrogate models
         for i in range(self.s):
             n_new = self.sim_db[i]['n']
             self.surrogates[i].fit(self.sim_db[i]['x_vals'][:n_new, :],
@@ -1515,7 +1510,6 @@ class MOOP:
 
         """
 
-        # Call self.surrogates.update() to update the surrogate models
         for i in range(self.s):
             n_old = self.sim_db[i]['old']
             n_new = self.sim_db[i]['n']
@@ -1541,174 +1535,6 @@ class MOOP:
         for si in self.surrogates:
             si.setTrustRegion(center, radius)
         return
-
-    def evaluateSurrogates_old(self, x):
-        """ Evaluate all simulation surrogates.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the (embedded) result
-            of the surrogate model evaluations.
-
-        """
-
-        # Check for illegal input
-        if isinstance(x, np.ndarray):
-            if x.shape[0] != self.n:
-                raise ValueError("x must have length n")
-        else:
-            raise TypeError("x must be a numpy array")
-        # Evaluate the surrogate models to approximate the simulation outputs
-        sim = np.zeros(self.m_total)
-        m_count = 0
-        for i, surrogate in enumerate(self.surrogates):
-            sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
-            m_count += self.m[i]
-        return sim
-
-    def surrogateUncertainty_old(self, x, grad=False):
-        """ Evaluate uncertainty (standard deviation) of all surrogates.
-
-        Assumes a Gaussian distribution on simulation outputs.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-            grad (bool): Specifies whether or not to evalaute the gradients.
-
-        Returns:
-            numpy.ndarray: (When grad is False) a 1d numpy.ndarray containing
-            the std deviation of the surrogates at x. (When grad is True)
-            a 2d numpy.ndarray containing the Jacobian of gradients of
-            all surrogates uncertainties at x.
-
-        """
-
-        # Check for illegal input
-        if isinstance(x, np.ndarray):
-            if x.shape[0] != self.n:
-                raise ValueError("x must have length n")
-        else:
-            raise TypeError("x must be a numpy array")
-        # If gradient evaluation was requested
-        if grad:
-            dstdD_dx = np.zeros((self.m_total, self.n))
-            m_count = 0
-            for i, surrogate in enumerate(self.surrogates):
-                dstdD_dx[m_count:m_count+self.m[i]] = \
-                    surrogate.stdDevGrad(x)
-                m_count += self.m[i]
-            return dstdD_dx
-        # Otherwise, evaluate the surrogate standard deviations
-        else:
-            sim_stdD = np.zeros(self.m_total)
-            m_count = 0
-            for i, surrogate in enumerate(self.surrogates):
-                sim_stdD[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
-                m_count += self.m[i]
-            return sim_stdD
-
-    def evaluateObjectives_old(self, x):
-        """ Evaluate all objectives using the simulation surrogates as needed.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the result of the
-            evaluation.
-
-        """
-
-        # Check for illegal input
-        if isinstance(x, np.ndarray):
-            if x.shape[0] != self.n:
-                raise ValueError("x must have length n")
-        else:
-            raise TypeError("x must be a numpy array")
-        # Evaluate the surrogate models to approximate the simulation outputs
-        sim = np.zeros(self.m_total)
-        sim_std_dev = np.zeros(self.m_total)
-        m_count = 0
-        for i, surrogate in enumerate(self.surrogates):
-            sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
-            if any(self.obj_exp_vals):
-                sim_std_dev[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
-            m_count += self.m[i]
-        # Evaluate the objective functions
-        xx = self.__extract__(x)
-        sx = self.__unpack_sim__(sim)
-        if any(self.obj_exp_vals):
-            sdx = self.__unpack_sim__(sim_std_dev)
-        fx = np.zeros(self.o)
-        for i, obj_func in enumerate(self.objectives):
-            if self.obj_exp_vals[i]:
-                fx[i] = obj_func(xx, sx, sdx)
-            else:
-                fx[i] = obj_func(xx, sx)
-        # Return the result
-        return fx
-
-    def evaluateConstraints_old(self, x):
-        """ Evaluate the constraints using the simulation surrogates as needed.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the list of constraint
-            violations at x (zero if no violation).
-
-        """
-
-        # Check for illegal input
-        if isinstance(x, np.ndarray):
-            if x.shape[0] != self.n:
-                raise ValueError("x must have length n")
-        else:
-            raise TypeError("x must be a numpy array")
-        # Special case if there are no constraints, just return [0]
-        if self.p == 0:
-            return np.zeros(1)
-        # Otherwise, calculate the constraint violations
-        else:
-            # Evaluate the surrogate models to approximate the sim outputs
-            sim = np.zeros(self.m_total)
-            sim_std_dev = np.zeros(self.m_total)
-            m_count = 0
-            for i, surrogate in enumerate(self.surrogates):
-                sim[m_count:m_count + self.m[i]] = surrogate.evaluate(x)
-                if any(self.c_exp_vals):
-                    sim_std_dev[m_count:m_count+self.m[i]] = \
-                                                    surrogate.stdDev(x)
-                m_count += self.m[i]
-            # Evaluate the constraint functions
-            xx = self.__extract__(x)
-            sx = self.__unpack_sim__(sim)
-            if any(self.c_exp_vals):
-                sdx = self.__unpack_sim__(sim_std_dev)
-            cx = np.zeros(self.p)
-            for i, constraint_func in enumerate(self.constraints):
-                if self.c_exp_vals[i]:
-                    cx[i] = constraint_func(xx, sx, sdx)
-                else:
-                    cx[i] = constraint_func(xx, sx)
-            # Return the constraint violations
-            return cx
 
     def evaluatePenalty_old(self, x, sx=None):
         """ Evaluate the penalized objective using the surrogates as needed.
@@ -1968,7 +1794,7 @@ class MOOP:
 
         """
 
-        sx_list = [jnp.zeros(0)]
+        sx_list = [self.empty]
         for si in self.surrogates:
             sx_list.append(si.evaluate(x))
         return jnp.concatenate(sx_list)
@@ -1990,7 +1816,7 @@ class MOOP:
 
         """
 
-        sdx_list = [jnp.zeros(0)]
+        sdx_list = [self.empty]
         for si in self.surrogates:
             sdx_list.append(si.stdDev(x))
         return jnp.concatenate(sdx_list)
@@ -2010,8 +1836,8 @@ class MOOP:
 
         """
 
-        sx_list = [jnp.zeros(0)]
-        sdx_list = [jnp.zeros(0)]
+        sx_list = [self.empty]
+        sdx_list = [self.empty]
         for si in self.surrogates:
             sx_list.append(si.evaluate(x))
             if any(self.obj_exp_vals):
@@ -2020,7 +1846,7 @@ class MOOP:
         sx = self.__unpack_sim__(jnp.concatenate(sx_list))
         if any(self.obj_exp_vals):
             sdx = self.__unpack_sim__(jnp.concatenate(sdx_list))
-        fx = jnp.zeros(self.o)
+        fx = jnp.empty(self.o)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
                 fx = fx.at[i].set(obj_func(xx, sx, sdx))
@@ -2043,8 +1869,10 @@ class MOOP:
 
         """
 
-        sx_list = [jnp.zeros(0)]
-        sdx_list = [jnp.zeros(0)]
+        if self.p == 0:
+            return np.zeros(1)
+        sx_list = [self.empty]
+        sdx_list = [self.empty]
         for si in self.surrogates:
             sx_list.append(si.evaluate(x))
             if any(self.c_exp_vals):
@@ -2053,7 +1881,7 @@ class MOOP:
         sx = self.__unpack_sim__(jnp.concatenate(sx_list))
         if any(self.c_exp_vals):
             sdx = self.__unpack_sim__(jnp.concatenate(sdx_list))
-        cx = jnp.zeros(self.p)
+        cx = jnp.empty(self.p)
         for i, constraint_func in enumerate(self.constraints):
             if self.c_exp_vals[i]:
                 cx = cx.at[i].set(constraint_func(xx, sx, sdx))
@@ -2076,8 +1904,8 @@ class MOOP:
 
         """
 
-        sx_list = [jnp.zeros(0)]
-        sdx_list = [jnp.zeros(0)]
+        sx_list = [self.empty]
+        sdx_list = [self.empty]
         for si in self.surrogates:
             sx_list.append(si.evaluate(x))
             if any(self.obj_exp_vals) or any(self.c_exp_vals):
@@ -2086,19 +1914,19 @@ class MOOP:
         sx = self.__unpack_sim__(jnp.concatenate(sx_list))
         if any(self.obj_exp_vals) or any(self.c_exp_vals):
             sdx = self.__unpack_sim__(jnp.concatenate(sdx_list))
-        fx = jnp.zeros(self.o)
+        fx = jnp.empty(self.o)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
                 fx = fx.at[i].set(obj_func(xx, sx, sdx))
             else:
                 fx = fx.at[i].set(obj_func(xx, sx))
-        cx = jnp.zeros(self.p)
+        cx = jnp.empty(self.p)
         for i, constraint_func in enumerate(self.constraints):
             if self.c_exp_vals[i]:
-                cx = cx.at[i].set(constraint_func(xx, ssx, sdx))
+                cx = cx.at[i].set(jnp.maximum(constraint_func(xx, sx, sdx), 0))
             else:
-                cx = cx.at[i].set(constraint_func(xx, ssx))
-        return fx + self.lam * jnp.sum(cx)
+                cx = cx.at[i].set(jnp.maximum(constraint_func(xx, sx), 0))
+        return fx + (self.lam * jnp.sum(cx))
 
     def evaluateGradients(self, x):
         """ Evaluate the gradient of the penalized objective using surrogates.

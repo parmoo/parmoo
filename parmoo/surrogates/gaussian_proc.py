@@ -283,10 +283,26 @@ class GaussRBF(SurrogateFunction):
             for i in range(self.m):
                 tmp = np.dot(self.v.T, rhs[:, i]) / self.w[:]
                 self.weights[i, :] = np.dot(self.v, tmp)
+            self.evaluate = jit(self._evaluate)
         return
 
     def evaluate(self, x):
         """ Evaluate the Gaussian RBF at a design point.
+
+        Args:
+            x (numpy.ndarray): A 1d array containing the design point at
+                which to the Gaussian RBF should be evaluated.
+
+        Returns:
+            numpy.ndarray: A 1d array containing the predicted objective value
+            at x.
+
+        """
+
+        return jnp.zeros(self.m)
+
+    def _evaluate(self, x):
+        """ Private version of above Gaussian RBF evaluator that can be jitted.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
@@ -455,6 +471,8 @@ class GaussRBF(SurrogateFunction):
         self.v = np.array(gp_state['v'])
         self.w = np.array(gp_state['w'])
         self.y_std_dev = np.array(gp_state['y_std_dev'])
+        # Re-jit
+        self.evaluate = jit(self._evaluate)
         return
 
 

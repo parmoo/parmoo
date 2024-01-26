@@ -171,9 +171,10 @@ def test_GaussRBF():
     # Test save and load
     rbf6.save("parmoo.surrogate")
     rbf7.load("parmoo.surrogate")
+    os.remove("parmoo.surrogate")
+    rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     xx = np.random.random_sample(3)
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
-    os.remove("parmoo.surrogate")
     # Generate a simple 1D RBF and check its stdDev is accurate
     x_vals4 = np.array([[0.0], [1.0]])
     y_vals4 = np.array([[0.0], [1.0]])
@@ -388,9 +389,10 @@ def test_LocalGaussRBF():
     # Test save and load
     rbf6.save("parmoo.surrogate")
     rbf7.load("parmoo.surrogate")
+    os.remove("parmoo.surrogate")
+    rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     xx = np.random.random_sample(3)
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
-    os.remove("parmoo.surrogate")
     # Generate a simple 1D RBF and check its stdDev is accurate
     x_vals4 = np.array([[0.0], [1.0]])
     y_vals4 = np.array([[0.0], [1.0]])
