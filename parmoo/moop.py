@@ -8,7 +8,7 @@ simulations, specified using dictionaries.
 """
 
 import inspect
-from jax import jacfwd
+from jax import jacfwd, lax
 from jax import numpy as jnp
 import json
 import numpy as np
@@ -389,9 +389,7 @@ class MOOP:
 
         """
 
-        # Check whether we are using named sims
         if self.use_names:
-            # Unpack sx into a numpy structured array
             sxx = np.zeros(1, dtype=self.sim_names)
             m_count = 0
             for i, mi in enumerate(self.m):
@@ -399,7 +397,6 @@ class MOOP:
                 m_count += mi
             return sxx[0]
         else:
-            # Do nothing
             return sx
 
     def __pack_sim__(self, sx):
@@ -415,9 +412,7 @@ class MOOP:
 
         """
 
-        # Check whether we are using named sims
         if self.use_names:
-            # Pack sx into a numpy.ndarray
             sxx = np.zeros(self.m_total)
             m_count = 0
             for i, mi in enumerate(self.m):
@@ -425,7 +420,6 @@ class MOOP:
                 m_count += mi
             return sxx
         else:
-            # Do nothing
             return sx
 
     def __init__(self, opt_func, hyperparams=None):
@@ -1979,14 +1973,6 @@ class MOOP:
             sx_list.append(si.evaluate(x))
         return jnp.concatenate(sx_list)
 
-        #sim = jnp.zeros(self.m_total)
-        #m_count = 0
-        #for i, surrogate in enumerate(self.surrogates):
-        #    m_end = m_count + self.m[i]
-        #    sim = sim.at[m_count:m_end].set(surrogate.evaluate(x))
-        #    m_count = m_end
-        #return sim
-
     def surrogateUncertainty(self, x):
         """ Evaluate uncertainty (standard deviation) of all surrogates.
 
@@ -2009,14 +1995,6 @@ class MOOP:
             sdx_list.append(si.stdDev(x))
         return jnp.concatenate(sdx_list)
 
-        #sim_stdD = jnp.zeros(self.m_total)
-        #m_count = 0
-        #for i, surrogate in enumerate(self.surrogates):
-        #    m_end = m_count + self.m[i]
-        #    sim_stdD = sim_stdD.at[m_count:m_end].set(surrogate.stdDev(x))
-        #    m_count = m_end
-        #return sim_stdD
-
     def evaluateObjectives(self, x):
         """ Evaluate all objectives using the simulation surrogates as needed.
 
@@ -2032,25 +2010,22 @@ class MOOP:
 
         """
 
-        sim = np.zeros(self.m_total)
-        sim_std_dev = np.zeros(self.m_total)
-        m_count = 0
-        for i, surrogate in enumerate(self.surrogates):
-            sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
+        sx_list = [jnp.zeros(0)]
+        sdx_list = [jnp.zeros(0)]
+        for si in self.surrogates:
+            sx_list.append(si.evaluate(x))
             if any(self.obj_exp_vals):
-                sim_std_dev[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
-            m_count += self.m[i]
-        # Evaluate the objective functions
+                sdx_list.append(si.stdDev(x))
         xx = self.__extract__(x)
-        sx = self.__unpack_sim__(sim)
+        sx = self.__unpack_sim__(jnp.concatenate(sx_list))
         if any(self.obj_exp_vals):
-            sdx = self.__unpack_sim__(sim_std_dev)
-        fx = np.zeros(self.o)
+            sdx = self.__unpack_sim__(jnp.concatenate(sdx_list))
+        fx = jnp.zeros(self.o)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
-                fx[i] = obj_func(xx, sx, sdx)
+                fx = fx.at[i].set(obj_func(xx, sx, sdx))
             else:
-                fx[i] = obj_func(xx, sx)
+                fx = fx.at[i].set(obj_func(xx, sx))
         return fx
 
     def evaluateConstraints(self, x):
@@ -2068,34 +2043,23 @@ class MOOP:
 
         """
 
-        # Special case if there are no constraints, just return [0]
-        if self.p == 0:
-            return np.zeros(1)
-        # Otherwise, calculate the constraint violations
-        else:
-            # Evaluate the surrogate models to approximate the sim outputs
-            sim = np.zeros(self.m_total)
-            sim_std_dev = np.zeros(self.m_total)
-            m_count = 0
-            for i, surrogate in enumerate(self.surrogates):
-                sim[m_count:m_count + self.m[i]] = surrogate.evaluate(x)
-                if any(self.c_exp_vals):
-                    sim_std_dev[m_count:m_count+self.m[i]] = \
-                                                    surrogate.stdDev(x)
-                m_count += self.m[i]
-            # Evaluate the constraint functions
-            xx = self.__extract__(x)
-            sx = self.__unpack_sim__(sim)
+        sx_list = [jnp.zeros(0)]
+        sdx_list = [jnp.zeros(0)]
+        for si in self.surrogates:
+            sx_list.append(si.evaluate(x))
             if any(self.c_exp_vals):
-                sdx = self.__unpack_sim__(sim_std_dev)
-            cx = np.zeros(self.p)
-            for i, constraint_func in enumerate(self.constraints):
-                if self.c_exp_vals[i]:
-                    cx[i] = constraint_func(xx, sx, sdx)
-                else:
-                    cx[i] = constraint_func(xx, sx)
-            # Return the constraint violations
-            return cx
+                sdx_list.append(si.stdDev(x))
+        xx = self.__extract__(x)
+        sx = self.__unpack_sim__(jnp.concatenate(sx_list))
+        if any(self.c_exp_vals):
+            sdx = self.__unpack_sim__(jnp.concatenate(sdx_list))
+        cx = jnp.zeros(self.p)
+        for i, constraint_func in enumerate(self.constraints):
+            if self.c_exp_vals[i]:
+                cx = cx.at[i].set(constraint_func(xx, sx, sdx))
+            else:
+                cx = cx.at[i].set(constraint_func(xx, sx))
+        return cx
 
     def evaluatePenalty(self, x, sx=None):
         """ Evaluate the penalized objective using the surrogates as needed.
@@ -2112,43 +2076,29 @@ class MOOP:
 
         """
 
-        # Evaluate the surrogate models to approximate the simulation outputs
-        sim_std_dev = np.zeros(self.m_total)
-        if sx is None:
-            m_count = 0
-            sim = np.zeros(self.m_total)
-            for i, surrogate in enumerate(self.surrogates):
-                sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
-                if any(self.obj_exp_vals) or any(self.c_exp_vals):
-                    sim_std_dev[m_count:m_count+self.m[i]] = \
-                                                    surrogate.stdDev(x)
-                m_count += self.m[i]
-        else:
-            sim = sx
-        # Px is the penalized objective score
-        Px = np.zeros(self.o)
-        # Evaluate the objective functions
+        sx_list = [jnp.zeros(0)]
+        sdx_list = [jnp.zeros(0)]
+        for si in self.surrogates:
+            sx_list.append(si.evaluate(x))
+            if any(self.obj_exp_vals) or any(self.c_exp_vals):
+                sdx_list.append(si.stdDev(x))
         xx = self.__extract__(x)
-        ssx = self.__unpack_sim__(sim)
+        sx = self.__unpack_sim__(jnp.concatenate(sx_list))
         if any(self.obj_exp_vals) or any(self.c_exp_vals):
-            sdx = self.__unpack_sim__(sim_std_dev)
+            sdx = self.__unpack_sim__(jnp.concatenate(sdx_list))
+        fx = jnp.zeros(self.o)
         for i, obj_func in enumerate(self.objectives):
             if self.obj_exp_vals[i]:
-                Px[i] = obj_func(xx, ssx, sdx)
+                fx = fx.at[i].set(obj_func(xx, sx, sdx))
             else:
-                Px[i] = obj_func(xx, ssx)
-        # Evaluate the constraint functions
-        if self.p > 0:
-            for i, constraint_func in enumerate(self.constraints):
-                if self.c_exp_vals[i]:
-                    cx = constraint_func(xx, ssx, sdx)
-                else:
-                    cx = constraint_func(xx, ssx)
-                if cx > 0.0:
-                    # Add constraint violation penalty
-                    Px[:] = Px[:] + self.lam * cx
-        # Return the result
-        return Px
+                fx = fx.at[i].set(obj_func(xx, sx))
+        cx = jnp.zeros(self.p)
+        for i, constraint_func in enumerate(self.constraints):
+            if self.c_exp_vals[i]:
+                cx = cx.at[i].set(constraint_func(xx, ssx, sdx))
+            else:
+                cx = cx.at[i].set(constraint_func(xx, ssx))
+        return fx + self.lam * jnp.sum(cx)
 
     def evaluateGradients(self, x):
         """ Evaluate the gradient of the penalized objective using surrogates.

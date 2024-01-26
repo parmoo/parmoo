@@ -27,9 +27,9 @@ class GaussRBF(SurrogateFunction):
     """
 
     # Slots for the UniformRandom class
-    __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'x_std_dev',
-                 'nugget', 'loc_inds', 'tr_center',
-                 'weights', 'prior', 'v', 'w', 'order', 'y_std_dev']
+    __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'nugget',
+                 'loc_inds', 'tr_center', 'weights', 'prior', 'v', 'w',
+                 'order', 'x_std_dev', 'y_std_dev']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the GaussRBF class.
@@ -298,8 +298,9 @@ class GaussRBF(SurrogateFunction):
 
         """
 
-        return _evaluate(float(self.order), self.x_vals[self.loc_inds], self.x_std_dev,
-                         self.weights, self.prior, x)
+        return lax.cond(float(self.order) < 1, _evaluate_0, _evaluate_1,
+                        self.x_vals[self.loc_inds], self.x_std_dev,
+                        self.weights, self.prior, x)
 
     def gradient(self, x):
         """ Evaluate the gradients of the Gaussian RBF at a design point.
@@ -481,18 +482,11 @@ def _pdist(x_vals):
     return vmap(lambda x: _cdist(x_vals, x))(x_vals)
 
 @jit
-def _evaluate(iorder, x_vals, x_std_dev, weights, prior, x):
-    """ Evaluate a Gaussian RBF's posterior at a design point x. """
-
-    return lax.cond(iorder < 1, _evaluate_0, _evaluate_1,
-                    x_vals, x_std_dev, weights, prior, x)
-
-@jit
 def _evaluate_0(x_vals, x_std_dev, weights, prior, x):
     """ Evaluate a Gaussian RBF (constant prior) at a design point x. """
 
-    return jnp.dot(weights, _gaussian(_cdist(x_vals, x),
-                                      x_std_dev)) + prior[-1, :]
+    post_tmp = jnp.dot(weights, _gaussian(_cdist(x_vals, x), x_std_dev))
+    return post_tmp + prior[-1, :]
 
 @jit
 def _evaluate_1(x_vals, x_std_dev, weights, prior, x):

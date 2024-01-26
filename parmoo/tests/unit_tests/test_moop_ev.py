@@ -7,11 +7,11 @@ def test_MOOP_evaluateExpectedValue_unnamed():
 
     """
 
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -140,11 +140,11 @@ def test_MOOP_evaluateExpectedValuePenalty_unnamed():
 
     """
 
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -269,11 +269,14 @@ def test_MOOP_expectedValueGradient_unnamed():
 
     """
 
+    from jax import config
+    config.update("jax_enable_x64", True)
+    from jax import jacfwd
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -387,7 +390,7 @@ def test_MOOP_expectedValueGradient_unnamed():
     # Try some random evals
     for i in range(10):
         xi = np.random.random_sample(3)
-        dsig_dxi = moop1.surrogateUncertainty(xi, grad=True)
+        dsig_dxi = jacfwd(moop1.surrogateUncertainty)(xi)
         df_dsig = np.zeros((3, 3))
         df_dsig[1, :] = ev_1(xi, np.zeros(3),
                              moop1.surrogateUncertainty(xi), der=3)
@@ -406,11 +409,11 @@ def test_MOOP_evaluateConstraintExpectedValue_unnamed():
 
     """
 
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -539,11 +542,14 @@ def test_MOOP_expectedValueConstraintGradient_unnamed():
 
     """
 
+    from jax import config
+    config.update("jax_enable_x64", True)
+    from jax import jacfwd
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -657,7 +663,7 @@ def test_MOOP_expectedValueConstraintGradient_unnamed():
     # Try some random evals
     for i in range(10):
         xi = np.random.random_sample(3)
-        dsig_dxi = moop1.surrogateUncertainty(xi, grad=True)
+        dsig_dxi = jacfwd(moop1.surrogateUncertainty)(xi)
         df_dsig = np.zeros((3, 3))
         df_dsig[1, :] = ev_1(xi, np.zeros(3),
                              moop1.surrogateUncertainty(xi), der=3)
@@ -678,11 +684,11 @@ def test_MOOP_evaluateExpectedValue_named():
 
     """
 
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -1064,11 +1070,14 @@ def test_MOOP_expectedValueGradient_named():
 
     """
 
+    from jax import config
+    config.update("jax_enable_x64", True)
+    from jax import jacfwd
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -1247,7 +1256,7 @@ def test_MOOP_expectedValueGradient_named():
         xi = np.random.random_sample(3)
         xxi = moop1.__extract__(xi)
         sds = moop1.surrogateUncertainty(xi)
-        dsig_dxi = moop1.surrogateUncertainty(xi, grad=True)
+        dsig_dxi = jacfwd(moop1.surrogateUncertainty)(xi)
         df_dsig = np.zeros((3, 3))
         df_dsig_tmp = ev_1(xxi, moop1.__unpack_sim__(np.zeros(3)),
                            moop1.__unpack_sim__(sds), der=3)
@@ -1268,11 +1277,11 @@ def test_MOOP_evaluateConstraintExpectedValue_named():
 
     """
 
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -1464,11 +1473,14 @@ def test_MOOP_expectedValueConstraintGradient_named():
 
     """
 
+    from jax import config
+    config.update("jax_enable_x64", True)
+    from jax import jacfwd
+    import numpy as np
     from parmoo import MOOP
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
     # Create 3 objectives for later
 
@@ -1647,7 +1659,7 @@ def test_MOOP_expectedValueConstraintGradient_named():
         xi = np.random.random_sample(3)
         xxi = moop1.__extract__(xi)
         sds = moop1.surrogateUncertainty(xi)
-        dsig_dxi = moop1.surrogateUncertainty(xi, grad=True)
+        dsig_dxi = jacfwd(moop1.surrogateUncertainty)(xi)
         df_dsig = np.zeros((3, 3))
         df_dsig_tmp = ev_1(xxi, moop1.__unpack_sim__(np.zeros(3)),
                            moop1.__unpack_sim__(sds), der=3)

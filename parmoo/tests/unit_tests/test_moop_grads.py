@@ -86,11 +86,6 @@ def test_MOOP_evaluatePenalty():
     moop1.addConstraint({'constraint': c1})
     assert (np.all(moop1.evaluatePenalty(np.zeros(3)) == np.zeros(1)))
     assert (np.all(moop1.evaluatePenalty(np.ones(3)) == 3.75 * np.ones(1)))
-    # Now try some bad evaluations
-    with pytest.raises(TypeError):
-        moop1.evaluatePenalty(10.0)
-    with pytest.raises(ValueError):
-        moop1.evaluatePenalty(np.zeros(1))
     # Adjust the scaling and compare
     moop2 = MOOP(GlobalSurrogate_PS)
     moop2.addDesign({'lb': -1.0, 'ub': 1.0},

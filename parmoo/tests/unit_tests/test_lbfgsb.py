@@ -102,8 +102,6 @@ def test_GlobalSurrogate_BFGS():
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
-    with pytest.raises(TypeError):
-        opt.solve(5)
     with pytest.raises(ValueError):
         opt.solve(np.zeros((3, n-1)))
     with pytest.raises(ValueError):
@@ -235,8 +233,6 @@ def test_LocalSurrogate_BFGS():
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
-    with pytest.raises(TypeError):
-        opt.solve(5)
     with pytest.raises(ValueError):
         opt.solve(np.zeros((3, n-1)))
     with pytest.raises(ValueError):

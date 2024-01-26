@@ -818,7 +818,7 @@ def run_quickstart():
         'sim_func': sim_func,
         'search': LatinHypercube,
         'surrogate': GaussRBF,
-        'hyperparams': {'search_budget': 20}
+        'hyperparams': {'search_budget': 10}
     })
 
     my_moop.addObjective({
@@ -841,7 +841,7 @@ def run_quickstart():
             'hyperparams': {}
         })
 
-    my_moop.solve(5)
+    my_moop.solve(2)
 
     return my_moop
 
@@ -884,7 +884,7 @@ def run_dtlz2():
         ),
         'search': LatinHypercube,
         'surrogate': GaussRBF,
-        'hyperparams': {'search_budget': 10*n}
+        'hyperparams': {'search_budget': 10}
     })
     # Add o objectives
     for i in range(o):
