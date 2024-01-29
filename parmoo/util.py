@@ -2,6 +2,7 @@
 
 These functions may also be of external interest. They are:
  * xerror(o, lb, ub, hyperparams)
+ * check_names(name, des_schema, sim_schema, obj_schema, con_schema)
  * check_sims(n, arg1, arg2, ...)
  * lex_leq(a, b)
  * updatePF(data, nondom)
@@ -56,6 +57,28 @@ def xerror(o=1, lb=None, ub=None, hyperparams=None):
     # Check the hyperparams dict
     if not isinstance(hyperparams, dict):
         raise TypeError("hyperparams must be a dictionary")
+    return
+
+
+def check_names(name, *args):
+    """ Typecheck the input arguments for a new variable name.
+
+    Args:
+        name (hashable): Any hashable value that could be used as a variable
+            name.
+
+        *args (list of tuples): 1 or more lists of existing variable names to
+            check against in order to guarantee that name is unique.
+
+    """
+
+    import typing
+
+    if not isinstance(name, typing.Hashable):
+        raise TypeError("Every variable name must be hashable")
+    for arg in args:
+        if any([name == ni[0] for ni in arg]:
+            raise ValueError(f"The variable name {name} is already in use")
     return
 
 
