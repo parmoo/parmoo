@@ -7,7 +7,7 @@ single_sim_out objective functions to define the problem.
 """
 
 from parmoo import MOOP
-from parmoo.optimizers import LBFGSB
+from parmoo.optimizers import GlobalSurrogate_BFGS
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
@@ -20,7 +20,7 @@ NUM_DES = 3
 NUM_OBJ = 3
 
 # Create a MOOP
-moop = MOOP(LBFGSB)
+moop = MOOP(GlobalSurrogate_BFGS)
 
 # Add NUM_DES continuous design variables
 for i in range(NUM_DES):

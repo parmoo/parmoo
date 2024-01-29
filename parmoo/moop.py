@@ -81,7 +81,7 @@ class MOOP:
      * ``MOOP.__pack_sim__(sx)``
      * ``MOOP.fitSurrogates()``
      * ``MOOP.updateSurrogates()``
-     * ``MOOP.resetSurrogates(center)``
+     * ``MOOP.setSurrogateTR(center, radius)``
      * ``MOOP.evaluateSurrogates(x)``
      * ``MOOP.surrogateUncertainty(x)``
      * ``MOOP.evaluateObjectives(x)``
@@ -1528,8 +1528,8 @@ class MOOP:
             self.sim_db[i]['old'] = self.sim_db[i]['n']
         return
 
-    def resetSurrogates(self, center):
-        """ Reset the surrogates using SurrogateFunction.setCenter(center).
+    def setSurrogateTR(self, center, radius):
+        """ Alert the surrogate functions of the trust region.
 
         Warning: Not recommended for external usage!
 
@@ -1538,19 +1538,13 @@ class MOOP:
                 (embedded) coordinates of the new center in the rescaled
                 design space.
 
-        Returns:
-            np.ndarray or float: The suggested trust-region radius.
+            radius (np.ndarray or float): The trust region radius.
 
         """
 
-        rad = np.zeros(self.n)
-        rad[:] = self.scaled_ub - self.scaled_lb
         for si in self.surrogates:
-            try:
-                rad = np.minimum(si.setCenter(center), rad)
-            except NotImplementedError:
-                continue
-        return rad
+            si.setTrustRegion(center, radius)
+        return
 
     def evaluateSurrogates(self, x):
         """ Evaluate all simulation surrogates.
@@ -2109,6 +2103,7 @@ class MOOP:
                          'f_vals': np.zeros((1, self.o)),
                          'c_vals': np.zeros((1, 1))}
             # Initialize the surrogate optimizer
+            self.hyperparams['des_tols'] = self.scaled_des_tols.tolist()
             self.optimizer_obj = self.optimizer(self.o,
                                                 self.scaled_lb,
                                                 self.scaled_ub,
@@ -2120,9 +2115,8 @@ class MOOP:
                                           self.evaluateGradients)
             self.optimizer_obj.setConstraints(self.evaluateConstraints)
             for i, acquisition in enumerate(self.acquisitions):
-                if i in ib:
-                    self.optimizer_obj.addAcquisition(acquisition)
-            self.optimizer_obj.setReset(self.resetSurrogates)
+                self.optimizer_obj.addAcquisition(acquisition)
+            self.optimizer_obj.setTrFunc(self.setSurrogateTR)
             # Generate search data
             for j, search in enumerate(self.searches):
                 des = search.startSearch(self.scaled_lb, self.scaled_ub)
@@ -2365,7 +2359,7 @@ class MOOP:
                         else:
                             fx[i] = obj_func(x, sx)
                     self.addData(x, self.__unpack_sim__(sim))
-                    self.optimizer.returnResults(x, fx, sx, sdx)
+                    self.optimizer_obj.returnResults(x, fx, sx, sdx)
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpointfile)
@@ -3154,22 +3148,12 @@ class MOOP:
         # Recover object classes and instances
         mod = import_module(parmoo_state['optimizer'][1])
         self.optimizer = getattr(mod, parmoo_state['optimizer'][0])
-        self.optimizer_obj = self.optimizer(self.o,
-                                            self.scaled_lb,
-                                            self.scaled_ub,
-                                            self.hyperparams)
-        try:
-            fname = filename + ".optimizer"
-            self.optimizer_obj.load(fname)
-        except NotImplementedError:
-            pass
         self.searches = []
         for i, (search_name, search_mod) in enumerate(
                                                 parmoo_state['searches']):
             mod = import_module(search_mod)
             new_search = getattr(mod, search_name)
-            toadd = new_search(self.m[i], self.scaled_lb, self.scaled_ub,
-                               self.hyperparams)
+            toadd = new_search(self.m[i], self.scaled_lb, self.scaled_ub, {})
             try:
                 fname = filename + ".search." + str(i + 1)
                 toadd.load(fname)
@@ -3180,8 +3164,7 @@ class MOOP:
         for i, (sur_name, sur_mod) in enumerate(parmoo_state['surrogates']):
             mod = import_module(sur_mod)
             new_sur = getattr(mod, sur_name)
-            toadd = new_sur(self.m[i], self.scaled_lb, self.scaled_ub,
-                            self.hyperparams)
+            toadd = new_sur(self.m[i], self.scaled_lb, self.scaled_ub, {})
             try:
                 fname = filename + ".surrogate." + str(i + 1)
                 toadd.load(fname)
@@ -3192,14 +3175,29 @@ class MOOP:
         for i, (acq_name, acq_mod) in enumerate(parmoo_state['acquisitions']):
             mod = import_module(acq_mod)
             new_acq = getattr(mod, acq_name)
-            toadd = new_acq(self.o, self.scaled_lb, self.scaled_ub,
-                            self.hyperparams)
+            toadd = new_acq(self.o, self.scaled_lb, self.scaled_ub, {})
             try:
                 fname = filename + ".acquisition." + str(i + 1)
                 toadd.load(fname)
             except NotImplementedError:
                 pass
             self.acquisitions.append(toadd)
+        # Rebuild the optimizer object
+        self.optimizer_obj = self.optimizer(self.o, self.scaled_lb, self.scaled_ub, {})
+        self.optimizer_obj.setObjective(self.evaluateObjectives)
+        self.optimizer_obj.setSimulation(self.evaluateSurrogates,
+                                         self.surrogateUncertainty)
+        self.optimizer_obj.setPenalty(self.evaluatePenalty,
+                                      self.evaluateGradients)
+        self.optimizer_obj.setConstraints(self.evaluateConstraints)
+        for i, acquisition in enumerate(self.acquisitions):
+            self.optimizer_obj.addAcquisition(acquisition)
+        self.optimizer_obj.setTrFunc(self.setSurrogateTR)
+        try:
+            fname = filename + ".optimizer"
+            self.optimizer_obj.load(fname)
+        except NotImplementedError:
+            pass
         self.new_checkpoint = False
         self.new_data = False
         return

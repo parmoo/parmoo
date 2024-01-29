@@ -1,8 +1,8 @@
 
-def test_RandomSearch():
-    """ Test the RandomSearch class in optimizers.py.
+def test_GlobalSurrogate_RS():
+    """ Test the GlobalSurrogate_RS class in optimizers.py.
 
-    Perform a test of the RandomSearch class by minimizing the three variable,
+    Perform a test of the GlobalSurrogate_RS class by minimizing the three variable,
     biobjective function
 
     $$
@@ -20,7 +20,7 @@ def test_RandomSearch():
     """
 
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import RandomSearch
+    from parmoo.optimizers import GlobalSurrogate_RS
     import numpy as np
     import pytest
 
@@ -50,12 +50,12 @@ def test_RandomSearch():
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(TypeError):
-        RandomSearch(o, lb, ub, {'opt_budget': 2.0})
+        GlobalSurrogate_RS(o, lb, ub, {'opt_budget': 2.0})
     with pytest.raises(ValueError):
-        RandomSearch(o, lb, ub, {'opt_budget': 0})
+        GlobalSurrogate_RS(o, lb, ub, {'opt_budget': 0})
     # Initialize the problem correctly, with and without an optional budget
-    RandomSearch(o, lb, ub, {})
-    opt = RandomSearch(o, lb, ub, {'opt_budget': 10010})
+    GlobalSurrogate_RS(o, lb, ub, {})
+    opt = GlobalSurrogate_RS(o, lb, ub, {'opt_budget': 10010})
     # Try to add some bad objectives, constraints, and acquisitions
     with pytest.raises(TypeError):
         opt.setObjective(5)
@@ -73,7 +73,7 @@ def test_RandomSearch():
     opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setReset(lambda x: 100.0)
+    opt.setTrFunc(lambda x, r: 100)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(TypeError):
         opt.solve(5)
@@ -81,7 +81,7 @@ def test_RandomSearch():
         opt.solve(np.zeros((3, n-1)))
     with pytest.raises(ValueError):
         opt.solve(np.zeros((4, n)))
-    # Solve the surrogate problem with RandomSearch, starting from the centroid
+    # Solve the surrogate problem with GlobalSurrogate_RS, starting from the centroid
     x = np.zeros((3, n))
     x[:] = 0.5
     (x1, x2, x3) = opt.solve(x)
@@ -100,4 +100,4 @@ def test_RandomSearch():
 
 
 if __name__ == "__main__":
-    test_RandomSearch()
+    test_GlobalSurrogate_RS()

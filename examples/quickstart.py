@@ -5,12 +5,12 @@ from parmoo import MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 
 # Fix the random seed for reproducibility
 np.random.seed(0)
 
-my_moop = MOOP(LocalGPS)
+my_moop = MOOP(GlobalSurrogate_PS)
 
 my_moop.addDesign({'name': "x1",
                    'des_type': "continuous",

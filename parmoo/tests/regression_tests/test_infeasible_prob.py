@@ -6,7 +6,7 @@ Ensure that ParMOO correctly identifies the most nearly feasible point.
 """
 
 from parmoo import MOOP
-from parmoo.optimizers import LBFGSB
+from parmoo.optimizers import GlobalSurrogate_BFGS
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
 from parmoo.searches import LatinHypercube
@@ -43,7 +43,7 @@ def const(x, sx, der=0):
         return sum([(x[name] - 1.0) ** 2 for name in x.dtype.names])
 
 # Create a MOOP
-moop = MOOP(LBFGSB)
+moop = MOOP(GlobalSurrogate_BFGS)
 
 # Add 2 continuous design variables
 for i in range(2):

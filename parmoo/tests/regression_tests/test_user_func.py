@@ -9,8 +9,8 @@ variables and globally defined functions.
 """
 
 from parmoo import MOOP
-from parmoo.optimizers import TR_LBFGSB
-from parmoo.surrogates import LocalGaussRBF
+from parmoo.optimizers import LocalSurrogate_BFGS
+from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
 import os
@@ -44,7 +44,7 @@ def obj2(x, sx, der=0):
         return 1.0 - sum(sx)
 
 # Create a MOOP
-moop = MOOP(TR_LBFGSB)
+moop = MOOP(LocalSurrogate_BFGS)
 
 # Add NUM_DES continuous design variables
 for i in range(NUM_DES):
@@ -56,7 +56,7 @@ moop.addSimulation({'name': "Sample sim",
                     'm': 1,
                     'sim_func': sim,
                     'search': LatinHypercube,
-                    'surrogate': LocalGaussRBF,
+                    'surrogate': GaussRBF,
                     'hyperparams': {}})
 
 # Add user objective functions
@@ -79,3 +79,5 @@ assert(moop.getPF()['f_vals'].shape[0] > 0)
 os.remove("parmoo.moop")
 os.remove("parmoo.simdb.json")
 os.remove("parmoo.surrogate.1")
+os.remove("parmoo.search.1")
+os.remove("parmoo.optimizer")

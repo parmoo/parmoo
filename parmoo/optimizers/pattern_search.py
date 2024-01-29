@@ -1,15 +1,16 @@
 
-""" Implementations of the SurrogateOptimizer class.
+""" Implementations of Pattern Search (PS) and its variations.
 
 This module contains implementations of the SurrogateOptimizer ABC, which
-are based on the GPS polling strategy for direct search.
+are based on pattern search.
 
-Note that these strategies are all gradient-free, and therefore does not
-require objective, constraint, or surrogate gradients methods to be defined.
+Note that these strategies are all gradient-free, and therefore do not
+require any gradients to be defined. This makes them friendly for
+getting started.
 
 The classes include:
- * ``LocalGPS`` -- Generalized Pattern Search (GPS) algorithm
- * ``GlobalGPS`` -- global random search, followed by GPS
+ * ``LocalSurrogate_PS`` -- A multi-start pattern search (PS) algorithm
+ * ``GlobalSurrogate_PS`` -- global random search, followed by LocalPS
 
 """
 
@@ -19,23 +20,24 @@ from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
 
 
-class LocalGPS(SurrogateOptimizer):
-    """ Use Generalized Pattern Search (GPS) to identify local solutions.
+class LocalSurrogate_PS(SurrogateOptimizer):
+    """ Use multi-start Pattern Search to solve surrogate problem locally.
 
-    Applies GPS to the surrogate problem, in order to identify design
+    Applies PS to the surrogate problem, in order to identify design
     points that are locally Pareto optimal, with respect to the surrogate
     problem. Sorts poll directions by most recently used and attempts to
     step in promising directions in late iterations.
 
     """
 
-    # Slots for the LocalGPS class
+    # Slots for the LocalSurrogate_PS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'resetObjectives',
-                 'penalty_func', 'sim_sd', 'restarts', 'momentum', 'q_ind']
+                 'objectives', 'simulations', 'gradients', 'setTR',
+                 'penalty_func', 'sim_sd', 'restarts', 'momentum', 'q_ind',
+                 'prev_centers', 'des_tols', 'targets']
 
     def __init__(self, o, lb, ub, hyperparams):
-        """ Constructor for the LocalGPS class.
+        """ Constructor for the LocalSurrogate_PS class.
 
         Args:
             o (int): The number of objectives.
@@ -49,7 +51,7 @@ class LocalGPS(SurrogateOptimizer):
 
             hyperparams (dict): A dictionary of hyperparameters for the
                 optimization procedure. It may contain the following:
-                 * opt_budget (int): The GPS iteration limit (default: 1000).
+                 * opt_budget (int): The PS iteration limit (default: 1000).
                  * opt_restarts (int): Number of multisolve restarts per
                    scalarization (default: n+1).
 
@@ -103,7 +105,27 @@ class LocalGPS(SurrogateOptimizer):
                                  "must be a float")
         else:
             self.momentum = 9e-1
+        if 'des_tols' in hyperparams:
+            if isinstance(hyperparams['des_tols'], list):
+                if len(hyperparams['des_tols']) != self.n:
+                    raise ValueError("the length of hyperparpams['des_tols']"
+                                     " must match the length of lb and ub")
+                if not all(hyperparams['des_tols']):
+                    raise ValueError("all entries in hyperparams['des_tols']"
+                                     " must be greater than 0")
+                for di in hyperparams['des_tols']:
+                    if not isinstance(di, float):
+                        raise TypeError("hyperparams['des_tols'] must "
+                                        "contain a list of float types")
+            else:
+                raise TypeError("hyperparams['des_tols'] must contain a list "
+                                "of float types")
+            self.des_tols = np.asarray(hyperparams['des_tols'])
+        else:
+            self.des_tols = np.ones(self.n) * 1.0e-8
         self.acquisitions = []
+        self.prev_centers = []
+        self.targets = []
         return
 
     def __obj_func__(self, x_in):
@@ -127,8 +149,66 @@ class LocalGPS(SurrogateOptimizer):
                                                      sx_in, sdx_in)
         return ax
 
+    def __checkTR(self, center):
+        """ Check the recommended trust region for a new center. """
+
+        # Search the history for the given radius
+        rad = np.zeros(self.n)
+        for (ci, ri) in reversed(self.prev_centers):
+            if np.all(np.abs(center - np.asarray(ci)) < self.des_tols):
+                rad[:] = np.asarray(ri)
+                break
+        # If not found in the history initialize
+        if np.all(rad == 0):
+            rad = (self.ub - self.lb) * 0.1
+            rad = np.maximum(rad, self.des_tols)
+        return rad
+
+    def __checkTargets(self):
+        """ Use internal list of targets to check and update the TR radii """
+
+        for ti in self.targets:
+            # Decay all "missed" targets' TR radii
+            ci, ri, _, _ = ti
+            ri = np.maximum(ri * 0.5, self.des_tols)
+            # Update the TR history
+            found = False
+            j = 0
+            for (cj, rj) in reversed(self.prev_centers):
+                j -= 1
+                if np.all(np.abs(cj - ci) < self.des_tols):
+                    self.prev_centers[j][-1] = ri
+            if not found:
+                self.prev_centers.append([ci, ri])
+        # Reset the list of targets for next iteration
+        self.targets = []
+        return
+
+    def returnResults(self, x, fx, sx, sdx):
+        """ Collect the results of a function evaluation.
+
+        Args:
+            x (np.ndarray): The design point evaluated.
+
+            fx (np.ndarray): The objective function values at x.
+
+            sx (np.ndarray): The simulation function values at x.
+
+            sdx (np.ndarray): The standard deviation in the simulation
+                outputs at x.
+
+        """
+
+        for i, ti in enumerate(self.targets):
+            j = ti[3]
+            fxj = self.acquisitions[j].scalarize(fx, x, sx, sdx)
+            # Remove any targets that have been "hit"
+            if fxj < ti[2]:
+                del self.targets[i]
+        return
+
     def solve(self, x):
-        """ Solve the surrogate problem using a generalized pattern search.
+        """ Solve the surrogate problem in a trust region via pattern search.
 
         Args:
             x (np.ndarray): A 2d array containing a list of feasible
@@ -136,7 +216,7 @@ class LocalGPS(SurrogateOptimizer):
 
         Returns:
             np.ndarray: A 2d numpy.ndarray of potentially efficient design
-            points that were found by the GPS optimizer.
+            points that were found by the PS optimizer.
 
         """
 
@@ -153,10 +233,12 @@ class LocalGPS(SurrogateOptimizer):
         result = []
         lb_tmp = np.zeros(self.n)
         ub_tmp = np.ones(self.n)
+        self.__checkTargets()
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
             # Create a new trust region
-            rad = self.resetObjectives(x[j, :])
+            rad = self.__checkTR(x[j, :])
+            self.setTR(x[j, :], rad)
             lb_tmp[:] = np.maximum(self.lb[:], x[j, :] - rad)
             ub_tmp[:] = np.minimum(self.ub[:], x[j, :] + rad)
             # Get a candidate
@@ -170,26 +252,93 @@ class LocalGPS(SurrogateOptimizer):
                                                     momentum=self.momentum,
                                                     istarts=self.restarts)
             result.append(xj)
+            # We need to remember this "target" for later
+            self.targets.append([x[j, :], rad, fj, j])
         return np.asarray(result)
 
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
 
-class GlobalGPS(SurrogateOptimizer):
-    """ Use randomized search globally followed by GPS locally.
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
 
-    Use ``RandomSearch`` to globally search the design space (search phase)
-    followed by ``LocalGPS`` to refine the potentially efficient solutions
-    (poll phase).
+        """
+
+        import json
+
+        # Serialize PS object in dictionary
+        ps_state = {'n': self.n,
+                    'budget': self.budget,
+                    'restarts': self.restarts,
+                    'momentum': self.momentum,
+                    'q_ind': self.q_ind}
+        # Serialize numpy.ndarray objects
+        ps_state['lb'] = self.lb.tolist()
+        ps_state['ub'] = self.ub.tolist()
+        ps_state['des_tols'] = self.des_tols.tolist()
+        # Flatten arrays
+        ps_state['prev_centers'] = []
+        for (ci, ri) in self.prev_centers:
+            ps_state['rev_centers'].append([ci.tolist(), ri.tolist()])
+        ps_state['targets'] = []
+        for ti in self.targets:
+            ps_state['targets'].append([ti[0].tolist(), ti[1].tolist(), ti[2], ti[3]])
+        # Save file
+        with open(filename, 'w') as fp:
+            json.dump(ps_state, fp)
+        return
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        import json
+
+        # Load file
+        with open(filename, 'r') as fp:
+            ps_state = json.load(fp)
+        # Deserialize PS object from dictionary
+        self.n = ps_state['n']
+        self.budget = ps_state['budget']
+        self.restarts = ps_state['restarts']
+        self.momentum = ps_state['momentum']
+        self.q_ind = ps_state['q_ind']
+        # Deserialize numpy.ndarray objects
+        self.lb = np.array(ps_state['lb'])
+        self.ub = np.array(ps_state['ub'])
+        self.des_tols = np.array(ps_state['des_tols'])
+        # Extract history arrays
+        self.prev_centers = []
+        for (ci, ri) in ps_state['prev_centers']:
+            self.prev_centers.append([np.array(ci), np.array(ri)])
+        self.targets = []
+        for ti in ps_state['targets']:
+            self.targets.append([np.array(ti[0]), np.array(ti[1]), ti[2], ti[3]])
+        return
+
+
+class GlobalSurrogate_PS(SurrogateOptimizer):
+    """ Use randomized search globally followed by a local PS.
+
+    Use ``RandomSearch`` to globally search the design space followed
+    ``LocalSurrogate_PS`` to refine the potentially efficient solutions.
 
     """
 
-    # Slots for the GlobalGPS class
+    # Slots for the GlobalSurrogate_PS class
     __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'resetObjectives',
+                 'objectives', 'simulations', 'gradients', 'setTR',
                  'penalty_func', 'opt_budget', 'gps_budget', 'sim_sd',
                  'momentum']
 
     def __init__(self, o, lb, ub, hyperparams):
-        """ Constructor for the GlobalGPS class.
+        """ Constructor for the GlobalPS class.
 
         Args:
             o (int): The number of objectives.
@@ -205,8 +354,8 @@ class GlobalGPS(SurrogateOptimizer):
                 optimization procedure. It may contain the following:
                  * opt_budget (int): The function evaluation budget
                    (default: 1500)
-                 * gps_budget (int): The number of the total opt_budget
-                   evaluations that will be used by GPS (default: 2/3
+                 * ps_budget (int): The number of the total opt_budget
+                   evaluations that will be used by PS (default: 2/3
                    of opt_budget).
 
         Returns:
@@ -286,7 +435,7 @@ class GlobalGPS(SurrogateOptimizer):
         return ax
 
     def solve(self, x):
-        """ Solve the surrogate problem by using random search followed by GPS.
+        """ Solve the surrogate problem by using random search followed by PS.
 
         Args:
             x (np.ndarray): A 2d array containing a list of feasible
@@ -309,51 +458,41 @@ class GlobalGPS(SurrogateOptimizer):
                                  "of acquisition functions")
         else:
             raise TypeError("x must be a numpy array")
-        # Set the batch size
+        # Create an infinite trust region
+        rad = np.ones(self.n) * np.infty
+        self.setTR(self.lb, rad)
+        # Perform a random search globally
         batch_size = 1000
-        # Initialize lists/arrays
+        data = {'x_vals': np.zeros((batch_size, self.n)),
+                'f_vals': np.zeros((batch_size, self.o)),
+                'c_vals': np.zeros((batch_size, 0))}
+        # Loop over batch size until k == budget
+        k = 0
+        nondom = {}
+        search_budget = self.opt_budget = self.gps_budget
+        while (k < search_budget):
+            # Check how many new points to generate
+            k_new = min(search_budget, k + batch_size) - k
+            if k_new < batch_size:
+                data['x_vals'] = np.zeros((k_new, self.n))
+                data['f_vals'] = np.zeros((k_new, self.o))
+                data['c_vals'] = np.zeros((k_new, 0))
+            # Randomly generate k_new new points
+            for i in range(k_new):
+                if i < len(self.acquisitions):
+                    xi = x[i, :]
+                else:
+                    xi = (np.random.sample(self.n) *
+                          (self.ub[:] - self.lb[:]) + self.lb[:])
+                data['x_vals'][i, :] = xi[:]
+                data['f_vals'][i, :] = self.penalty_func(xi)
+            # Update the PF
+            nondom = updatePF(data, nondom)
+            k += k_new
+        f_vals = []
+        # Loop over acquisition functions and perform pattern search
         result = []
-        lb_tmp = np.zeros(self.n)
-        ub_tmp = np.ones(self.n)
-        # For each acquisition function
         for j, acq in enumerate(self.acquisitions):
-            # Create a new trust region
-            rad = self.resetObjectives(x[j, :])
-            lb_old = lb_tmp
-            ub_old = ub_tmp
-            lb_tmp[:] = np.maximum(self.lb[:], x[j, :] - rad)
-            ub_tmp[:] = np.minimum(self.ub[:], x[j, :] + rad)
-            # Check if TR has changed
-            if j == 0 or np.any(np.abs(lb_old - lb_tmp) +
-                                np.abs(ub_old - ub_tmp) > 1.0e-8):
-                # Initialize the database
-                data = {'x_vals': np.zeros((batch_size, self.n)),
-                        'f_vals': np.zeros((batch_size, self.o)),
-                        'c_vals': np.zeros((batch_size, 0))}
-                # Loop over batch size until k == budget
-                k = 0
-                nondom = {}
-                search_budget = self.opt_budget = self.gps_budget
-                while (k < search_budget):
-                    # Check how many new points to generate
-                    k_new = min(search_budget, k + batch_size) - k
-                    if k_new < batch_size:
-                        data['x_vals'] = np.zeros((k_new, self.n))
-                        data['f_vals'] = np.zeros((k_new, self.o))
-                        data['c_vals'] = np.zeros((k_new, 0))
-                    # Randomly generate k_new new points
-                    for i in range(k_new):
-                        if i == 0:
-                            xi = x[j, :]
-                        else:
-                            xi = (np.random.sample(self.n) *
-                                  (ub_tmp[:] - lb_tmp[:]) + lb_tmp[:])
-                        data['x_vals'][i, :] = xi[:]
-                        data['f_vals'][i, :] = self.penalty_func(xi)
-                    # Update the PF
-                    nondom = updatePF(data, nondom)
-                    k += k_new
-            f_vals = []
             if acq.useSD():
                 f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
                                         self.sim_sd(xi))
@@ -369,9 +508,9 @@ class GlobalGPS(SurrogateOptimizer):
             x0 = nondom['x_vals'][imin, :].copy()
             # Get a candidate
             self.q_ind = j
-            mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
-            xj, fj = __accelerated_pattern_search__(self.n, lb_tmp,
-                                                    ub_tmp, x0,
+            mesh_tol = max(1.0e-8, np.min((self.ub - self.lb) * 1.0e-4))
+            xj, fj = __accelerated_pattern_search__(self.n, self.lb,
+                                                    self.ub, x0,
                                                     self.__obj_func__,
                                                     ibudget=self.gps_budget,
                                                     mesh_start=0.1,
@@ -381,13 +520,63 @@ class GlobalGPS(SurrogateOptimizer):
             result.append(xj)
         return np.asarray(result)
 
+    def save(self, filename):
+        """ Save important data from this class so that it can be reloaded.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data should be saved.
+
+        """
+
+        import json
+
+        # Serialize PS object in dictionary
+        ps_state = {'n': self.n,
+                    'o': self.o,
+                    'opt_budget': self.opt_budget,
+                    'gps_budget': self.gps_budget,
+                    'momentum': self.momentum}
+        # Serialize numpy.ndarray objects
+        ps_state['lb'] = self.lb.tolist()
+        ps_state['ub'] = self.ub.tolist()
+        # Save file
+        with open(filename, 'w') as fp:
+            json.dump(ps_state, fp)
+        return
+
+    def load(self, filename):
+        """ Reload important data into this class after a previous save.
+
+        Args:
+            filename (string): The relative or absolute path to the file
+                where all reload data has been saved.
+
+        """
+
+        import json
+
+        # Load file
+        with open(filename, 'r') as fp:
+            ps_state = json.load(fp)
+        # Deserialize PS object from dictionary
+        self.n = ps_state['n']
+        self.o = ps_state['o']
+        self.opt_budget = ps_state['opt_budget']
+        self.gps_budget = ps_state['gps_budget']
+        self.momentum = ps_state['momentum']
+        # Deserialize numpy.ndarray objects
+        self.lb = np.array(ps_state['lb'])
+        self.ub = np.array(ps_state['ub'])
+        return
+
 
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                                    mesh_start=None, mesh_tol=1.0e-8,
                                    momentum=0.9, istarts=1):
     """ Solve the optimization problem min obj_func(x) over x in [lb, ub].
 
-    Uses pattern search with 1 additional poll direction inspired by
+    Uses pattern search with an additional search direction inspired by
     Nesterov's momentum.
 
     Args:

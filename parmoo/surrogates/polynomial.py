@@ -25,8 +25,7 @@ class Linear(SurrogateFunction):
 
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps',
-                 'n_loc', 'loc_inds', 'tr_center', 'rad', 'weights',
-                 'prev_centers']
+                 'loc_inds', 'tr_center', 'weights']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the Linear class.
@@ -65,22 +64,8 @@ class Linear(SurrogateFunction):
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros(self.n + 1)
         # Initialize trust-region settings
-        self.prev_centers = []
         self.tr_center = np.zeros(0)
-        self.rad = np.zeros(self.n)
         self.loc_inds = []
-        # Check for the 'n_loc' optional value in hyperparams
-        if 'n_loc' in hyperparams:
-            if isinstance(hyperparams['n_loc'], int):
-                self.n_loc = hyperparams['n_loc']
-                if self.n_loc < self.n + 1:
-                    raise ValueError("hyperparams['n_loc'] must be"
-                                     + " greater than or equal to n+1")
-            else:
-                raise ValueError("hyperparams['n_loc'] contained an illegal"
-                                 + " value")
-        else:
-            self.n_loc = self.n + 1
         # Check for 'des_tols' optional key in hyperparams
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
@@ -164,16 +149,14 @@ class Linear(SurrogateFunction):
         self.tr_center = self.lb - np.ones(self.n)
         return
 
-    def setCenter(self, center):
+    def setTrustRegion(self, center, radius):
         """ Set the new trust-region center and refit the local linear model.
 
         Args:
             center (numpy.ndarray): A 1d array containing the new trust-region
                 center.
 
-        Returns:
-            float: The distance to the n+1 nearest point, which should be used
-            as the trust-region radius for a local optimizer.
+            radius (numpy.ndarray or float): The trust-region radius.
 
         """
 
@@ -186,45 +169,37 @@ class Linear(SurrogateFunction):
             elif (np.any(center < self.lb - self.eps) or
                   np.any(center > self.ub + self.eps)):
                 raise ValueError("center cannot be infeasible")
+        # Check that the radius is legal
+        if isinstance(radius, np.ndarray):
+            if radius.size != self.n:
+                raise ValueError("radius must have length n")
+            elif np.any(radius <= 0):
+                raise ValueError("radius must be positive")
+        elif isinstance(radius, float):
+            if radius <= 0:
+                raise ValueError("radius must be positive")
+        else:
+            raise TypeError("radius must be a numpy array or float")
         # If the center has changed, refit the model
         if np.any(np.abs(self.tr_center - center) > self.eps):
             # Update the center and sort the nearest neighbors
             self.tr_center = center
             idists = np.argsort(np.asarray([np.linalg.norm(xj - center)
                                             for xj in self.x_vals]))
-            # Check the history to see if this is a repeated iterate
-            rfound = -1
-            for ci, ri in self.prev_centers:
-                if np.all(np.abs(ci - center) < self.eps):
-                    rfound = ri
-                    break
-            # Check the suggested radius
-            xn = self.x_vals[idists[self.n_loc - 1]]
+            # Check the n nearest neighbors
+            xn = self.x_vals[idists[self.n]]
             r_tmp = np.linalg.norm(center - xn)
             # Get all points within the radius
             self.loc_inds = [int(i) for i in idists
                              if np.linalg.norm(np.maximum(np.abs(center
                                        - self.x_vals[i]) - self.eps, 0)) <=
                                        r_tmp]
-            # If found in the history, decay the radius
-            if np.any(rfound > 0):
-                self.rad = rfound * 0.5
-                self.rad = np.maximum(self.rad, np.sqrt(self.eps))
-            else:
-                self.rad = np.minimum(r_tmp, (self.ub - self.lb) * 0.05)
-                self.rad = np.maximum(self.rad, np.sqrt(self.eps))
             # Get (min norm) LS fit
             A = np.hstack((self.x_vals[self.loc_inds],
                            np.ones((len(self.loc_inds), 1))))
             self.weights = np.linalg.lstsq(A, self.f_vals[self.loc_inds],
                                            rcond=None)[0]
-        # Otherwise, just decay the radius
-        else:
-            self.rad *= 0.5
-            self.rad = np.maximum(self.rad, np.sqrt(self.eps))
-        # Update the history
-        self.prev_centers.append((self.tr_center, self.rad))
-        return self.rad
+        return
 
     def evaluate(self, x):
         """ Evaluate the linear model at a design point.
@@ -269,7 +244,6 @@ class Linear(SurrogateFunction):
         # Serialize RBF object in dictionary
         ls_state = {'m': self.m,
                     'n': self.n,
-                    'n_loc': self.n_loc,
                     'loc_inds': self.loc_inds}
         # Serialize numpy.ndarray objects
         ls_state['lb'] = self.lb.tolist()
@@ -278,10 +252,6 @@ class Linear(SurrogateFunction):
         ls_state['f_vals'] = self.f_vals.tolist()
         ls_state['eps'] = self.eps.tolist()
         ls_state['tr_center'] = self.tr_center.tolist()
-        ls_state['rad'] = self.rad.tolist()
-        ls_state['prev_centers'] = []
-        for ci, ri in self.prev_centers:
-            ls_state['prev_centers'].append([ci.tolist(), ri.tolist()])
         ls_state['weights'] = self.weights.tolist()
         # Save file
         with open(filename, 'w') as fp:
@@ -305,7 +275,6 @@ class Linear(SurrogateFunction):
         # Deserialize RBF object from dictionary
         self.m = ls_state['m']
         self.n = ls_state['n']
-        self.n_loc = ls_state['n_loc']
         self.loc_inds = ls_state['loc_inds']
         # Deserialize numpy.ndarray objects
         self.lb = np.array(ls_state['lb'])
@@ -314,9 +283,5 @@ class Linear(SurrogateFunction):
         self.f_vals = np.array(ls_state['f_vals'])
         self.eps = np.array(ls_state['eps'])
         self.tr_center = np.array(ls_state['tr_center'])
-        self.rad = np.array(ls_state['rad'])
-        self.prev_centers = []
-        for ci, ri in ls_state['prev_centers']:
-            self.prev_centers.append([np.array(ci), np.array(ri)])
         self.weights = np.array(ls_state['weights'])
         return

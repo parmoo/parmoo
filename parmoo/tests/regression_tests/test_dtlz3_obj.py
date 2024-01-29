@@ -7,7 +7,7 @@ dtlz3_obj objective functions to define the problem.
 """
 
 from parmoo import MOOP
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
 from parmoo.searches import LatinHypercube
@@ -21,7 +21,7 @@ NUM_DES = 3
 NUM_OBJ = 3
 
 # Create a MOOP
-moop = MOOP(LocalGPS)
+moop = MOOP(GlobalSurrogate_PS)
 
 # Add NUM_DES continuous design variables
 for i in range(NUM_DES):

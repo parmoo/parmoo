@@ -3,18 +3,18 @@ import numpy as np
 import pandas as pd
 from parmoo import MOOP
 from parmoo.searches import LatinHypercube
-from parmoo.surrogates import LocalGaussRBF
+from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint, FixedWeights
-from parmoo.optimizers import TR_LBFGSB
+from parmoo.optimizers import LocalSurrogate_BFGS
 from parmoo.objectives import single_sim_out
 import logging
 
 # Fix the random seed for reproducibility
 np.random.seed(0)
 
-# Switch to using the TR_LBFGSB solver to solve surrogate problems in
-# a trust region with multi-start LBFGSB
-my_moop = MOOP(TR_LBFGSB)
+# Switch to using the LocalSurrogate_BFGS solver to solve surrogate problems
+# in a trust region with multi-start LBFGSB
+my_moop = MOOP(LocalSurrogate_BFGS)
 
 # Massive 50-variable black-box optimization problem
 # Completely hopeless for methods that rely on global models
@@ -41,7 +41,7 @@ my_moop.addSimulation({'name': "MySim",
                        'm': 2,
                        'sim_func': sim_func,
                        'search': LatinHypercube,
-                       'surrogate': LocalGaussRBF,
+                       'surrogate': GaussRBF,
                        'hyperparams': {'search_budget': 200}})
 
 # 2 objectives (using the single_sim_out library objective to minimize a

@@ -61,7 +61,9 @@ def test_GaussRBF():
     rbf1.fit(x_vals1, y_vals1)
     rbf1.update(x_vals2, y_vals2)
     rbf1.update(np.zeros((0, 3)), np.zeros((0, 2)))    # Update with no data
+    rbf1.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     rbf2.fit(x_vals_full, y_vals_full)
+    rbf2.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     # Try a bad improvement step to test error handling
     with pytest.raises(TypeError):
         rbf1.improve(5, False)
@@ -94,7 +96,7 @@ def test_GaussRBF():
     y_vals3 = np.asarray([[np.dot(xi, xi)] for xi in x_vals3])
     rbf3 = GaussRBF(1, np.zeros(3), np.ones(3), {})
     rbf3.fit(x_vals3, y_vals3)
-    rbf3.setCenter(np.zeros(3))
+    rbf3.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     y_grad_vals3 = -0.03661401 * np.ones((1, 3))
     assert (np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
             < 1.0e-4)
@@ -130,12 +132,14 @@ def test_GaussRBF():
     rbf4 = GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': 0.0001})
     rbf4.fit(x_vals1, y_vals1)
     rbf4.update(x_vals2, y_vals2)
+    rbf4.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     # Now create a really tiny design space with a large tolerance
     rbf5 = GaussRBF(1, np.zeros(1), np.ones(1),
                     {'des_tols': 0.3 * np.ones(1)})
     xdat5 = np.asarray([[0.4], [0.6]])
     ydat5 = np.asarray([[0.4], [0.6]])
     rbf5.fit(xdat5, ydat5)
+    rbf5.setTrustRegion(np.zeros(1), np.ones(1) * np.infty)
     # Test that improve() is able to find points outside the design tolerance
     for i in range(5):
         x_improv = rbf5.improve(xdat5[0], False)
@@ -147,6 +151,7 @@ def test_GaussRBF():
     rbf6 = GaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf6.fit(x_vals1, y_vals1)
     rbf6.update(x_vals2, y_vals2)
+    rbf6.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     # Now fit datapoints in a plane
     x_vals3 = np.zeros((4, 3))
     x_vals3[1, 0] = 0.1
@@ -156,6 +161,7 @@ def test_GaussRBF():
     rbf7 = GaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf7.fit(x_vals3, y_vals3)
     rbf7.update(x_vals3, y_vals3)
+    rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     # Test save and load
     rbf6.save("parmoo.surrogate")
     rbf7.load("parmoo.surrogate")
@@ -163,13 +169,14 @@ def test_GaussRBF():
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
     os.remove("parmoo.surrogate")
     # Generate a simple 1D RBF and check its stdDev and stdDevGrad are accurate
-    x_vals4 = np.array([[0], [1]])
-    y_vals4 = np.array([[0], [1]])
-    rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {})
+    x_vals4 = np.array([[0.0], [1.0]])
+    y_vals4 = np.array([[0.0], [1.0]])
+    rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {'tail_order': 0})
     rbf8.fit(x_vals4, y_vals4)
+    rbf8.setTrustRegion(np.zeros(1), np.ones(1) * np.infty)
     assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 0.5) < 1.0e-8)
     assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 1.0e-2)
-    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) < 1.0e-4)
+    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) > 1)
     assert (np.linalg.norm(rbf8.stdDevGrad(np.array([0.5]))) < 1.0e-4)
     xx = np.linspace(0, 1).reshape((50, 1))
     maxind = 0
@@ -194,33 +201,29 @@ def test_LocalGaussRBF():
 
     """
 
-    from parmoo.surrogates import LocalGaussRBF
+    from parmoo.surrogates import GaussRBF
     import numpy as np
     import pytest
     import os
 
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
-        LocalGaussRBF(2, np.zeros(3), np.ones(3), {'nugget': []})
+        GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': []})
     with pytest.raises(ValueError):
-        LocalGaussRBF(2, np.zeros(3), np.ones(3), {'nugget': -1.0})
+        GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': -1.0})
     with pytest.raises(ValueError):
-        LocalGaussRBF(2, np.zeros(3), np.ones(3), {'n_loc': []})
-    with pytest.raises(ValueError):
-        LocalGaussRBF(2, np.zeros(3), np.ones(3), {'n_loc': 1})
-    with pytest.raises(ValueError):
-        LocalGaussRBF(2, np.zeros(3), np.ones(3),
+        GaussRBF(2, np.zeros(3), np.ones(3),
                       {'nugget': 0.1, 'des_tols': np.zeros(3)})
     with pytest.raises(ValueError):
-        LocalGaussRBF(2, np.zeros(3), np.ones(3),
+        GaussRBF(2, np.zeros(3), np.ones(3),
                       {'nugget': 0.1, 'des_tols': np.zeros(2)})
     with pytest.raises(ValueError):
-        LocalGaussRBF(2, np.zeros(3), np.ones(3),
+        GaussRBF(2, np.zeros(3), np.ones(3),
                       {'nugget': 0.1, 'des_tols': 0.1})
     # Create 2 identical RBFs
-    rbf1 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {'tail_order': 1})
-    rbf2 = LocalGaussRBF(2, np.zeros(3), np.ones(3),
-                         {'n_loc': 4, 'tail_order': 1})
+    rbf1 = GaussRBF(2, np.zeros(3), np.ones(3), {'tail_order': 1})
+    rbf2 = GaussRBF(2, np.zeros(3), np.ones(3),
+                         {'tail_order': 1})
     # Generate some random data with 3 design variables and 2 outputs
     x_vals1 = np.random.random_sample((10, 3))
     y_vals1 = np.random.random_sample((10, 2))
@@ -251,16 +254,22 @@ def test_LocalGaussRBF():
     rbf1.fit(x_vals1, y_vals1)
     rbf1.update(x_vals2, y_vals2)
     rbf1.update(np.zeros((0, 3)), np.zeros((0, 2)))    # Update with no data
-    rbf1.setCenter(0.5 * np.ones(3))
+    rbf1.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.5)
     rbf2.fit(x_vals_full, y_vals_full)
-    rbf2.setCenter(0.5 * np.ones(3))
+    rbf2.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.5)
     # Try to set the center with illegal values to test error handling
     with pytest.raises(TypeError):
-        rbf1.setCenter(5)
+        rbf1.setTrustRegion(5, np.ones(3))
     with pytest.raises(ValueError):
-        rbf1.setCenter(np.zeros(5))
+        rbf1.setTrustRegion(np.zeros(5), np.ones(3))
     with pytest.raises(ValueError):
-        rbf1.setCenter(-np.ones(3))
+        rbf1.setTrustRegion(-np.ones(3), np.ones(3))
+    with pytest.raises(TypeError):
+        rbf1.setTrustRegion(np.ones(3) * 0.5, 5)
+    with pytest.raises(ValueError):
+        rbf1.setTrustRegion(np.ones(3) * 0.5, np.ones(5))
+    with pytest.raises(ValueError):
+        rbf1.setTrustRegion(np.ones(3) * 0.5, -np.ones(3))
     # Try a bad improvement step to test error handling
     with pytest.raises(TypeError):
         rbf1.improve(5, False)
@@ -274,8 +283,8 @@ def test_LocalGaussRBF():
     assert (all(rbf1.stdDev(x) == rbf2.stdDev(x)))
     # Check that the RBFs interpolate, up to 8 decimal digits of precision
     for i in range(x_vals_full.shape[0]):
-        rbf1.setCenter(x_vals_full[i])
-        rbf2.setCenter(x_vals_full[i])
+        rbf1.setTrustRegion(x_vals_full[i], np.ones(3) * 0.1)
+        rbf2.setTrustRegion(x_vals_full[i], np.ones(3) * 0.1)
         assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
                 < 0.00000001)
         assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
@@ -283,8 +292,8 @@ def test_LocalGaussRBF():
         assert (np.linalg.norm(rbf1.stdDev(x_vals_full[i]) < 1.0e-4))
         assert (np.linalg.norm(rbf2.stdDev(x_vals_full[i]) < 1.0e-4))
     # Check that the RBFs compute the same grad, up to 8 digits of precision
-    rbf1.setCenter(0.5 * np.ones(3))
-    rbf2.setCenter(0.5 * np.ones(3))
+    rbf1.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.1)
+    rbf2.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.1)
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
                                rbf2.gradient(x_vals_full[i])) < 0.00000001)
@@ -294,9 +303,9 @@ def test_LocalGaussRBF():
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
     y_vals3 = np.asarray([[np.dot(xi, xi)] for xi in x_vals3])
-    rbf3 = LocalGaussRBF(1, np.zeros(3), np.ones(3), {'tail_order': 0})
+    rbf3 = GaussRBF(1, np.zeros(3), np.ones(3), {'tail_order': 0})
     rbf3.fit(x_vals3, y_vals3)
-    rbf3.setCenter(x_vals3[-1])
+    rbf3.setTrustRegion(x_vals3[-1], np.ones(3) * 0.25)
     y_grad_vals3 = -0.08798618 * np.ones((1, 3))
     assert (np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
             < 1.0e-4)
@@ -322,7 +331,7 @@ def test_LocalGaussRBF():
         x_new[i, i] = 0.50000001
         f_new[i, 0] = np.dot(x_new[i, :], x_new[i, :])
     rbf3.update(x_new, f_new)
-    rbf3.setCenter(0.5 * np.ones(3))
+    rbf3.setTrustRegion(0.5 * np.ones(3), 1.0e-4)
     x_improv = rbf3.improve(np.asarray([0.5, 0.5, 0.5]), False)
     assert (np.all(x_improv[0] <= np.ones(3)) and
             np.all(x_improv[0] >= np.zeros(3)))
@@ -331,19 +340,20 @@ def test_LocalGaussRBF():
     # Now fit redundant data points using a nugget
     x_vals1 = np.append(x_vals1, np.asarray([x_vals1[0, :]]), axis=0)
     y_vals1 = np.append(y_vals1, np.asarray([y_vals1[0, :]]), axis=0)
-    rbf4 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {'nugget': 0.0001})
+    rbf4 = GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': 0.0001})
     rbf4.fit(x_vals1, y_vals1)
-    rbf4.setCenter(x_vals1[0])
+    rbf4.setTrustRegion(x_vals1[0], np.ones(3) * 0.1)
     rbf4.evaluate(x_vals1[0])
     rbf4.update(x_vals2, y_vals2)
-    rbf4.setCenter(x_vals1[0])
+    rbf4.setTrustRegion(x_vals1[0], np.ones(3) * 0.1)
     rbf4.gradient(x_vals1[0])
     # Now create a really tiny design space with a large tolerance
-    rbf5 = LocalGaussRBF(1, np.zeros(1), np.ones(1),
+    rbf5 = GaussRBF(1, np.zeros(1), np.ones(1),
                          {'des_tols': 0.3 * np.ones(1)})
     xdat5 = np.asarray([[0.4], [0.6]])
     ydat5 = np.asarray([[0.4], [0.6]])
     rbf5.fit(xdat5, ydat5)
+    rbf5.setTrustRegion(np.ones(1) * 0.5, np.ones(1) * 1.0e-1)
     # Test that improve() is able to find points outside the design tolerance
     for i in range(5):
         x_improv = rbf5.improve(xdat5[0], False)
@@ -352,17 +362,17 @@ def test_LocalGaussRBF():
         x_improv = rbf5.improve(xdat5[0], True)
         assert (x_improv[0][0] < 0.1 or x_improv[0][0] > 0.9)
     # Now fit redundant data points to test adaptive nugget
-    rbf6 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {})
+    rbf6 = GaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf6.fit(x_vals1, y_vals1)
     rbf6.update(x_vals2, y_vals2)
-    rbf6.setCenter(x_vals1[0])
+    rbf6.setTrustRegion(x_vals1[0], np.ones(3) * 0.1)
     # Now fit datapoints in a plane
     x_vals3 = np.zeros((4, 3))
     x_vals3[1, 0] = 0.1
     x_vals3[2, 0] = 0.2
     x_vals3[3, 0] = 0.3
     y_vals3 = np.ones((4, 2))
-    rbf7 = LocalGaussRBF(2, np.zeros(3), np.ones(3), {})
+    rbf7 = GaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf7.fit(x_vals3, y_vals3)
     rbf7.update(x_vals3, y_vals3)
     # Test save and load
@@ -372,14 +382,14 @@ def test_LocalGaussRBF():
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
     os.remove("parmoo.surrogate")
     # Generate a simple 1D RBF and check its stdDev and stdDevGrad are accurate
-    x_vals4 = np.array([[0], [1]])
-    y_vals4 = np.array([[0], [1]])
-    rbf8 = LocalGaussRBF(1, np.zeros(1), np.ones(1), {'tail_order': 0})
+    x_vals4 = np.array([[0.0], [1.0]])
+    y_vals4 = np.array([[0.0], [1.0]])
+    rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {'tail_order': 0})
     rbf8.fit(x_vals4, y_vals4)
-    rbf8.setCenter(np.array([0.5]))
+    rbf8.setTrustRegion(np.array([0.5]), np.ones(1) * 0.25)
     assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 0.5) < 1.0e-8)
     assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 5.0e-3)
-    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) < 1.0e-4)
+    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) > 1.0)
     assert (np.linalg.norm(rbf8.stdDevGrad(np.array([0.5]))) < 1.0e-4)
     xx = np.linspace(0, 1).reshape((50, 1))
     maxind = 0

@@ -8,11 +8,11 @@ def test_MOOP_addDesign_bad_cont():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import pytest
 
     # Initialize a MOOP with no hyperparameters
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Try to add some bad design variable types
     with pytest.raises(TypeError):
         moop.addDesign([])
@@ -76,13 +76,13 @@ def test_MOOP_addDesign_bad_cont():
                         'ub': 1.0})
     # Add variables out of order
     with pytest.raises(RuntimeError):
-        moop1 = MOOP(LocalGPS)
+        moop1 = MOOP(LocalSurrogate_PS)
         moop1.acquisitions.append(0)
         moop1.addDesign({'des_type': "continuous",
                          'lb': 0.0,
                          'ub': 1.0})
     with pytest.raises(RuntimeError):
-        moop2 = MOOP(LocalGPS)
+        moop2 = MOOP(LocalSurrogate_PS)
         moop2.sim_funcs.append(0)
         moop2.addDesign({'des_type': "continuous",
                          'lb': 0.0,
@@ -98,11 +98,11 @@ def test_MOOP_addDesign_bad_cat():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import pytest
 
     # Initialize a MOOP with no hyperparameters
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Add some bad categorical variables
     with pytest.raises(AttributeError):
         moop.addDesign({'des_type': "categorical"})
@@ -133,11 +133,11 @@ def test_MOOP_addDesign_bad_int():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import pytest
 
     # Initialize a MOOP with no hyperparameters
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Add some bad integer variables
     with pytest.raises(AttributeError):
         moop.addDesign({'des_type': "integer"})
@@ -169,10 +169,10 @@ def test_MOOP_addDesign():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
 
     # Initialize a MOOP with no hyperparameters
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Now add some continuous and integer design variables
     assert (moop.n == 0)
     moop.addDesign({'des_type': "continuous",
@@ -252,11 +252,11 @@ def test_MOOP_embed_extract_unnamed1():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Initialize a MOOP with no hyperparameters
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Add integer and continuous vars and check that they embed correctly
     moop.addDesign({'des_type': "integer",
                     'lb': 0,
@@ -393,11 +393,11 @@ def test_MOOP_embed_extract_unnamed2():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Same problem as in test_MOOP_embed_extract_unnamed1(), but reverse order
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Add a custom variable and raw variable and check that they embed
     moop.addDesign({'des_type': "raw"})
     moop.addDesign({'des_type': "custom",
@@ -496,11 +496,11 @@ def test_MOOP_embed_extract_named1():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Now, create another MOOP where all variables are labeled
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Add two continuous variables and check that they are embedded correctly
     moop.addDesign({'name': "x0",
                     'des_type': "integer",
@@ -672,11 +672,11 @@ def test_MOOP_embed_extract_named2():
     """
 
     from parmoo import MOOP
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     # Now, create another MOOP where all variables are labeled
-    moop = MOOP(LocalGPS)
+    moop = MOOP(LocalSurrogate_PS)
     # Add a custom variable
     moop.addDesign({'name': "x7",
                     'des_type': "custom",

@@ -1,8 +1,8 @@
 
-def test_LBFGSB():
+def test_GlobalSurrogate_BFGS():
     """ Test the LBFGS class in optimizers.py.
 
-    Perform a test of the LBFGSB class by minimizing the three variable,
+    Perform a test of the GlobalSurrogate_BFGS class by minimizing the three variable,
     biobjective function
 
     $$
@@ -20,7 +20,7 @@ def test_LBFGSB():
     """
 
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LBFGSB
+    from parmoo.optimizers import GlobalSurrogate_BFGS
     import numpy as np
     import pytest
 
@@ -69,12 +69,12 @@ def test_LBFGSB():
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(TypeError):
-        LBFGSB(o, lb, ub, {'opt_budget': 2.0})
+        GlobalSurrogate_BFGS(o, lb, ub, {'opt_budget': 2.0})
     with pytest.raises(ValueError):
-        LBFGSB(o, lb, ub, {'opt_budget': 0})
+        GlobalSurrogate_BFGS(o, lb, ub, {'opt_budget': 0})
     # Initialize the problem correctly, with and without an optional budget
-    LBFGSB(o, lb, ub, {'opt_budget': 100})
-    opt = LBFGSB(o, lb, ub, {})
+    GlobalSurrogate_BFGS(o, lb, ub, {'opt_budget': 100})
+    opt = GlobalSurrogate_BFGS(o, lb, ub, {})
     # Try to add some bad objectives, constraints, and acquisitions
     with pytest.raises(TypeError):
         opt.setObjective(5)
@@ -100,7 +100,7 @@ def test_LBFGSB():
     opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setReset(lambda x: 100.0)
+    opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(TypeError):
         opt.solve(5)
@@ -110,7 +110,7 @@ def test_LBFGSB():
         opt.solve(np.zeros((4, n)))
     with pytest.raises(ValueError):
         opt.solve(-np.ones((3, n)))
-    # Solve the surrogate problem with LBFGSB, starting from the centroid
+    # Solve the surrogate problem with GlobalSurrogate_BFGS, starting from the centroid
     x = np.zeros((3, n))
     x[:] = 0.5
     (x1, x2, x3) = opt.solve(x)
@@ -128,10 +128,10 @@ def test_LBFGSB():
     return
 
 
-def test_TR_LBFGSB():
-    """ Test the TR_LBFGSB class in optimizers.py.
+def test_LocalSurrogate_BFGS():
+    """ Test the LocalSurrogate_BFGS class in optimizers.py.
 
-    Perform a test of the TR_LBFGSB class by minimizing the three variable,
+    Perform a test of the LocalSurrogate_BFGS class by minimizing the three variable,
     biobjective function
 
     $$
@@ -149,7 +149,7 @@ def test_TR_LBFGSB():
     """
 
     from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import TR_LBFGSB
+    from parmoo.optimizers import LocalSurrogate_BFGS
     import numpy as np
     import pytest
 
@@ -198,12 +198,12 @@ def test_TR_LBFGSB():
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(TypeError):
-        TR_LBFGSB(o, lb, ub, {'opt_budget': 2.0})
+        LocalSurrogate_BFGS(o, lb, ub, {'opt_budget': 2.0})
     with pytest.raises(ValueError):
-        TR_LBFGSB(o, lb, ub, {'opt_budget': 0})
+        LocalSurrogate_BFGS(o, lb, ub, {'opt_budget': 0})
     # Initialize the problem correctly, with and without an optional budget
-    TR_LBFGSB(o, lb, ub, {'opt_budget': 100})
-    opt = TR_LBFGSB(o, lb, ub, {})
+    LocalSurrogate_BFGS(o, lb, ub, {'opt_budget': 100})
+    opt = LocalSurrogate_BFGS(o, lb, ub, {})
     # Try to add some bad objectives, constraints, and acquisitions
     with pytest.raises(TypeError):
         opt.setObjective(5)
@@ -224,16 +224,16 @@ def test_TR_LBFGSB():
     with pytest.raises(TypeError):
         opt.addAcquisition(5)
     with pytest.raises(TypeError):
-        opt.setReset(5)
+        opt.setTrFunc(5)
     with pytest.raises(ValueError):
-        opt.setReset(lambda z1, z2: 0.0)
+        opt.setTrFunc(lambda z1: 0.0)
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
     opt.setSimulation(S, SD)
     opt.setPenalty(L, g)
     opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setReset(lambda x: 100.0)
+    opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(TypeError):
         opt.solve(5)
@@ -243,24 +243,30 @@ def test_TR_LBFGSB():
         opt.solve(np.zeros((4, n)))
     with pytest.raises(ValueError):
         opt.solve(-np.ones((3, n)))
-    # Solve the surrogate problem with LBFGSB, starting from the centroid
-    x = np.zeros((3, n))
-    x[:] = 0.5
-    (x1, x2, x3) = opt.solve(x)
     # Define the solution
     x1_soln = np.eye(n)[0]
     x1_soln[n-1] = 0.1
     x2_soln = np.eye(n)[1]
     x2_soln[n-1] = 0.1
+    # Solve the surrogate problem with LBFGSB, starting from the centroid
+    x = np.zeros((3, n))
+    x[:] = 0.5
+    for i in range(6):
+        (x1, x2, x3) = opt.solve(x)
+        x[0] = x1
+        x[1] = x2
+        x[2] = x3
+        for j in range(3):
+            opt.returnResults(x[j], np.ones(2) * -10, np.zeros(1), np.zeros(1))
     # eps is the tolerance for rejecting a solution as incorrect
     eps = 0.01
     # Check that the computed solutions are within eps of the truth
-    assert (np.linalg.norm(x1 - x1_soln) < eps)
-    assert (np.linalg.norm(x2 - x2_soln) < eps)
-    assert (np.abs(x3[n-1] - 0.1) < eps)
+    assert (np.linalg.norm(x[0] - x1_soln) < eps)
+    assert (np.linalg.norm(x[1] - x2_soln) < eps)
+    assert (np.abs(x[2, n-1] - 0.1) < eps)
     return
 
 
 if __name__ == "__main__":
-    test_LBFGSB()
-    test_TR_LBFGSB()
+    test_GlobalSurrogate_LBFGS()
+    test_LocalSurrogate_BFGS()
