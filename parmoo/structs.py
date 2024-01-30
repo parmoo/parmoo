@@ -434,14 +434,14 @@ class SurrogateFunction(ABC):
         """
 
         # Check that the x is legal
-        if not isinstance(x, np.ndarray):
-            raise TypeError("x must be a numpy array")
-        else:
+        try:
             if x.size != self.n:
                 raise ValueError("x must have length n")
             elif (np.any(x < self.lb - self.eps) or
                   np.any(x > self.ub + self.eps)):
                 raise ValueError("x cannot be infeasible")
+        except AttributeError:
+            raise TypeError("x must be a numpy array-like object")
         # Allocate the output array.
         x_new = np.zeros(self.n)
         if global_improv:
@@ -566,8 +566,8 @@ class SurrogateOptimizer(ABC):
 
         # Check whether obj_func() has an appropriate signature
         if callable(obj_func):
-            if len(inspect.signature(obj_func).parameters) != 1:
-                raise ValueError("obj_func() must accept exactly one input")
+            if len(inspect.signature(obj_func).parameters) != 2:
+                raise ValueError("obj_func() must accept exactly two inputs")
             else:
                 # Add obj_func to the problem
                 self.objectives = obj_func
@@ -575,7 +575,7 @@ class SurrogateOptimizer(ABC):
             raise TypeError("obj_func() must be callable")
         return
 
-    def setSimulation(self, sim_func, sd_func=None):
+    def setSimulation(self, sim_func, sd_func):
         """ Add a vector-valued simulation function, used to calculate objs.
 
         Args:
@@ -598,9 +598,9 @@ class SurrogateOptimizer(ABC):
         else:
             raise TypeError("sim_func() must be callable")
         # Check whether sd_func() has an appropriate signature
-        if sd_func is not None and callable(sd_func):
-            if len(inspect.signature(sd_func).parameters) not in (1, 2):
-                raise ValueError("sd_func() must accept one or 2 inputs")
+        if callable(sd_func):
+            if len(inspect.signature(sd_func).parameters) != 1:
+                raise ValueError("sd_func() must accept exactly one input")
             else:
                 # Add sd_func to the problem
                 self.sim_sd = sd_func
@@ -608,7 +608,7 @@ class SurrogateOptimizer(ABC):
             raise TypeError("sd_func() must be callable")
         return
 
-    def setPenalty(self, penalty_func, grad_func):
+    def setPenalty(self, penalty_func):
         """ Add a matrix-valued gradient function for obj_func.
 
         Args:
@@ -620,19 +620,10 @@ class SurrogateOptimizer(ABC):
 
         """
 
-        # Check whether grad_func() has an appropriate signature
-        if callable(grad_func):
-            if len(inspect.signature(grad_func).parameters) != 1:
-                raise ValueError("grad_func() must accept exactly one input")
-            else:
-                # Add grad_func to the problem
-                self.gradients = grad_func
-        else:
-            raise TypeError("grad_func() must be callable")
         # Check whether penalty_func() has an appropriate signature
         if callable(penalty_func):
-            if len(inspect.signature(penalty_func).parameters) not in [1, 2]:
-                raise ValueError("penalty_func must accept exactly one input")
+            if len(inspect.signature(penalty_func).parameters) != 2:
+                raise ValueError("penalty_func must accept exactly two inputs")
             else:
                 # Add Lagrangian to the problem
                 self.penalty_func = penalty_func
@@ -653,8 +644,8 @@ class SurrogateOptimizer(ABC):
 
         # Check whether constraint_func() has an appropriate signature
         if callable(constraint_func):
-            if len(inspect.signature(constraint_func).parameters) != 1:
-                raise ValueError("constraint_func() must accept exactly one"
+            if len(inspect.signature(constraint_func).parameters) != 2:
+                raise ValueError("constraint_func() must accept exactly two"
                                  + " input")
             else:
                 # Add constraint_func to the problem

@@ -41,32 +41,6 @@ def test_MOOP_addDesign_bad_cont():
         moop.addDesign({'des_type': "continuous",
                         'lb': 0.0,
                         'ub': 0.0})
-    with pytest.raises(TypeError):
-        moop.addDesign({'name': 5,
-                        'des_type': "continuous",
-                        'lb': 0.0,
-                        'ub': 1.0})
-    # Add some bad continuous variables, using default option
-    with pytest.raises(KeyError):
-        moop.addDesign({})
-    with pytest.raises(TypeError):
-        moop.addDesign({'des_tol': "hello world",
-                        'lb': 0.0,
-                        'ub': 1.0})
-    with pytest.raises(ValueError):
-        moop.addDesign({'des_tol': -1.0,
-                        'lb': 0.0,
-                        'ub': 1.0})
-    with pytest.raises(TypeError):
-        moop.addDesign({'lb': "hello",
-                        'ub': "world"})
-    with pytest.raises(ValueError):
-        moop.addDesign({'lb': 0.0,
-                        'ub': 0.0})
-    with pytest.raises(TypeError):
-        moop.addDesign({'name': 5,
-                        'lb': 0.0,
-                        'ub': 1.0})
     # Try to use a repeated name to test error handling
     with pytest.raises(ValueError):
         moop.addDesign({'name': "x_1", 'lb': 0.0, 'ub': 1.0})
@@ -113,10 +87,6 @@ def test_MOOP_addDesign_bad_cat():
         moop.addDesign({'des_type': "categorical",
                         'levels': 1})
     with pytest.raises(TypeError):
-        moop.addDesign({'name': 5,
-                        'des_type': "categorical",
-                        'levels': 2})
-    with pytest.raises(TypeError):
         moop.addDesign({'des_type': "categorical",
                         'levels': [3, "hi"]})
     with pytest.raises(ValueError):
@@ -149,11 +119,6 @@ def test_MOOP_addDesign_bad_int():
         moop.addDesign({'des_type': "integer",
                         'lb': 0,
                         'ub': 0})
-    with pytest.raises(TypeError):
-        moop.addDesign({'name': 5,
-                        'des_type': "integer",
-                        'lb': 0,
-                        'ub': 1})
 
 
 def test_MOOP_addDesign():

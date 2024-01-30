@@ -32,7 +32,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
 
     # Slots for the LocalSurrogate_PS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'setTR',
+                 'objectives', 'simulations', 'setTR',
                  'penalty_func', 'sim_sd', 'restarts', 'momentum', 'q_ind',
                  'prev_centers', 'des_tols', 'targets']
 
@@ -330,7 +330,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
 
     # Slots for the GlobalSurrogate_PS class
     __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'setTR',
+                 'objectives', 'simulations', 'setTR',
                  'penalty_func', 'opt_budget', 'gps_budget', 'sim_sd',
                  'momentum']
 

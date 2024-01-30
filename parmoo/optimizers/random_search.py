@@ -27,7 +27,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
 
     # Slots for the GlobalSurrogate_RS class
     __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints', 'objectives',
-                 'budget', 'simulations', 'gradients', 'setTR',
+                 'budget', 'simulations', 'setTR',
                  'penalty_func', 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
@@ -120,7 +120,8 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
                 xi = (np.random.sample(self.n) *
                       (self.ub[:] - self.lb[:]) + self.lb[:])
                 data['x_vals'][i, :] = xi[:]
-                data['f_vals'][i, :] = self.penalty_func(xi)
+                sxi = self.simulations(xi)
+                data['f_vals'][i, :] = self.penalty_func(xi, sxi)
             # Update the PF
             nondom = updatePF(data, nondom)
             k += k_new

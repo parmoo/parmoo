@@ -29,8 +29,8 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
 
     # Slots for the GlobalSurrogate_BFGS class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'setTR',
-                 'penalty_func', 'sim_sd']
+                 'objectives', 'simulations', 'setTR', 'penalty_func',
+                 'sim_sd']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the GlobalSurrogate_BFGS class.
@@ -142,8 +142,8 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                     return acquisition.scalarize(fx, x, sx, sdx)
 
             def scalar_g(x, *args):
-                return acquisition.scalarizeGrad(self.penalty_func(x),
-                                                 self.gradients(x))
+                sx = self.simulations(x)
+                return acquisition.scalarizeGrad(self.penalty_func(x, sx))
 
             # Get the solution via multistart solve
             soln = x[j, :].copy()
@@ -230,7 +230,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
 
     # Slots for the LBFGSB class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'gradients', 'penalty_func', 'setTR',
+                 'objectives', 'penalty_func', 'setTR',
                  'restarts', 'simulations', 'sim_sd', 'prev_centers',
                  'des_tols', 'targets']
 
@@ -423,8 +423,8 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                     return acquisition.scalarize(fx, x, sx, sdx)
 
             def scalar_g(x, *args):
-                return acquisition.scalarizeGrad(self.penalty_func(x),
-                                                 self.gradients(x))
+                sx = self.simulations(x)
+                return acquisition.scalarizeGrad(self.penalty_func(x, sx))
 
             # Create a new trust region
             rad = self.__checkTR(x[j, :])

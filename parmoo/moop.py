@@ -77,18 +77,18 @@ class MOOP:
      * ``MOOP.getObjectiveData(format='ndarray')``
 
     The following private methods are not recommended for external usage:
-     * ``MOOP._extract(x)``
      * ``MOOP._embed(x)``
-     * ``MOOP._unpack_sim(sx)``
+     * ``MOOP._extract(x)``
      * ``MOOP._pack_sim(sx)``
+     * ``MOOP._unpack_sim(sx)``
      * ``MOOP._fit_surrogates()``
      * ``MOOP._update_surrogates()``
      * ``MOOP._set_surrogate_tr(center, radius)``
      * ``MOOP._evaluate_surrogates(x)``
      * ``MOOP._surrogate_uncertainty(x)``
-     * ``MOOP._evaluate_objectives(x)``
-     * ``MOOP._evaluate_constraints(x)``
-     * ``MOOP._evaluate_penalty(x)``
+     * ``MOOP._evaluate_objectives(x, sx)``
+     * ``MOOP._evaluate_constraints(x, sx)``
+     * ``MOOP._evaluate_penalty(x, sx)``
 
     """
 
@@ -97,7 +97,7 @@ class MOOP:
                  'n_feature', 'n_latent',
                  'm', 'm_total', 'o', 'p', 's',
                  # Embedding dimensions, bounds, and tolerances
-                 'embedders', 'embedding_size'
+                 'embedders', 'embedding_size',
                  'latent_lb', 'latent_ub',
                  'latent_des_tols',
                  # Schemas and databases
@@ -110,7 +110,6 @@ class MOOP:
                  'new_checkpoint',
                  # Simulations, objectives, constraints, and their metadata
                  'sim_funcs', 'obj_funcs', 'con_funcs',
-                 'obj_exp_vals', 'c_exp_vals',
                  # Solver components and their metadata
                  'acquisitions', 'searches', 'surrogates',
                  'optimizer', 'optimizer_obj',
@@ -156,7 +155,6 @@ class MOOP:
         self.new_checkpoint = True
         # Initialize simulations, objectives, constraints, and their metadata
         self.sim_funcs, self.obj_funcs, self.con_funcs = [], [], []
-        self.obj_exp_vals, self.c_exp_vals = [], []
         # Initialize solver components and their metadata
         self.acquisitions, self.searches, self.surrogates = [], [], []
         self.optimizer, self.optimizer_obj = None, None
@@ -272,7 +270,7 @@ class MOOP:
                 self.latent_ub.append(ub)
             des_tols = embedder.getDesTols()
             for des_tol in des_tols:
-                self.latent_des_tols.append(des_tol)
+                self.latent_des_tols.append(float(des_tol))
             dtype = embedder.getInputType()
             self.embedders.append(embedder)
             # Update the schema
@@ -281,7 +279,7 @@ class MOOP:
             else:
                 name = len(self.des_schema)
             check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_names, self.con_schema)
+                        self.obj_schema, self.con_schema)
             self.des_schema.append((name, dtype))
         # Reset the database
         self.n_dat = 0
@@ -331,7 +329,7 @@ class MOOP:
             else:
                 name = "sim" + str(self.s + 1)
             check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_names, self.con_schema)
+                        self.obj_schema, self.con_schema)
             # Update the schema and track the simulation output dimensions
             if m > 1:
                 self.sim_schema.append((name, 'f8', m))
@@ -385,24 +383,6 @@ class MOOP:
                     * 0 -- no derivative taken, return f(x, sim_func(x))
                     * 1 -- return derivative wrt x, or
                     * 2 -- return derivative wrt sim(x).
-                 * 'exp_func' (function): An algebraic objective function
-                   that calculates the expected value and distribution of
-                   an objective, given that surrogate outputs are Gaussian
-                   distributed with given mean and variance. Accepts three
-                   inputs. The first input represents x, the second input
-                   is the expected value of S(x), and the third input
-                   represents the standard deviation of S(x) -- assuming
-                   S(x) is Gaussian distributed.
-                   The output is the expected value of f(x, S).
-                   Interface should match:
-                   `cost = exp_func(x, sim_mean, sim_std_dev, der=0,
-                                    sd=False)`,
-                   where `der` is an optional argument specifying whether to
-                   evaluate the derivative
-                    * 0 -- no derivative taken, return f(x, sim_func(x))
-                    * 1 -- return derivative wrt x,
-                    * 2 -- return derivative wrt expected value of sim(x), or
-                    * 3 -- return derivative wrt std deviation of sim(x).
 
         """
 
@@ -416,15 +396,7 @@ class MOOP:
             # Check that the objective dictionary is a legal format
             if not isinstance(arg, dict):
                 raise TypeError("Each arg must be a Python dict")
-            if 'exp_func' in arg:
-                if callable(arg['exp_func']):
-                    if not (len(inspect.signature(arg['exp_func']).parameters)
-                            in [3, 4]):
-                        raise ValueError("The 'exp_func' must take 3 or 4"
-                                         + " arguments")
-                else:
-                    raise TypeError("The 'exp_func' must be callable")
-            elif 'obj_func' in arg:
+            if 'obj_func' in arg:
                 if callable(arg['obj_func']):
                     if not (len(inspect.signature(arg['obj_func']).parameters)
                             in [2, 3]):
@@ -434,32 +406,22 @@ class MOOP:
                 else:
                     raise TypeError("The 'obj_func' must be callable")
             else:
-                raise AttributeError("The 'exp_func' or 'obj_func' field must "
-                                     + "be present in each arg")
+                raise AttributeError("Each arg must conatain an 'obj_func'")
             # Add the objective name to the schema
             if 'name' in arg:
                 name = arg['name']
             else:
                 name = f"f{self.o + 1}"
             check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_names, self.con_schema)
+                        self.obj_schema, self.con_schema)
             self.obj_schema.append((name, 'f8'))
             # Finally, if all else passed, add the objective
-            if 'exp_func' in arg.keys():
-                self.obj_funcs.append(arg['exp_func'])
-                self.obj_exp_vals.append(True)
-            else:
-                self.obj_funcs.append(arg['obj_func'])
-                self.obj_exp_vals.append(False)
+            self.obj_funcs.append(arg['obj_func'])
             self.o += 1
         return
 
     def addConstraint(self, *args):
         """ Add a new constraint to the MOOP.
-
-        Append a new constraint to the problem. The constraint can be
-        a linear or nonlinear inequality constraint, and may depend on
-        the design variables and/or the simulation outputs.
 
         Args:
             args (dict): Python dictionary containing constraint function
@@ -486,24 +448,6 @@ class MOOP:
                    It is the user's responsibility to ensure that after adding
                    all constraints, the feasible region is nonempty and has
                    nonzero measure in the design space.
-                 * 'exp_func' (function): An algebraic objective function
-                   that calculates the expected value and distribution of
-                   the constraint penalty, given that surrogate outputs are
-                   Gaussian distributed with given mean and variance. Accepts
-                   three inputs. The first input represents x, the second
-                   input is the expected value of S(x), and the third input
-                   represents the standard deviation of S(x) -- assuming
-                   S(x) is Gaussian distributed.
-                   The output is the expected value of c(x, S).
-                   Interface should match:
-                   `penalty = exp_func(x, sim_mean, sim_std_dev, der=0,
-                                       sd=False)`,
-                   where `der` is an optional argument specifying whether to
-                   evaluate the derivative
-                    * 0 -- no derivative taken, return exp val c(x, Sx)
-                    * 1 -- return derivative wrt x,
-                    * 2 -- return derivative wrt expected value of sim(x), or
-                    * 3 -- return derivative wrt std deviation of sim(x).
 
         """
 
@@ -517,15 +461,7 @@ class MOOP:
             # Check that the constraint dictionary is a legal format
             if not isinstance(arg, dict):
                 raise TypeError("Each arg must be a Python dict")
-            if 'exp_func' in arg:
-                if callable(arg['exp_func']):
-                    if not (len(inspect.signature(arg['exp_func']).parameters)
-                            in [3, 4]):
-                        raise ValueError("The 'exp_func' must take 3 or 4"
-                                         + " arguments")
-                else:
-                    raise TypeError("The 'exp_func' must be callable")
-            elif 'constraint' in arg:
+            if 'constraint' in arg:
                 if callable(arg['constraint']):
                     if not (len(inspect.signature(arg['constraint']).
                                 parameters) in [2, 3]):
@@ -535,33 +471,22 @@ class MOOP:
                 else:
                     raise TypeError("The 'constraint' must be callable")
             else:
-                raise AttributeError("The 'exp_func' or 'constraint' field "
-                                     + "must be present in each arg")
+                raise AttributeError("Each arg must contain a 'constraint'")
             # Add the constraint name
             if 'name' in arg:
                 name = arg['name']
             else:
                 name = f"c{self.p + 1}"
             check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_names, self.con_schema)
+                        self.obj_schema, self.con_schema)
             self.con_schema.append((name, 'f8'))
             # Finally, if all else passed, add the constraint
-            if 'exp_func' in arg.keys():
-                self.con_funcs.append(arg['exp_func'])
-                self.c_exp_vals.append(True)
-            else:
-                self.con_funcs.append(arg['constraint'])
-                self.c_exp_vals.append(False)
+            self.con_funcs.append(arg['constraint'])
             self.p += 1
         return
 
     def addAcquisition(self, *args):
         """ Add an acquisition function to the MOOP.
-
-        Append a new acquisition function to the problem. In each iteration,
-        each acquisition is used to generate one or more points to evaluate
-        Typically, each acquisition generates one evaluation per simulation
-        function.
 
         Args:
             args (dict): Python dictionary of acquisition function info,
@@ -648,9 +573,6 @@ class MOOP:
     def getDesignType(self):
         """ Get the numpy dtype of all design points for this MOOP.
 
-        Use this type when allocating a numpy array to store the design
-        points for this MOOP object.
-
         Returns:
             np.dtype: The numpy dtype of this MOOP's design points.
             If no design variables have yet been added, returns None.
@@ -664,9 +586,6 @@ class MOOP:
 
     def getSimulationType(self):
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
-
-        Use this type if allocating a numpy array to store the simulation
-        outputs of this MOOP object.
 
         Returns:
             np.dtype: The numpy dtype of this MOOP's simulation outputs.
@@ -682,9 +601,6 @@ class MOOP:
     def getObjectiveType(self):
         """ Get the numpy dtype of an objective point for this MOOP.
 
-        Use this type if allocating a numpy array to store the objective
-        values of this MOOP object.
-
         Returns:
             np.dtype: The numpy dtype of this MOOP's objective points.
             If no objectives have yet been added, returns None.
@@ -698,9 +614,6 @@ class MOOP:
 
     def getConstraintType(self):
         """ Get the numpy dtype of the constraint violations for this MOOP.
-
-        Use this type if allocating a numpy array to store the constraint
-        scores output of this MOOP object.
 
         Returns:
             np.dtype: The numpy dtype of this MOOP's constraint violation
@@ -716,12 +629,13 @@ class MOOP:
     def check_sim_db(self, x, s_name):
         """ Check self.sim_db[s_name] to see if the design x was evaluated.
 
-        x (ndarray or numpy structured array): A 1d numpy.ndarray or numpy
-            structured array specifying the design point to check for.
+        Args:
+            x (dict or numpy structured array): A numpy structured array or a
+                Python dictionary specifying the keys/names and corresponding
+                values of a design point to search for.
 
-        s_name (str or int): The name or index of the simulation where
-            (x, sx) will be added. Note, indices are assigned in the order
-            the simulations were listed during initialization.
+            s_name (str): The name of the simulation whose database will be
+                searched.
 
         Returns:
             None or numpy.ndarray: returns None if x is not in
@@ -736,7 +650,6 @@ class MOOP:
             if sj[0] == s_name:
                 i = j
                 break
-        # Check for errors
         if i < 0 or i > self.s - 1:
             raise ValueError("s_name did not contain a legal name/index")
         # Check the database for previous evaluations of x
@@ -752,38 +665,28 @@ class MOOP:
     def update_sim_db(self, x, sx, s_name):
         """ Update sim_db[s_name] by adding a design/simulation output pair.
 
-        x (np.ndarray or numpy structured array): A 1d numpy.ndarray or numpy
-            structured array specifying the design point to add.
+        Args:
+            x (dict or numpy structured array): A numpy structured array or a
+                Python dictionary specifying the keys/names and corresponding
+                values of a design point to add.
 
+            sx (np.ndarray): A 1D array containing the corresponding
+                simulation output(s).
 
-        sx (np.ndarray): A 1d numpy.ndarray containing the corresponding
-            simulation output.
-
-        s_name (str or int): The name or index of the simulation to whose
-            database the pair (x, sx) will be added. Note, when using unnamed
-            variables and simulations, the simulation indices were assigned
-            in the same order that the simulations were added to the MOOP
-            (using `MOOP.addSimulation(*args)`) during initialization.
+            s_name (str): The name of the simulation to whose database the
+                pair (x, sx) will be added into.
 
         """
 
         # Extract the simulation name
-        if isinstance(s_name, str):
-            i = -1
-            for j, sj in enumerate(self.sim_schema):
-                if sj[0] == s_name:
-                    i = j
-                    break
-        elif isinstance(s_name, int):
-            i = s_name
-        else:
-            raise TypeError("s_name must be a string or int")
-        # Check for errors
+        i = -1
+        for j, sj in enumerate(self.sim_schema):
+            if sj[0] == s_name:
+                i = j
+                break
         if i < 0 or i > self.s - 1:
             raise ValueError("s_name did not contain a legal name/index")
-        # Extract data
         xx = self._embed(x)
-        # Check whether sim_db[i]['n'] > 0
         if self.sim_db[i]['n'] > 0:
             # If sim_db[i]['n'] > 0, then append to the database
             self.sim_db[i]['x_vals'] = np.append(self.sim_db[i]['x_vals'],
@@ -796,10 +699,9 @@ class MOOP:
             self.sim_db[i]['x_vals'][0, :] = xx
             self.sim_db[i]['s_vals'][0, :] = sx
             self.sim_db[i]['n'] += 1
-        # If data-saving is on, append the sim output to a json
+        # If various checkpointing modes are on, then save the current states
         if self.checkpoint_data:
             self.savedata(x, sx, s_name, filename=self.checkpoint_file)
-        # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpoint_file)
         return
@@ -808,19 +710,19 @@ class MOOP:
         """ Evaluate sim_func[s_name] and store the result in the database.
 
         Args:
-            x (numpy.ndarray or numpy structured array): Either a numpy
-                structured array (when using named variables) or a 1D
-                numpy.ndarray containing the values of the design variable
-                to evaluate. Note, when operating with unnamed variables,
-                design variables are indices were assigned in the order that
-                the design variables were added to the MOOP using
-                `MOOP.addDesign(*args)`.
+            x (dict or numpy structured array): A numpy structured array or a
+                Python dictionary specifying the keys/names and corresponding
+                values of a design point to search for.
 
-            s_name (str, int): The name or index of the simulation to
-                evaluate. Note, when operating with unnamed variables,
-                simulation indices were assigned in the order that
-                the simulations were added to the MOOP using
-                `MOOP.addSimulation(*args)`.
+        s_name (str): The name of the simulation whose database will be
+            searched.
+
+            x (dict or numpy structured array): Either a numpy structured
+                array or a Python dictionary with keys/names corresponding
+                to the design variable names given and values containing
+                the corresponding values of the design point to evaluate.
+
+            s_name (str): The name of the simulation to evaluate.
 
         Returns:
             numpy.ndarray: A 1d numpy.ndarray containing the output from the
@@ -828,418 +730,11 @@ class MOOP:
 
         """
 
-        if isinstance(s_name, str):
-            i = -1
-            for j, sj in enumerate(self.sim_schema):
-                if sj[0] == s_name:
-                    i = j
-                    break
-        elif isinstance(s_name, int):
-            i = s_name
-        else:
-            raise TypeError("s_name must be a string or int")
-        if i < 0 or i > self.s - 1:
-            raise ValueError("s_name did not contain a legal name/index")
         sx = self.check_sim_db(x, s_name)
         if sx is None:
             sx = np.asarray(self.sim_funcs[i](x))
             self.update_sim_db(x, sx, s_name)
         return sx
-
-    def _embed(self, x):
-        """ Embed a design input as a n-dimensional vector for ParMOO.
-
-        Args:
-            x (dict): Either a numpy structured array or Python dictionary
-                whose keys match the design variable names, and whose
-                values contain design variable values.
-
-        Returns:
-            ndarray: A 1D array of length n_latent containing the embedded
-            design vector.
-
-        """
-
-        xx = []
-        for i, ei in enumerate(self.embedders):
-            xx.append(jnp.array(ei.embed(x[self.des_schema[i][0]])).flatten())
-        return jnp.concatenate(xx)
-
-    def _extract(self, x):
-        """ Extract a design variable from an n-dimensional vector.
-
-        Args:
-            x (ndarray): A 1D array of length n_latent containing the embedded
-                design vector.
-
-        Returns:
-            dict: A Python dictionary whose keys match the design variable
-            names, and whose values contain design variable values.
-
-        """
-
-        xx = {}
-        istart = 0
-        for i, ei in enumerate(self.embedders):
-            iend = istart + self.embedding_size[i]
-            xx[self.des_schema[i][0]] = ei.extract(x[istart:iend])
-            istart = iend
-        return xx
-
-    def _unpack_sim(self, sx):
-        """ Extract a simulation output from a m-dimensional vector.
-
-        Args:
-            sx (ndarray): A 1D array of length m containing the vectorized
-                simulation outputs.
-
-        Returns:
-            dict: A dictionary with keys corresponding to simulation names
-            and values corresponding to simulation outputs.
-
-        """
-
-        sx_out = {}
-        m_count = 0
-        for i, mi in enumerate(self.m):
-            sx_out[self.sim_schema[i][0]] = sx[m_count:m_count+mi]
-            m_count += mi
-        return sx_out
-
-    def _pack_sim(self, sx):
-        """ Pack a simulation output into a m-dimensional vector.
-
-        Args:
-            sx (dict): A dictionary with keys corresponding to simulation
-                names and values corresponding to simulation outputs.
-
-        Returns:
-            ndarray: A 1D ndarray of length m containing the vectorized
-            simulation outputs.
-
-        """
-
-        sx_list = []
-        for i, mi in enumerate(self.m):
-            sx_list.append(sx[self.sim_schema[i][0]])
-        return jnp.concatenate(sx_list)
-
-    def _fit_surrogates(self):
-        """ Fit the surrogate models using the current sim databases.
-
-        Warning: Not recommended for external usage!
-
-        """
-
-        for i in range(self.s):
-            n_new = self.sim_db[i]['n']
-            self.surrogates[i].fit(self.sim_db[i]['x_vals'][:n_new, :],
-                                   self.sim_db[i]['s_vals'][:n_new, :])
-            self.sim_db[i]['old'] = self.sim_db[i]['n']
-        return
-
-    def _update_surrogates(self):
-        """ Update the surrogate models using the current sim databases.
-
-        Warning: Not recommended for external usage!
-
-        """
-
-        for i in range(self.s):
-            n_old = self.sim_db[i]['old']
-            n_new = self.sim_db[i]['n']
-            self.surrogates[i].update(self.sim_db[i]['x_vals'][n_old:n_new, :],
-                                      self.sim_db[i]['s_vals'][n_old:n_new, :])
-            self.sim_db[i]['old'] = self.sim_db[i]['n']
-        return
-
-    def _set_surrogate_tr(self, center, radius):
-        """ Alert the surrogate functions of the trust region.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            center (numpy.ndarray): A 1d numpy.ndarray containing the
-                (embedded) coordinates of the new center in the rescaled
-                design space.
-
-            radius (np.ndarray or float): The trust region radius.
-
-        """
-
-        for si in self.surrogates:
-            si.setTrustRegion(center, radius)
-        return
-
-    def _evaluate_surrogates(self, x):
-        """ Evaluate all simulation surrogates.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the (embedded) result
-            of the surrogate model evaluations.
-
-        """
-
-        sx_list = [self.empty]
-        for si in self.surrogates:
-            sx_list.append(si.evaluate(x))
-        return jnp.concatenate(sx_list)
-
-    def _surrogate_uncertainty(self, x):
-        """ Evaluate uncertainty (standard deviation) of all surrogates.
-
-        Assumes a Gaussian distribution on simulation outputs.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the standard
-            deviation of the surrogates at x.
-
-        """
-
-        sdx_list = [self.empty]
-        for si in self.surrogates:
-            sdx_list.append(si.stdDev(x))
-        return jnp.concatenate(sdx_list)
-
-    def _evaluate_objectives(self, x):
-        """ Evaluate all objectives using the simulation surrogates as needed.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the result of the
-            evaluation.
-
-        """
-
-        xx = self._extract(x)
-        sx = self._unpack_sim(self._evaluate_surrogates(x))
-        if any(self.obj_exp_vals):
-            sdx = self._unpack_sim(self._surrogate_uncertainty(x))
-        fx = []
-        for i, obj_func in enumerate(self.obj_funcs):
-            if self.obj_exp_vals[i]:
-                fx.append(jnp.array(obj_func(xx, sx, sdx)).flatten())
-            else:
-                fx.append(jnp.array(obj_func(xx, sx)).flatten())
-        return jnp.concatenate(fx)
-
-    def _evaluate_constraints(self, x):
-        """ Evaluate the constraints using the simulation surrogates as needed.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the list of constraint
-            violations at x (zero if no violation).
-
-        """
-
-        if self.p == 0:
-            return self.empty
-        xx = self._extract(x)
-        sx = self._unpack_sim(self._evaluate_surrogates(x))
-        if any(self.c_exp_vals):
-            sdx = self._unpack_sim(self._surrogate_uncertainty(x))
-        cx = []
-        for i, constraint_func in enumerate(self.con_funcs):
-            if self.c_exp_vals[i]:
-                cx.append(jnp.array(constraint_func(xx, sx, sdx)).flatten())
-            else:
-                cx.append(jnp.array(constraint_func(xx, sx)).flatten())
-        return jnp.concatenate(cx)
-
-    def _evaluate_penalty(self, x, sx=None):
-        """ Evaluate the penalized objective using the surrogates as needed.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the result of the
-            evaluation.
-
-        """
-
-        xx = self._extract(x)
-        sx = self._unpack_sim(self._evaluate_surrogates(x))
-        if any(self.obj_exp_vals) or any(self.c_exp_vals):
-            sdx = self._unpack_sim(self._surrogate_uncertainty(x))
-        fx = []
-        for i, obj_func in enumerate(self.obj_funcs):
-            if self.obj_exp_vals[i]:
-                fx.append(jnp.array(obj_func(xx, sx, sdx)).flatten())
-            else:
-                fx.append(jnp.array(obj_func(xx, sx)).flatten())
-        cx = 0.0
-        for i, constraint_func in enumerate(self.con_funcs):
-            if self.c_exp_vals[i]:
-                cx += jnp.maximum(constraint_func(xx, sx, sdx), 0)
-            else:
-                cx += jnp.maximum(constraint_func(xx, sx), 0)
-        return jnp.concatenate(fx) + (self.lam * cx)
-
-    def evaluateGradients(self, x):
-        """ Evaluate the gradient of the penalized objective using surrogates.
-
-        Warning: Not recommended for external usage!
-
-        Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
-
-        Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the result of the
-            evaluation.
-
-        """
-
-        # Check for illegal input
-        if isinstance(x, np.ndarray):
-            if x.shape[0] != self.n_latent:
-                raise ValueError("x must have length n")
-        else:
-            raise TypeError("x must be a numpy array")
-        # Evaluate the surrogate models to approximate the simulation outputs
-        sim = np.zeros(self.m_total)
-        sim_std_dev = np.zeros(self.m_total)
-        m_count = 0
-        for i, surrogate in enumerate(self.surrogates):
-            sim[m_count:m_count+self.m[i]] = surrogate.evaluate(x)
-            if any(self.obj_exp_vals) or any(self.c_exp_vals):
-                sim_std_dev[m_count:m_count+self.m[i]] = surrogate.stdDev(x)
-            m_count += self.m[i]
-        # Evaluate the gradients of the surrogates
-        if self.m_total > 0:
-            dsim_dx = np.zeros((self.m_total, self.n_latent))
-            dstdD_dx = np.zeros((self.m_total, self.n_latent))
-            m_count = 0
-            for i, surrogate in enumerate(self.surrogates):
-                dsim_dx[m_count:m_count+self.m[i], :] = \
-                        surrogate.gradient(x)
-                # Also standard deviation gradients
-                if any(self.obj_exp_vals) or any(self.c_exp_vals):
-                    dstdD_dx[m_count:m_count+self.m[i]] = \
-                        surrogate.stdDevGrad(x)
-                m_count += self.m[i]
-        # Evaluate the gradients of the objective functions
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sim)
-        if any(self.obj_exp_vals) or any(self.c_exp_vals):
-            sdx = self._unpack_sim(sim_std_dev)
-        df_dx = np.zeros((self.o, self.n_latent))
-        for i, obj_func in enumerate(self.obj_funcs):
-            if self.obj_exp_vals[i]:
-                df_dx_tmp = obj_func(xx, ssx, sdx, der=1)
-            else:
-                df_dx_tmp = obj_func(xx, ssx, der=1)
-            for j, d_name in enumerate(self.des_schema):
-                if self.des_order[j] < self.n_cont:
-                    df_dx[i, j] = df_dx_tmp[d_name[0]]
-            df_dx[i, :self.n_cont] = ((df_dx[i, self.des_order])
-                                      [:self.n_cont] /
-                                      self.scale[:self.n_cont])
-        # Now evaluate wrt the sims
-        if self.m_total > 0:
-            df_dsim = np.zeros((self.o, self.m_total))
-            for i, obj_func in enumerate(self.obj_funcs):
-                if self.obj_exp_vals[i]:
-                    df_ds_tmp = obj_func(xx, ssx, sdx, der=2)
-                else:
-                    df_ds_tmp = obj_func(xx, ssx, der=2)
-                df_dsim[i, :] = self._pack_sim(df_ds_tmp)
-        # Now evaluate wrt the std deviations
-        if any(self.obj_exp_vals):
-            df_dstdD = np.zeros((self.o, self.m_total))
-            for i, obj_func in enumerate(self.obj_funcs):
-                if self.obj_exp_vals[i]:
-                    df_dsd_tmp = obj_func(xx, ssx, sdx, der=3)
-                    df_dstdD[i, :] = self._pack_sim(df_dsd_tmp)
-        # Finally, evaluate the full objective Jacobian
-        dfx = np.zeros((self.o, self.n_latent))
-        dfx = df_dx
-        if self.m_total > 0:
-            dfx = dfx + np.dot(df_dsim, dsim_dx)
-        if any(self.obj_exp_vals):
-            dfx = dfx + np.dot(df_dstdD, dstdD_dx)
-        # If there are no constraints, just return zeros
-        dcx = np.zeros(self.n_latent)
-        # Otherwise, calculate the constraint violation Jacobian
-        if self.p > 0:
-            # Evaluate the constraint functions
-            cx = np.zeros(self.p)
-            for i, const_func in enumerate(self.con_funcs):
-                if self.c_exp_vals[i]:
-                    cx[i] = const_func(xx, ssx, sdx)
-                else:
-                    cx[i] = const_func(xx, ssx)
-            # Evaluate the gradients of the constraint functions
-            dc_dx = np.zeros((self.p, self.n_latent))
-            for i, const_func in enumerate(self.con_funcs):
-                if self.c_exp_vals[i]:
-                    dc_dx_tmp = const_func(xx, ssx, sdx, der=1)
-                else:
-                    dc_dx_tmp = const_func(xx, ssx, der=1)
-                for j, d_name in enumerate(self.des_schema):
-                    if self.des_order[j] < self.n_cont:
-                        dc_dx[i, j] = dc_dx_tmp[d_name[0]]
-                dc_dx[i, :self.n_cont] = ((dc_dx[i, self.des_order])
-                                          [:self.n_cont] /
-                                          self.scale[:self.n_cont])
-            # Now evaluate wrt the sims
-            if self.m_total > 0:
-                dc_dsim = np.zeros((self.p, self.m_total))
-                for i, const_func in enumerate(self.con_funcs):
-                    if self.c_exp_vals[i]:
-                        dc_dsim_tmp = const_func(xx, ssx, sdx, der=2)
-                    else:
-                        dc_dsim_tmp = const_func(xx, ssx, der=2)
-                    dc_dsim[i, :] = self._pack_sim(dc_dsim_tmp)
-            # Now evaluate wrt the std deviations
-            if any(self.c_exp_vals):
-                dc_dstdD = np.zeros((self.p, self.m_total))
-                for i, const_func in enumerate(self.con_funcs):
-                    if self.c_exp_vals[i]:
-                        dc_dsd_tmp = const_func(xx, ssx, sdx, der=3)
-                        dc_dstdD[i, :] = self._pack_sim(dc_dsd_tmp)
-            # Finally, evaluate the full Jacobian of the constraints
-            for i in range(len(self.con_funcs)):
-                if cx[i] > 0:
-                    dcx[:] = dcx[:] + dc_dx[i, :]
-                    if self.m_total > 0:
-                        dcx[:] = dcx[:] + np.dot(dc_dsim[i, :], dsim_dx[:, :])
-                    if self.c_exp_vals[i]:
-                        dcx[:] = dcx[:] + np.dot(dc_dstdD[i, :],
-                                                 dstdD_dx[:, :])
-        # Construct the Jacobian of the penalized objective function
-        dLx = np.zeros((self.o, self.n_latent))
-        for i in range(self.o):
-            dLx[i, :] = dfx[i, :] + self.lam * dcx[:]
-        # Return the result
-        return dLx
 
     def addData(self, x, sx):
         """ Update the internal objective database by truly evaluating x.
@@ -1269,20 +764,14 @@ class MOOP:
 
         """
 
-        # Initialize the database if needed
-        if any(self.obj_exp_vals):
-            sdx = np.zeros(sx.dtype)
-        # Pre-embed x
         xx = self._embed(x)
         des_tols = np.asarray(self.latent_des_tols)
+        # Initialize the database if needed
         if self.n_dat == 0:
             self.data['x_vals'][0, :] = xx
             self.data['f_vals'] = np.zeros((1, self.o))
             for i, obj_func in enumerate(self.obj_funcs):
-                if self.obj_exp_vals[i]:
-                    self.data['f_vals'][0, i] = obj_func(x, sx, sdx)
-                else:
-                    self.data['f_vals'][0, i] = obj_func(x, sx)
+                self.data['f_vals'][0, i] = obj_func(x, sx)
             # Check if there are constraint violations to maintain
             if self.p > 0:
                 self.data['c_vals'] = np.zeros((1, self.p))
@@ -1300,10 +789,7 @@ class MOOP:
             self.data['x_vals'] = np.append(self.data['x_vals'], [xx], axis=0)
             fx = np.zeros(self.o)
             for i, obj_func in enumerate(self.obj_funcs):
-                if self.obj_exp_vals[i]:
-                    fx[i] = obj_func(x, sx, sdx)
-                else:
-                    fx[i] = obj_func(x, sx)
+                fx[i] = obj_func(x, sx)
             self.data['f_vals'] = np.append(self.data['f_vals'],
                                             [fx], axis=0)
             # Check if there are constraint violations to maintain
@@ -1396,8 +882,7 @@ class MOOP:
             self.optimizer_obj.setObjective(self._evaluate_objectives)
             self.optimizer_obj.setSimulation(self._evaluate_surrogates,
                                              self._surrogate_uncertainty)
-            self.optimizer_obj.setPenalty(self._evaluate_penalty,
-                                          self.evaluateGradients)
+            self.optimizer_obj.setPenalty(self._evaluate_penalty)
             self.optimizer_obj.setConstraints(self._evaluate_constraints)
             for i, acquisition in enumerate(self.acquisitions):
                 self.optimizer_obj.addAcquisition(acquisition)
@@ -1565,20 +1050,17 @@ class MOOP:
 
         # Special rules for k=0, vs k>0
         if k == 0:
-            # Fit the surrogates
             self._fit_surrogates()
-            # Add all points that have been fully evaluated to the database
             if self.s > 0:
                 # Check every point in sim_db[0]
                 des_tols = np.asarray(self.latent_des_tols)
                 for xi, si in zip(self.sim_db[0]['x_vals'],
                                   self.sim_db[0]['s_vals']):
-                    # Keep track of the sim value
                     sim = np.zeros(self.m_total)
                     sim[0:self.m[0]] = si[:]
                     m_count = self.m[0]
                     is_shared = True
-                    # Check against every other sim_db
+                    # Check for xi in sim_db[1:s]
                     for j in range(1, self.s):
                         is_shared = False
                         for xj, sj in zip(self.sim_db[j]['x_vals'],
@@ -1589,30 +1071,30 @@ class MOOP:
                                 m_count = m_count + self.m[j]
                                 is_shared = True
                                 break
-                        # If not found, stop checking
                         if not is_shared:
                             break
                     # If xi was in every sim_db, add it to the database
                     if is_shared:
-                        self.addData(self._extract(xi),
-                                     self._unpack_sim(sim))
+                        self.addData(self._extract(xi), self._unpack_sim(sim))
         else:
-            # If constraints are violated, increase lam
-            if any([np.any(self._evaluate_constraints(self._embed(xi))
-                           > 1.0e-4) for (xi, i) in batch]):
-                self.lam = min(1e4, self.lam * 2.0)
-            # Update the surrogates
+            # If any constraints are violated, increase lam toward the limit
+            for (xi, i) in batch:
+                xxi = self._embed(xi)
+                sxi = self._evaluate_surrogates(xxi)
+                eps = np.sqrt(self.epsilon)
+                if np.any(self._evaluate_constraints(xxi, sxi) > eps):
+                    self.lam = min(1e4, self.lam * 2.0)
+                    break
+            # Update the models and objective database
             self._update_surrogates()
-            # Add new points that have been fully evaluated to the database
             for xi in batch:
                 (x, i) = xi
                 xx = self._embed(x)
                 is_shared = True
                 sim = np.zeros(self.m_total)
                 m_count = 0
-                # Check against every other group
                 if self.s > 0:
-                    # Check against every other sim_db
+                    # Check for xi in every sim_db
                     des_tols = np.asarray(self.latent_des_tols)
                     for j in range(self.s):
                         is_shared = False
@@ -1632,14 +1114,11 @@ class MOOP:
                 if is_shared:
                     fx = np.zeros(self.o)
                     sx = self._unpack_sim(sim)
-                    sdx = np.zeros(sx.size)
+                    sdx = self._unpack_sim(np.zeros(self.m_total))
                     for i, obj_func in enumerate(self.obj_funcs):
-                        if self.obj_exp_vals[i]:
-                            fx[i] = obj_func(x, sx, sdx)
-                        else:
-                            fx[i] = obj_func(x, sx)
-                    self.addData(x, self._unpack_sim(sim))
-                    self.optimizer_obj.returnResults(x, fx, sx, sdx)
+                        fx[i] = obj_func(x, sx)
+                    self.addData(x, sx)
+                    self.optimizer_obj.returnResults(xx, fx, sim, np.zeros(self.m_total))
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpoint_file)
@@ -1813,24 +1292,25 @@ class MOOP:
                   'f_vals': np.zeros(0),
                   'c_vals': np.zeros(0)}
         # Build the data type
-        dt = self.des_schema.copy()
+        dt = []
+        for dname in self.des_schema:
+            dt.append((str(dname[0]), dname[1]))
         for fname in self.obj_schema:
-            dt.append(fname)
+            dt.append((str(fname[0]), fname[1]))
         for cname in self.con_schema:
-            dt.append(cname)
+            dt.append((str(cname[0], cname[1])))
         # Initialize result array
         result = np.zeros(pf['x_vals'].shape[0], dtype=dt)
         # Extract all results
         if self.n_dat > 0:
-            x_vals = np.asarray([self._extract(xi)
-                                 for xi in pf['x_vals']])
-            if x_vals is not None and x_vals.shape[0] > 0:
+            for i, xi in enumerate(pf['x_vals']):
+                xxi = self._extract(xi)
                 for (name, t) in self.des_schema:
-                    result[name][:] = x_vals[name][:]
+                    result[str(name)][i] = xxi[name]
             for i, (name, t) in enumerate(self.obj_schema):
-                result[name][:] = pf['f_vals'][:, i]
+                result[str(name)][:] = pf['f_vals'][:, i]
             for i, (name, t) in enumerate(self.con_schema):
-                result[name][:] = pf['c_vals'][:, i]
+                result[str(name)][:] = pf['c_vals'][:, i]
         if format == 'pandas':
             return pd.DataFrame(result)
         elif format == 'ndarray':
@@ -1875,7 +1355,9 @@ class MOOP:
             x_vals = np.asarray([self._extract(xi)
                                  for xi in self.sim_db[i]['x_vals']])
             # Build the datatype
-            dt = self.des_schema.copy()
+            dt = []
+            for dname in self.des_schema:
+                dt.append((str(dname[0]), dname[1]))
             if len(sname) == 2:
                 dt.append(('out', sname[1]))
             else:
@@ -1943,11 +1425,13 @@ class MOOP:
         """
 
         # Build the data type
-        dt = self.des_schema.copy()
+        dt = []
+        for dname in self.des_schema:
+            dt.append((str(dname[0]), dname[1]))
         for fname in self.obj_schema:
-            dt.append(fname)
+            dt.append((str(fname[0]), fname[1]))
         for cname in self.con_schema:
-            dt.append(cname)
+            dt.append((str(cname[0], cname[1])))
         # Initialize result array
         if self.n_dat > 0:
             result = np.zeros(self.data['x_vals'].shape[0], dtype=dt)
@@ -2010,8 +1494,6 @@ class MOOP:
                         'des_schema': self.des_schema,
                         'obj_schema': self.obj_schema,
                         'con_schema': self.con_schema,
-                        'obj_exp_vals': self.obj_exp_vals,
-                        'c_exp_vals': self.c_exp_vals,
                         'lam': self.lam,
                         'epsilon': self.epsilon,
                         'hyperparams': self.hyperparams,
@@ -2178,8 +1660,6 @@ class MOOP:
         self.obj_schema = [tuple(item) for item in parmoo_state['obj_schema']]
         self.con_schema = [tuple(item)
                            for item in parmoo_state['con_schema']]
-        self.obj_exp_vals = [item for item in parmoo_state['obj_exp_vals']]
-        self.c_exp_vals = [item for item in parmoo_state['c_exp_vals']]
         self.lam = parmoo_state['lam']
         self.epsilon = parmoo_state['epsilon']
         self.hyperparams = parmoo_state['hyperparams']
@@ -2328,8 +1808,7 @@ class MOOP:
         self.optimizer_obj.setObjective(self._evaluate_objectives)
         self.optimizer_obj.setSimulation(self._evaluate_surrogates,
                                          self._surrogate_uncertainty)
-        self.optimizer_obj.setPenalty(self._evaluate_penalty,
-                                      self.evaluateGradients)
+        self.optimizer_obj.setPenalty(self._evaluate_penalty)
         self.optimizer_obj.setConstraints(self._evaluate_constraints)
         for i, acquisition in enumerate(self.acquisitions):
             self.optimizer_obj.addAcquisition(acquisition)
@@ -2378,3 +1857,220 @@ class MOOP:
             json.dump(toadd, fp)
         self.new_data = False
         return
+
+    def _embed(self, x):
+        """ Embed a design input as a n-dimensional vector for ParMOO.
+
+        Args:
+            x (dict): Either a numpy structured array or Python dictionary
+                whose keys match the design variable names, and whose
+                values contain design variable values.
+
+        Returns:
+            ndarray: A 1D array of length n_latent containing the embedded
+            design vector.
+
+        """
+
+        xx = []
+        for i, ei in enumerate(self.embedders):
+            xx.append(jnp.array(ei.embed(x[self.des_schema[i][0]])).flatten())
+        return jnp.concatenate(xx)
+
+    def _extract(self, x):
+        """ Extract a design variable from an n-dimensional vector.
+
+        Args:
+            x (ndarray): A 1D array of length n_latent containing the embedded
+                design vector.
+
+        Returns:
+            dict: A Python dictionary whose keys match the design variable
+            names, and whose values contain design variable values.
+
+        """
+
+        xx = {}
+        istart = 0
+        for i, ei in enumerate(self.embedders):
+            iend = istart + self.embedding_size[i]
+            xx[self.des_schema[i][0]] = ei.extract(x[istart:iend])
+            istart = iend
+        return xx
+
+    def _pack_sim(self, sx):
+        """ Pack a simulation output into a m-dimensional vector.
+
+        Args:
+            sx (dict): A dictionary with keys corresponding to simulation
+                names and values corresponding to simulation outputs.
+
+        Returns:
+            ndarray: A 1D ndarray of length m containing the vectorized
+            simulation outputs.
+
+        """
+
+        sx_list = []
+        for i in range(self.s):
+            sx_list.append(sx[self.sim_schema[i][0]])
+        return jnp.concatenate(sx_list, axis=None)
+
+    def _unpack_sim(self, sx):
+        """ Extract a simulation output from a m-dimensional vector.
+
+        Args:
+            sx (ndarray): A 1D array of length m containing the vectorized
+                simulation outputs.
+
+        Returns:
+            dict: A dictionary with keys corresponding to simulation names
+            and values corresponding to simulation outputs.
+
+        """
+
+        sx_out = {}
+        istart = 0
+        for i, mi in enumerate(self.m):
+            iend = istart + mi
+            sx_out[self.sim_schema[i][0]] = sx[istart:iend]
+            istart = iend
+        return sx_out
+
+    def _fit_surrogates(self):
+        """ Fit the surrogate models using the current sim databases. """
+
+        for i in range(self.s):
+            n_new = self.sim_db[i]['n']
+            self.surrogates[i].fit(self.sim_db[i]['x_vals'][:n_new, :],
+                                   self.sim_db[i]['s_vals'][:n_new, :])
+            self.sim_db[i]['old'] = self.sim_db[i]['n']
+        return
+
+    def _update_surrogates(self):
+        """ Update the surrogate models using the current sim databases. """
+
+        for i in range(self.s):
+            n_old = self.sim_db[i]['old']
+            n_new = self.sim_db[i]['n']
+            self.surrogates[i].update(self.sim_db[i]['x_vals'][n_old:n_new, :],
+                                      self.sim_db[i]['s_vals'][n_old:n_new, :])
+            self.sim_db[i]['old'] = self.sim_db[i]['n']
+        return
+
+    def _set_surrogate_tr(self, center, radius):
+        """ Alert the surrogate functions of a new trust region.
+
+        Args:
+            center (numpy.ndarray): A 1d numpy.ndarray containing the
+                (embedded) coordinates of the new center in the rescaled
+                design space.
+
+            radius (np.ndarray or float): The trust region radius.
+
+        """
+
+        for si in self.surrogates:
+            si.setTrustRegion(center, radius)
+        return
+
+    def _evaluate_surrogates(self, x):
+        """ Evaluate all simulation surrogates.
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the (embedded) result
+            of the surrogate model evaluations.
+
+        """
+
+        sx_list = [self.empty]
+        for si in self.surrogates:
+            sx_list.append(si.evaluate(x))
+        return jnp.concatenate(sx_list)
+
+    def _surrogate_uncertainty(self, x):
+        """ Evaluate the standard deviation of the possible surrogate outputs.
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate uncertainties at.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the standard
+            deviation of the surrogates at x.
+
+        """
+
+        sdx_list = [self.empty]
+        for si in self.surrogates:
+            sdx_list.append(si.stdDev(x))
+        return jnp.concatenate(sdx_list)
+
+    def _evaluate_objectives(self, x, sx):
+        """ Evaluate all objectives using the simulation surrogates as needed.
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the result of the
+            evaluation.
+
+        """
+
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        fx = []
+        for i, obj_func in enumerate(self.obj_funcs):
+            fx.append(jnp.array(obj_func(xx, ssx)).flatten())
+        return jnp.concatenate(fx)
+
+    def _evaluate_constraints(self, x, sx):
+        """ Evaluate the constraints using the simulation surrogates as needed.
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the list of constraint
+            violations at x (zero if no violation).
+
+        """
+
+        if self.p == 0:
+            return self.empty
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        cx = []
+        for i, constraint_func in enumerate(self.con_funcs):
+            cx.append(jnp.array(constraint_func(xx, ssx)).flatten())
+        return jnp.concatenate(cx)
+
+    def _evaluate_penalty(self, x, sx):
+        """ Evaluate the penalized objective using the surrogates as needed.
+
+        Args:
+            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
+                design point to evaluate.
+
+        Returns:
+            numpy.ndarray: A 1d numpy.ndarray containing the result of the
+            evaluation.
+
+        """
+
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        fx = []
+        for i, obj_func in enumerate(self.obj_funcs):
+            fx.append(jnp.array(obj_func(xx, ssx)).flatten())
+        cx = 0.0
+        for i, constraint_func in enumerate(self.con_funcs):
+            cx += jnp.maximum(constraint_func(xx, ssx), 0)
+        return jnp.concatenate(fx) + (self.lam * cx)

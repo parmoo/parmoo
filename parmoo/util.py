@@ -77,7 +77,7 @@ def check_names(name, *args):
     if not isinstance(name, typing.Hashable):
         raise TypeError("Every variable name must be hashable")
     for arg in args:
-        if any([name == ni[0] for ni in arg]:
+        if any([name == ni[0] for ni in arg]):
             raise ValueError(f"The variable name {name} is already in use")
     return
 
