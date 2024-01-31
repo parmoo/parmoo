@@ -30,11 +30,10 @@ def test_GlobalSurrogate_RS():
     lb = np.zeros(n)
     ub = np.ones(n)
     # Create the biobjective function
-    def f(z): return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
-    def L(z, sz=1): return f(z)
+    def f(z, sz): return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
+    def L(z, sz): return f(z, sz)
     def S(z): return np.ones(2)
     def SD(z): return np.zeros(2)
-    def g(z): return np.ones((2, 3))
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
     acqu1.setTarget({}, lambda x: np.zeros(2), {})
@@ -60,18 +59,18 @@ def test_GlobalSurrogate_RS():
     with pytest.raises(TypeError):
         opt.setObjective(5)
     with pytest.raises(ValueError):
-        opt.setObjective(lambda z1, z2: np.zeros(1))
+        opt.setObjective(lambda z1, z2, z3: np.zeros(1))
     with pytest.raises(TypeError):
         opt.setConstraints(5)
     with pytest.raises(ValueError):
-        opt.setConstraints(lambda z1, z2: np.zeros(1))
+        opt.setConstraints(lambda z1, z2, z3: np.zeros(1))
     with pytest.raises(TypeError):
         opt.addAcquisition(5)
     # Add the correct objective and constraints
     opt.setObjective(f)
-    opt.setConstraints(lambda z: np.asarray([0.1 - z[2], z[2] - 0.6]))
+    opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
     opt.setSimulation(S, SD)
-    opt.setPenalty(L, g)
+    opt.setPenalty(L)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setTrFunc(lambda x, r: 100)
     # Try to solve with invalid inputs to test error handling

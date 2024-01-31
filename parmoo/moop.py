@@ -8,7 +8,7 @@ simulations, specified using dictionaries.
 """
 
 import inspect
-from jax import jacfwd, lax
+from jax import jacfwd, lax, custom_vjp
 from jax import numpy as jnp
 import json
 import numpy as np
@@ -47,10 +47,6 @@ class MOOP:
      * ``MOOP.getObjectiveType()``
      * ``MOOP.getConstraintType()``
 
-    The following methods are used to save/load a ParMOO state to/from disk:
-     * ``MOOP.save([filename="parmoo"])``
-     * ``MOOP.load([filename="parmoo"])``
-
     To turn on checkpointing use:
      * ``MOOP.setCheckpoint(checkpoint, [checkpoint_data, filename])``
 
@@ -63,8 +59,8 @@ class MOOP:
 
     The following methods are used for solving the MOOP and managing the
     internal simulation/objective databases:
-     * ``MOOP.check_sim_db(x, s_name)``
-     * ``MOOP.update_sim_db(x, sx, s_name)``
+     * ``MOOP.checkSimDb(x, s_name)``
+     * ``MOOP.updateSimDb(x, sx, s_name)``
      * ``MOOP.evaluateSimulation(x, s_name)``
      * ``MOOP.addData(x, sx)``
      * ``MOOP.iterate(k, ib=None)``
@@ -75,6 +71,10 @@ class MOOP:
      * ``MOOP.getPF(format='ndarray')``
      * ``MOOP.getSimulationData(format='ndarray')``
      * ``MOOP.getObjectiveData(format='ndarray')``
+
+    The following methods are used to save/load the current checkpoint (state):
+     * ``MOOP.save([filename="parmoo"])``
+     * ``MOOP.load([filename="parmoo"])``
 
     The following private methods are not recommended for external usage:
      * ``MOOP._embed(x)``
@@ -94,25 +94,27 @@ class MOOP:
 
     __slots__ = [
                  # Problem dimensions
-                 'n_feature', 'n_latent',
-                 'm', 'm_total', 'o', 'p', 's',
-                 # Embedding dimensions, bounds, and tolerances
+                 'm', 'm_total', 'n_feature', 'n_latent', 'o', 'p', 's',
+                 # Embeddings
                  'embedders', 'embedding_size',
+                 # Tolerances
+                 'feature_des_tols', 'latent_des_tols',
+                 # Bound constraints
                  'latent_lb', 'latent_ub',
-                 'latent_des_tols',
                  # Schemas and databases
                  'des_schema', 'sim_schema', 'obj_schema', 'con_schema',
-                 'data', 'sim_db', 'n_dat', 'new_data',
+                 'data', 'sim_db', 'n_dat',
                  # Constants, counters, and adaptive parameters
                  'empty', 'epsilon', 'iteration', 'lam',
                  # Checkpointing markers
                  'checkpoint', 'checkpoint_data', 'checkpoint_file',
-                 'new_checkpoint',
-                 # Simulations, objectives, constraints, and their metadata
+                 'new_checkpoint', 'new_data',
+                 # Simulations, objectives, and constraints
                  'sim_funcs', 'obj_funcs', 'con_funcs',
-                 # Solver components and their metadata
-                 'acquisitions', 'searches', 'surrogates',
-                 'optimizer', 'optimizer_obj',
+                 # Solver components
+                 'acquisitions', 'searches', 'surrogates', 'optimizer',
+                 'optimizer_obj',
+                 # Metadata
                  'hyperparams', 'history',
                 ]
 
@@ -132,18 +134,18 @@ class MOOP:
         """
 
         # Initialize the problem dimensions
-        self.n_feature, self.n_latent = 0, 0
         self.m = []
-        self.m_total, self.o, self.p, self.s = 0, 0, 0, 0
+        self.m_total, self.n_feature, self.n_latent = 0, 0, 0
+        self.o, self.p, self.s = 0, 0, 0
         # Initialize the embedding dimensions, bounds, and tolerances
         self.embedders, self.embedding_size = [], []
+        self.feature_des_tols, self.latent_des_tols = [], []
         self.latent_lb, self.latent_ub = [], []
-        self.latent_des_tols = []
         # Initialize the schemas and databases
         self.des_schema, self.sim_schema = [], []
         self.obj_schema, self.con_schema = [], []
         self.data, self.sim_db = {}, []
-        self.n_dat, self.new_data = 0, True
+        self.n_dat = 0
         # Initialize the constants, counters, and adaptive parameters
         self.empty = jnp.zeros(0)
         self.epsilon = jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)
@@ -152,7 +154,7 @@ class MOOP:
         # Initialize checkpointing markers
         self.checkpoint, self.checkpoint_data = False, False
         self.checkpoint_file = "parmoo"
-        self.new_checkpoint = True
+        self.new_checkpoint, self.new_data = True, True
         # Initialize simulations, objectives, constraints, and their metadata
         self.sim_funcs, self.obj_funcs, self.con_funcs = [], [], []
         # Initialize solver components and their metadata
@@ -268,7 +270,8 @@ class MOOP:
             ubs = embedder.getUpperBounds()
             for ub in ubs:
                 self.latent_ub.append(ub)
-            des_tols = embedder.getDesTols()
+            self.feature_des_tols.append(embedder.getFeatureDesTols())
+            des_tols = embedder.getLatentDesTols()
             for des_tol in des_tols:
                 self.latent_des_tols.append(float(des_tol))
             dtype = embedder.getInputType()
@@ -626,7 +629,7 @@ class MOOP:
         else:
             return np.dtype(self.con_schema)
 
-    def check_sim_db(self, x, s_name):
+    def checkSimDb(self, x, s_name):
         """ Check self.sim_db[s_name] to see if the design x was evaluated.
 
         Args:
@@ -662,7 +665,7 @@ class MOOP:
         # Nothing found, return None
         return None
 
-    def update_sim_db(self, x, sx, s_name):
+    def updateSimDb(self, x, sx, s_name):
         """ Update sim_db[s_name] by adding a design/simulation output pair.
 
         Args:
@@ -730,10 +733,10 @@ class MOOP:
 
         """
 
-        sx = self.check_sim_db(x, s_name)
+        sx = self.checkSimDb(x, s_name)
         if sx is None:
             sx = np.asarray(self.sim_funcs[i](x))
-            self.update_sim_db(x, sx, s_name)
+            self.updateSimDb(x, sx, s_name)
         return sx
 
     def addData(self, x, sx):
@@ -986,7 +989,7 @@ class MOOP:
                         namei = self.sim_schema[i][0]
                         if all([np.any(np.abs(xxi - xj) > des_tols)
                                 or namei != j for (xj, j) in ebatch]) \
-                           and self.check_sim_db(xi, namei) is None:
+                           and self.checkSimDb(xi, namei) is None:
                             # If not, add it to the fbatch and ebatch
                             fbatch.append((xi, namei))
                             ebatch.append((xxi, namei))
@@ -1000,11 +1003,9 @@ class MOOP:
                                              and namei == j for (xj, j)
                                              in ebatch])
                                         for xk in ibatch]) or
-                                   any([self.check_sim_db(self._extract(xk),
-                                                          namei)
+                                   any([self.checkSimDb(self._extract(xk), namei)
                                         is not None for xk in ibatch])):
-                                x_improv = self.surrogates[i].improve(xxi,
-                                                                      True)
+                                x_improv = self.surrogates[i].improve(xxi, True)
                                 ibatch = [self._embed(self._extract(xk))
                                           for xk in x_improv]
                             # Add improvement points to the fbatch

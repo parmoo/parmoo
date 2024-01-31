@@ -428,28 +428,28 @@ def test_MOOP_evaluateSimulation():
     y2 = np.ones(1, dtype=moop2.des_schema)[0]
     # Check database with bad values
     with pytest.raises(ValueError):
-        moop1.check_sim_db(x1, -1)
+        moop1.checkSimDb(x1, -1)
     with pytest.raises(ValueError):
-        moop2.check_sim_db(x2, "hello world")
+        moop2.checkSimDb(x2, "hello world")
     # Try to update database and evaluate sims with bad values
     with pytest.raises(TypeError):
-        moop1.update_sim_db(x1, np.zeros(1), 5.0)
+        moop1.updateSimDb(x1, np.zeros(1), 5.0)
     with pytest.raises(ValueError):
-        moop1.update_sim_db(x1, np.zeros(1), -1)
+        moop1.updateSimDb(x1, np.zeros(1), -1)
     with pytest.raises(ValueError):
-        moop2.update_sim_db(x2, np.zeros(1), "hello world")
+        moop2.updateSimDb(x2, np.zeros(1), "hello world")
     with pytest.raises(ValueError):
-        moop1.check_sim_db(x1, -1)
+        moop1.checkSimDb(x1, -1)
     with pytest.raises(ValueError):
-        moop2.check_sim_db(x2, "hello world")
+        moop2.checkSimDb(x2, "hello world")
     # Try 3 good evaluations
     moop1.evaluateSimulation(x1, "g1")
     moop1.evaluateSimulation(y1, "g1")
     moop2.evaluateSimulation(x2, "g2")
-    assert (moop1.check_sim_db(x1, "g1") is not None)
-    assert (moop1.check_sim_db(y1, "g1") is not None)
-    assert (moop2.check_sim_db(x2, "g2") is not None)
-    assert (moop2.check_sim_db(y2, "g2") is None)
+    assert (moop1.checkSimDb(x1, "g1") is not None)
+    assert (moop1.checkSimDb(y1, "g1") is not None)
+    assert (moop2.checkSimDb(x2, "g2") is not None)
+    assert (moop2.checkSimDb(y2, "g2") is None)
     return
 
 

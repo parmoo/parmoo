@@ -61,7 +61,7 @@ class CategoricalEmbedder:
         self.ones = jnp.ones(n_lvls)
         return
 
-    def getDesTols(self):
+    def getLatentDesTols(self):
         """ Get the design tolerances along each dimension of the embedding.
 
         Returns:
@@ -70,6 +70,17 @@ class CategoricalEmbedder:
         """
 
         return self.des_tol
+
+    def getFeatureDesTols(self):
+        """ Get the design tolerances in the feature space (pre-embedding).
+
+        Returns:
+            float: the design tolerance in the feature space -- a value of
+            0 indicates a discrete variable
+
+        """
+
+        return 0.0
 
     def getEmbeddingSize(self):
         """ Get dimension of embedded space.
@@ -111,16 +122,6 @@ class CategoricalEmbedder:
         """
 
         return np.ones(self.des_tol.size)
-
-    def isDiscrete(self):
-        """ Tell the optimizer whether this variable is discrete-valued.
-
-        Returns:
-            numpy.ndarray: array of design space tolerances after embedding
-
-        """
-
-        return True
 
     def embed(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
@@ -215,7 +216,7 @@ class ContinuousEmbedder:
         self.scaled_des_tol = np.ones(1) * des_tol / self.scale
         return
 
-    def getDesTols(self):
+    def getLatentDesTols(self):
         """ Get the design tolerances along each dimension of the embedding.
 
         Returns:
@@ -224,6 +225,17 @@ class ContinuousEmbedder:
         """
 
         return self.scaled_des_tol
+
+    def getFeatureDesTols(self):
+        """ Get the design tolerances in the feature space (pre-embedding).
+
+        Returns:
+            float: the design tolerance in the feature space -- a value of
+            0 indicates a discrete variable
+
+        """
+
+        return float(self.scaled_des_tol[0] * self.scale[0])
 
     def getEmbeddingSize(self):
         """ Get dimension of embedded space.
@@ -265,16 +277,6 @@ class ContinuousEmbedder:
         """
 
         return np.ones(1)
-
-    def isDiscrete(self):
-        """ Tell the optimizer whether this variable is discrete-valued.
-
-        Returns:
-            numpy.ndarray: array of design space tolerances after embedding
-
-        """
-
-        return False
 
     def embed(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
@@ -358,7 +360,7 @@ class IntegerEmbedder:
         self.scaled_des_tol = np.ones(1) * 0.5 / self.scale
         return
 
-    def getDesTols(self):
+    def getLatentDesTols(self):
         """ Get the design tolerances along each dimension of the embedding.
 
         Returns:
@@ -367,6 +369,17 @@ class IntegerEmbedder:
         """
 
         return self.scaled_des_tol
+
+    def getFeatureDesTols(self):
+        """ Get the design tolerances in the feature space (pre-embedding).
+
+        Returns:
+            float: the design tolerance in the feature space -- a value of
+            0 indicates a discrete variable
+
+        """
+
+        return 0.0
 
     def getEmbeddingSize(self):
         """ Get dimension of embedded space.
@@ -408,16 +421,6 @@ class IntegerEmbedder:
         """
 
         return np.ones(1)
-
-    def isDiscrete(self):
-        """ Tell the optimizer whether this variable is discrete-valued.
-
-        Returns:
-            numpy.ndarray: array of design space tolerances after embedding
-
-        """
-
-        return True
 
     def embed(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
@@ -506,7 +509,7 @@ class IdentityEmbedder:
             raise TypeError("settings must be a dictionary")
         return
 
-    def getDesTols(self):
+    def getLatentDesTols(self):
         """ Get the design tolerances along each dimension of the embedding.
 
         Returns:
@@ -515,6 +518,17 @@ class IdentityEmbedder:
         """
 
         return self.des_tol * np.ones(1)
+
+    def getFeatureDesTols(self):
+        """ Get the design tolerances in the feature space (pre-embedding).
+
+        Returns:
+            float: the design tolerance in the feature space -- a value of
+            0 indicates a discrete variable
+
+        """
+
+        return float(self.des_tol)
 
     def getEmbeddingSize(self):
         """ Get dimension of embedded space.
@@ -556,16 +570,6 @@ class IdentityEmbedder:
         """
 
         return self.ub * np.ones(1)
-
-    def isDiscrete(self):
-        """ Tell the optimizer whether this variable is discrete-valued.
-
-        Returns:
-            numpy.ndarray: array of design space tolerances after embedding
-
-        """
-
-        return False
 
     def embed(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.

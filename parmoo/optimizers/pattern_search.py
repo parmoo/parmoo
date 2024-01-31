@@ -478,8 +478,9 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                 else:
                     xi = (np.random.sample(self.n) *
                           (self.ub[:] - self.lb[:]) + self.lb[:])
+                sxi = self.simulations(xi)
                 data['x_vals'][i, :] = xi[:]
-                data['f_vals'][i, :] = self.penalty_func(xi)
+                data['f_vals'][i, :] = self.penalty_func(xi, sxi)
             # Update the PF
             nondom = updatePF(data, nondom)
             k += k_new
