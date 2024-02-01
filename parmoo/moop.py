@@ -96,7 +96,7 @@ class MOOP:
                  # Problem dimensions
                  'm', 'm_total', 'n_feature', 'n_latent', 'o', 'p', 's',
                  # Embeddings
-                 'embedders', 'embedding_size',
+                 'embedders', 'embedder_args', 'embedding_size',
                  # Tolerances
                  'feature_des_tols', 'latent_des_tols',
                  # Bound constraints
@@ -116,6 +116,8 @@ class MOOP:
                  'optimizer_obj',
                  # Metadata
                  'hyperparams', 'history',
+                 # Compiled function definitions
+                 'evaluate_objectives', 'evaluate_constraints', 'evaluate_penalty'
                 ]
 
     def __init__(self, opt_func, hyperparams=None):
@@ -138,7 +140,7 @@ class MOOP:
         self.m_total, self.n_feature, self.n_latent = 0, 0, 0
         self.o, self.p, self.s = 0, 0, 0
         # Initialize the embedding dimensions, bounds, and tolerances
-        self.embedders, self.embedding_size = [], []
+        self.embedders, self.embedder_args, self.embedding_size = [], [], []
         self.feature_des_tols, self.latent_des_tols = [], []
         self.latent_lb, self.latent_ub = [], []
         # Initialize the schemas and databases
@@ -239,24 +241,38 @@ class MOOP:
             raise RuntimeError("Cannot add more design variables after"
                                + " adding simulation functions")
         for arg in args:
-            # Check arg for correct types
+            # Check arg and optional inputs for correct types
             if not isinstance(arg, dict):
                 raise TypeError("Each argument must be a Python dict")
             if 'des_type' in arg:
                 if not isinstance(arg['des_type'], str):
                     raise TypeError("args['des_type'] must be a str")
+            if 'name' in arg:
+                name = arg['name']
+            else:
+                name = len(self.des_schema)
+            check_names(name, self.des_schema, self.sim_schema,
+                        self.obj_schema, self.con_schema)
             # Append each design variable (default) to the schema
             if 'des_type' not in arg or \
                arg['des_type'] in ["continuous", "cont", "real"]:
-                embedder = ContinuousEmbedder(arg)
+                arg1 = arg
+                embedder = ContinuousEmbedder(arg1)
             elif arg['des_type'] in ["integer", "int"]:
-                embedder = IntegerEmbedder(arg)
+                arg1 = arg
+                embedder = IntegerEmbedder(arg1)
             elif arg['des_type'] in ["categorical", "cat"]:
-                embedder = CategoricalEmbedder(arg)
+                arg1 = arg
+                embedder = CategoricalEmbedder(arg1)
             elif arg['des_type'] in ["custom"]:
-                embedder = arg['embedder'](arg)
+                arg1 = {}
+                for key in arg:
+                    if key != 'embedder':
+                        arg1[key] = arg[key]
+                embedder = arg['embedder'](arg1)
             elif arg['des_type'] in ["raw"]:
-                embedder = IdentityEmbedder(arg)
+                arg1 = arg
+                embedder = IdentityEmbedder(arg1)
             else:
                 raise ValueError("des_type=" + arg['des_type'] +
                                  " is not a recognized value")
@@ -264,6 +280,7 @@ class MOOP:
             self.n_feature += 1
             self.embedding_size.append(embedder.getEmbeddingSize())
             self.n_latent += self.embedding_size[-1]
+            # Update the des tols and latent bound constraints
             lbs = embedder.getLowerBounds()
             for lb in lbs:
                 self.latent_lb.append(lb)
@@ -274,16 +291,11 @@ class MOOP:
             des_tols = embedder.getLatentDesTols()
             for des_tol in des_tols:
                 self.latent_des_tols.append(float(des_tol))
+            # Update the schema and add the embedder to list
             dtype = embedder.getInputType()
-            self.embedders.append(embedder)
-            # Update the schema
-            if 'name' in arg:
-                name = arg['name']
-            else:
-                name = len(self.des_schema)
-            check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_schema, self.con_schema)
             self.des_schema.append((name, dtype))
+            self.embedders.append(embedder)
+            self.embedder_args.append(arg1)  # This is saved for re-loading
         # Reset the database
         self.n_dat = 0
         self.data = {}
@@ -577,7 +589,7 @@ class MOOP:
         """ Get the numpy dtype of all design points for this MOOP.
 
         Returns:
-            np.dtype: The numpy dtype of this MOOP's design points.
+            dtype: The numpy dtype of this MOOP's design points.
             If no design variables have yet been added, returns None.
 
         """
@@ -591,7 +603,7 @@ class MOOP:
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
 
         Returns:
-            np.dtype: The numpy dtype of this MOOP's simulation outputs.
+            dtype: The numpy dtype of this MOOP's simulation outputs.
             If no simulations have been given, returns None.
 
         """
@@ -605,7 +617,7 @@ class MOOP:
         """ Get the numpy dtype of an objective point for this MOOP.
 
         Returns:
-            np.dtype: The numpy dtype of this MOOP's objective points.
+            dtype: The numpy dtype of this MOOP's objective points.
             If no objectives have yet been added, returns None.
 
         """
@@ -619,7 +631,7 @@ class MOOP:
         """ Get the numpy dtype of the constraint violations for this MOOP.
 
         Returns:
-            np.dtype: The numpy dtype of this MOOP's constraint violation
+            dtype: The numpy dtype of this MOOP's constraint violation
             outputs. If no constraint functions have been given, returns None.
 
         """
@@ -660,9 +672,7 @@ class MOOP:
         des_tols = np.asarray(self.latent_des_tols)
         for j in range(self.sim_db[i]['n']):
             if np.all(np.abs(self.sim_db[i]['x_vals'][j, :] - xx) < des_tols):
-                # If found, return the sim value
                 return self.sim_db[i]['s_vals'][j, :]
-        # Nothing found, return None
         return None
 
     def updateSimDb(self, x, sx, s_name):
@@ -713,13 +723,6 @@ class MOOP:
         """ Evaluate sim_func[s_name] and store the result in the database.
 
         Args:
-            x (dict or numpy structured array): A numpy structured array or a
-                Python dictionary specifying the keys/names and corresponding
-                values of a design point to search for.
-
-        s_name (str): The name of the simulation whose database will be
-            searched.
-
             x (dict or numpy structured array): Either a numpy structured
                 array or a Python dictionary with keys/names corresponding
                 to the design variable names given and values containing
@@ -728,13 +731,20 @@ class MOOP:
             s_name (str): The name of the simulation to evaluate.
 
         Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the output from the
+            numpy.ndarray: A 1D array containing the output from the evaluation
             sx = simulation[s_name](x).
 
         """
 
         sx = self.checkSimDb(x, s_name)
         if sx is None:
+            i = -1
+            for j, sj in enumerate(self.sim_schema):
+                if sj[0] == s_name:
+                    i = j
+                    break
+            if i < 0 or i > self.s - 1:
+                raise ValueError("s_name did not contain a legal name/index")
             sx = np.asarray(self.sim_funcs[i](x))
             self.updateSimDb(x, sx, s_name)
         return sx
@@ -743,27 +753,15 @@ class MOOP:
         """ Update the internal objective database by truly evaluating x.
 
         Args:
-            x (numpy.ndarray or numpy structured array): Either a numpy
-                structured array (when using named variables) or a 1D
-                numpy.ndarray containing the value of the design variable
-                to add to ParMOO's database. When operating with unnamed
-                variables, the indices were assigned in the order that
-                the design variables were added to the MOOP using
-                `MOOP.addDesign(*args)`.
+            x (dict or numpy structured array): Either a numpy structured
+                array or Python dictionary containing the value of the design
+                variable to add to ParMOO's database.
 
-            sx (numpy.ndarray or numpy structured array): Either a numpy
-                structured array (when using named variables) or a 1D
-                numpy.ndarray containing the values of the corresponding
-                simulation outputs for ALL simulations involved in this
-                MOOP. In named mode, sx['s_name'][:] contains the output(s)
-                for sim_func['s_name']. In unnamed mode, simulation indices
-                were assigned in the order that they were added using
-                `MOOP.addSimulation(*args)`. Then, if each simulation i has
-                m_i outputs (i = 0, 1, ...):
-                 * sx[:m_0] contains the output(s) of sim_func[0],
-                 * sx[m_0:m_0 + m_1] contains output(s) of sim_func[1],
-                 * sx[m_0 + m_1:m_0 + m_1 + m_2] contains the output(s) for
-                   sim_func[2], etc.
+            sx (dict or numpy structured array): Either a numpy structured
+                array or Python dictionary containing the values of the
+                corresponding simulation outputs for ALL simulations involved
+                in this MOOP -- sx['s_name'][:] contains the output(s)
+                for sim_func['s_name'].
 
         """
 
@@ -825,33 +823,23 @@ class MOOP:
                 resulting candidates to the batch.
 
         Returns:
-            (list): A list of design points (numpy structured or 1D arrays) or
-            tuples (design points, simulation name) specifying the unfiltered
-            list of candidates that ParMOO recommends for true simulation
-            evaluations. Specifically:
-             * Each item or the first entry in tuple is either a numpy
-               structured array (when operating with named variables) or a
-               1D numpy.ndarray (in unnamed mode). When operating with
-               unnamed variables, the indices were assigned in the order
-               that the design variables were added to the MOOP using
-               `MOOP.addDesign(*args)`.
-             * If the item is a tuple, then the second entry in the tuple
-               is either the (str) name of the simulation to
-               evaluate (when operating with named variables) or the (int)
-               index of the simulation to evaluate (when operating in
-               unnamed mode). Note, in unnamed mode, simulation indices
-               were assigned in the order that they were added using
-               `MOOP.addSimulation(*args)`.
+            (list): A list of tuples (design points, simulation name)
+            specifying the unfiltered list of candidates that ParMOO
+            recommends for true simulation evaluations. Specifically:
+             * The first entry in each tuple is either a numpy structured
+               array or a Python dictionary specifying the design point
+               to evaluate.
+             * The second entry in the tuple is the (str) name of the
+               simulation to evaluate at the design point specified above.
 
         """
 
-        # Check that the iterate is a legal integer
+        # Check that the inputs and MOOP states are legal
         if isinstance(k, int):
             if k < 0:
                 raise ValueError("k must be nonnegative")
         else:
             raise TypeError("k must be an int type")
-        # Check that ib is a list of legal integers or None
         if isinstance(ib, list) and all([isinstance(ibj, int) for ibj in ib]):
             for ibj in ib:
                 if ibj < 0 or ibj >= len(self.acquisitions):
@@ -860,14 +848,11 @@ class MOOP:
             raise TypeError("when present, ib must be a list of int types")
         else:
             ib = [i for i in range(len(self.acquisitions))]
-        # Check that there are design variables for this problem
         if self.n_latent == 0:
             raise AttributeError("there are no design vars for this problem")
-        # Check that there are objectives
         if self.o == 0:
             raise AttributeError("there are no objectives for this problem")
-
-        # Prepare a batch to return
+        # Begin to prepare a batch to return
         xbatch = []
         # Special rule for the k=0 iteration
         if k == 0:
@@ -922,42 +907,13 @@ class MOOP:
         surrogate's Surrogate.improve() method.
 
         Args:
-            *args (list of numpy.ndarrays or tuples): The list of
-            unfiltered candidates returned by the MOOP.iterate() method.
-            A list of design points (numpy structured or 1D arrays) or
-            tuples (design points, simulation name) specifying the unfiltered
-            list of candidates that ParMOO recommends for true simulation
-            evaluations. Specifically:
-             * Each item or the first entry in tuple is either a numpy
-               structured array (when operating with named variables) or a
-               1D numpy.ndarray (in unnamed mode). When operating with
-               unnamed variables, the indices were assigned in the order
-               that the design variables were added to the MOOP using
-               `MOOP.addDesign(*args)`.
-             * If the item is a tuple, then the second entry in the tuple
-               is either the (str) name of the simulation to
-               evaluate (when operating with named variables) or the (int)
-               index of the simulation to evaluate (when operating in
-               unnamed mode). Note, in unnamed mode, simulation indices
-               were assigned in the order that they were added using
-               `MOOP.addSimulation(*args)`.
+            *args (list of tuples): The list of unfiltered candidates
+            returned by the ``MOOP.iterate()`` method.
 
         Returns:
-            (list): A filtered list of ordered pairs (tuples), specifying
-            the (design points, simulation name) that ParMOO suggests for
-            evaluation. Specifically:
-             * The first entry in each tuple is either a numpy structured
-               array (when operating with named variables) or a 1D
-               numpy.ndarray (in unnamed mode). When operating with unnamed
-               variables, the indices were assigned in the order that
-               the design variables were added to the MOOP using
-               `MOOP.addDesign(*args)`.
-             * The second entry is either the (str) name of the simulation to
-               evaluate (when operating with named variables) or the (int)
-               index of the simulation to evaluate (when operating in
-               unnamed mode). Note, in unnamed mode, simulation indices
-               were assigned in the order that they were added using
-               `MOOP.addSimulation(*args)`.
+            (list): A filtered list of tuples, matching the format of the
+            ``MOOP.iterate()`` output, but with redundant points removed
+            and suitably replaced.
 
         """
 
@@ -1032,20 +988,8 @@ class MOOP:
             k (int): The iteration counter (corresponding to MOOP.iteration).
 
             batch (list): A list of ordered pairs (tuples), each specifying
-                a design point that was evaluated in this iteration.
-                For each tuple in the list:
-                 * The first entry in each tuple is either a numpy structured
-                   array (when operating with named variables) or a 1D
-                   numpy.ndarray (in unnamed mode). When operating with
-                   unnamed variables, the indices were assigned in the order
-                   that the design variables were added to the MOOP using
-                   `MOOP.addDesign(*args)`.
-                 * The second entry is either the (str) name of the simulation
-                   to evaluate (when operating with named variables) or the
-                   (int) index of the simulation to evaluate (when operating
-                   in unnamed mode). Note, in unnamed mode, simulation indices
-                   were assigned in the order that they were added using
-                   `MOOP.addSimulation(*args)`.
+                a design point that was evaluated in this iteration, whose
+                format matches the output of ``MOOP.iterate()``.
 
         """
 
@@ -1147,6 +1091,9 @@ class MOOP:
                 counter. ParMOO keeps track of how many iterations it has
                 completed internally. This value k specifies the stopping
                 criteria for ParMOO.
+
+            sim_max (int): The max limit for ParMOO's simulation database,
+                i.e., the simulation evaluation budget.
 
         """
 
@@ -1267,19 +1214,9 @@ class MOOP:
         Returns:
             A discrete approximation of the Pareto front and efficient set.
 
-            If operating with named variables, then this is a 1d numpy
+            If operating with named variables, then this is a 1D numpy
             structured array whose fields match the names for design
             variables, objectives, and constraints (if any).
-
-            Otherwise, this is a dict containing the following keys:
-             * x_vals (numpy.ndarray): A 2d numpy.ndarray containing a list
-               of nondominated points discretely approximating the
-               Pareto front.
-             * f_vals (numpy.ndarray): A 2d numpy.ndarray containing the list
-               of corresponding efficient design points.
-             * c_vals (numpy.ndarray): A 2d numpy.ndarray containing the list
-               of corresponding constraint satisfaction scores,
-               all less than or equal to 0.
 
         """
 
@@ -1299,7 +1236,7 @@ class MOOP:
         for fname in self.obj_schema:
             dt.append((str(fname[0]), fname[1]))
         for cname in self.con_schema:
-            dt.append((str(cname[0], cname[1])))
+            dt.append((str(cname[0]), cname[1]))
         # Initialize result array
         result = np.zeros(pf['x_vals'].shape[0], dtype=dt)
         # Extract all results
@@ -1370,8 +1307,7 @@ class MOOP:
                 for (name, t) in self.des_schema:
                     result[sname[0]][name][:] = x_vals[name][:]
                 if len(sname) == 2:
-                    result[sname[0]]['out'] = self.sim_db[i]['s_vals'][:,
-                                                                       0]
+                    result[sname[0]]['out'] = self.sim_db[i]['s_vals'][:, 0]
                 else:
                     result[sname[0]]['out'] = self.sim_db[i]['s_vals']
         if format == 'pandas':
@@ -1394,8 +1330,7 @@ class MOOP:
         elif format == 'ndarray':
             return result
         else:
-            raise ValueError(str(format) + "is an invalid value for "
-                             + "'format'")
+            raise ValueError(str(format) + "is an invalid value for 'format'")
 
     def getObjectiveData(self, format='ndarray'):
         """ Extract all computed objective scores from this MOOP's database.
@@ -1484,38 +1419,31 @@ class MOOP:
                           "overwrite your data...")
         # Create a serializable ParMOO dictionary by replacing function refs
         # with funcion/module names
-        parmoo_state = {'n_latent': self.n_latent,
-                        'm': self.m,
+        parmoo_state = {'m': self.m,
                         'm_total': self.m_total,
+                        'n_feature': self.n_feature,
+                        'n_latent': self.n_latent,
                         'o': self.o,
                         'p': self.p,
                         's': self.s,
-                        'n_dat': self.n_dat,
-                        'sim_schema': self.sim_schema,
+                        'embedder_args': self.embedder_args,
+                        'embedding_size': self.embedding_size,
+                        'feature_des_tols': self.feature_des_tols,
+                        'latent_des_tols': self.latent_des_tols,
+                        'latent_lb': self.latent_lb,
+                        'latent_ub': self.latent_ub,
                         'des_schema': self.des_schema,
+                        'sim_schema': self.sim_schema,
                         'obj_schema': self.obj_schema,
                         'con_schema': self.con_schema,
-                        'lam': self.lam,
-                        'epsilon': self.epsilon,
-                        'hyperparams': self.hyperparams,
-                        'history': self.history,
+                        'n_dat': self.n_dat,
                         'iteration': self.iteration,
+                        'lam': self.lam,
                         'checkpoint': self.checkpoint,
                         'checkpoint_data': self.checkpoint_data,
-                        'checkpoint_file': self.checkpoint_file}
-        # Serialize numpy arrays
-        if isinstance(self.latent_lb, np.ndarray):
-            parmoo_state['latent_lb'] = self.latent_lb.tolist()
-        else:
-            parmoo_state['latent_lb'] = self.latent_lb
-        if isinstance(self.latent_ub, np.ndarray):
-            parmoo_state['latent_ub'] = self.latent_ub.tolist()
-        else:
-            parmoo_state['latent_ub'] = self.latent_ub
-        if isinstance(self.latent_des_tols, np.ndarray):
-            parmoo_state['latent_des_tols'] = self.latent_des_tols.tolist()
-        else:
-            parmoo_state['latent_des_tols'] = self.latent_des_tols
+                        'checkpoint_file': self.checkpoint_file,
+                        'hyperparams': self.hyperparams,
+                        'history': self.history}
         # Serialize internal databases
         parmoo_state['data'] = {}
         if 'x_vals' in self.data:
@@ -1531,17 +1459,6 @@ class MOOP:
                                            'n': dbi['n'],
                                            'old': dbi['old']})
         # Add names for all callables (functions/objects)
-        parmoo_state['obj_funcs'] = []
-        parmoo_state['obj_funcs_info'] = []
-        for fi in self.obj_funcs:
-            if type(fi).__name__ == "function":
-                parmoo_state['obj_funcs'].append((fi.__name__, fi.__module__))
-                parmoo_state['obj_funcs_info'].append("function")
-            else:
-                parmoo_state['obj_funcs'].append((fi.__class__.__name__,
-                                                   fi.__class__.__module__))
-                parmoo_state['obj_funcs_info'].append(
-                        codecs.encode(pickle.dumps(fi), "base64").decode())
         parmoo_state['sim_funcs'] = []
         parmoo_state['sim_funcs_info'] = []
         for si in self.sim_funcs:
@@ -1553,6 +1470,17 @@ class MOOP:
                                                   si.__class__.__module__))
                 parmoo_state['sim_funcs_info'].append(
                         codecs.encode(pickle.dumps(si), "base64").decode())
+        parmoo_state['obj_funcs'] = []
+        parmoo_state['obj_funcs_info'] = []
+        for fi in self.obj_funcs:
+            if type(fi).__name__ == "function":
+                parmoo_state['obj_funcs'].append((fi.__name__, fi.__module__))
+                parmoo_state['obj_funcs_info'].append("function")
+            else:
+                parmoo_state['obj_funcs'].append((fi.__class__.__name__,
+                                                   fi.__class__.__module__))
+                parmoo_state['obj_funcs_info'].append(
+                        codecs.encode(pickle.dumps(fi), "base64").decode())
         parmoo_state['con_funcs'] = []
         parmoo_state['con_funcs_info'] = []
         for ci in self.con_funcs:
@@ -1566,6 +1494,9 @@ class MOOP:
                 parmoo_state['con_funcs_info'].append(
                         codecs.encode(pickle.dumps(ci), "base64").decode())
         # Store names/modules of object classes
+        parmoo_state['embedders'] = [(embedder.__class__.__name__,
+                                      embedder.__class__.__module__)
+                                    for embedder in self.embedders]
         parmoo_state['optimizer'] = (self.optimizer.__name__,
                                      self.optimizer.__module__)
         parmoo_state['searches'] = [(search.__class__.__name__,
@@ -1649,30 +1580,31 @@ class MOOP:
             parmoo_state = json.load(fp)
 
         # Reload serialized intrinsic types (scalar values and Python lists)
-        self.n_latent = parmoo_state['n_latent']
         self.m = parmoo_state['m']
         self.m_total = parmoo_state['m_total']
+        self.n_feature = parmoo_state['n_feature']
+        self.n_latent = parmoo_state['n_latent']
         self.o = parmoo_state['o']
         self.p = parmoo_state['p']
         self.s = parmoo_state['s']
+        self.embedder_args = parmoo_state['embedder_args']
+        self.embedding_size = parmoo_state['embedding_size']
+        self.feature_des_tols = parmoo_state['feature_des_tols']
+        self.latent_des_tols = parmoo_state['latent_des_tols']
+        self.latent_lb = parmoo_state['latent_lb']
+        self.latent_ub = parmoo_state['latent_ub']
+        self.des_schema = parmoo_state['des_schema']
+        self.sim_schema = parmoo_state['sim_schema']
+        self.obj_schema = parmoo_state['obj_schema']
+        self.con_schema = parmoo_state['con_schema']
         self.n_dat = parmoo_state['n_dat']
-        self.sim_schema = [tuple(item) for item in parmoo_state['sim_schema']]
-        self.des_schema = [tuple(item) for item in parmoo_state['des_schema']]
-        self.obj_schema = [tuple(item) for item in parmoo_state['obj_schema']]
-        self.con_schema = [tuple(item)
-                           for item in parmoo_state['con_schema']]
-        self.lam = parmoo_state['lam']
-        self.epsilon = parmoo_state['epsilon']
-        self.hyperparams = parmoo_state['hyperparams']
-        self.history = parmoo_state['history']
         self.iteration = parmoo_state['iteration']
+        self.lam = parmoo_state['lam']
         self.checkpoint = parmoo_state['checkpoint']
         self.checkpoint_data = parmoo_state['checkpoint_data']
         self.checkpoint_file = parmoo_state['checkpoint_file']
-        # Reload serialize numpy arrays
-        self.latent_lb = np.array(parmoo_state['latent_lb'])
-        self.latent_ub = np.array(parmoo_state['latent_ub'])
-        self.latent_des_tols = np.array(parmoo_state['latent_des_tols'])
+        self.hyperparams = parmoo_state['hyperparams']
+        self.history = parmoo_state['history']
         # Reload serialized internal databases
         self.data = {}
         if 'x_vals' in parmoo_state['data']:
@@ -1768,6 +1700,12 @@ class MOOP:
                 toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
             self.con_funcs.append(toadd)
         # Recover object classes and instances
+        self.embedders = []
+        for i, (emb_name, emb_mod) in enumerate(parmoo_state['embedders']):
+            mod = import_module(emb_mod)
+            new_emb = getattr(mod, emb_name)
+            toadd = new_emb(self.embedder_args[i])
+            self.embedders.append(toadd)
         mod = import_module(parmoo_state['optimizer'][1])
         self.optimizer = getattr(mod, parmoo_state['optimizer'][0])
         self.searches = []
@@ -2018,6 +1956,9 @@ class MOOP:
             x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
                 design point to evaluate.
 
+            sx (numpy.ndarray): A 1d numpy.ndarray containing the (packed)
+                simulation vector at x.
+
         Returns:
             numpy.ndarray: A 1d numpy.ndarray containing the result of the
             evaluation.
@@ -2031,6 +1972,53 @@ class MOOP:
             fx.append(jnp.array(obj_func(xx, ssx)).flatten())
         return jnp.concatenate(fx)
 
+    def _obj_fwd(self, x, sx):
+        """ Evaluate a forward pass over the objective functions.
+    
+        Args:
+            x (ndarray): A 1D array containing the (embedded) design point
+                to evaluate.
+    
+            sx (ndarray): A 1D array containing the (packed) simulation
+                vector at x.
+    
+        Returns:
+            (ndarray, (ndarray, ndarray)): The first entry is a 1D array
+            containing the result of the evaluation, and the second entry
+            contains the extracted pair (xx, ssx).
+    
+        """
+    
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        fx = []
+        for i, obj_func in enumerate(self.obj_funcs):
+            fx.append(jnp.array(obj_func(xx, ssx)).flatten())
+        return jnp.concatenate(fx), (xx, ssx)
+
+    def _obj_bwd(self, res, w):
+        """ Evaluate a backward pass over the objective functions.
+    
+        Args:
+            res (tuple of ndarrays): Contains extracted value of x and the
+                unpacked value of sx computed during the forward pass.
+    
+            w (ndarray): Contains the adjoint vector for the computation
+                succeeding the objective evaluation in the compute graph.
+    
+        Returns:
+            (ndarray, ndarray): A pair of 1D arrays containing the gradient
+            with respect to x and sx, respectively.
+    
+        """
+    
+        xx, ssx = res
+        dfdx, dfds = [], []
+        for i, obj_func in enumerate(self.obj_funcs):
+            dfdx.append(jnp.array(obj_func(xx, ssx, grad=1)).flatten() * w[i])
+            dfds.append(jnp.array(obj_func(xx, ssx, grad=2)).flatten() * w[i])
+        return (jnp.concatenate(dfdx), jnp.concatenate(dfds))
+
     def _evaluate_constraints(self, x, sx):
         """ Evaluate the constraints using the simulation surrogates as needed.
 
@@ -2038,20 +2026,68 @@ class MOOP:
             x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
                 design point to evaluate.
 
+            sx (numpy.ndarray): A 1d numpy.ndarray containing the (packed)
+                simulation vector at x.
+
         Returns:
             numpy.ndarray: A 1d numpy.ndarray containing the list of constraint
-            violations at x (zero if no violation).
+            violations at x (negative or zero if no violation).
 
         """
 
-        if self.p == 0:
-            return self.empty
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
-        cx = []
+        cx = [self.empty]
         for i, constraint_func in enumerate(self.con_funcs):
             cx.append(jnp.array(constraint_func(xx, ssx)).flatten())
         return jnp.concatenate(cx)
+
+    def _con_fwd(self, x, sx):
+        """ Evaluate a forward pass over the constraint functions.
+
+        Args:
+            x (ndarray): A 1D array containing the (embedded) design point
+                to evaluate.
+
+            sx (ndarray): A 1D array containing the (packed) simulation
+                vector at x.
+
+        Returns:
+            (ndarray, (ndarray, ndarray)): The first entry is a 1D array
+            containing the constraint violations at x, and the second entry
+            contains the extracted pair (xx, ssx).
+
+        """
+
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        cx = [self.empty]
+        for i, con_func in enumerate(self.con_funcs):
+            cx.append(jnp.array(con_func(xx, ssx)).flatten())
+        return jnp.concatenate(cx), (xx, sxx)
+
+    def _con_bwd(self, res, w):
+        """ Evaluate a backward pass over the constraint functions.
+
+        Args:
+            res (tuple of ndarrays): Contains extracted value of x and the
+                unpacked value of sx computed during the forward pass.
+
+            w (ndarray): Contains the adjoint vector for the computation
+                succeeding the constraint evaluation in the compute graph.
+
+        Returns:
+            (ndarray, ndarray): A pair of 1D arrays containing the gradient
+            with respect to x and sx, respectively.
+
+        """
+
+        xx, ssx = res
+        dcdx, dcds = [], []
+        for i, con_func in enumerate(self.con_funcs):
+            dcdx.append(jnp.array(con_func(xx, ssx, grad=1)).flatten() * w[i])
+            dcds.append(jnp.array(con_func(xx, ssx, grad=2)).flatten() * w[i])
+        return (jnp.concatenate(dcdx), jnp.concatenate(dcds))
 
     def _evaluate_penalty(self, x, sx):
         """ Evaluate the penalized objective using the surrogates as needed.
@@ -2059,6 +2095,9 @@ class MOOP:
         Args:
             x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
                 design point to evaluate.
+
+            sx (numpy.ndarray): A 1d numpy.ndarray containing the (packed)
+                simulation vector at x.
 
         Returns:
             numpy.ndarray: A 1d numpy.ndarray containing the result of the
@@ -2075,3 +2114,89 @@ class MOOP:
         for i, constraint_func in enumerate(self.con_funcs):
             cx += jnp.maximum(constraint_func(xx, ssx), 0)
         return jnp.concatenate(fx) + (self.lam * cx)
+
+    def _pen_fwd(self, x, sx):
+        """ Evaluate a forward pass over the penalized objective functions.
+    
+        Args:
+            x (ndarray): A 1D array containing the (embedded) design point
+                to evaluate.
+    
+            sx (ndarray): A 1D array containing the (packed) simulation
+                vector at x.
+    
+        Returns:
+            (ndarray, (ndarray, ndarray)): The first entry is a 1D array
+            containing the result of the evaluation, and the second entry
+            contains the extracted pair (xx, ssx).
+    
+        """
+    
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        fx, cx = [], []
+        for i, obj_func in enumerate(self.obj_funcs):
+            fx.append(jnp.array(obj_func(xx, ssx)).flatten())
+        for i, constraint_func in enumerate(self.con_funcs):
+            cx.append(jnp.maximum(constraint_func(xx, ssx), 0) * self.lam)
+        cx_cat = jnp.concatenate(cx)
+        zeros = jnp.zeros(cx_cat.shape)
+        activities = (jnp.isclose(cx_cat, zeros) - 1) * -self.lam
+        return jnp.concatenate(fx) + jnp.sum(cx_cat), (xx, ssx, activities)
+
+    def _pen_bwd(self, res, w):
+        """ Evaluate a backward pass over the penalized objective functions.
+    
+        Args:
+            res (tuple of ndarrays): Contains extracted value of x and the
+                unpacked value of sx computed during the forward pass.
+    
+            w (ndarray): Contains the adjoint vector for the computation
+                succeeding the objective evaluation in the compute graph.
+    
+        Returns:
+            (ndarray, ndarray): A pair of 1D arrays containing the gradient
+            with respect to x and sx, respectively.
+    
+        """
+    
+        xx, ssx, activities = res
+        dcdx, dcds = [], []
+        for i, con_func in enumerate(self.con_funcs):
+            dcdx.append(jnp.array(con_func(xx, ssx, grad=1)).flatten())
+            dcds.append(jnp.array(con_func(xx, ssx, grad=2)).flatten())
+        dpdx = jnp.dot(activities, jnp.concatenate(dcdx))
+        dpds = jnp.dot(activities, jnp.concatenate(dcds))
+        dfdx, dfds = [], []
+        for i, obj_func in enumerate(self.obj_funcs):
+            dfdx.append((jnp.array(obj_func(xx, ssx, grad=1)).flatten() + dpdx)
+                        * w[i])
+            dfds.append((jnp.array(obj_func(xx, ssx, grad=2)).flatten() + dpds)
+                        * w[i])
+        return (jnp.concatenate(dfdx), jnp.concatenate(dfds))
+
+    def compile(self):
+        """ Compile the helper functions and link the fwd/bwd pass functions """
+
+        # Link the forward/backward pass functions
+
+        @custom_vjp
+        def eval_obj(x, sx): return self._evaluate_objectives(x, sx)
+        def obj_fwd(x, sx): return self._obj_fwd(x, sx)
+        def obj_bwd(res, w): return self._obj_bwd(res, w)
+        eval_obj.defvjp(obj_fwd, obj_bwd)
+        self.evaluate_objectives = eval_obj
+
+        @custom_vjp
+        def eval_con(x, sx): return self._evaluate_constraints(x, sx)
+        def con_fwd(x, sx): return self._con_fwd(x, sx)
+        def con_bwd(res, w): return self._con_bwd(res, w)
+        eval_con.defvjp(con_fwd, con_bwd)
+        self.evaluate_constraints = eval_con
+
+        @custom_vjp
+        def eval_pen(x, sx): return self._evaluate_penalty(x, sx)
+        def pen_fwd(x, sx): return self._pen_fwd(x, sx)
+        def pen_bwd(res, w): return self._pen_bwd(res, w)
+        eval_pen.defvjp(pen_fwd, pen_bwd)
+        self.evaluate_penalty = eval_pen

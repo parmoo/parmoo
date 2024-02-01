@@ -205,7 +205,7 @@ class ContinuousEmbedder:
             else:
                 des_tol = 1.0e-8 * max(ub - lb, 1.0e-4)
             if lb + des_tol > ub:
-                raise ValueError("lower bound must be stricter less than "
+                raise ValueError("lower bound must be strictly less than "
                                  "upper bound for all design variables "
                                  "up to the design tolerance")
         else:
@@ -350,7 +350,7 @@ class IntegerEmbedder:
                 raise KeyError("'ub' is a required key for continuous "
                                "design variables")
             if lb >= ub:
-                raise ValueError("lower bound must be stricter less than "
+                raise ValueError("lower bound must be strictly less than "
                                  "upper bound for all design variables ")
         else:
             raise TypeError("settings must be a dictionary")
@@ -502,7 +502,7 @@ class IdentityEmbedder:
             else:
                 self.des_tol = 1.0e-8 * max(self.ub - self.lb, 1.0e-4)
             if self.lb + self.des_tol > self.ub:
-                raise ValueError("lower bound must be stricter less than "
+                raise ValueError("lower bound must be strictly less than "
                                  "upper bound for all design variables "
                                  "up to the design tolerance")
         else:
