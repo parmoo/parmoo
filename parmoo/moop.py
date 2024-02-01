@@ -62,7 +62,7 @@ class MOOP:
      * ``MOOP.checkSimDb(x, s_name)``
      * ``MOOP.updateSimDb(x, sx, s_name)``
      * ``MOOP.evaluateSimulation(x, s_name)``
-     * ``MOOP.addData(x, sx)``
+     * ``MOOP.addObjData(x, sx)``
      * ``MOOP.iterate(k, ib=None)``
      * ``MOOP.updateAll(k, batch)``
 
@@ -105,7 +105,7 @@ class MOOP:
                  'des_schema', 'sim_schema', 'obj_schema', 'con_schema',
                  'data', 'sim_db', 'n_dat',
                  # Constants, counters, and adaptive parameters
-                 'empty', 'epsilon', 'iteration', 'lam',
+                 'epsilon', 'iteration', 'lam',
                  # Checkpointing markers
                  'checkpoint', 'checkpoint_data', 'checkpoint_file',
                  'new_checkpoint', 'new_data',
@@ -149,7 +149,6 @@ class MOOP:
         self.data, self.sim_db = {}, []
         self.n_dat = 0
         # Initialize the constants, counters, and adaptive parameters
-        self.empty = jnp.zeros(0)
         self.epsilon = jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)
         self.iteration = 0
         self.lam = 1.0
@@ -201,8 +200,9 @@ class MOOP:
                    all of ParMOO's databases. This is also how users should
                    index this variable in all user-defined functions passed
                    to ParMOO.
-                   If left blank, it is assigned an integer index by default
-                   corresponding to the order added.
+                   If left blank, it defaults to "xi" where i= 1, 2, 3,...
+                   corresponds to the order in which the design variables
+                   were added.
                  * 'des_type' (str): The type for this design variable.
                    Currently supported options are:
                     * 'continuous' (or 'cont' or 'real')
@@ -250,7 +250,7 @@ class MOOP:
             if 'name' in arg:
                 name = arg['name']
             else:
-                name = len(self.des_schema)
+                name = f"x{len(self.des_schema) + 1}"
             check_names(name, self.des_schema, self.sim_schema,
                         self.obj_schema, self.con_schema)
             # Append each design variable (default) to the schema
@@ -749,7 +749,7 @@ class MOOP:
             self.updateSimDb(x, sx, s_name)
         return sx
 
-    def addData(self, x, sx):
+    def addObjData(self, x, sx):
         """ Update the internal objective database by truly evaluating x.
 
         Args:
@@ -852,9 +852,8 @@ class MOOP:
             raise AttributeError("there are no design vars for this problem")
         if self.o == 0:
             raise AttributeError("there are no objectives for this problem")
-        # Begin to prepare a batch to return
-        xbatch = []
         # Special rule for the k=0 iteration
+        xbatch = []
         if k == 0:
             # Initialize the database
             self.n_dat = 0
@@ -882,19 +881,23 @@ class MOOP:
                 for xi in des:
                     xbatch.append((self._extract(xi),
                                    self.sim_schema[j][0]))
-        # Now the main loop
+        # General case for k>0 iterations
         else:
+            # Set acquisition function targets
             x0 = np.zeros((len(self.acquisitions), self.n_latent))
-            # Set acquisition functions
             for i, acqi in enumerate(self.acquisitions):
                 x0[i, :] = acqi.setTarget(self.data,
                                           self._evaluate_penalty,
                                           self.history)
             # Solve the surrogate problem
             x_candidates = self.optimizer_obj.solve(x0)
-            # Create a batch for filter method
+            # Create a batch for filtering methods
             for i, acqi in enumerate(self.acquisitions):
-                xbatch.append(self._extract(x_candidates[i, :]))
+                if self.s > 0:
+                    for sn in self.sim_schema:
+                        xbatch.append((self._extract(x_candidates[i, :]), sn[0]))
+                else:
+                    xbatch.append(self._extract(x_candidates[i, :]))
         return xbatch
 
     def filterBatch(self, *args):
@@ -1020,7 +1023,7 @@ class MOOP:
                             break
                     # If xi was in every sim_db, add it to the database
                     if is_shared:
-                        self.addData(self._extract(xi), self._unpack_sim(sim))
+                        self.addObjData(self._extract(xi), self._unpack_sim(sim))
         else:
             # If any constraints are violated, increase lam toward the limit
             for (xi, i) in batch:
@@ -1062,7 +1065,7 @@ class MOOP:
                     sdx = self._unpack_sim(np.zeros(self.m_total))
                     for i, obj_func in enumerate(self.obj_funcs):
                         fx[i] = obj_func(x, sx)
-                    self.addData(x, sx)
+                    self.addObjData(x, sx)
                     self.optimizer_obj.returnResults(xx, fx, sim, np.zeros(self.m_total))
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
@@ -1285,14 +1288,10 @@ class MOOP:
 
         """
 
-        # Initialize result dictionary
+        # Build a results dict with a key for each simulation
         result = {}
-        # For each simulation
         for i, sname in enumerate(self.sim_schema):
-            # Extract all results
-            x_vals = np.asarray([self._extract(xi)
-                                 for xi in self.sim_db[i]['x_vals']])
-            # Build the datatype
+            # Construct the dtype for this simulation database
             dt = []
             for dname in self.des_schema:
                 dt.append((str(dname[0]), dname[1]))
@@ -1300,16 +1299,17 @@ class MOOP:
                 dt.append(('out', sname[1]))
             else:
                 dt.append(('out', sname[1], sname[2]))
-            # Initialize result array for sname[i]
+            # Fill the results array
             result[sname[0]] = np.zeros(self.sim_db[i]['n'], dtype=dt)
             if self.sim_db[i]['n'] > 0:
-                # Copy results
-                for (name, t) in self.des_schema:
-                    result[sname[0]][name][:] = x_vals[name][:]
-                if len(sname) == 2:
-                    result[sname[0]]['out'] = self.sim_db[i]['s_vals'][:, 0]
-                else:
+                for j, xj in enumerate(self.sim_db[i]['x_vals']):
+                    xxj = self._extract(xj)
+                    for (name, t) in self.des_schema:
+                        result[sname[0]][name][j] = xxj[name]
+                if len(sname) > 2:
                     result[sname[0]]['out'] = self.sim_db[i]['s_vals']
+                else:
+                    result[sname[0]]['out'] = self.sim_db[i]['s_vals'][:, 0]
         if format == 'pandas':
             # For simulation data, converting to pandas is a little more
             # complicated...
@@ -1363,11 +1363,11 @@ class MOOP:
         # Build the data type
         dt = []
         for dname in self.des_schema:
-            dt.append((str(dname[0]), dname[1]))
+            dt.append(dname)
         for fname in self.obj_schema:
-            dt.append((str(fname[0]), fname[1]))
+            dt.append(fname)
         for cname in self.con_schema:
-            dt.append((str(cname[0], cname[1])))
+            dt.append(cname)
         # Initialize result array
         if self.n_dat > 0:
             result = np.zeros(self.data['x_vals'].shape[0], dtype=dt)
@@ -1375,10 +1375,10 @@ class MOOP:
             result = np.zeros(0, dtype=dt)
         # Extract all results
         if self.n_dat > 0:
-            x_vals = np.asarray([self._extract(xi)
-                                 for xi in self.data['x_vals']])
-            for (name, t) in self.des_schema:
-                result[name][:] = x_vals[name][:]
+            for i, xi in enumerate(self.data['x_vals']):
+                xxi = self._extract(xi)
+                for (name, t) in self.des_schema:
+                    result[name][i] = xxi[name]
             for i, (name, t) in enumerate(self.obj_schema):
                 result[name][:] = self.data['f_vals'][:, i]
             for i, (name, t) in enumerate(self.con_schema):
@@ -1713,7 +1713,8 @@ class MOOP:
                                                 parmoo_state['searches']):
             mod = import_module(search_mod)
             new_search = getattr(mod, search_name)
-            toadd = new_search(self.m[i], self.latent_lb, self.latent_ub, {})
+            toadd = new_search(self.m[i], np.array(self.latent_lb),
+                               np.array(self.latent_ub), {})
             try:
                 fname = filename + ".search." + str(i + 1)
                 toadd.load(fname)
@@ -1724,7 +1725,8 @@ class MOOP:
         for i, (sur_name, sur_mod) in enumerate(parmoo_state['surrogates']):
             mod = import_module(sur_mod)
             new_sur = getattr(mod, sur_name)
-            toadd = new_sur(self.m[i], self.latent_lb, self.latent_ub, {})
+            toadd = new_sur(self.m[i], np.array(self.latent_lb),
+                            np.array(self.latent_ub), {})
             try:
                 fname = filename + ".surrogate." + str(i + 1)
                 toadd.load(fname)
@@ -1735,7 +1737,8 @@ class MOOP:
         for i, (acq_name, acq_mod) in enumerate(parmoo_state['acquisitions']):
             mod = import_module(acq_mod)
             new_acq = getattr(mod, acq_name)
-            toadd = new_acq(self.o, self.latent_lb, self.latent_ub, {})
+            toadd = new_acq(self.o, np.array(self.latent_lb),
+                            np.array(self.latent_ub), {})
             try:
                 fname = filename + ".acquisition." + str(i + 1)
                 toadd.load(fname)
@@ -1743,7 +1746,8 @@ class MOOP:
                 pass
             self.acquisitions.append(toadd)
         # Rebuild the optimizer object
-        self.optimizer_obj = self.optimizer(self.o, self.latent_lb, self.latent_ub, {})
+        self.optimizer_obj = self.optimizer(self.o, np.array(self.latent_lb),
+                                            np.array(self.latent_ub), {})
         self.optimizer_obj.setObjective(self._evaluate_objectives)
         self.optimizer_obj.setSimulation(self._evaluate_surrogates,
                                          self._surrogate_uncertainty)
@@ -1784,12 +1788,20 @@ class MOOP:
                           "existing data...")
         # Unpack x/sx pair into a dict for saving
         toadd = {'sim_id': s_name}
-        for key in x.dtype.names:
-            toadd[key] = x[key]
-        if isinstance(sx, np.ndarray):
-            toadd['out'] = sx.tolist()
+        for dname in self.des_schema:
+            key = dname[0]
+            if np.issubdtype(x[key], np.integer) or \
+               jnp.issubdtype(x[key], jnp.integer):
+                toadd[key] = int(x[key])
+            elif np.issubdtype(x[key], np.floating) or \
+                 jnp.issubdtype(x[key], jnp.floating):
+                toadd[key] = float(x[key])
+            else:
+                toadd[key] = str(x[key])
+        if isinstance(sx, np.ndarray) or isinstance(sx, jnp.ndarray):
+            toadd['out'] = [float(sxi) for sxi in sx]
         else:
-            toadd['out'] = sx
+            toadd['out'] = float(sx)
         # Save in file with proper exension
         fname = filename + ".simdb.json"
         with open(fname, 'a') as fp:
@@ -1850,7 +1862,7 @@ class MOOP:
 
         """
 
-        sx_list = []
+        sx_list = [jnp.zeros(0)]
         for i in range(self.s):
             sx_list.append(sx[self.sim_schema[i][0]])
         return jnp.concatenate(sx_list, axis=None)
@@ -1911,6 +1923,11 @@ class MOOP:
 
         for si in self.surrogates:
             si.setTrustRegion(center, radius)
+        # Compile and set the optimizer attributes to compiled functions
+        self._compile()
+        self.optimizer_obj.setObjective(self.evaluate_objectives)
+        self.optimizer_obj.setPenalty(self.evaluate_penalty)
+        self.optimizer_obj.setConstraints(self.evaluate_constraints)
         return
 
     def _evaluate_surrogates(self, x):
@@ -1926,7 +1943,7 @@ class MOOP:
 
         """
 
-        sx_list = [self.empty]
+        sx_list = [jnp.zeros(0)]
         for si in self.surrogates:
             sx_list.append(si.evaluate(x))
         return jnp.concatenate(sx_list)
@@ -1944,7 +1961,7 @@ class MOOP:
 
         """
 
-        sdx_list = [self.empty]
+        sdx_list = [jnp.zeros(0)]
         for si in self.surrogates:
             sdx_list.append(si.stdDev(x))
         return jnp.concatenate(sdx_list)
@@ -1967,7 +1984,7 @@ class MOOP:
 
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
-        fx = []
+        fx = [jnp.zeros(0)]
         for i, obj_func in enumerate(self.obj_funcs):
             fx.append(jnp.array(obj_func(xx, ssx)).flatten())
         return jnp.concatenate(fx)
@@ -1991,7 +2008,7 @@ class MOOP:
     
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
-        fx = []
+        fx = [jnp.zeros(0)]
         for i, obj_func in enumerate(self.obj_funcs):
             fx.append(jnp.array(obj_func(xx, ssx)).flatten())
         return jnp.concatenate(fx), (xx, ssx)
@@ -2013,11 +2030,11 @@ class MOOP:
         """
     
         xx, ssx = res
-        dfdx, dfds = [], []
+        dfdx, dfds = [jnp.zeros((0, self.n_latent))], [jnp.zeros((0, self.m_total))]
         for i, obj_func in enumerate(self.obj_funcs):
-            dfdx.append(jnp.array(obj_func(xx, ssx, grad=1)).flatten() * w[i])
-            dfds.append(jnp.array(obj_func(xx, ssx, grad=2)).flatten() * w[i])
-        return (jnp.concatenate(dfdx), jnp.concatenate(dfds))
+            dfdx.append(jnp.array(self._embed(obj_func(xx, ssx, der=1))).flatten() * w[i])
+            dfds.append(jnp.array(self._pack_sim(obj_func(xx, ssx, der=2))).flatten() * w[i])
+        return (jnp.vstack(dfdx), jnp.vstack(dfds))
 
     def _evaluate_constraints(self, x, sx):
         """ Evaluate the constraints using the simulation surrogates as needed.
@@ -2037,7 +2054,7 @@ class MOOP:
 
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
-        cx = [self.empty]
+        cx = [jnp.zeros(0)]
         for i, constraint_func in enumerate(self.con_funcs):
             cx.append(jnp.array(constraint_func(xx, ssx)).flatten())
         return jnp.concatenate(cx)
@@ -2061,7 +2078,7 @@ class MOOP:
 
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
-        cx = [self.empty]
+        cx = [jnp.zeros(0)]
         for i, con_func in enumerate(self.con_funcs):
             cx.append(jnp.array(con_func(xx, ssx)).flatten())
         return jnp.concatenate(cx), (xx, sxx)
@@ -2083,11 +2100,11 @@ class MOOP:
         """
 
         xx, ssx = res
-        dcdx, dcds = [], []
+        dcdx, dcds = [jnp.zeros((0, self.n_latent))], [jnp.zeros((0, self.m_total))]
         for i, con_func in enumerate(self.con_funcs):
-            dcdx.append(jnp.array(con_func(xx, ssx, grad=1)).flatten() * w[i])
-            dcds.append(jnp.array(con_func(xx, ssx, grad=2)).flatten() * w[i])
-        return (jnp.concatenate(dcdx), jnp.concatenate(dcds))
+            dcdx.append(jnp.array(self._embed(con_func(xx, ssx, der=1))).flatten() * w[i])
+            dcds.append(jnp.array(self._pack_sim(con_func(xx, ssx, der=2))).flatten() * w[i])
+        return (jnp.vstack(dcdx), jnp.vstack(dcds))
 
     def _evaluate_penalty(self, x, sx):
         """ Evaluate the penalized objective using the surrogates as needed.
@@ -2107,7 +2124,7 @@ class MOOP:
 
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
-        fx = []
+        fx = [jnp.zeros(0)]
         for i, obj_func in enumerate(self.obj_funcs):
             fx.append(jnp.array(obj_func(xx, ssx)).flatten())
         cx = 0.0
@@ -2134,11 +2151,11 @@ class MOOP:
     
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
-        fx, cx = [], []
+        fx, cx = [jnp.zeros(0)], [jnp.zeros(0)]
         for i, obj_func in enumerate(self.obj_funcs):
             fx.append(jnp.array(obj_func(xx, ssx)).flatten())
         for i, constraint_func in enumerate(self.con_funcs):
-            cx.append(jnp.maximum(constraint_func(xx, ssx), 0) * self.lam)
+            cx.append(jnp.array(jnp.maximum(constraint_func(xx, ssx), 0) * self.lam).flatten())
         cx_cat = jnp.concatenate(cx)
         zeros = jnp.zeros(cx_cat.shape)
         activities = (jnp.isclose(cx_cat, zeros) - 1) * -self.lam
@@ -2159,23 +2176,25 @@ class MOOP:
             with respect to x and sx, respectively.
     
         """
-    
+   
         xx, ssx, activities = res
-        dcdx, dcds = [], []
+        dcdx, dcds = [jnp.zeros((0, self.n_latent))], [jnp.zeros((0, self.m_total))]
         for i, con_func in enumerate(self.con_funcs):
-            dcdx.append(jnp.array(con_func(xx, ssx, grad=1)).flatten())
-            dcds.append(jnp.array(con_func(xx, ssx, grad=2)).flatten())
-        dpdx = jnp.dot(activities, jnp.concatenate(dcdx))
-        dpds = jnp.dot(activities, jnp.concatenate(dcds))
-        dfdx, dfds = [], []
+            dcdx.append(jnp.array(self._embed(con_func(xx, ssx, der=1)
+                                  )).reshape((1, self.n_latent)))
+            dcds.append(jnp.array(self._pack_sim(con_func(xx, ssx, der=2)
+                                  )).reshape((1, self.m_total)))
+        dpdx = jnp.dot(activities, jnp.vstack(dcdx))
+        dpds = jnp.dot(activities, jnp.vstack(dcds))
+        dfdx, dfds = [jnp.zeros((0, self.n_latent))], [jnp.zeros((0, self.m_total))]
         for i, obj_func in enumerate(self.obj_funcs):
-            dfdx.append((jnp.array(obj_func(xx, ssx, grad=1)).flatten() + dpdx)
-                        * w[i])
-            dfds.append((jnp.array(obj_func(xx, ssx, grad=2)).flatten() + dpds)
-                        * w[i])
-        return (jnp.concatenate(dfdx), jnp.concatenate(dfds))
+            dfdx.append((jnp.array(self._embed(obj_func(xx, ssx, der=1)
+                         )).reshape((1, self.n_latent)) + dpdx) * w[i])
+            dfds.append((jnp.array(self._pack_sim(obj_func(xx, ssx, der=2)
+                         )).reshape((1, self.m_total)) + dpds) * w[i])
+        return jnp.vstack(dfdx), jnp.vstack(dfds)
 
-    def compile(self):
+    def _compile(self):
         """ Compile the helper functions and link the fwd/bwd pass functions """
 
         # Link the forward/backward pass functions

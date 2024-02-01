@@ -42,26 +42,26 @@ def test_MOOP_embed_extract():
     for xi_tmp in test_pts:
         xi_tmp = np.random.sample(7)
         xi = {}
-        xi[0] = int(1000 * xi_tmp[0])
-        xi[1] = xi_tmp[1] - 1.0
-        xi[2] = np.round(xi_tmp[2])
-        xi[3] = f"{int(np.round(xi_tmp[3]))}guy"
-        xi[4] = xi_tmp[4]
-        xi[5] = xi_tmp[5] * 5.0
-        xi[6] = xi_tmp[6]
+        xi["x1"] = int(1000 * xi_tmp[0])
+        xi["x2"] = xi_tmp[1] - 1.0
+        xi["x3"] = np.round(xi_tmp[2])
+        xi["x4"] = f"{int(np.round(xi_tmp[3]))}guy"
+        xi["x5"] = xi_tmp[4]
+        xi["x6"] = xi_tmp[5] * 5.0
+        xi["x7"] = xi_tmp[6]
         xxi = moop._embed(xi)
         # Check that embedding is legal
         assert (np.all(xxi[:6] >= -1.0e-8) and np.all(xxi[:6] <= 1 + 1.0e-8))
         assert (xxi[7] >= -1.0e-8 and xxi[7] <= 1 + 1.0e-8)
         assert (xxi.size == moop.n_latent)
         # Check extraction matches
-        assert (moop._extract(xxi)[0] == xi[0])
-        assert (np.abs(moop._extract(xxi)[1] - xi[1]) < 1.0e-8)
-        assert (np.abs(moop._extract(xxi)[2] - xi[2]) < 1.0e-8)
-        assert (moop._extract(xxi)[3] == xi[3])
-        assert (moop._extract(xxi)[4] == xi[4])
-        assert (np.abs(moop._extract(xxi)[5] - xi[5]) < 1.0e-8)
-        assert (np.abs(moop._extract(xxi)[6] - xi[6]) < 1.0e-8)
+        assert (moop._extract(xxi)["x1"] == xi["x1"])
+        assert (np.abs(moop._extract(xxi)["x2"] - xi["x2"]) < 1.0e-8)
+        assert (np.abs(moop._extract(xxi)["x3"] - xi["x3"]) < 1.0e-8)
+        assert (moop._extract(xxi)["x4"] == xi["x4"])
+        assert (moop._extract(xxi)["x5"] == xi["x5"])
+        assert (np.abs(moop._extract(xxi)["x6"] - xi["x6"]) < 1.0e-8)
+        assert (np.abs(moop._extract(xxi)["x7"] - xi["x7"]) < 1.0e-8)
 
 
 def test_MOOP_pack_unpack_sim():
@@ -80,8 +80,8 @@ def test_MOOP_pack_unpack_sim():
 
     # Create a continuous MOOP with 2 sims for packing/unpacking
     moop = MOOP(LocalSurrogate_PS)
-    moop.addDesign({'name': "x0", 'lb': 0.0, 'ub': 1000.0},
-                   {'name': "x1", 'lb': -1.0, 'ub': 0.0})
+    moop.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1000.0},
+                   {'name': "x2", 'lb': -1.0, 'ub': 0.0})
     g1 = {'m': 1,
           'hyperparams': {},
           'search': LatinHypercube,
@@ -130,26 +130,27 @@ def test_MOOP_fit_update_surrogates():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
+          'sim_func': lambda x: [np.linalg.norm([x[i] for i in x])],
           'surrogate': GaussRBF}
     g2 = {'n': 3,
           'm': 2,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
+          'sim_func': lambda x: [np.linalg.norm([x[i]-1 for i in x]),
+                                 np.linalg.norm([x[i]-0.5 for i in x])],
           'surrogate': GaussRBF}
     moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': lambda x, s: x[0]},
-                       {'obj_func': lambda x, s: s[0]},
-                       {'obj_func': lambda x, s: s[1] + s[2]})
+    moop1.addObjective({'obj_func': lambda x, s: x["x1"]},
+                       {'obj_func': lambda x, s: s["sim1"]},
+                       {'obj_func': lambda x, s: sum(s["sim2"])})
     # Evaluate some data points and fit the surrogates
     for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation(np.zeros(3), sn)
-        moop1.evaluateSimulation(np.array([0.5, 0.5, 0.5]), sn)
-        moop1.evaluateSimulation(np.array([1.0, 0.0, 0.0]), sn)
-        moop1.evaluateSimulation(np.array([0.0, 1.0, 0.0]), sn)
-        moop1.evaluateSimulation(np.array([0.0, 0.0, 1.0]), sn)
-        moop1.evaluateSimulation(np.ones(3), sn)
+        moop1.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
+        moop1.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
+        moop1.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
+        moop1.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
+        moop1.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
+        moop1.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop1._fit_surrogates()
     moop1._set_surrogate_tr(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Create an identical copy
@@ -157,21 +158,21 @@ def test_MOOP_fit_update_surrogates():
     for i in range(3):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
-    moop2.addObjective({'obj_func': lambda x, s: x[0]},
-                       {'obj_func': lambda x, s: s[0]},
-                       {'obj_func': lambda x, s: s[1] + s[2]})
+    moop2.addObjective({'obj_func': lambda x, s: x["x1"]},
+                       {'obj_func': lambda x, s: s["sim1"]},
+                       {'obj_func': lambda x, s: sum(s["sim2"])})
     # Fit with half the training data used by moop1
     for sn in ["sim1", "sim2"]:
-        moop2.evaluateSimulation(np.zeros(3), sn)
-        moop2.evaluateSimulation(np.array([0.5, 0.5, 0.5]), sn)
-        moop2.evaluateSimulation(np.array([1.0, 0.0, 0.0]), sn)
+        moop2.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
+        moop2.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
+        moop2.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
     moop2._fit_surrogates()
     moop2._set_surrogate_tr(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Update with the other half of the training data
     for sn in ["sim1", "sim2"]:
-        moop2.evaluateSimulation(np.array([0.0, 1.0, 0.0]), sn)
-        moop2.evaluateSimulation(np.array([0.0, 0.0, 1.0]), sn)
-        moop2.evaluateSimulation(np.ones(3), sn)
+        moop2.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
+        moop2.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
+        moop2.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop2._update_surrogates()
     moop2._set_surrogate_tr(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Do 5 random tests and make sure the outputs are (near) identical
@@ -206,29 +207,30 @@ def test_MOOP_evaluate_surrogates():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
+          'sim_func': lambda x: [np.linalg.norm([x[i] for i in x])],
           'surrogate': GaussRBF}
     g2 = {'n': 3,
           'm': 2,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
+          'sim_func': lambda x: [np.linalg.norm([x[i]-1 for i in x]),
+                                 np.linalg.norm([x[i]-0.5 for i in x])],
           'surrogate': GaussRBF}
     moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': lambda x, s: x[0]},
-                       {'obj_func': lambda x, s: s[0]},
-                       {'obj_func': lambda x, s: s[1] + s[2]})
+    moop1.addObjective({'obj_func': lambda x, s: x["x1"]},
+                       {'obj_func': lambda x, s: s["sim1"]},
+                       {'obj_func': lambda x, s: sum(s["sim2"])})
     # Try some bad evaluations
     with pytest.raises(ValueError):
         moop1.evaluateSimulation(np.zeros(3), -1)
     # Evaluate some data points and fit the surrogates
     for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation(np.zeros(3), sn)
-        moop1.evaluateSimulation(np.array([0.5, 0.5, 0.5]), sn)
-        moop1.evaluateSimulation(np.array([1.0, 0.0, 0.0]), sn)
-        moop1.evaluateSimulation(np.array([0.0, 1.0, 0.0]), sn)
-        moop1.evaluateSimulation(np.array([0.0, 0.0, 1.0]), sn)
-        moop1.evaluateSimulation(np.ones(3), sn)
+        moop1.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
+        moop1.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
+        moop1.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
+        moop1.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
+        moop1.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
+        moop1.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop1._fit_surrogates()
     moop1._set_surrogate_tr(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Now do some test evaluations and check the results
@@ -256,21 +258,21 @@ def test_MOOP_evaluate_surrogates():
                        {'obj_func': lambda x, s: s[0]},
                        {'obj_func': lambda x, s: s[1] + s[2]})
     for sn in ["sim1", "sim2"]:
-        moop2.evaluateSimulation(np.zeros(3), sn)
-        moop2.evaluateSimulation(np.array([0.5, 0.5, 0.5]), sn)
-        moop2.evaluateSimulation(np.array([1.0, 0.0, 0.0]), sn)
-        moop2.evaluateSimulation(np.array([0.0, 1.0, 0.0]), sn)
-        moop2.evaluateSimulation(np.array([0.0, 0.0, 1.0]), sn)
-        moop2.evaluateSimulation(np.ones(3), sn)
+        moop2.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
+        moop2.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
+        moop2.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
+        moop2.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
+        moop2.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
+        moop2.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop2._fit_surrogates()
     moop2._set_surrogate_tr(np.zeros(3), np.infty)
     # Now compare evaluations against the original surrogate
-    x = moop1._embed(np.zeros(3))
-    xx = moop2._embed(np.zeros(3))
+    x = moop1._embed({'x1': 0, 'x2': 0, 'x3': 0})
+    xx = moop2._embed({'x1': 0, 'x2': 0, 'x3': 0})
     assert (np.linalg.norm(moop1._evaluate_surrogates(x) -
                            moop2._evaluate_surrogates(xx)) < 1.0e-8)
-    x = moop1._embed(np.ones(3))
-    xx = moop2._embed(np.ones(3))
+    x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
+    xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
     assert (np.linalg.norm(moop1._evaluate_surrogates(x) -
                            moop2._evaluate_surrogates(xx)) < 1.0e-8)
 
@@ -300,16 +302,17 @@ def test_MOOP_evaluate_objectives():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
+          'sim_func': lambda x: [np.linalg.norm([x[i] for i in x])],
           'surrogate': GaussRBF}
     g2 = {'n': 3,
           'm': 2,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
+          'sim_func': lambda x: [np.linalg.norm([x[i]-1 for i in x]),
+                                 np.linalg.norm([x[i]-0.5 for i in x])],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
-    moop.addObjective({'obj_func': lambda x, s: x[0]},
+    moop.addObjective({'obj_func': lambda x, s: x["x1"]},
                       {'obj_func': lambda x, s: s["sim1"][0]},
                       {'obj_func': lambda x, s: s["sim2"][0] + s["sim2"][1]})
     # Try some bad evaluations
@@ -317,12 +320,12 @@ def test_MOOP_evaluate_objectives():
         moop.evaluateSimulation(np.zeros(3), -1)
     # Evaluate some data points and fit the surrogates
     for sn in ["sim1", "sim2"]:
-        moop.evaluateSimulation(np.zeros(3), sn)
-        moop.evaluateSimulation(np.array([0.5, 0.5, 0.5]), sn)
-        moop.evaluateSimulation(np.array([1.0, 0.0, 0.0]), sn)
-        moop.evaluateSimulation(np.array([0.0, 1.0, 0.0]), sn)
-        moop.evaluateSimulation(np.array([0.0, 0.0, 1.0]), sn)
-        moop.evaluateSimulation(np.ones(3), sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
+        moop.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
+        moop.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop._fit_surrogates()
     moop._set_surrogate_tr(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Now do some test evaluations and check the results
@@ -365,30 +368,31 @@ def test_MOOP_evaluate_constraints():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
+          'sim_func': lambda x: [np.linalg.norm([x[i] for i in x])],
           'surrogate': GaussRBF}
     g2 = {'n': 3,
           'm': 2,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
+          'sim_func': lambda x: [np.linalg.norm([x[i]-1 for i in x]),
+                                 np.linalg.norm([x[i]-0.5 for i in x])],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
     # Evaluate an empty constraint and check that a zero array is returned
     assert (np.all(moop._evaluate_constraints(np.zeros(3), np.zeros(3))
             == np.zeros(1)))
     # Now add 3 constraints
-    moop.addConstraint({'constraint': lambda x, s: x[0]})
+    moop.addConstraint({'constraint': lambda x, s: x["x1"]})
     moop.addConstraint({'constraint': lambda x, s: s["sim1"][0]})
     moop.addConstraint({'constraint': lambda x, s: s["sim2"][0] + s["sim2"][1]})
     # Evaluate some data points and fit the surrogates
     for sn in ["sim1", "sim2"]:
-        moop.evaluateSimulation(np.zeros(3), sn)
-        moop.evaluateSimulation(np.array([0.5, 0.5, 0.5]), sn)
-        moop.evaluateSimulation(np.array([1.0, 0.0, 0.0]), sn)
-        moop.evaluateSimulation(np.array([0.0, 1.0, 0.0]), sn)
-        moop.evaluateSimulation(np.array([0.0, 0.0, 1.0]), sn)
-        moop.evaluateSimulation(np.ones(3), sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
+        moop.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
+        moop.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop._fit_surrogates()
     moop._set_surrogate_tr(np.zeros(3), np.infty)
     # Now do some test evaluations and check the results
@@ -431,30 +435,31 @@ def test_MOOP_evaluate_penalty():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
+          'sim_func': lambda x: [np.linalg.norm([x[i] for i in x])],
           'surrogate': GaussRBF}
     g2 = {'n': 3,
           'm': 2,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
+          'sim_func': lambda x: [np.linalg.norm([x[i]-1 for i in x]),
+                                 np.linalg.norm([x[i]-0.5 for i in x])],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
-    moop.addObjective({'obj_func': lambda x, s: x[0]},
+    moop.addObjective({'obj_func': lambda x, s: x["x1"]},
                       {'obj_func': lambda x, s: s["sim1"][0]},
                       {'obj_func': lambda x, s: s["sim2"][0] + s["sim2"][1]})
-    moop.addConstraint({'constraint': lambda x, s: x[0] - 0.5})
+    moop.addConstraint({'constraint': lambda x, s: x["x1"] - 0.5})
     # Try some bad evaluations
     with pytest.raises(ValueError):
         moop.evaluateSimulation(np.zeros(3), -1)
     # Evaluate some data points and fit the surrogates
     for sn in ["sim1", "sim2"]:
-        moop.evaluateSimulation(np.zeros(3), sn)
-        moop.evaluateSimulation(np.array([0.5, 0.5, 0.5]), sn)
-        moop.evaluateSimulation(np.array([1.0, 0.0, 0.0]), sn)
-        moop.evaluateSimulation(np.array([0.0, 1.0, 0.0]), sn)
-        moop.evaluateSimulation(np.array([0.0, 0.0, 1.0]), sn)
-        moop.evaluateSimulation(np.ones(3), sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
+        moop.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
+        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
+        moop.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop._fit_surrogates()
     moop._set_surrogate_tr(np.ones(3) * 0.5, np.ones(3) * 0.5)
     # Now do some test evaluations and check the results

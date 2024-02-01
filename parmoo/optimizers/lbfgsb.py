@@ -13,6 +13,7 @@ The classes include:
 
 """
 
+from jax import jacrev
 import numpy as np
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
@@ -143,7 +144,12 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
 
             def scalar_g(x, *args):
                 sx = self.simulations(x)
-                return acquisition.scalarizeGrad(self.penalty_func(x, sx))
+                fx = self.penalty_func(x, sx)
+                dfdx = jacrev(self.penalty_func, argnums=0)(x, sx)[0]
+                dfds = jacrev(self.penalty_func, argnums=1)(x, sx)[0]
+                dsdx = jacrev(self.simulations)(x)
+                gx = np.asarray(acquisition.scalarizeGrad(fx, dfdx + np.dot(dfds, dsdx)))
+                return gx
 
             # Get the solution via multistart solve
             soln = x[j, :].copy()
@@ -424,7 +430,11 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
 
             def scalar_g(x, *args):
                 sx = self.simulations(x)
-                return acquisition.scalarizeGrad(self.penalty_func(x, sx))
+                fx = self.penalty_func(x, sx)
+                dsdx = jacrev(self.simulations)(x)
+                dfdx, dfds = jacrev(self.penalty_func, argnums=(0, 1))(x, sx)
+                gx = np.asarray(acquisition.scalarizeGrad(fx, dfdx + np.dot(dfds, dsdx)))
+                return gx
 
             # Create a new trust region
             rad = self.__checkTR(x[j, :])

@@ -54,10 +54,10 @@ def test_MOOP_evaluateSimulation():
     return
 
 
-def test_MOOP_addData():
+def test_MOOP_addObjData():
     """ Check that the MOOP class is able to add data to its internal database.
 
-    Initialize a MOOP object and check that the addData(s, sx) function
+    Initialize a MOOP object and check that the addObjData(s, sx) function
     works correctly.
 
     """
@@ -76,14 +76,14 @@ def test_MOOP_addData():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([x[xi] ** 2 for xi in x]))],
+          'sim_func': lambda x: [np.sqrt(sum([x[i] ** 2 for i in x]))],
           'surrogate': GaussRBF}
     g2 = {'n': 3,
           'm': 2,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([(x[xi]-1)**2 for xi in x])),
-                                 np.sqrt(sum([x[xi-0.5]**2 for xi in x]))],
+          'sim_func': lambda x: [np.sqrt(sum([(x[i]-1)**2 for i in x])),
+                                 np.sqrt(sum([x[i-0.5]**2 for i in x]))],
           'surrogate': GaussRBF}
     moop1.addSimulation(g1, g2)
     moop1.addObjective({'obj_func': lambda x, s: s["sim2"][0]})
@@ -95,9 +95,9 @@ def test_MOOP_addData():
     s1 = moop1._unpack_sim(np.ones(3))
     xe2 = moop1._extract(np.eye(3)[2])
     moop1.iterate(0)
-    moop1.addData(x0, s0)
-    moop1.addData(x0, s0)
-    moop1.addData(x1, s1)
+    moop1.addObjData(x0, s0)
+    moop1.addObjData(x0, s0)
+    moop1.addObjData(x1, s1)
     assert (moop1.data['f_vals'].shape == (2, 2))
     assert (moop1.data['x_vals'].shape == (2, 3))
     assert (moop1.data['c_vals'].shape == (2, 1))
@@ -109,15 +109,15 @@ def test_MOOP_addData():
     moop2.addSimulation(g1, g2)
     moop2.addObjective({'obj_func': lambda x, s: s["sim2"][0]})
     moop2.addObjective({'obj_func': lambda x, s: s["sim1"]})
-    moop2.addConstraint({'constraint': lambda x, s: x[0]})
+    moop2.addConstraint({'constraint': lambda x, s: x["x1"]})
     moop2.addConstraint({'constraint': lambda x, s: s["sim1"]})
     moop2.addConstraint({'constraint': lambda x, s: sum(s["sim2"])})
     # Test adding some data
     moop2.iterate(0)
-    moop2.addData(x0, s0)
-    moop2.addData(x0, s0)
-    moop2.addData(xe2, s0)
-    moop2.addData(x1, s1)
+    moop2.addObjData(x0, s0)
+    moop2.addObjData(x0, s0)
+    moop2.addObjData(xe2, s0)
+    moop2.addObjData(x1, s1)
     assert (moop2.data['f_vals'].shape == (3, 2))
     assert (moop2.data['x_vals'].shape == (3, 3))
     assert (moop2.data['c_vals'].shape == (3, 3))
@@ -130,13 +130,13 @@ def test_MOOP_addData():
     moop3.addSimulation(g1, g2)
     moop3.addObjective({'obj_func': lambda x, s: s["sim2"][0]})
     moop3.addObjective({'obj_func': lambda x, s: s["sim1"]})
-    moop3.addConstraint({'constraint': lambda x, s: x[0]})
+    moop3.addConstraint({'constraint': lambda x, s: x["x1"]})
     moop3.addConstraint({'constraint': lambda x, s: s["sim1"]})
     moop3.addConstraint({'constraint': lambda x, s: sum(s["sim2"])})
     # Test adding some data
     moop3.iterate(0)
     x1 = moop3._extract(np.ones(5))
-    moop3.addData(x1, s1)
+    moop3.addObjData(x1, s1)
     assert (moop3.data['f_vals'].shape == (1, 2))
     assert (moop3.data['x_vals'].shape == (1, 5))
     assert (moop3.data['c_vals'].shape == (1, 3))
@@ -160,10 +160,10 @@ def test_MOOP_getPF():
     moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    def f1(x, s): return np.sqrt(sum([x[i]**2 for i in [1, 2, 3]]) + (x[0] - 1)**2)
-    def f2(x, s): return np.sqrt(sum([x[i]**2 for i in [0, 2, 3]]) + (x[1] - 1)**2)
-    def f3(x, s): return np.sqrt(sum([x[i]**2 for i in [0, 1, 3]]) + (x[2] - 1)**2)
-    def c1(x, s): return -sum([x[i] for i in [0, 1, 2, 3]])
+    def f1(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]]) + (x["x1"] - 1)**2)
+    def f2(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]]) + (x["x2"] - 1)**2)
+    def f3(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]]) + (x["x3"] - 1)**2)
+    def c1(x, s): return -sum([x[i] for i in ["x1", "x2", "x3", "x4"]])
     moop.addObjective({'obj_func': f1})
     moop.addObjective({'obj_func': f2})
     moop.addObjective({'obj_func': f3})
@@ -192,55 +192,10 @@ def test_MOOP_getPF():
                                    np.array([0.0, 0.0, 0.0, 1.0]), sx)
     moop.n_dat = 5
     soln = moop.getPF()
+    assert (soln.shape[0] == 4)
     assert (soln['f1'].size == 4)
     assert (soln['f2'].size == 4)
     assert (soln['f3'].size == 4)
-    # Create another toy problem with 4 variables, 3 objectives, 1 constraint
-    def f1(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]]) + (x["x1"] - 1)**2)
-    def f2(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]]) + (x["x2"] - 1)**2)
-    def f3(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]]) + (x["x3"] - 1)**2)
-    def c1(x, s): return -sum([x[f"x{i}"] for i in [1, 2, 3, 4]])
-    moop = MOOP(LocalSurrogate_PS, hyperparams={})
-    for i in range(4):
-        moop.addDesign({'name': ('x' + str(i+1)), 'lb': 0.0, 'ub': 1.0})
-    moop.addObjective({'obj_func': f1})
-    moop.addObjective({'obj_func': f2})
-    moop.addObjective({'obj_func': f3})
-    moop.addConstraint({'constraint': c1})
-    for i in range(3):
-        moop.addAcquisition({'acquisition': UniformWeights})
-    # Directly set the MOOP's database to produce a known Pareto front
-    moop.data = {'x_vals': np.zeros((5, 4)),
-                 'f_vals': np.zeros((5, 3)),
-                 'c_vals': np.zeros((5, 1))}
-    moop.data['x_vals'][0, :] = np.array([0.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][0, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['c_vals'][0, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][1, :] = np.array([1.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][1, :] = moop._evaluate_objectives(
-                                   np.array([1.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['c_vals'][1, :] = moop._evaluate_constraints(
-                                   np.array([1.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][2, :] = np.array([0.0, 1.0, 0.0, 0.0])
-    moop.data['f_vals'][2, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 1.0, 0.0, 0.0]), sx)
-    moop.data['c_vals'][2, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 1.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][3, :] = np.array([0.0, 0.0, 1.0, 0.0])
-    moop.data['f_vals'][3, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 1.0, 0.0]), sx)
-    moop.data['c_vals'][3, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 1.0, 0.0]), sx)
-    moop.data['x_vals'][4, :] = np.array([0.0, 0.0, 0.0, 1.0])
-    moop.data['f_vals'][4, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 1.0]), sx)
-    moop.data['c_vals'][4, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 0.0, 1.0]), sx)
-    moop.n_dat = 5
-    soln = moop.getPF()
-    assert (soln.shape[0] == 4)
 
 
 def test_MOOP_getSimulationData():
@@ -265,40 +220,37 @@ def test_MOOP_getSimulationData():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [sum([x[name] ** 2.0
-                                      for name in x.dtype.names])],
+          'sim_func': lambda x: [sum([x[i]**2 for i in x])],
           'surrogate': GaussRBF}
     g2 = {'name': "Bobo2",
           'm': 2,
           'search': LatinHypercube,
-          'sim_func': lambda x: [sum([(x[name] - 1.0) ** 2.0
-                                      for name in x.dtype.names]),
-                                 sum([(x[name] - 0.5) ** 2.0
-                                      for name in x.dtype.names])],
+          'sim_func': lambda x: [sum([(x[i] - 1)**2 for i in x]),
+                                 sum([(x[i] - 0.5)**2 for i in x])],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
     soln = moop.getSimulationData()
     assert (soln['Bobo1']['out'].size == 0)
     assert (soln['Bobo2']['out'].size == 0)
     # Evaluate 5 simulations
-    sample_x = np.zeros(1, dtype=moop.des_schema)
-    moop.evaluateSimulation(sample_x[0], "Bobo1")
-    moop.evaluateSimulation(sample_x[0], "Bobo2")
+    sample_x = {"x1": 0, "x2": 0, "x3": 0, "x4": 0}
+    moop.evaluateSimulation(sample_x, "Bobo1")
+    moop.evaluateSimulation(sample_x, "Bobo2")
     sample_x["x1"] = 1.0
-    moop.evaluateSimulation(sample_x[0], "Bobo1")
-    moop.evaluateSimulation(sample_x[0], "Bobo2")
+    moop.evaluateSimulation(sample_x, "Bobo1")
+    moop.evaluateSimulation(sample_x, "Bobo2")
     sample_x["x1"] = 0.0
     sample_x["x2"] = 1.0
-    moop.evaluateSimulation(sample_x[0], "Bobo1")
-    moop.evaluateSimulation(sample_x[0], "Bobo2")
+    moop.evaluateSimulation(sample_x, "Bobo1")
+    moop.evaluateSimulation(sample_x, "Bobo2")
     sample_x["x2"] = 0.0
     sample_x["x3"] = 1.0
-    moop.evaluateSimulation(sample_x[0], "Bobo1")
-    moop.evaluateSimulation(sample_x[0], "Bobo2")
+    moop.evaluateSimulation(sample_x, "Bobo1")
+    moop.evaluateSimulation(sample_x, "Bobo2")
     sample_x["x3"] = 0.0
     sample_x["x4"] = 1.0
-    moop.evaluateSimulation(sample_x[0], "Bobo1")
-    moop.evaluateSimulation(sample_x[0], "Bobo2")
+    moop.evaluateSimulation(sample_x, "Bobo1")
+    moop.evaluateSimulation(sample_x, "Bobo2")
     soln = moop.getSimulationData()
     assert (soln['Bobo1']['out'].shape == (5,))
     assert (soln['Bobo2']['out'].shape == (5, 2))
@@ -312,108 +264,55 @@ def test_MOOP_getObjectiveData():
 
     """
 
+    import numpy as np
     from parmoo import MOOP
     from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
-    import numpy as np
 
-    # Create a toy problem with 4 design variables
-    moop = MOOP(LocalSurrogate_PS, hyperparams={})
-    for i in range(4):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    # Now add three objectives
-    def f1(x, sim): return np.linalg.norm(x - np.eye(4)[0, :]) ** 2.0
-    moop.addObjective({'obj_func': f1})
-    def f2(x, sim): return np.linalg.norm(x - np.eye(4)[1, :]) ** 2.0
-    moop.addObjective({'obj_func': f2})
-    def f3(x, sim): return np.linalg.norm(x - np.eye(4)[2, :]) ** 2.0
-    moop.addObjective({'obj_func': f3})
-    moop.addConstraint({'constraint': lambda x, s: -sum(x)})
-    # Add 3 acquisition functions
-    for i in range(3):
-        moop.addAcquisition({'acquisition': UniformWeights})
-    # Solve the MOOP and extract the final database with 6 iterations
-    moop.data = {'x_vals': np.zeros((5, 4)),
-                 'f_vals': np.zeros((5, 3)),
-                 'c_vals': np.zeros((5, 1))}
-    moop.data['x_vals'][0, :] = np.array([0.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][0, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 0.0]))
-    moop.data['c_vals'][0, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 0.0, 0.0]))
-    moop.data['x_vals'][1, :] = np.array([1.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][1, :] = moop._evaluate_objectives(
-                                   np.array([1.0, 0.0, 0.0, 0.0]))
-    moop.data['c_vals'][1, :] = moop._evaluate_constraints(
-                                   np.array([1.0, 0.0, 0.0, 0.0]))
-    moop.data['x_vals'][2, :] = np.array([0.0, 1.0, 0.0, 0.0])
-    moop.data['f_vals'][2, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 1.0, 0.0, 0.0]))
-    moop.data['c_vals'][2, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 1.0, 0.0, 0.0]))
-    moop.data['x_vals'][3, :] = np.array([0.0, 0.0, 1.0, 0.0])
-    moop.data['f_vals'][3, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 1.0, 0.0]))
-    moop.data['c_vals'][3, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 1.0, 0.0]))
-    moop.data['x_vals'][4, :] = np.array([0.0, 0.0, 0.0, 1.0])
-    moop.data['f_vals'][4, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 1.0]))
-    moop.data['c_vals'][4, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 0.0, 1.0]))
-    moop.n_dat = 5
-    soln = moop.getObjectiveData()
-    assert (soln['f_vals'].shape == (5, 3))
-    # Create a toy problem with 4 design variables
+    # Create a toy problem with 4 variables, 3 objectives
     moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'name': ('x' + str(i+1)), 'lb': 0.0, 'ub': 1.0})
-
-    # Now add three objectives
-    def f1(x, sim):
-        return (x['x1'] - 1.0)**2 + (x['x2'])**2 + (x['x3'])**2 + (x['x4'])**2
+    def f1(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]]) + (x["x1"] - 1)**2)
+    def f2(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]]) + (x["x2"] - 1)**2)
+    def f3(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]]) + (x["x3"] - 1)**2)
+    def c1(x, s): return -sum([x[f"x{i}"] for i in [1, 2, 3, 4]])
     moop.addObjective({'obj_func': f1})
-
-    def f2(x, sim):
-        return (x['x1'])**2 + (x['x2'] - 1.0)**2 + (x['x3'])**2 + (x['x4'])**2
     moop.addObjective({'obj_func': f2})
-
-    def f3(x, sim):
-        return (x['x1'])**2 + (x['x2'])**2 + (x['x3'] - 1.0)**2 + (x['x4'])**2
     moop.addObjective({'obj_func': f3})
-    moop.addConstraint({'constraint': lambda x, s: -sum(x)})
-    # Add 3 acquisition functions
+    moop.addConstraint({'constraint': c1})
     for i in range(3):
         moop.addAcquisition({'acquisition': UniformWeights})
-    # Solve the MOOP and extract the final database with 6 iterations
+    # Directly set the MOOP's database to produce a known output
+    sx = np.zeros(0)
     moop.data = {'x_vals': np.zeros((5, 4)),
                  'f_vals': np.zeros((5, 3)),
                  'c_vals': np.zeros((5, 1))}
     moop.data['x_vals'][0, :] = np.array([0.0, 0.0, 0.0, 0.0])
     moop.data['f_vals'][0, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 0.0]))
+                                   np.array([0.0, 0.0, 0.0, 0.0]), sx)
     moop.data['c_vals'][0, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 0.0, 0.0]))
+                                   np.array([0.0, 0.0, 0.0, 0.0]), sx)
     moop.data['x_vals'][1, :] = np.array([1.0, 0.0, 0.0, 0.0])
     moop.data['f_vals'][1, :] = moop._evaluate_objectives(
-                                   np.array([1.0, 0.0, 0.0, 0.0]))
+                                   np.array([1.0, 0.0, 0.0, 0.0]), sx)
     moop.data['c_vals'][1, :] = moop._evaluate_constraints(
-                                   np.array([1.0, 0.0, 0.0, 0.0]))
+                                   np.array([1.0, 0.0, 0.0, 0.0]), sx)
     moop.data['x_vals'][2, :] = np.array([0.0, 1.0, 0.0, 0.0])
     moop.data['f_vals'][2, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 1.0, 0.0, 0.0]))
+                                   np.array([0.0, 1.0, 0.0, 0.0]), sx)
     moop.data['c_vals'][2, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 1.0, 0.0, 0.0]))
+                                   np.array([0.0, 1.0, 0.0, 0.0]), sx)
     moop.data['x_vals'][3, :] = np.array([0.0, 0.0, 1.0, 0.0])
     moop.data['f_vals'][3, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 1.0, 0.0]))
+                                   np.array([0.0, 0.0, 1.0, 0.0]), sx)
     moop.data['c_vals'][3, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 1.0, 0.0]))
+                                   np.array([0.0, 0.0, 1.0, 0.0]), sx)
     moop.data['x_vals'][4, :] = np.array([0.0, 0.0, 0.0, 1.0])
     moop.data['f_vals'][4, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 1.0]))
+                                   np.array([0.0, 0.0, 0.0, 1.0]), sx)
     moop.data['c_vals'][4, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 0.0, 1.0]))
+                                   np.array([0.0, 0.0, 0.0, 1.0]), sx)
     moop.n_dat = 5
     soln = moop.getObjectiveData()
     assert (soln.shape[0] == 5)
@@ -427,28 +326,26 @@ def test_MOOP_save_load_functions():
     """
 
     import numpy as np
+    import os
     from parmoo import MOOP
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
     import pytest
-    import os
 
     # Functions sim1, sim2, f1, f2, c1 need to be global for save/load to work
     global sim1, sim2, f1, f2, c1
-
-    # Initialize public functions
-    def sim1(x): return [np.linalg.norm(x)]
-    def sim2(x): return [np.linalg.norm(x - 1.0)]
-    def f1(x, sim): return sim[0]
-    def f2(x, sim): return sim[1]
-    def c1(x, sim): return x[0] - 0.5
+    def sim1(x): return [np.sqrt(sum([x[i]**2 for i in x]))]
+    def sim2(x): return [np.sqrt(sum([(x[i] - 1)**2 for i in x]))]
+    def f1(x, sim): return sim["sim1"]
+    def f2(x, sim): return sim["sim2"]
+    def c1(x, sim): return x["x1"] - 0.5
     # Create a MOOP with 3 variables, 2 sims, 2 objs, and 1 constraint
     moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
     # Empty save
     moop1.save()
-    # Add design variables
+    # Add MOOP variables, sims, objectives, etc.
     for i in range(2):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addDesign({'des_type': "categorical", 'levels': 3})
@@ -525,50 +422,43 @@ def test_MOOP_save_load_classes():
 
     """
 
+    import os
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
+    from parmoo.constraints import single_sim_bound
+    from parmoo.objectives import single_sim_out
+    from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.simulations.dtlz import dtlz2_sim
-    from parmoo.objectives import single_sim_out
-    from parmoo.constraints import single_sim_bound
-    import os
 
     # Initialize the simulation group with 3 outputs
-    sim1 = dtlz2_sim(3, num_obj=2)
+    f1 = single_sim_out(3, 2, 0)
+    f2 = single_sim_out(3, 2, 1)
+    c1 = single_sim_bound(3, 2, 1)
+    # Create a mixed-variable MOOP with 3 variables, 2 sims, 2 objs, 1 const
+    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
+    # Test empty save
+    moop1.save()
+    for i in range(2):
+        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop1.addDesign({'des_type': "categorical", 'levels': 3})
     g1 = {'m': 2,
           'hyperparams': {},
           'search': LatinHypercube,
           'search_budget': 20,
-          'sim_func': sim1,
+          'sim_func': dtlz2_sim(moop1.getDesignType(), num_obj=2),
           'surrogate': GaussRBF}
-    f1 = single_sim_out(3, 2, 0)
-    f2 = single_sim_out(3, 2, 1)
-    c1 = single_sim_bound(3, 2, 1)
-    # Create a MOOP with 3 design variables and 2 simulations
-    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
-    # Test empty save
-    moop1.save()
-    # Add design variables
-    for i in range(2):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addDesign({'des_type': "categorical", 'levels': 3})
     moop1.addSimulation(g1)
-    # Add 2 objectives
     moop1.addObjective({'obj_func': f1},
                        {'obj_func': f2})
-    # Add 1 constraint
     moop1.addConstraint({'constraint': c1})
-    # Add 3 acquisition functions
     for i in range(3):
         moop1.addAcquisition({'acquisition': UniformWeights})
-    # Test save
+    # Test save and reload
     moop1.save()
-    # Test load
     moop2 = MOOP(LocalSurrogate_PS)
     moop2.load()
-    # Check that save/load are correct
     check_moops(moop1, moop2)
     # Clean up test directory
     os.remove("parmoo.moop")
@@ -584,20 +474,26 @@ def test_MOOP_checkpoint():
 
     """
 
-    from parmoo import MOOP
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
     import os
+    from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
+    from parmoo.optimizers import LocalSurrogate_PS
+    from parmoo.searches import LatinHypercube
+    from parmoo.surrogates import GaussRBF
 
     # Functions sim1, sim2, f1, f2, c1 need to be global for save/load to work
     global sim1, sim2, f1, f2, c1
-
-    # Initialize two simulation groups with 1 output each
-    def sim1(x): return [np.linalg.norm(x)]
-    def sim2(x): return [np.linalg.norm(x - 1.0)]
+    def sim1(x): return [np.sqrt(sum([x[i] ** 2 for i in x]))]
+    def sim2(x): return [np.sqrt(sum([(x[i] - 1) ** 2 for i in x]))]
+    def f1(x, sim): return sim["sim1"]
+    def f2(x, sim): return sim["sim2"]
+    def c1(x, sim): return x["x1"] - 0.5
+    # Create a mixed-variable MOOP with 3 variables, 2 sims, 3 objs, 1 const
+    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
+    for i in range(2):
+        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop1.addDesign({'des_type': "categorical", 'levels': 3})
     g1 = {'m': 1,
           'hyperparams': {},
           'search': LatinHypercube,
@@ -610,24 +506,10 @@ def test_MOOP_checkpoint():
           'search_budget': 25,
           'sim_func': sim2,
           'surrogate': GaussRBF}
-    # Create two objectives for later
-    def f1(x, sim): return sim[0]
-    def f2(x, sim): return sim[1]
-    # Create a simulation for later
-    def c1(x, sim): return x[0] - 0.5
-    # Create a MOOP with 3 design variables and 2 simulations
-    moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
-    # Add design variables
-    for i in range(2):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addDesign({'des_type': "categorical", 'levels': 3})
     moop1.addSimulation(g1, g2)
-    # Add 2 objectives
     moop1.addObjective({'obj_func': f1},
                        {'obj_func': f2})
-    # Add 1 constraint
     moop1.addConstraint({'constraint': c1})
-    # Add 3 acquisition functions
     for i in range(3):
         moop1.addAcquisition({'acquisition': UniformWeights})
     # Turn on checkpointing
@@ -641,7 +523,6 @@ def test_MOOP_checkpoint():
     # Test load
     moop2 = MOOP(LocalSurrogate_PS)
     moop2.load()
-    # Check that save/load are correct
     check_moops(moop1, moop2)
     # Clean up test directory
     os.remove("parmoo.moop")
@@ -710,7 +591,7 @@ def check_moops(moop1, moop2):
             assert (sim1.__name__ == sim2.__name__)
         else:
             assert (sim1.__class__.__name__ == sim2.__class__.__name__)
-    for const1, const2 in zip(moop1.constraints, moop2.constraints):
+    for const1, const2 in zip(moop1.con_funcs, moop2.con_funcs):
         if hasattr(const1, "__name__"):
             assert (const1.__name__ == const2.__name__)
         else:
@@ -727,7 +608,7 @@ def check_moops(moop1, moop2):
 
 if __name__ == "__main__":
     test_MOOP_evaluateSimulation()
-    test_MOOP_addData()
+    test_MOOP_addObjData()
     test_MOOP_getPF()
     test_MOOP_getSimulationData()
     test_MOOP_getObjectiveData()

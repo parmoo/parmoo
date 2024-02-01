@@ -64,18 +64,15 @@ def check_names(name, *args):
     """ Typecheck the input arguments for a new variable name.
 
     Args:
-        name (hashable): Any hashable value that could be used as a variable
-            name.
+        name (str): A str that could be used as the variable name.
 
         *args (list of tuples): 1 or more lists of existing variable names to
             check against in order to guarantee that name is unique.
 
     """
 
-    import typing
-
-    if not isinstance(name, typing.Hashable):
-        raise TypeError("Every variable name must be hashable")
+    if not isinstance(name, str):
+        raise TypeError("Every variable name must be a string type")
     for arg in args:
         if any([name == ni[0] for ni in arg]):
             raise ValueError(f"The variable name {name} is already in use")

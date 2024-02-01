@@ -250,8 +250,8 @@ class GaussRBF(SurrogateFunction):
             refit = True
         # Only do the following if we are re-fitting the models
         if refit:
-            pdists = _pdist(self.x_vals[self.loc_inds])
-            cov = _gaussian(pdists, self.x_std_dev)
+            cov = _gaussian(_pdist(self.x_vals[self.loc_inds]),
+                            self.x_std_dev)
             # Add the nugget, if present
             if self.nugget > 0:
                 for i in range(len(self.loc_inds)):
@@ -277,32 +277,19 @@ class GaussRBF(SurrogateFunction):
                     self.prior[:-1, :] = np.linalg.lstsq(A, b, rcond=None)[0]
                     rhs[:, :] = rhs[:, :] - np.dot(self.x_vals[self.loc_inds],
                                                    self.prior[:-1])
-            self.y_std_dev = tstd(rhs, axis=0)
+            if rhs.shape[0] > 1:
+                self.y_std_dev = tstd(rhs, axis=0)
+            else:
+                self.y_std_dev = np.ones(rhs.shape[1])
             # Finish the solve
             self.weights = np.zeros((self.m, rhs.shape[0]))
             for i in range(self.m):
                 tmp = np.dot(self.v.T, rhs[:, i]) / self.w[:]
                 self.weights[i, :] = np.dot(self.v, tmp)
-            self.evaluate = jit(self._evaluate)
         return
 
     def evaluate(self, x):
         """ Evaluate the Gaussian RBF at a design point.
-
-        Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which to the Gaussian RBF should be evaluated.
-
-        Returns:
-            numpy.ndarray: A 1d array containing the predicted objective value
-            at x.
-
-        """
-
-        return jnp.zeros(self.m)
-
-    def _evaluate(self, x):
-        """ Private version of above Gaussian RBF evaluator that can be jitted.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
@@ -471,31 +458,26 @@ class GaussRBF(SurrogateFunction):
         self.v = np.array(gp_state['v'])
         self.w = np.array(gp_state['w'])
         self.y_std_dev = np.array(gp_state['y_std_dev'])
-        # Re-jit
-        self.evaluate = jit(self._evaluate)
         return
 
 
 # Private pure helper functions to be compiled via jax.jit()
 
 @jit
-def _gaussian(r, x_std_dev):
-    """ Evaluate gaussian bump with x_std_dev at distance r from center """
+def _gaussian(r2, x_std_dev):
+    """ Evaluate gaussian bump with x_std_dev at distance r^2 from center """
 
-    return jnp.exp(-jnp.power(r / x_std_dev, 2))
+    return jnp.exp(-r2 / (x_std_dev ** 2))
 
 @jit
 def _cdist(x_vals, x):
-    """ Compute all distances from points in x_vals to x """
+    """ Compute all squared distances from points in x_vals to x """
 
-    d_sq = jnp.sum(jnp.power(x_vals - x, 2.0), axis=1)
-    d_rt = jnp.sqrt(d_sq)
-    imask = jnp.isclose(d_sq, 0.0)
-    return lax.select(imask, d_sq, d_rt)
+    return jnp.sum((x_vals - x) ** 2, axis=1)
 
 @jit
 def _pdist(x_vals):
-    """ Compute all pairwise distances to the input arg """
+    """ Compute all pairwise squared distances to the input arg """
 
     return vmap(lambda x: _cdist(x_vals, x))(x_vals)
 
