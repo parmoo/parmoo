@@ -9,6 +9,7 @@ def test_MOOP_evaluateSimulation():
 
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
@@ -33,6 +34,9 @@ def test_MOOP_evaluateSimulation():
           'sim_func': lambda x: [sum([(x[xi]-1)**2 for xi in x])],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
+    moop.addObjective({'obj_func': lambda x, s: s["g1"]})
+    moop.addAcquisition({'acquisition': UniformWeights})
+    moop.compile()
     x = {"x1": 0, "x2": 0, "x3": 0}
     y = {"x1": 1, "x2": 1, "x3": 1}
     sx = np.zeros(1, dtype=moop.getSimulationType())[0]
@@ -64,6 +68,7 @@ def test_MOOP_addObjData():
 
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     from parmoo.optimizers import LocalSurrogate_PS
@@ -88,13 +93,14 @@ def test_MOOP_addObjData():
     moop1.addSimulation(g1, g2)
     moop1.addObjective({'obj_func': lambda x, s: s["sim2"][0]})
     moop1.addObjective({'obj_func': lambda x, s: s["sim1"]})
+    moop1.addAcquisition({'acquisition': UniformWeights})
+    moop1.compile()
     # Test adding some data
     x0 = moop1._extract(np.zeros(3))
     s0 = moop1._unpack_sim(np.zeros(3))
     x1 = moop1._extract(np.ones(3))
     s1 = moop1._unpack_sim(np.ones(3))
     xe2 = moop1._extract(np.eye(3)[2])
-    moop1.iterate(0)
     moop1.addObjData(x0, s0)
     moop1.addObjData(x0, s0)
     moop1.addObjData(x1, s1)
@@ -112,8 +118,9 @@ def test_MOOP_addObjData():
     moop2.addConstraint({'constraint': lambda x, s: x["x1"]})
     moop2.addConstraint({'constraint': lambda x, s: s["sim1"]})
     moop2.addConstraint({'constraint': lambda x, s: sum(s["sim2"])})
+    moop2.addAcquisition({'acquisition': UniformWeights})
+    moop2.compile()
     # Test adding some data
-    moop2.iterate(0)
     moop2.addObjData(x0, s0)
     moop2.addObjData(x0, s0)
     moop2.addObjData(xe2, s0)
@@ -133,8 +140,9 @@ def test_MOOP_addObjData():
     moop3.addConstraint({'constraint': lambda x, s: x["x1"]})
     moop3.addConstraint({'constraint': lambda x, s: s["sim1"]})
     moop3.addConstraint({'constraint': lambda x, s: sum(s["sim2"])})
+    moop3.addAcquisition({'acquisition': UniformWeights})
+    moop3.compile()
     # Test adding some data
-    moop3.iterate(0)
     x1 = moop3._extract(np.ones(5))
     moop3.addObjData(x1, s1)
     assert (moop3.data['f_vals'].shape == (1, 2))
@@ -170,6 +178,7 @@ def test_MOOP_getPF():
     moop.addConstraint({'constraint': c1})
     for i in range(3):
         moop.addAcquisition({'acquisition': UniformWeights})
+    moop.compile()
     # Directly set the MOOP's database to produce a known Pareto front
     moop.data = {'x_vals': np.zeros((5, 4)),
                  'f_vals': np.zeros((5, 3)),
@@ -208,6 +217,7 @@ def test_MOOP_getSimulationData():
 
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
@@ -229,6 +239,9 @@ def test_MOOP_getSimulationData():
                                  sum([(x[i] - 0.5)**2 for i in x])],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
+    moop.addObjective({'obj_func': lambda x, s: s["Bobo2"][0]})
+    moop.addAcquisition({'acquisition': UniformWeights})
+    moop.compile()
     soln = moop.getSimulationData()
     assert (soln['Bobo1']['out'].size == 0)
     assert (soln['Bobo2']['out'].size == 0)
@@ -283,6 +296,7 @@ def test_MOOP_getObjectiveData():
     moop.addConstraint({'constraint': c1})
     for i in range(3):
         moop.addAcquisition({'acquisition': UniformWeights})
+    moop.compile()
     # Directly set the MOOP's database to produce a known output
     sx = np.zeros(0)
     moop.data = {'x_vals': np.zeros((5, 4)),
@@ -328,10 +342,10 @@ def test_MOOP_save_load_functions():
     import numpy as np
     import os
     from parmoo import MOOP
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
+    from parmoo.searches import LatinHypercube
+    from parmoo.surrogates import GaussRBF
     import pytest
 
     # Functions sim1, sim2, f1, f2, c1 need to be global for save/load to work
@@ -393,6 +407,7 @@ def test_MOOP_save_load_functions():
     moop3.addConstraint({'constraint': c1})
     for i in range(3):
         moop3.addAcquisition({'acquisition': UniformWeights})
+    moop3.compile()
     # Try to save and overwrite old data
     with pytest.raises(OSError):
         moop3.save()
@@ -408,8 +423,6 @@ def test_MOOP_save_load_functions():
     os.remove("parmoo.simdb.json")
     os.remove("parmoo.surrogate.1")
     os.remove("parmoo.surrogate.2")
-    os.remove("parmoo.search.1")
-    os.remove("parmoo.search.2")
     os.remove("parmoo.optimizer")
 
 
@@ -455,6 +468,7 @@ def test_MOOP_save_load_classes():
     moop1.addConstraint({'constraint': c1})
     for i in range(3):
         moop1.addAcquisition({'acquisition': UniformWeights})
+    moop1.compile()
     # Test save and reload
     moop1.save()
     moop2 = MOOP(LocalSurrogate_PS)
@@ -463,7 +477,6 @@ def test_MOOP_save_load_classes():
     # Clean up test directory
     os.remove("parmoo.moop")
     os.remove("parmoo.surrogate.1")
-    os.remove("parmoo.search.1")
     os.remove("parmoo.optimizer")
 
 
@@ -529,8 +542,6 @@ def test_MOOP_checkpoint():
     os.remove("parmoo.simdb.json")
     os.remove("parmoo.surrogate.1")
     os.remove("parmoo.surrogate.2")
-    os.remove("parmoo.search.1")
-    os.remove("parmoo.search.2")
     os.remove("parmoo.optimizer")
 
 
@@ -549,9 +560,9 @@ def check_moops(moop1, moop2):
     import numpy as np
 
     # Check scalars
-    assert (moop2.n_feature == moop1.n_feature and
+    assert (moop2.m == moop1.m and
+            moop2.n_feature == moop1.n_feature and
             moop2.n_latent == moop1.n_latent and
-            moop2.m_total == moop1.m_total and
             moop2.o == moop1.o and moop2.p == moop1.p and
             moop2.s == moop1.s and moop2.n_dat == moop1.n_dat and
             moop2.lam == moop1.lam and
@@ -563,7 +574,7 @@ def check_moops(moop1, moop2):
                                                     moop1.latent_lb)]))
     assert (all([ub2i == ub1i for ub2i, ub1i in zip(moop2.latent_ub,
                                                     moop1.latent_ub)]))
-    assert (all([m2i == m1i for m2i, m1i in zip(moop2.m, moop1.m)]))
+    assert (all([m2i == m1i for m2i, m1i in zip(moop2.m_list, moop1.m_list)]))
     assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.sim_schema,
                                                       moop1.sim_schema)]))
     assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.des_schema,
@@ -573,9 +584,6 @@ def check_moops(moop1, moop2):
     assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.con_schema,
                                                       moop1.con_schema)]))
     # Check dictionaries
-    assert (all([ki in moop2.hyperparams.keys()
-                 for ki in moop1.hyperparams.keys()]))
-    assert (all([ki in moop2.history.keys() for ki in moop1.history.keys()]))
     assert (all([moop2.data[ki].shape == moop1.data[ki].shape
                  for ki in moop2.data.keys()]))
     assert (all([all([moop2.sim_db[j][ki].shape == moop1.sim_db[j][ki].shape
@@ -597,7 +605,8 @@ def check_moops(moop1, moop2):
         else:
             assert (const1.__class__.__name__ == const2.__class__.__name__)
     # Check functions
-    assert (moop2.optimizer.__name__ == moop1.optimizer.__name__)
+    assert (moop2.optimizer.__class__.__name__ ==
+            moop1.optimizer.__class__.__name__)
     assert (all([s1.__class__.__name__ == s2.__class__.__name__
                  for s1, s2 in zip(moop1.searches, moop2.searches)]))
     assert (all([s1.__class__.__name__ == s2.__class__.__name__

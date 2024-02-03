@@ -10,6 +10,7 @@ The classes include:
 
 """
 
+from jax import numpy as jnp
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
@@ -71,7 +72,7 @@ class UniformWeights(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a new vector of scalarizing weights.
 
         Args:
@@ -80,8 +81,6 @@ class UniformWeights(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): Another unused argument for this function.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -181,7 +180,7 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        return np.dot(f_vals, self.weights)
+        return jnp.dot(f_vals, self.weights)
 
     def scalarizeGrad(self, f_vals, g_vals):
         """ Scalarize a Jacobian of gradients using the current weights.
@@ -273,7 +272,7 @@ class FixedWeights(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a feasible starting point.
 
         Args:
@@ -282,8 +281,6 @@ class FixedWeights(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): Another unused argument for this function.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -380,7 +377,7 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        return np.dot(f_vals, self.weights)
+        return jnp.dot(f_vals, self.weights)
 
     def scalarizeGrad(self, f_vals, g_vals):
         """ Scalarize a Jacobian of gradients using the current weights.
@@ -398,49 +395,3 @@ class FixedWeights(AcquisitionFunction):
         """
 
         return np.dot(np.transpose(g_vals), self.weights)
-
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize WS object in dictionary
-        ws_state = {'o': self.o,
-                    'n': self.n}
-        # Serialize numpy.ndarray objects
-        ws_state['lb'] = self.lb.tolist()
-        ws_state['ub'] = self.ub.tolist()
-        ws_state['weights'] = self.weights.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(ws_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            ws_state = json.load(fp)
-        # Deserialize WS object from dictionary
-        self.o = ws_state['o']
-        self.n = ws_state['n']
-        # Deserialize numpy.ndarray objects
-        self.lb = np.array(ws_state['lb'])
-        self.ub = np.array(ws_state['ub'])
-        self.weights = np.array(ws_state['weights'])
-        return

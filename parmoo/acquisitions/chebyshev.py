@@ -86,7 +86,7 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a new vector of scalarizing weights.
 
         Args:
@@ -95,8 +95,6 @@ class UniformAugChebyshev(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): Another unused argument for this function.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -339,7 +337,7 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a feasible starting point.
 
         Args:
@@ -348,8 +346,6 @@ class FixedAugChebyshev(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): Another unused argument for this function.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -500,51 +496,3 @@ class FixedAugChebyshev(AcquisitionFunction):
             wv = np.zeros(self.o)
             wv[manifold] = self.weights[manifold]
             return np.dot(wv + self.alpha, g_vals)
-
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize RBF object in dictionary
-        ac_state = {'o': self.o,
-                    'n': self.n,
-                    'alpha': self.alpha}
-        # Serialize numpy.ndarray objects
-        ac_state['lb'] = self.lb.tolist()
-        ac_state['ub'] = self.ub.tolist()
-        ac_state['weights'] = self.weights.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(ac_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            ac_state = json.load(fp)
-        # Deserialize AC object from dictionary
-        self.o = ac_state['o']
-        self.n = ac_state['n']
-        self.alpha = ac_state['alpha']
-        # Deserialize numpy.ndarray objects
-        self.lb = np.array(ac_state['lb'])
-        self.ub = np.array(ac_state['ub'])
-        self.weights = np.array(ac_state['weights'])
-        return

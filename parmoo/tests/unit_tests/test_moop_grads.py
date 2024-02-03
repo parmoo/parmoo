@@ -40,6 +40,7 @@ def test_MOOP_evaluate_penalty_grads():
 
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import GlobalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
@@ -85,6 +86,8 @@ def test_MOOP_evaluate_penalty_grads():
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addObjective({'obj_func': f1})
+    moop1.addAcquisition({'acquisition': UniformWeights})
+    moop1.compile()
     # Check the shape and values of the penalty jacobian
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
@@ -112,30 +115,55 @@ def test_MOOP_evaluate_penalty_grads():
                                  np.sqrt(sum([(x[i] - 0.5)**2 for i in x]))],
           'surrogate': GaussRBF}
     moop1.addSimulation(g1, g2)
+    moop1.addObjective({'obj_func': f1})
+    moop1.addAcquisition({'acquisition': UniformWeights})
+    moop1.compile()
     # Add some data and set the surrogates
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
     moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
-    moop1.addObjective({'obj_func': f1})
     # Check the jacobian outputs with the same test cases as above
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1 = 2.0 * np.ones((1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
+    # Re-define the MOOP but add a constraint
+    moop1 = MOOP(GlobalSurrogate_PS)
+    for i in range(3):
+        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop1.addSimulation(g1, g2)
+    moop1.addObjective({'obj_func': f1})
     moop1.addConstraint({'constraint': c1})
+    moop1.addAcquisition({'acquisition': UniformWeights})
+    moop1.compile()
+    for sn in ["sim1", "sim2"]:
+        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
+    moop1._fit_surrogates()
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1[0, 0] = 3.0
     assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Now add an additional objective and constraint that depend upon the sim
+    # Re-define the MOOP but add objectives and constraints that use the sim
+    moop1 = MOOP(GlobalSurrogate_PS)
+    for i in range(3):
+        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop1.addSimulation(g1, g2)
+    moop1.addObjective({'obj_func': f1})
+    moop1.addObjective({'obj_func': f2})
+    moop1.addConstraint({'constraint': c1})
+    moop1.addConstraint({'constraint': c2})
+    moop1.addAcquisition({'acquisition': UniformWeights})
+    moop1.compile()
+    for sn in ["sim1", "sim2"]:
+        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
+    moop1._fit_surrogates()
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
     fx0 = np.zeros((2, 3))
     fx0[1, 0] = 1.0
     fx0[0, :] = 2.0
     fx0[0, 0] = 3.0
-    moop1.addObjective({'obj_func': f2})
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx0) < 1.0e-8))
-    moop1.addConstraint({'constraint': c2})
     assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx0) < 1.0e-8))
     # Create a duplicate MOOP but adjust the design space scaling
     moop2 = MOOP(GlobalSurrogate_PS)
@@ -147,6 +175,8 @@ def test_MOOP_evaluate_penalty_grads():
     moop2.addObjective({'obj_func': f2})
     moop2.addConstraint({'constraint': c1})
     moop2.addConstraint({'constraint': c2})
+    moop2.addAcquisition({'acquisition': UniformWeights})
+    moop2.compile()
     for sn in ["sim1", "sim2"]:
         moop2.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop2._fit_surrogates()
@@ -156,6 +186,17 @@ def test_MOOP_evaluate_penalty_grads():
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
     assert (np.linalg.norm(eval_pen_jac(moop1, x) - eval_pen_jac(moop2, xx) < 1.0e-8))
+    # Now check that after compiling, jax correctly propagates pen_jac
+    moop1._compile()
+    def pen_jac(x):
+        sx = moop1._evaluate_surrogates(x)
+        return moop1.evaluate_penalty(x, sx)
+    moop1_pen_jac = jacrev(pen_jac)
+    for xi in np.random.sample((5, 3)):
+        dfdxi = moop1_pen_jac(xi)
+        print(dfdxi)
+        print(eval_pen_jac(moop1, xi))
+        assert (np.all(np.abs(eval_pen_jac(moop1, xi) - dfdxi) < 1.0e-8))
 
 
 def test_MOOP_solve_with_grads():
@@ -252,4 +293,4 @@ def test_MOOP_solve_with_grads():
 
 if __name__ == "__main__":
     test_MOOP_evaluate_penalty_grads()
-    test_MOOP_solve_with_grads()
+    #test_MOOP_solve_with_grads()

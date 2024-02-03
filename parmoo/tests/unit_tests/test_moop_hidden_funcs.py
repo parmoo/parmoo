@@ -117,6 +117,7 @@ def test_MOOP_fit_update_surrogates():
     config.update("jax_enable_x64", True)
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
@@ -143,6 +144,8 @@ def test_MOOP_fit_update_surrogates():
     moop1.addObjective({'obj_func': lambda x, s: x["x1"]},
                        {'obj_func': lambda x, s: s["sim1"]},
                        {'obj_func': lambda x, s: sum(s["sim2"])})
+    moop1.addAcquisition({'acquisition': UniformWeights})
+    moop1.compile()
     # Evaluate some data points and fit the surrogates
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
@@ -161,6 +164,8 @@ def test_MOOP_fit_update_surrogates():
     moop2.addObjective({'obj_func': lambda x, s: x["x1"]},
                        {'obj_func': lambda x, s: s["sim1"]},
                        {'obj_func': lambda x, s: sum(s["sim2"])})
+    moop2.addAcquisition({'acquisition': UniformWeights})
+    moop2.compile()
     # Fit with half the training data used by moop1
     for sn in ["sim1", "sim2"]:
         moop2.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
@@ -194,6 +199,7 @@ def test_MOOP_evaluate_surrogates():
     config.update("jax_enable_x64", True)
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
@@ -220,6 +226,8 @@ def test_MOOP_evaluate_surrogates():
     moop1.addObjective({'obj_func': lambda x, s: x["x1"]},
                        {'obj_func': lambda x, s: s["sim1"]},
                        {'obj_func': lambda x, s: sum(s["sim2"])})
+    moop1.addAcquisition({'acquisition': UniformWeights})
+    moop1.compile()
     # Try some bad evaluations
     with pytest.raises(ValueError):
         moop1.evaluateSimulation(np.zeros(3), -1)
@@ -257,6 +265,8 @@ def test_MOOP_evaluate_surrogates():
     moop2.addObjective({'obj_func': lambda x, s: x[0]},
                        {'obj_func': lambda x, s: s[0]},
                        {'obj_func': lambda x, s: s[1] + s[2]})
+    moop2.addAcquisition({'acquisition': UniformWeights})
+    moop2.compile()
     for sn in ["sim1", "sim2"]:
         moop2.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
         moop2.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
@@ -289,6 +299,7 @@ def test_MOOP_evaluate_objectives():
     config.update("jax_enable_x64", True)
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
@@ -315,6 +326,8 @@ def test_MOOP_evaluate_objectives():
     moop.addObjective({'obj_func': lambda x, s: x["x1"]},
                       {'obj_func': lambda x, s: s["sim1"][0]},
                       {'obj_func': lambda x, s: s["sim2"][0] + s["sim2"][1]})
+    moop.addAcquisition({'acquisition': UniformWeights})
+    moop.compile()
     # Try some bad evaluations
     with pytest.raises(ValueError):
         moop.evaluateSimulation(np.zeros(3), -1)
@@ -355,6 +368,7 @@ def test_MOOP_evaluate_constraints():
     config.update("jax_enable_x64", True)
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
@@ -378,6 +392,9 @@ def test_MOOP_evaluate_constraints():
                                  np.linalg.norm([x[i]-0.5 for i in x])],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
+    moop.addObjective({'obj_func': lambda x, s: x["x1"]})
+    moop.addAcquisition({'acquisition': UniformWeights})
+    moop.compile()
     # Evaluate an empty constraint and check that a zero array is returned
     assert (np.all(moop._evaluate_constraints(np.zeros(3), np.zeros(3))
             == np.zeros(1)))
@@ -385,6 +402,7 @@ def test_MOOP_evaluate_constraints():
     moop.addConstraint({'constraint': lambda x, s: x["x1"]})
     moop.addConstraint({'constraint': lambda x, s: s["sim1"][0]})
     moop.addConstraint({'constraint': lambda x, s: s["sim2"][0] + s["sim2"][1]})
+    moop.compile()
     # Evaluate some data points and fit the surrogates
     for sn in ["sim1", "sim2"]:
         moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
@@ -422,6 +440,7 @@ def test_MOOP_evaluate_penalty():
     config.update("jax_enable_x64", True)
     import numpy as np
     from parmoo import MOOP
+    from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
@@ -449,6 +468,8 @@ def test_MOOP_evaluate_penalty():
                       {'obj_func': lambda x, s: s["sim1"][0]},
                       {'obj_func': lambda x, s: s["sim2"][0] + s["sim2"][1]})
     moop.addConstraint({'constraint': lambda x, s: x["x1"] - 0.5})
+    moop.addAcquisition({'acquisition': UniformWeights})
+    moop.compile()
     # Try some bad evaluations
     with pytest.raises(ValueError):
         moop.evaluateSimulation(np.zeros(3), -1)

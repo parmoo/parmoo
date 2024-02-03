@@ -1,12 +1,12 @@
 
 """ Abstract base classes (ABCs) for ParMOO project.
 
-This module contains several abstract base classes that can be used
-to create a flexible framework for surrogate based multiobjective
-optimization.
+This module contains several ABCs that can be used to extend and customize
+ParMOO's solver components and/or supported problem types.
 
 The classes include:
  * AcquisitionFunction
+ * Embedder
  * GlobalSearch
  * SurrogateFunction
  * SurrogateOptimizer
@@ -23,10 +23,9 @@ class AcquisitionFunction(ABC):
     """ ABC describing acquisition functions.
 
     This class contains the following methods:
-     * ``useSD()``
-     * ``setTarget(data, constraint_func, history)``
+     * ``setTarget(data, penalty_func)``
      * ``scalarize(f_vals)``
-     * ``scalarizeGrad(f_vals, g_vals)``
+     * ``useSD()``
      * ``save(filename)``
      * ``load(filename)``
 
@@ -39,11 +38,9 @@ class AcquisitionFunction(ABC):
         Args:
             o (int): The number of objectives.
 
-            lb (numpy.ndarray): A 1d array of lower bounds for the design
-                space.
+            lb (ndarray): A 1D array of lower bounds for the design space.
 
-            ub (numpy.ndarray): A 1d array of upper bounds for the design
-                space.
+            ub (ndarray): A 1D array of upper bounds for the design space
 
             hyperparams (dict): A dictionary of hyperparameters that are
                 passed to the acquisition function.
@@ -54,32 +51,20 @@ class AcquisitionFunction(ABC):
         """
 
     @abstractmethod
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Set a new target value or region for the AcquisitionFunction.
 
         Args:
             data (dict): A dictionary specifying the current function
                 evaluation database. It contains two mandatory fields:
-                 * 'x_vals' (numpy.ndarray): A 2d array containing the
-                   list of design points.
-                 * 'f_vals' (numpy.ndarray): A 2d array containing the
-                   corresponding list of objective values.
-
-            If gradients are available, data may contain one additional
-                field:
-                 * 'g_vals' (numpy.ndarray): A 3d array containing the
-                   Jacobian of the objective function at each
-                   point in 'x_vals'.
+                 * 'x_vals' (ndarray): A 2D array of design points.
+                 * 'f_vals' (ndarray): A 2d array of corresponding objectives.
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates all (penalized) objective scores.
 
-            history (dict): A persistent dictionary that could be used by
-                the implementation of the AcquisitionFunction to pass data
-                between iterations.
-
         Returns:
-            numpy.ndarray: A 1d array containing a feasible starting point
+            ndarray: A 1D array containing a feasible starting point
             for the scalarized problem.
 
         """
@@ -102,39 +87,22 @@ class AcquisitionFunction(ABC):
         """ Scalarize a vector-valued function using the AcquisitionFunction.
 
         Args:
-            f_vals (np.ndarray): A 1D array specifying a vector of function
+            f_vals (ndarray): A 1D array specifying a vector of function
                 values to be scalarized.
 
-            x_vals (np.ndarray): A 1D array specifying a vector the design
+            x_vals (ndarray): A 1D array specifying a vector the design
                 point corresponding to f_vals.
 
-            s_vals_mean (np.ndarray): A 1D array specifying the expected
-                simulation outputs for the x value being scalarized.
+            s_vals_mean (ndarray): A 1D array specifying the expected value
+                of the simulation outputs for the x value being scalarized.
 
-            s_vals_sd (np.ndarray): A 1D array specifying the standard
-                deviation for each of the simulation outputs.
+            s_vals_sd (ndarray): A 1D array specifying the standard deviation
+                for each of the simulation outputs.
 
         Returns:
             float: The scalarized value.
 
         """
-
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient.
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.
@@ -167,6 +135,151 @@ class AcquisitionFunction(ABC):
         raise NotImplementedError("This class method has not been implemented")
 
 
+class Embedder(ABC):
+    """ ABC describing the embedding of design variables.
+
+    This class contains the following methods:
+     * ``setTarget(data, penalty_func)``
+     * ``scalarize(f_vals)``
+     * ``useSD()``
+     * ``save(filename)``
+     * ``load(filename)``
+
+    """
+
+    @abstractmethod
+    def __init__(self, settings):
+        """ Constructor for the Embedder class.
+
+        Args:
+            settings (dict): Contains any variable information that the user
+                might need to provide.
+
+        Returns:
+            Embedder: A new Embedder object.
+
+        """
+
+    @abstractmethod
+    def getLatentDesTols(self):
+        """ Get the design tolerances along each dimension of the embedding.
+
+        Returns:
+            numpy.ndarray: array of design space tolerances after embedding.
+
+        """
+
+    @abstractmethod
+    def getFeatureDesTols(self):
+        """ Get the design tolerances in the feature space (pre-embedding).
+
+        Returns:
+            float: the design tolerance in the feature space -- a value of
+            0 indicates that this is a discrete variable.
+
+        """
+
+    @abstractmethod
+    def getEmbeddingSize(self):
+        """ Get the dimension of the latent (embedded) space.
+
+        Returns:
+            int: the dimension of the latent space produced.
+
+        """
+
+    @abstractmethod
+    def getInputType(self):
+        """ Get the input type for this embedder.
+
+        Note: Whatever the input type, the output type must always be a
+        ndarray of one or more continuous variables in some range [lb, ub].
+
+        Returns:
+            str: A numpy string representation of the input type from the
+            feature space.
+            Currently supported values are: ["f8", "i4", "a25", or "u25"].
+
+        """
+
+    @abstractmethod
+    def getLowerBounds(self):
+        """ Get a vector of lower bounds for the embedded (latent) space.
+
+        Returns:
+            ndarray: A 1D array of lower bounds in embedded space whose size
+                matches the output of ``getEmbeddingSize()``.
+
+        """
+
+    @abstractmethod
+    def getUpperBounds(self):
+        """ Get a vector of upper bounds for the embedded (latent) space.
+
+        Returns:
+            ndarray: A 1D array of upper bounds in embedded space whose size
+                matches the output of ``getEmbeddingSize()``.
+
+        """
+
+    def embed(self, x):
+        """ Embed a design input as an n-dimensional vector for ParMOO.
+
+        Note: This method should be implemented by all sub-classes. However,
+        we have not explicitly required this by providing a dummy
+        implementation below.
+
+        This allows users to write a hidden method to perform the embedding,
+        then over-write our default implementation at runtime.
+
+        This is important for ParMOO's performance since embed and extract
+        could be called frequently on ParMOO's critical path. However, if
+        you are not able to write a jittable-method, ParMOO will still run
+        but may experience longer iteration times.
+
+        Args:
+            x (stype): The value of the design variable to embed, where
+                stype matches the numpy-string type specified by
+                getInputType().
+
+        Returns:
+            ndarray: A 1D array whose size matches the output of
+            getEmbeddingSize() containing the embedding of x.
+
+        """
+
+        raise NotImplementedError("This Embedder has not implemented an "
+                                  "embed method yet.")
+
+    def extract(self, x):
+        """ Extract a design input from an n-dimensional vector for ParMOO.
+
+        Note: This method should be implemented by all sub-classes. However,
+        we have not explicitly required this by providing a dummy
+        implementation below.
+
+        This allows users to write a hidden method to perform the embedding,
+        then over-write our default implementation at runtime.
+
+        This is important for ParMOO's performance since embed and extract
+        could be called frequently on ParMOO's critical path. However, if
+        you are not able to write a jittable-method, ParMOO will still run
+        but may experience longer iteration times.
+
+        Args:
+            x (ndarray): A 1D array whose size matches the output of
+                getEmbeddingSize() containing the embedding of x.
+
+        Returns:
+            stype: The value of the design variable to embed, where stype
+            matches the numpy-string type specified by getInputType().
+
+        """
+
+        raise NotImplementedError("This Embedder has not implemented an "
+                                  "extract method yet.")
+
+
 class GlobalSearch(ABC):
     """ ABC describing global search techniques.
 
@@ -185,11 +298,9 @@ class GlobalSearch(ABC):
         Args:
             o (int): The number of objectives.
 
-            lb (numpy.ndarray): A 1d array of lower bounds for the design
-                space.
+            lb (ndarray): A 1D array of lower bounds for the design space.
 
-            ub (numpy.ndarray): A 1d array of upper bounds for the design
-                space.
+            ub (ndarray): A 1D array of upper bounds for the design space.
 
             hyperparams (dict): A dictionary of hyperparameters for the
                 global search. It may contain any inputs specific to the
@@ -205,15 +316,12 @@ class GlobalSearch(ABC):
         """ Begin a new global search.
 
         Args:
-            lb (numpy.ndarray): A 1d array of lower bounds for the design
-                region. The dimension must match n.
+            lb (ndarray): A 1D array of lower bounds for the design space.
 
-            ub (numpy.ndarray): A 1d array of upper bounds for the design
-                region. The dimension must match n.
+            ub (ndarray): A 1D array of upper bounds for the design space.
 
         Returns:
-            numpy.ndarray: A 2d array, containing the list of design points
-            to be evaluated.
+            ndarray: A 2D design matrix.
 
         """
 
@@ -221,8 +329,7 @@ class GlobalSearch(ABC):
         """ Resume a global search.
 
         Returns:
-            numpy.ndarray: A 2d array, containing the list of design points
-            to be evaluated.
+            ndarray: A 2D design matrix.
 
         """
 
@@ -267,9 +374,7 @@ class SurrogateFunction(ABC):
      * ``update(x, f)``
      * ``setTrustRegion(center, radius)`` (default implementation provided)
      * ``evaluate(x)``
-     * ``gradient(x)``
      * ``stdDev(x)``
-     * ``stdDevGrad(x)``
      * ``improve(x, global_improv)`` (default implementation provided)
      * ``save(filename)``
      * ``load(filename)``
@@ -283,20 +388,15 @@ class SurrogateFunction(ABC):
         Args:
             m (int): The number of objectives to fit.
 
-            lb (numpy.ndarray): A 1d array of lower bounds for the design
-                region. The number of design variables is inferred from the
-                dimension of lb.
+            lb (ndarray): A 1D array of lower bounds for the design space.
 
-            ub (numpy.ndarray): A 1d array of upper bounds for the design
-                region. The dimension must match ub.
+            ub (ndarray): A 1D array of upper bounds for the design space.
 
             hyperparams (dict): A dictionary of hyperparameters to be used
                 by the surrogate models, including:
-                 * des_tols (numpy.ndarray, optional): A 1d array whose length
+                 * des_tols (ndarray, optional): A 1D array whose length
                    matches lb and ub. Each entry is a number (greater than 0)
                    specifying the design space tolerance for that variable.
-                   By default, des_tols = [1.0e-8, ..., 1.0e-8].
-
 
         Returns:
             SurrogateFunction: A new SurrogateFunction object.
@@ -308,11 +408,9 @@ class SurrogateFunction(ABC):
         """ Fit a new surrogate to the given data.
 
         Args:
-             x (numpy.ndarray): A 2d array containing the list of
-                 design points.
+             x (ndarray): A 2D array containing the design points to fit.
 
-             f (numpy.ndarray): A 2d array containing the corresponding list
-                 of objective values.
+             f (ndarray): A 2D array of the corresponding objectives values.
 
         """
 
@@ -321,12 +419,9 @@ class SurrogateFunction(ABC):
         """ Update an existing surrogate model using new data.
 
         Args:
-             x (numpy.ndarray): A 2d array containing the list of
-                 new design points, with which to update the surrogate
-                 models.
+             x (ndarray): A 2D array containing new design points to fit.
 
-             f (numpy.ndarray): A 2d array containing the corresponding list
-                 of objective values.
+             f (ndarray): A 2D array of the corresponding objectives values.
 
         """
 
@@ -337,10 +432,9 @@ class SurrogateFunction(ABC):
         global surrogate model.
 
         Args:
-            center (numpy.ndarray): A 1d array containing the center for
-                this local fit.
+            center (ndarray): A 1D array containing the center for a local fit.
 
-            radius (np.ndarray or float): The trust-region radius.
+            radius (ndarray or float): The radius for the local fit.
 
         """
 
@@ -351,32 +445,12 @@ class SurrogateFunction(ABC):
         """ Evaluate the surrogate at a design point.
 
         Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which to the surrogate should be evaluated.
+            x (ndarray): A 1D array containing the design point to evaluate.
 
         Returns:
-            numpy.ndarray: A 1d array containing the predicted objective value
-            at x.
+            ndarray: A 1D array containing the predicted outputs at x.
 
         """
-
-    def gradient(self, x):
-        """ Evaluate the gradient of the surrogate at a design point.
-
-        Note: this method need not be implemented when using a derivative
-        free SurrogateOptimization solver.
-
-        Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the gradient of the surrogate should be evaluated.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            surrogate at x.
-
-        """
-
-        raise NotImplementedError("This class method has not been implemented")
 
     def stdDev(self, x):
         """ Evaluate the standard deviation (uncertainty) of the surrogate at x.
@@ -385,29 +459,10 @@ class SurrogateFunction(ABC):
         function does not use the model uncertainty.
 
         Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the standard deviation should be evaluated.
+            x (ndarray): A 1D array containing the design point to evaluate.
 
         Returns:
-            numpy.ndarray: A 1d array containing the standard deviation at x.
-
-        """
-
-        raise NotImplementedError("This class method has not been implemented")
-
-    def stdDevGrad(self, x):
-        """ Evaluate the gradient of the standard deviation at x.
-
-        Note: this method need not be implemented when the acquisition
-        function does not use both the model uncertainty and gradient.
-
-        Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the gradient of standard deviation should be evaluated.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            standard deviation at x.
+            ndarray: A 1D array containing the output standard deviation at x.
 
         """
 
@@ -421,15 +476,15 @@ class SurrogateFunction(ABC):
         policy.
 
         Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the surrogate should be improved.
+            x (ndarray): A 1D array containing a design point where greater
+                accuracy is needed.
 
-            global_improv (Boolean): When True, returns a point for global
-                improvement, ignoring the value of x.
+            global_improv (Boolean): When True, ignore the value of x and
+                seek global model improvement.
 
         Returns:
-            numpy.ndarray: A 2d array containing the list of design points
-            that should be evaluated to improve the surrogate.
+            ndarray: A 2D array containing a list of (at least 1) design points
+            that could be evaluated to improve the surrogate model's accuracy.
 
         """
 
@@ -541,11 +596,9 @@ class SurrogateOptimizer(ABC):
         Args:
             o (int): The number of objectives.
 
-            lb (numpy.ndarray): A 1d array of lower bounds for the design
-                space.
+            lb (ndarray): A 1D array of lower bounds for the design space.
 
-            ub (numpy.ndarray): A 1d array of upper bounds for the design
-                space.
+            ub (ndarray): A 1D array of upper bounds for the design space.
 
             hyperparams (dict): A dictionary of hyperparameters for the
                 optimization procedure.
@@ -602,7 +655,6 @@ class SurrogateOptimizer(ABC):
             if len(inspect.signature(sd_func).parameters) != 1:
                 raise ValueError("sd_func() must accept exactly one input")
             else:
-                # Add sd_func to the problem
                 self.sim_sd = sd_func
         else:
             raise TypeError("sd_func() must be callable")
@@ -625,7 +677,7 @@ class SurrogateOptimizer(ABC):
             if len(inspect.signature(penalty_func).parameters) != 2:
                 raise ValueError("penalty_func must accept exactly two inputs")
             else:
-                # Add Lagrangian to the problem
+                # Add penalty to the problem
                 self.penalty_func = penalty_func
         else:
             raise TypeError("penalty_func must be callable")
@@ -637,8 +689,8 @@ class SurrogateOptimizer(ABC):
         Args:
             constraint_func (function): A vector-valued function from the
                 design space whose components correspond to constraint
-                violations. If the problem is unconstrained, a function
-                that returns zeros could be provided.
+                violations. If the problem has only bound constraints, this
+                function returns zeros.
 
         """
 
@@ -658,10 +710,9 @@ class SurrogateOptimizer(ABC):
         """ Add a TR setter function for alerting surrogates.
 
         Args:
-            trFunc (function): A function with 2 inputs, which will be
-                called prior to solving the surrogate optimization
-                problem with each acquisition function in order to set
-                the surrogate trust-region center and radius.
+            trFunc (function): A function with 2 inputs, which the optimizer
+                must call prior to solving each surrogate optimization problem
+                in order to set the trust-region center and radius.
 
         """
 
@@ -677,17 +728,16 @@ class SurrogateOptimizer(ABC):
         return
 
     def returnResults(self, x, fx, sx, sdx):
-        """ Collect the results of a function evaluation.
+        """ This is a callback function to collect evaluation results.
 
         Args:
-            x (np.ndarray): The design point evaluated.
+            x (ndarray): A 1D array with the design point evaluated.
 
-            fx (np.ndarray): The objective function values at x.
+            fx (ndarray): A 1D array with the objective function values at x.
 
-            sx (np.ndarray): The simulation function values at x.
+            sx (ndarray): The simulation function values at x.
 
-            sdx (np.ndarray): The standard deviation in the simulation
-                outputs at x.
+            sdx (ndarray): The standard deviation in the simulation prediction.
 
         """
 
@@ -712,16 +762,14 @@ class SurrogateOptimizer(ABC):
         return
 
     @abstractmethod
-    def solve(self, x):
+    def solve(self, x_k):
         """ Solve the surrogate problem.
 
         Args:
-            x (numpy.ndarray): A 2d array containing a list of feasible
-                design points used to warm start the search.
+            x_k (ndarray): A 2D array containing a list of current iterates.
 
         Returns:
-            float: A 2d numpy.ndarray of potentially efficient design points
-            that were found by the surrogate optimizer.
+            ndarray: A 2D array matching the shape of x_k specifying x_{k+1}.
 
         """
 

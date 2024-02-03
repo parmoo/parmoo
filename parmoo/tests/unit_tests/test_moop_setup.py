@@ -20,12 +20,12 @@ def test_MOOP_init():
         MOOP(LocalSurrogate_PS, hyperparams=[])
     # Try a few valid inputs
     moop = MOOP(LocalSurrogate_PS)
-    assert (moop.n_feature == 0 and moop.n_latent == 0 and moop.s == 0 and
-            moop.m_total == 0 and moop.o == 0 and moop.p == 0)
+    assert (moop.m == 0 and moop.n_feature == 0 and moop.n_latent == 0 and
+            moop.s == 0 and moop.o == 0 and moop.p == 0)
     moop = MOOP(LocalSurrogate_PS, hyperparams={'test': 0})
-    assert (moop.n_feature == 0 and moop.n_latent == 0 and moop.s == 0 and
-            moop.m_total == 0 and moop.o == 0 and moop.p == 0)
-    assert (moop.hyperparams['test'] == 0)
+    assert (moop.m == 0 and moop.n_feature == 0 and moop.n_latent == 0 and
+            moop.s == 0 and moop.o == 0 and moop.p == 0)
+    assert (moop.opt_hp['test'] == 0)
 
 
 def test_MOOP_addDesign():
@@ -49,32 +49,15 @@ def test_MOOP_addDesign():
         moop.addDesign({'des_type': 1.0})
     with pytest.raises(ValueError):
         moop.addDesign({'des_type': "hello world"})
-    # Try to use a repeated name to test error handling
-    moop1 = MOOP(LocalSurrogate_PS)
-    with pytest.raises(ValueError):
-        moop1.addDesign({'name': "x_1", 'lb': 0.0, 'ub': 1.0})
-        moop1.addDesign({'name': "x_1",
-                        'des_type': "continuous",
-                        'lb': 0.0,
-                        'ub': 1.0})
-    # Add variables out of order
-    moop1.acquisitions.append(0)
-    with pytest.raises(RuntimeError):
-        moop1.addDesign({'des_type': "continuous",
-                         'lb': 0.0,
-                         'ub': 1.0})
-    moop1 = MOOP(LocalSurrogate_PS)
-    moop1.sim_funcs.append(0)
-    with pytest.raises(RuntimeError):
-        moop1.addDesign({'des_type': "continuous",
-                         'lb': 0.0,
-                         'ub': 1.0})
     assert (moop.n_latent == 0)
     # Now add some continuous and integer design variables
     moop.addDesign({'lb': 0.0,
                     'ub': 1.0})
+    # Try to use a repeated name to test error handling
+    with pytest.raises(ValueError):
+        moop.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
     assert (moop.n_latent == 1)
-    moop.addDesign({'name': "x_1",
+    moop.addDesign({'name': "x2",
                     'des_type': "continuous",
                     'lb': 0.0,
                     'ub': 1.0,
@@ -91,7 +74,7 @@ def test_MOOP_addDesign():
     moop.addDesign({'des_type': "categorical",
                     'levels': 3})
     assert (moop.n_latent == 6)
-    moop.addDesign({'name': "x_10",
+    moop.addDesign({'name': "x6",
                     'des_type': "categorical",
                     'levels': ["boy", "girl", "doggo"]})
     assert (moop.n_latent == 8)
@@ -140,8 +123,8 @@ def test_MOOP_addSimulation():
           'sim_func': lambda x: [np.linalg.norm(x)],
           'surrogate': GaussRBF}
     moop.addSimulation(g1)
-    assert (moop.n_latent == 3 and moop.s == 1 and moop.m_total == 1
-            and moop.o == 0 and moop.p == 0)
+    assert (moop.m == 1 and moop.n_latent == 3 and moop.s == 1 and
+            moop.o == 0 and moop.p == 0)
     # Initialize another MOOP with 3 design variables
     moop = MOOP(LocalSurrogate_PS)
     moop.addDesign({'des_type': "continuous",
@@ -158,8 +141,8 @@ def test_MOOP_addSimulation():
           'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
-    assert (moop.n_latent == 3 and moop.s == 2 and moop.m_total == 3
-            and moop.o == 0 and moop.p == 0)
+    assert (moop.m == 3 and moop.n_latent == 3 and moop.s == 2 and
+            moop.o == 0 and moop.p == 0)
     g3 = {'name': "Bobo1",
           'm': 1,
           'hyperparams': {},
@@ -223,11 +206,6 @@ def test_MOOP_addObjective():
         moop.addObjective({'obj_func': 0})
     with pytest.raises(ValueError):
         moop.addObjective({'obj_func': lambda x: 0.0})
-    # Add an objective after an acquisition
-    moop1 = MOOP(LocalSurrogate_PS)
-    moop1.acquisitions.append(0)
-    with pytest.raises(RuntimeError):
-        moop1.addObjective({'obj_func': lambda x, s: 0.0})
     # Check that no objectives were added yet
     assert (moop.o == 0)
     # Now add 3 good objectives
@@ -325,14 +303,8 @@ def test_MOOP_addAcquisition():
 
     # Initialize a MOOP with 3 variables and 3 objectives
     moop = MOOP(LocalSurrogate_PS)
-    # Try to add acquisition functions without design variables
-    with pytest.raises(RuntimeError):
-        moop.addAcquisition({'acquisition': UniformWeights})
     for i in range(3):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    # Try to add acquisition functions without objectives
-    with pytest.raises(RuntimeError):
-        moop.addAcquisition({'acquisition': UniformWeights})
     moop.addObjective({'obj_func': lambda x, s: x[0]},
                       {'obj_func': lambda x, s: x[1]},
                       {'obj_func': lambda x, s: x[2]})
@@ -353,9 +325,9 @@ def test_MOOP_addAcquisition():
     # Check that no acquisitions were added then add 3 good acquisitions
     assert (len(moop.acquisitions) == 0)
     moop.addAcquisition({'acquisition': UniformWeights})
-    assert (len(moop.acquisitions) == 1)
     moop.addAcquisition({'acquisition': UniformWeights},
                         {'acquisition': UniformWeights, 'hyperparams': {}})
+    moop.compile()
     assert (len(moop.acquisitions) == 3)
 
 

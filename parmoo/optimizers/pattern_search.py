@@ -14,10 +14,11 @@ The classes include:
 
 """
 
+from jax import numpy as jnp
 import numpy as np
-from scipy.stats.qmc import LatinHypercube
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
+from scipy.stats.qmc import LatinHypercube
 
 
 class LocalSurrogate_PS(SurrogateOptimizer):
@@ -106,23 +107,19 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         else:
             self.momentum = 9e-1
         if 'des_tols' in hyperparams:
-            if isinstance(hyperparams['des_tols'], list):
-                if len(hyperparams['des_tols']) != self.n:
+            if isinstance(hyperparams['des_tols'], np.ndarray):
+                if hyperparams['des_tols'].size != self.n:
                     raise ValueError("the length of hyperparpams['des_tols']"
                                      " must match the length of lb and ub")
-                if not all(hyperparams['des_tols']):
+                if not np.all(hyperparams['des_tols']):
                     raise ValueError("all entries in hyperparams['des_tols']"
                                      " must be greater than 0")
-                for di in hyperparams['des_tols']:
-                    if not isinstance(di, float):
-                        raise TypeError("hyperparams['des_tols'] must "
-                                        "contain a list of float types")
             else:
-                raise TypeError("hyperparams['des_tols'] must contain a list "
-                                "of float types")
+                raise TypeError("hyperparams['des_tols'] must be an array.")
             self.des_tols = np.asarray(hyperparams['des_tols'])
         else:
-            self.des_tols = np.ones(self.n) * 1.0e-8
+            self.des_tols = (np.ones(self.n) *
+                             float(jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)))
         self.acquisitions = []
         self.prev_centers = []
         self.targets = []
@@ -514,56 +511,6 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                                                     istarts=1)
             result.append(xj)
         return np.asarray(result)
-
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize PS object in dictionary
-        ps_state = {'n': self.n,
-                    'o': self.o,
-                    'opt_budget': self.opt_budget,
-                    'gps_budget': self.gps_budget,
-                    'momentum': self.momentum}
-        # Serialize numpy.ndarray objects
-        ps_state['lb'] = self.lb.tolist()
-        ps_state['ub'] = self.ub.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(ps_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            ps_state = json.load(fp)
-        # Deserialize PS object from dictionary
-        self.n = ps_state['n']
-        self.o = ps_state['o']
-        self.opt_budget = ps_state['opt_budget']
-        self.gps_budget = ps_state['gps_budget']
-        self.momentum = ps_state['momentum']
-        # Deserialize numpy.ndarray objects
-        self.lb = np.array(ps_state['lb'])
-        self.ub = np.array(ps_state['ub'])
-        return
 
 
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,

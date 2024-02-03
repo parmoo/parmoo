@@ -72,7 +72,7 @@ class RandomConstraint(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a target based on current nondominated points.
 
         Args:
@@ -85,10 +85,6 @@ class RandomConstraint(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): A persistent dictionary that could be used by
-                the implementation of the AcquisitionFunction to pass data
-                between iterations; also unused by this scheme.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -302,7 +298,7 @@ class EI_RandomConstraint(AcquisitionFunction):
 
         return True
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a target based on current nondominated points.
 
         Args:
@@ -315,10 +311,6 @@ class EI_RandomConstraint(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): A persistent dictionary that could be used by
-                the implementation of the AcquisitionFunction to pass data
-                between iterations; also unused by this scheme.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting

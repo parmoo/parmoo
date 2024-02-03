@@ -12,6 +12,7 @@ The classes include:
 
 """
 
+from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
@@ -143,49 +144,3 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
             imin = np.argmin(np.asarray([f_vals]))
             results.append(nondom['x_vals'][imin, :])
         return np.asarray(results)
-
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize RS object in dictionary
-        rs_state = {'n': self.n,
-                    'o': self.o,
-                    'budget': self.budget}
-        # Serialize numpy.ndarray objects
-        rs_state['lb'] = self.lb.tolist()
-        rs_state['ub'] = self.ub.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(rs_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            rs_state = json.load(fp)
-        # Deserialize RS object from dictionary
-        self.n = rs_state['n']
-        self.o = rs_state['o']
-        self.budget = rs_state['budget']
-        # Deserialize numpy.ndarray objects
-        self.lb = np.array(rs_state['lb'])
-        self.ub = np.array(rs_state['ub'])
-        return

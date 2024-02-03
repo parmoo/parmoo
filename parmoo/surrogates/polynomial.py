@@ -216,20 +216,6 @@ class Linear(SurrogateFunction):
 
         return np.dot(self.weights[:-1].T, x).flatten() + self.weights[-1]
 
-    def gradient(self, x):
-        """ Evaluate the gradients of the Gaussian RBF at a design point.
-
-        Args:
-            x (numpy.ndarray): Not used here.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the slopes of the linear
-            models.
-
-        """
-
-        return self.weights[:-1, :].T
-
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.
 

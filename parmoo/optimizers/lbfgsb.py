@@ -14,6 +14,7 @@ The classes include:
 """
 
 from jax import jacrev
+from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
@@ -142,14 +143,8 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                     fx = self.penalty_func(x, sx)
                     return acquisition.scalarize(fx, x, sx, sdx)
 
-            def scalar_g(x, *args):
-                sx = self.simulations(x)
-                fx = self.penalty_func(x, sx)
-                dfdx = jacrev(self.penalty_func, argnums=0)(x, sx)[0]
-                dfds = jacrev(self.penalty_func, argnums=1)(x, sx)[0]
-                dsdx = jacrev(self.simulations)(x)
-                gx = np.asarray(acquisition.scalarizeGrad(fx, dfdx + np.dot(dfds, dsdx)))
-                return gx
+            scalar_g1 = jacrev(scalar_f)
+            def scalar_g(x, *args): return np.asarray(scalar_g1(x, *args)).flatten()
 
             # Get the solution via multistart solve
             soln = x[j, :].copy()
@@ -181,48 +176,6 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
             # Append the found minima to the results list
             result.append(soln)
         return np.asarray(result)
-
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize BFGS object in dictionary
-        bfgs_state = {'n': self.n,
-                    'budget': self.budget}
-        # Serialize numpy.ndarray objects
-        bfgs_state['bounds'] = self.bounds.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(bfgs_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            bfgs_state = json.load(fp)
-        # Deserialize BFGS object from dictionary
-        self.n = bfgs_state['n']
-        self.budget = bfgs_state['budget']
-        # Deserialize numpy.ndarray objects
-        self.bounds = np.array(bfgs_state['bounds'])
-        return
 
 
 class LocalSurrogate_BFGS(SurrogateOptimizer):
@@ -298,23 +251,19 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
         else:
             self.restarts = 2
         if 'des_tols' in hyperparams:
-            if isinstance(hyperparams['des_tols'], list):
-                if len(hyperparams['des_tols']) != self.n:
+            if isinstance(hyperparams['des_tols'], np.ndarray):
+                if hyperparams['des_tols'].size != self.n:
                     raise ValueError("the length of hyperparpams['des_tols']"
                                      " must match the length of lb and ub")
-                if not all(hyperparams['des_tols']):
+                if not np.all(hyperparams['des_tols']):
                     raise ValueError("all entries in hyperparams['des_tols']"
                                      " must be greater than 0")
-                for di in hyperparams['des_tols']:
-                    if not isinstance(di, float):
-                        raise TypeError("hyperparams['des_tols'] must "
-                                        "contain a list of float types")
             else:
-                raise TypeError("hyperparams['des_tols'] must contain a list "
-                                "of float types")
+                raise TypeError("hyperparams['des_tols'] must be an array.")
             self.des_tols = np.asarray(hyperparams['des_tols'])
         else:
-            self.des_tols = np.ones(self.n) * 1.0e-8
+            self.des_tols = (np.ones(self.n) *
+                             float(jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)))
         self.acquisitions = []
         self.prev_centers = []
         self.targets = []
@@ -428,13 +377,8 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                     fx = self.penalty_func(x, sx)
                     return acquisition.scalarize(fx, x, sx, sdx)
 
-            def scalar_g(x, *args):
-                sx = self.simulations(x)
-                fx = self.penalty_func(x, sx)
-                dsdx = jacrev(self.simulations)(x)
-                dfdx, dfds = jacrev(self.penalty_func, argnums=(0, 1))(x, sx)
-                gx = np.asarray(acquisition.scalarizeGrad(fx, dfdx + np.dot(dfds, dsdx)))
-                return gx
+            scalar_g1 = jacrev(scalar_f)
+            def scalar_g(x, *args): return np.asarray(scalar_g1(x, *args)).flatten()
 
             # Create a new trust region
             rad = self.__checkTR(x[j, :])
