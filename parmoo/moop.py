@@ -122,10 +122,11 @@ class MOOP:
                  # Temporary solver components and metadata used during setup
                  'acq_tmp', 'opt_tmp', 'search_tmp', 'sur_tmp',
                  'acq_hp', 'opt_hp', 'sim_hp',
-                 # Compiled function definitions -- These are only defined after
-                 # calling the MOOP._compile() method
+                 # Compiled function definitions -- These are only defined
+                 # after calling the MOOP._compile() method
                  'embed', 'extract', 'pack_sim', 'unpack_sim',
-                 'evaluate_objectives', 'evaluate_constraints', 'evaluate_penalty',
+                 'evaluate_objectives', 'evaluate_constraints',
+                 'evaluate_penalty',
                  'evaluate_surrogates', 'surrogate_uncertainty',
                  'sur_grads', 'suq_grads'
                 ]
@@ -1945,7 +1946,7 @@ class MOOP:
 
         sx_list = [jnp.zeros(0)]
         for i in range(self.s):
-            sx_list.append(sx[self.sim_schema[i][0]])
+            sx_list.append(jnp.array(sx[self.sim_schema[i][0]]))
         return jnp.concatenate(sx_list, axis=None)
 
     def _unpack_sim(self, sx):
@@ -2002,8 +2003,8 @@ class MOOP:
 
         """
 
-        for si in self.surrogates:
-            si.setTrustRegion(center, radius)
+        for surrogate in self.surrogates:
+            surrogate.setTrustRegion(center, radius)
         # Compile and set the optimizer attributes to compiled functions
         self._compile()
         self.optimizer.setObjective(self.evaluate_objectives)
@@ -2025,48 +2026,9 @@ class MOOP:
         """
 
         sx_list = [jnp.zeros(0)]
-        for si in self.surrogates:
-            sx_list.append(jnp.array(si.evaluate(x)))
+        for surrogate in self.surrogates:
+            sx_list.append(surrogate.evaluate(x))
         return jnp.concatenate(sx_list, axis=None)
-
-    def _sur_fwd(self, x):
-        """ Evaluate a forward pass over the surrogate functions.
-    
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point
-                to evaluate.
-    
-        Returns:
-            (ndarray, ndarray): A tuple of 1D arrays containing the result of
-            the evaluation and the value of x, respectively.
-    
-        """
-
-        sx_list = [jnp.zeros(0)]
-        for si in self.surrogates:
-            sx_list.append(jnp.array(si.evaluate(x)))
-        return jnp.concatenate(sx_list, axis=None), x
-
-    def _sur_bwd(self, res, w):
-        """ Evaluate a backward pass over the surrogate functions.
-    
-        Args:
-            res (ndarray): A 1D array containing the (embedded) design point
-                to evaluate.
-    
-            w (ndarray): Contains the adjoint vector for the computation
-                succeeding the surrogate evaluation in the compute graph.
-    
-        Returns:
-            (ndarray, ): A 1D array containing the jacobian of the surrogate
-            evaluation.
-    
-        """
-
-        dsdx_list = [jnp.zeros(0)]
-        for dsdx in self.sur_grads:
-            dsdx_list.append(jnp.array(dsdx(res)))
-        return (jnp.concatenate(dsdx_list, axis=0), )
 
     def _surrogate_uncertainty(self, x):
         """ Evaluate the standard deviation of the possible surrogate outputs.
@@ -2082,48 +2044,9 @@ class MOOP:
         """
 
         sdx_list = [jnp.zeros(0)]
-        for si in self.surrogates:
-            sdx_list.append(si.stdDev(x))
+        for surrogate in self.surrogates:
+            sdx_list.append(surrogate.stdDev(x))
         return jnp.concatenate(sdx_list, axis=None)
-
-    def _suq_fwd(self, x):
-        """ Evaluate a forward pass over the surrogate UQ functions.
-    
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point
-                to evaluate.
-    
-        Returns:
-            (ndarray, ndarray): A tuple of 1D arrays containing the result of
-            the evaluation and the value of x, respectively.
-    
-        """
-
-        sdx_list = [jnp.zeros(0)]
-        for si in self.surrogates:
-            sdx_list.append(si.stdDev(x))
-        return jnp.concatenate(sdx_list, axis=None), x
-
-    def _suq_bwd(self, res, w):
-        """ Evaluate a backward pass over the surrogate UQ functions.
-    
-        Args:
-            res (ndarray): A 1D array containing the (embedded) design point
-                to evaluate.
-    
-            w (ndarray): Contains the adjoint vector for the computation
-                succeeding the surrogate evaluation in the compute graph.
-    
-        Returns:
-            (ndarray, ): A 1D array containing the jacobian of the surrogate
-            standard deviation evaluation.
-    
-        """
-
-        dsuqdx_list = [jnp.zeros(0)]
-        for dsuqdx in self.suq_grads:
-            dsuqdx_list.append(jnp.array(dsuqdx(res)))
-        return (jnp.concatenate(dsuqdx_list, axis=0), )
 
     def _evaluate_objectives(self, x, sx):
         """ Evaluate all objectives using the simulation surrogates as needed.
@@ -2143,10 +2066,10 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        fx = [jnp.zeros(0)]
-        for i, obj_func in enumerate(self.obj_funcs):
-            fx.append(jnp.array(obj_func(xx, ssx)))
-        return jnp.concatenate(fx, axis=None)
+        fx_list = [jnp.zeros(0)]
+        for obj_func in self.obj_funcs:
+            fx_list.append(jnp.array(obj_func(xx, ssx)))
+        return jnp.concatenate(fx_list, axis=None)
 
     def _obj_fwd(self, x, sx):
         """ Evaluate a forward pass over the objective functions.
@@ -2167,10 +2090,10 @@ class MOOP:
     
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        fx = [jnp.zeros(0)]
-        for i, obj_func in enumerate(self.obj_funcs):
-            fx.append(jnp.array(obj_func(xx, ssx)))
-        return jnp.concatenate(fx, axis=None), (xx, ssx)
+        fx_list = [jnp.zeros(0)]
+        for obj_func in self.obj_funcs:
+            fx_list.append(jnp.array(obj_func(xx, ssx)))
+        return jnp.concatenate(fx_list, axis=None), (xx, ssx)
 
     def _obj_bwd(self, res, w):
         """ Evaluate a backward pass over the objective functions.
@@ -2189,11 +2112,11 @@ class MOOP:
         """
     
         xx, ssx = res
-        dfdx, dfds = [jnp.zeros((0, self.n_latent))], [jnp.zeros((0, self.m))]
+        dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, obj_func in enumerate(self.obj_funcs):
-            dfdx.append(jnp.array(self.embed(obj_func(xx, ssx, der=1))).flatten() * w[i])
-            dfds.append(jnp.array(self.pack_sim(obj_func(xx, ssx, der=2))).flatten() * w[i])
-        return (jnp.concatenate(dfdx, axis=0), jnp.concatenate(dfds, axis=0))
+            dfdx = dfdx + self.embed(obj_func(xx, ssx, der=1)) * w[i]
+            dfds = dfds + self.pack_sim(obj_func(xx, ssx, der=2)) * w[i]
+        return dfdx, dfds
 
     def _evaluate_constraints(self, x, sx):
         """ Evaluate the constraints using the simulation surrogates as needed.
@@ -2213,10 +2136,10 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        cx = [jnp.zeros(0)]
-        for i, constraint_func in enumerate(self.con_funcs):
-            cx.append(jnp.array(constraint_func(xx, ssx)))
-        return jnp.concatenate(cx, axis=None)
+        cx_list = [jnp.zeros(0)]
+        for con_func in self.con_funcs:
+            cx_list.append(jnp.array(con_func(xx, ssx)))
+        return jnp.concatenate(cx_list, axis=None)
 
     def _con_fwd(self, x, sx):
         """ Evaluate a forward pass over the constraint functions.
@@ -2237,10 +2160,10 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        cx = [jnp.zeros(0)]
-        for i, con_func in enumerate(self.con_funcs):
-            cx.append(jnp.array(con_func(xx, ssx)))
-        return jnp.concatenate(cx, axis=None), (xx, sxx)
+        cx_list = [jnp.zeros(0)]
+        for con_func in self.con_funcs:
+            cx_list.append(jnp.array(con_func(xx, ssx)))
+        return jnp.concatenate(cx_list, axis=None), (xx, ssx)
 
     def _con_bwd(self, res, w):
         """ Evaluate a backward pass over the constraint functions.
@@ -2259,11 +2182,11 @@ class MOOP:
         """
 
         xx, ssx = res
-        dcdx, dcds = [jnp.zeros((0, self.n_latent))], [jnp.zeros((0, self.m))]
+        dcdx, dcds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, con_func in enumerate(self.con_funcs):
-            dcdx.append(jnp.array(self.embed(con_func(xx, ssx, der=1))).flatten() * w[i])
-            dcds.append(jnp.array(self.pack_sim(con_func(xx, ssx, der=2))).flatten() * w[i])
-        return (jnp.concatenate(dcdx, axis=0), jnp.concatenate(dcds, axis=0))
+            dcdx = dfdx + self.embed(con_func(xx, ssx, der=1)) * w[i]
+            dcds = dfdx + self.pack_sim(con_func(xx, ssx, der=2)) * w[i]
+        return dcdx, dcds
 
     def _evaluate_penalty(self, x, sx):
         """ Evaluate the penalized objective using the surrogates as needed.
@@ -2283,13 +2206,13 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        fx = [jnp.zeros(0)]
-        for i, obj_func in enumerate(self.obj_funcs):
-            fx.append(jnp.array(obj_func(xx, ssx)))
+        fx_list = [jnp.zeros(0)]
+        for obj_func in self.obj_funcs:
+            fx_list.append(jnp.array(obj_func(xx, ssx)))
         cx = 0.0
-        for i, constraint_func in enumerate(self.con_funcs):
-            cx += jnp.maximum(constraint_func(xx, ssx), 0)
-        return jnp.concatenate(fx, axis=None) + (self.lam * cx)
+        for con_func in self.con_funcs:
+            cx += jnp.maximum(con_func(xx, ssx), 0)
+        return jnp.concatenate(fx_list, axis=None) + (self.lam * cx)
 
     def _pen_fwd(self, x, sx):
         """ Evaluate a forward pass over the penalized objective functions.
@@ -2304,21 +2227,22 @@ class MOOP:
         Returns:
             (ndarray, (ndarray, ndarray)): The first entry is a 1D array
             containing the result of the evaluation, and the second entry
-            contains the extracted pair (xx, ssx).
+            contains the extracted pair (xx, ssx) followed by the penalized
+            constraint activities.
     
         """
     
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        fx, cx = [jnp.zeros(0)], [jnp.zeros(0)]
-        for i, obj_func in enumerate(self.obj_funcs):
-            fx.append(jnp.array(obj_func(xx, ssx)))
-        for i, constraint_func in enumerate(self.con_funcs):
-            cx.append(jnp.array(jnp.maximum(constraint_func(xx, ssx), 0)) * self.lam)
-        cx_cat = jnp.concatenate(cx, axis=None)
-        zeros = jnp.zeros(cx_cat.shape)
-        activities = (jnp.isclose(cx_cat, zeros) - 1) * -self.lam
-        return jnp.concatenate(fx, axis=None) + jnp.sum(cx_cat), (xx, ssx, activities)
+        fx_list, cx_list = [jnp.zeros(0)], [jnp.zeros(0)]
+        for con_func in self.con_funcs:
+            cx_list.append(jnp.array(jnp.maximum(con_func(xx, ssx), 0)))
+        cx_cat = jnp.concatenate(cx_list, axis=None)
+        cx_lam = jnp.sum(cx_cat) * self.lam
+        for obj_func in self.obj_funcs:
+            fx_list.append(jnp.array(obj_func(xx, ssx)) + cx_lam)
+        act = (jnp.isclose(cx_cat, jnp.zeros(cx_cat.shape)) - 1) * -self.lam
+        return jnp.concatenate(fx_list, axis=None), (xx, ssx, act)
 
     def _pen_bwd(self, res, w):
         """ Evaluate a backward pass over the penalized objective functions.
@@ -2335,43 +2259,37 @@ class MOOP:
             with respect to x and sx, respectively.
     
         """
-   
-        xx, ssx, activities = res
-        dcdx, dcds = [jnp.zeros((0, self.n_latent))], [jnp.zeros((0, self.m))]
+
+        xx, ssx, act = res
+        dcdx, dcds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, con_func in enumerate(self.con_funcs):
-            dcdx.append(jnp.array(self.embed(con_func(xx, ssx, der=1)
-                                  )).reshape((1, self.n_latent)))
-            dcds.append(jnp.array(self.pack_sim(con_func(xx, ssx, der=2)
-                                  )).reshape((1, self.m)))
-        dpdx = jnp.dot(activities, jnp.concatenate(dcdx, axis=0))
-        dpds = jnp.dot(activities, jnp.concatenate(dcds, axis=0))
-        dfdx, dfds = [jnp.zeros((0, self.n_latent))], [jnp.zeros((0, self.m))]
+            dcdx = dcdx + self.embed(con_func(xx, ssx, der=1)) * act[i]
+            dcds = dcds + self.pack_sim(con_func(xx, ssx, der=2)) * act[i]
+        dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, obj_func in enumerate(self.obj_funcs):
-            dfdx.append((jnp.array(self.embed(obj_func(xx, ssx, der=1)
-                         )).reshape((1, self.n_latent)) + dpdx) * w[i])
-            dfds.append((jnp.array(self.pack_sim(obj_func(xx, ssx, der=2)
-                         )).reshape((1, self.m)) + dpds) * w[i])
-        return (jnp.concatenate(dfdx, axis=0), jnp.concatenate(dfds, axis=0))
+            dfdx = dfdx + (self.embed(obj_func(xx, ssx, der=1)) + dcdx) * w[i]
+            dfds = dfds + (self.pack_sim(obj_func(xx, ssx, der=2)) + dcds) * w[i]
+        return dfdx, dfds
 
     def _compile(self):
         """ Compile the helper functions and link the fwd/bwd pass functions """
 
         # Try to calculate the surrogate gradients
-        sur_grads = []
+        self.sur_grads = []
         for i, si in enumerate(self.surrogates):
             try:
-                sur_grads.append(jax.jacrev(si.evaluate))
-                dsdx = sur_grads[-1](jnp.zeros(self.n_feature))
+                self.sur_grads.append(jax.jacrev(si.evaluate))
+                dsdx = self.sur_grads[-1](jnp.zeros(self.n_feature))
             except BaseException:
                 warnings.warn("jax failed to generate the jacobian for "
                               f"the surrogate of {self.sim_schema[i][0]}."
                               "Therefore, this surrogate is unsafe to use "
                               "with gradient-based optimization solvers.")
-        suq_grads = []
+        self.suq_grads = []
         if any([acqi.useSD() for acqi in self.acquisitions]):
             for i, si in enumerate(self.surrogates):
                 try:
-                    suq_grads.append(jax.jacrev(si.stdDev))
+                    self.suq_grads.append(jax.jacrev(si.stdDev))
                     dsd_dx = suq_grad[-1](jnp.zeros(self.n_feature))
                 except BaseException:
                     warnings.warn("jax failed to generate the jacobian for "
@@ -2382,19 +2300,21 @@ class MOOP:
 
         # Link the forward/backward pass functions
 
-        @jax.custom_vjp
-        def eval_sur(x, sx): return self._evaluate_surrogates(x)
-        def sur_fwd(x, sx): return self._sur_fwd(x)
-        def sur_bwd(res, w): return self._sur_bwd(res, w)
-        eval_sur.defvjp(sur_fwd, sur_bwd)
-        self.evaluate_surrogates = eval_sur
+        # @jax.custom_vjp
+        # def eval_sur(x): return self._evaluate_surrogates(x)
+        # def sur_fwd(x): return self._sur_fwd(x)
+        # def sur_bwd(res, w): return self._sur_bwd(res, w)
+        # eval_sur.defvjp(sur_fwd, sur_bwd)
+        # self.evaluate_surrogates = eval_sur
+        self.evaluate_surrogates = self._evaluate_surrogates
 
-        @jax.custom_vjp
-        def eval_suq(x, sx): return self._surrogate_uncertainty(x)
-        def suq_fwd(x, sx): return self._suq_fwd(x)
-        def suq_bwd(res, w): return self._suq_bwd(res, w)
-        eval_suq.defvjp(suq_fwd, suq_bwd)
-        self.surrogate_uncertainty = eval_suq
+        # @jax.custom_vjp
+        # def eval_suq(x): return self._surrogate_uncertainty(x)
+        # def suq_fwd(x): return self._suq_fwd(x)
+        # def suq_bwd(res, w): return self._suq_bwd(res, w)
+        # eval_suq.defvjp(suq_fwd, suq_bwd)
+        # self.surrogate_uncertainty = eval_suq
+        self.surrogate_uncertainty = self._surrogate_uncertainty
 
         @jax.custom_vjp
         def eval_obj(x, sx): return self._evaluate_objectives(x, sx)

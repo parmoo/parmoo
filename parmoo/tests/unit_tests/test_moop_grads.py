@@ -9,8 +9,11 @@ def eval_pen_jac(moop, x):
     sx = moop._evaluate_surrogates(x)
     dsdx = jacrev(moop._evaluate_surrogates)(x)
     _, res = moop._pen_fwd(x, sx)
-    dfdx, dfds = moop._pen_bwd(res, jnp.ones(moop.o))
-    return dfdx + jnp.dot(dfds, dsdx)
+    dfdx = jnp.zeros((moop.o, x.size))
+    for i, ei in enumerate(jnp.eye(moop.o)):
+        dfdxi, dfdsi = moop._pen_bwd(res, ei)
+        dfdx = dfdx.at[i, :].set(dfdxi + jnp.dot(dfdsi, dsdx))
+    return dfdx
 
 def eval_obj_jac(moop, x, sx):
     """ Helper for testing objective fwd/bwd evaluations """
@@ -189,13 +192,10 @@ def test_MOOP_evaluate_penalty_grads():
     # Now check that after compiling, jax correctly propagates pen_jac
     moop1._compile()
     def pen_jac(x):
-        sx = moop1._evaluate_surrogates(x)
-        return moop1.evaluate_penalty(x, sx)
+        return moop1.evaluate_penalty(x, moop1.evaluate_surrogates(x))
     moop1_pen_jac = jacrev(pen_jac)
     for xi in np.random.sample((5, 3)):
         dfdxi = moop1_pen_jac(xi)
-        print(dfdxi)
-        print(eval_pen_jac(moop1, xi))
         assert (np.all(np.abs(eval_pen_jac(moop1, xi) - dfdxi) < 1.0e-8))
 
 
