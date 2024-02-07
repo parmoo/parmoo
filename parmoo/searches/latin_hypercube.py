@@ -24,7 +24,7 @@ class LatinHypercube(GlobalSearch):
     """
 
     # Slots for the LatinHypercube class
-    __slots__ = ['lb', 'ub', 'ibudget', 'sampler']
+    __slots__ = ['lb', 'ub', 'budget', 'sampler']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the LatinHypercube GlobalSearch class.
@@ -61,12 +61,12 @@ class LatinHypercube(GlobalSearch):
                     raise ValueError("hyperparams['search_budget'] must "
                                      "be nonnegative")
                 else:
-                    self.ibudget = hyperparams['search_budget']
+                    self.budget = hyperparams['search_budget']
             else:
                 raise ValueError("hyperparams['search_budget'] must "
                                  "be an int")
         else:
-            self.ibudget = 100
+            self.budget = 100
         self.sampler = qmc.LatinHypercube(d=self.n)
         return
 
@@ -92,11 +92,11 @@ class LatinHypercube(GlobalSearch):
         self.lb = lb
         self.ub = ub
         # If the budget is 0, just return an empty array
-        if self.ibudget == 0:
+        if self.budget == 0:
             return np.asarray([])
         # Otherwise, return a n-dimensional Latin hypercube design
         else:
-            return qmc.scale(self.sampler.random(n=self.ibudget),
+            return qmc.scale(self.sampler.random(n=self.budget),
                              self.lb, self.ub)
 
     def resumeSearch(self):
@@ -109,9 +109,9 @@ class LatinHypercube(GlobalSearch):
         """
 
         # If the budget is 0, just return an empty array
-        if self.ibudget == 0:
+        if self.budget == 0:
             return np.asarray([])
         # Otherwise, return a n-dimensional Latin hypercube design
         else:
-            return qmc.scale(self.sampler.random(n=self.ibudget),
+            return qmc.scale(self.sampler.random(n=self.budget),
                              self.lb, self.ub)

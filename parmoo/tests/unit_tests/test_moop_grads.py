@@ -293,4 +293,4 @@ def test_MOOP_solve_with_grads():
 
 if __name__ == "__main__":
     test_MOOP_evaluate_penalty_grads()
-    #test_MOOP_solve_with_grads()
+    test_MOOP_solve_with_grads()

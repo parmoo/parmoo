@@ -127,8 +127,7 @@ class MOOP:
                  'embed', 'extract', 'pack_sim', 'unpack_sim',
                  'evaluate_objectives', 'evaluate_constraints',
                  'evaluate_penalty',
-                 'evaluate_surrogates', 'surrogate_uncertainty',
-                 'sur_grads', 'suq_grads'
+                 'evaluate_surrogates', 'surrogate_uncertainty'
                 ]
 
     def __init__(self, opt_func, hyperparams=None):
@@ -515,7 +514,7 @@ class MOOP:
             else:
                 hps = {}
             try:
-                acq = arg['acquisition'](1, np.zeros(1), np.ones(1), hps)
+                acq = arg['acquisition'](1, np.zeros(1), np.ones(1), {})
             except BaseException:
                 raise TypeError("'acquisition' must specify a child of the"
                                 + " AcquisitionFunction class")
@@ -663,6 +662,21 @@ class MOOP:
         # Set compiled flat go True
         logging.info("  Compilation finished.")
         self.compiled = True
+        # Print problem summary
+        logging.info(" Summary of ParMOO problem and settings:")
+        logging.info(f"   {self.n_feature} design dimensions")
+        logging.info(f"   {self.n_latent} embedded design dimensions")
+        logging.info(f"   {self.m} simulation outputs")
+        logging.info(f"   {self.s} simulations")
+        for i in range(self.s):
+            logging.info(f"     {self.m_list[i]} outputs for simulation {i}")
+            logging.info(f"     {self.searches[i].budget} search evaluations" +
+                         f" in iteration 0 for simulation {i}")
+        logging.info(f"   {self.o} objectives")
+        logging.info(f"   {self.p} constraints")
+        logging.info(f"   {len(self.acquisitions)} acquisition functions")
+        logging.info("   estimated simulation evaluations per iteration:" +
+                     f" {len(self.acquisitions) * self.s}")
         return
 
     def setCheckpoint(self, checkpoint,
@@ -850,7 +864,7 @@ class MOOP:
             s_name (str): The name of the simulation to evaluate.
 
         Returns:
-            numpy.ndarray: A 1D array containing the output from the evaluation
+            ndarray: A 1D array containing the output from the evaluation
             sx = simulation[s_name](x).
 
         """
@@ -1201,6 +1215,7 @@ class MOOP:
 
         """
 
+        logging.info(" Beginning new run of ParMOO...")
         # Check that at least one budget variable was given
         if iter_max is None and sim_max is None:
             raise ValueError("At least one of the following arguments " +
@@ -1223,6 +1238,9 @@ class MOOP:
                 raise ValueError("If 0 simulations are given, then iter_max" +
                                  "must be provided")
             iter_max = sim_max
+        # Compile the MOOP if needed
+        if not self.compiled:
+            self.compile()
         # Count total sims to exhaust iter_max if sim_max is None
         total_search_budget = 0
         for search in self.searches:
@@ -1242,22 +1260,6 @@ class MOOP:
                           "you are really only interested in design space " +
                           "exploration without exploitation/optimization.")
 
-        # Print logging info summary of problem setup
-        logging.info(" Beginning new run of ParMOO...")
-        logging.info(" summary of settings:")
-        logging.info(f"   {self.n_feature} design dimensions")
-        logging.info(f"   {self.n_latent} embedded design dimensions")
-        logging.info(f"   {self.m} simulation outputs")
-        logging.info(f"   {self.s} simulations")
-        for i in range(self.s):
-            logging.info(f"     {self.m_list[i]} outputs for simulation {i}")
-            logging.info(f"     {self.searches[i].budget} search evaluations" +
-                         f" in iteration 0 for simulation {i}")
-        logging.info(f"   {self.o} objectives")
-        logging.info(f"   {self.p} constraints")
-        logging.info(f"   {len(self.acquisitions)} acquisition functions")
-        logging.info("   estimated simulation evaluations per iteration:" +
-                     f" {len(self.acquisitions) * self.s}")
         logging.info(f"   iteration limit: {iter_max}")
         logging.info(f"   total simulation budget: {sim_max}")
         logging.info(" Done.")
@@ -1314,11 +1316,11 @@ class MOOP:
                 named inputs.
 
         Returns:
-            A discrete approximation of the Pareto front and efficient set.
-
-            If operating with named variables, then this is a 1D numpy
-            structured array whose fields match the names for design
-            variables, objectives, and constraints (if any).
+            numpy structured array or pandas DataFrame: Either a structured
+            array or dataframe (depending on the option selected above)
+            whose column/key names match the names of the design variables,
+            objectives, and constraints. It contains a discrete approximation
+            of the Pareto front and efficient set.
 
         """
 
@@ -1366,22 +1368,12 @@ class MOOP:
                 named inputs.
 
         Returns:
-            (dict or list) Either a dictionary or list of dictionaries
-            containing every point where a simulation was evaluated.
-
-            If operating with named variables, then the result is a dict.
-            Each key is the name for a different simulation, and each value
-            is a 1d numpy structured array whose keys match the
-            names for each design variables plus an
-            additional 'out' key for simulation outputs.
-
-            Otherwise, this is a list of s (number of simulations) dicts,
-            each dict containing the following keys:
-             * x_vals (numpy.ndarray): A 2d array containing a list
-               of design points that have been evaluated for this
-               simulation.
-             * s_vals (numpy.ndarray): A 1d or 2d array containing
-               the list of corresponding simulation outputs.
+            dict: A Python dictionary whose keys match the names of the
+            simulations. Each value is either a numpy structured array or
+            pandas dataframe (depending on the option selected above)
+            whose column/key names match the names of the design variables
+            plus either and 'out' field for single-output simulations,
+            or 'out_1', 'out_2', ... for multi-output simulations.
 
         """
 
@@ -1439,21 +1431,11 @@ class MOOP:
                 named inputs.
 
         Returns:
-            A database of all designs that have been fully evaluated,
-            and their corresponding objective scores.
-
-            If operating with named variables, then this is a 1d numpy
-            structured array whose fields match the names for design
-            variables, objectives, and constraints (if any).
-
-            Otherwise, this is a dict containing the following keys:
-             * x_vals (numpy.ndarray): A 2d array containing a list
-               of all fully evaluated design points.
-             * f_vals (numpy.ndarray): A 2d array containing the list
-               of corresponding objective values.
-             * c_vals (numpy.ndarray): A 2d array containing the list
-               of corresponding constraint satisfaction scores,
-               all less than or equal to 0.
+            numpy structured array or pandas DataFrame: Either a structured
+            array or dataframe (depending on the option selected above)
+            whose column/key names match the names of the design variables,
+            objectives, and constraints. It contains the results for every
+            fully evaluated design point.
 
         """
 
@@ -1995,11 +1977,10 @@ class MOOP:
         """ Alert the surrogate functions of a new trust region.
 
         Args:
-            center (numpy.ndarray): A 1d numpy.ndarray containing the
-                (embedded) coordinates of the new center in the rescaled
-                design space.
+            center (ndarray): A 1D array containing the (embedded) coordinates
+                of the new trust region center.
 
-            radius (np.ndarray or float): The trust region radius.
+            radius (ndarray or float): The trust region radius.
 
         """
 
@@ -2016,8 +1997,8 @@ class MOOP:
         """ Evaluate all simulation surrogates.
 
         Args:
-            x (ndarray): A 1D array containing the (embedded) design point
-                to evaluate.
+            x (ndarray): A 1D array containing the (embedded) design point to
+                evaluate.
 
         Returns:
             ndarray: A 1D array containing the (packed) result of the
@@ -2034,12 +2015,12 @@ class MOOP:
         """ Evaluate the standard deviation of the possible surrogate outputs.
 
         Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate uncertainties at.
+            x (ndarray): A 1D array containing the (embedded) design point to
+                evaluate the surrogate uncertainties at.
 
         Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the standard
-            deviation of the surrogates at x.
+            ndarray: A 1D array containing the standard deviation of the
+            surrogate prediction at x.
 
         """
 
@@ -2052,15 +2033,14 @@ class MOOP:
         """ Evaluate all objectives using the simulation surrogates as needed.
 
         Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
+            x (ndarray): A 1D array containing the (embedded) design point to
+                evaluate.
 
-            sx (numpy.ndarray): A 1d numpy.ndarray containing the (packed)
-                simulation vector at x.
+            sx (ndarray): A 1D array containing the (packed) simulation vector
+                at x.
 
         Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the result of the
-            evaluation.
+            ndarray: A 1D array containing the result of the evaluation.
 
         """
 
@@ -2075,11 +2055,11 @@ class MOOP:
         """ Evaluate a forward pass over the objective functions.
     
         Args:
-            x (ndarray): A 1D array containing the (embedded) design point
-                to evaluate.
+            x (ndarray): A 1D array containing the (embedded) design point to
+                evaluate.
     
-            sx (ndarray): A 1D array containing the (packed) simulation
-                vector at x.
+            sx (ndarray): A 1D array containing the (packed) simulation vector
+                at x.
     
         Returns:
             (ndarray, (ndarray, ndarray)): The first entry is a 1D array
@@ -2106,8 +2086,8 @@ class MOOP:
                 succeeding the objective evaluation in the compute graph.
     
         Returns:
-            (ndarray, ndarray): A pair of 1D arrays containing the gradient
-            with respect to x and sx, respectively.
+            (ndarray, ndarray): A pair of 1D arrays containing the products
+            w * jac(f wrt x) and w * jac(f wrt s), respectively.
     
         """
     
@@ -2122,15 +2102,15 @@ class MOOP:
         """ Evaluate the constraints using the simulation surrogates as needed.
 
         Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
+            x (ndarray): A 1D array containing the (embedded) design point to
+                evaluate.
 
-            sx (numpy.ndarray): A 1d numpy.ndarray containing the (packed)
-                simulation vector at x.
+            sx (ndarray): A 1D array containing the (packed) simulation vector
+                at x.
 
         Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the list of constraint
-            violations at x (negative or zero if no violation).
+            ndarray: A 1D array containing the list of constraint violations
+            at x, where a negative or zero score implies feasibility.
 
         """
 
@@ -2145,11 +2125,11 @@ class MOOP:
         """ Evaluate a forward pass over the constraint functions.
 
         Args:
-            x (ndarray): A 1D array containing the (embedded) design point
-                to evaluate.
+            x (ndarray): A 1D array containing the (embedded) design point to
+                evaluate.
 
-            sx (ndarray): A 1D array containing the (packed) simulation
-                vector at x.
+            sx (ndarray): A 1D array containing the (packed) simulation vector
+                at x.
 
         Returns:
             (ndarray, (ndarray, ndarray)): The first entry is a 1D array
@@ -2176,8 +2156,8 @@ class MOOP:
                 succeeding the constraint evaluation in the compute graph.
 
         Returns:
-            (ndarray, ndarray): A pair of 1D arrays containing the gradient
-            with respect to x and sx, respectively.
+            (ndarray, ndarray): A pair of 1D arrays containing the products
+            w * jac(c wrt x) and w * jac(c wrt s), respectively.
 
         """
 
@@ -2192,15 +2172,15 @@ class MOOP:
         """ Evaluate the penalized objective using the surrogates as needed.
 
         Args:
-            x (numpy.ndarray): A 1d numpy.ndarray containing the (embedded)
-                design point to evaluate.
+            x (ndarray): A 1D array containing the (embedded) design point to
+                evaluate.
 
-            sx (numpy.ndarray): A 1d numpy.ndarray containing the (packed)
-                simulation vector at x.
+            sx (ndarray): A 1d array containing the (packed) simulation vector
+                at x.
 
         Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the result of the
-            evaluation.
+            ndarray: A 1D array containing the result of the objective
+            evaluation with a penalty added for violated constraints.
 
         """
 
@@ -2227,8 +2207,9 @@ class MOOP:
         Returns:
             (ndarray, (ndarray, ndarray)): The first entry is a 1D array
             containing the result of the evaluation, and the second entry
-            contains the extracted pair (xx, ssx) followed by the penalized
-            constraint activities.
+            contains (xx, ssx, activities) where (xx, ssx) are the extracted
+            values of x and sx, "activities" gives the pre-penalized constraint
+            activities.
     
         """
     
@@ -2249,14 +2230,16 @@ class MOOP:
     
         Args:
             res (tuple of ndarrays): Contains extracted value of x and the
-                unpacked value of sx computed during the forward pass.
+                unpacked value of sx computed during the forward pass followed
+                by a vector encoding the indicies/penalties for the active
+                constraints.
     
             w (ndarray): Contains the adjoint vector for the computation
-                succeeding the objective evaluation in the compute graph.
+                succeeding the penalty evaluation in the compute graph.
     
         Returns:
-            (ndarray, ndarray): A pair of 1D arrays containing the gradient
-            with respect to x and sx, respectively.
+            (ndarray, ndarray): A pair of 1D arrays containing the products
+            w * jac(c wrt x) and w * jac(c wrt s), respectively.
     
         """
 
@@ -2274,65 +2257,39 @@ class MOOP:
     def _compile(self):
         """ Compile the helper functions and link the fwd/bwd pass functions """
 
-        # Try to calculate the surrogate gradients
-        self.sur_grads = []
-        for i, si in enumerate(self.surrogates):
-            try:
-                self.sur_grads.append(jax.jacrev(si.evaluate))
-                dsdx = self.sur_grads[-1](jnp.zeros(self.n_feature))
-            except BaseException:
-                warnings.warn("jax failed to generate the jacobian for "
-                              f"the surrogate of {self.sim_schema[i][0]}."
-                              "Therefore, this surrogate is unsafe to use "
-                              "with gradient-based optimization solvers.")
-        self.suq_grads = []
-        if any([acqi.useSD() for acqi in self.acquisitions]):
-            for i, si in enumerate(self.surrogates):
-                try:
-                    self.suq_grads.append(jax.jacrev(si.stdDev))
-                    dsd_dx = suq_grad[-1](jnp.zeros(self.n_feature))
-                except BaseException:
-                    warnings.warn("jax failed to generate the jacobian for "
-                                  f"the standard deviation function of the "
-                                  "surrogate of {self.sim_schema[i][0]}."
-                                  "Therefore, this surrogate is unsafe to use "
-                                  "with gradient-based optimization solvers.")
+        logging.info("    jitting ParMOO's helper functions...")
+        try:
+            self.evaluate_surrogates = jax.jit(self._evaluate_surrogates)
+        except BaseException:
+            self.evaluate_surrogates = self._evaluate_surrogates
+            logging.info("      WARNING: MOOP._evaluate_surrogates"
+                         "failed to jit...")
 
-        # Link the forward/backward pass functions
+        try:
+            self.surrogate_uncertainty = jax.jit(self._surrogate_uncertainty)
+        except BaseException:
+            self.surrogate_uncertainty = self._surrogate_uncertainty
+            logging.info("      WARNING: MOOP._surrogate_uncertainty"
+                         "failed to jit...")
+        logging.info("    Done.")
 
-        # @jax.custom_vjp
-        # def eval_sur(x): return self._evaluate_surrogates(x)
-        # def sur_fwd(x): return self._sur_fwd(x)
-        # def sur_bwd(res, w): return self._sur_bwd(res, w)
-        # eval_sur.defvjp(sur_fwd, sur_bwd)
-        # self.evaluate_surrogates = eval_sur
-        self.evaluate_surrogates = self._evaluate_surrogates
-
-        # @jax.custom_vjp
-        # def eval_suq(x): return self._surrogate_uncertainty(x)
-        # def suq_fwd(x): return self._suq_fwd(x)
-        # def suq_bwd(res, w): return self._suq_bwd(res, w)
-        # eval_suq.defvjp(suq_fwd, suq_bwd)
-        # self.surrogate_uncertainty = eval_suq
-        self.surrogate_uncertainty = self._surrogate_uncertainty
-
+        logging.info("    Linking fwd and bwd passes for user functions...")
         @jax.custom_vjp
         def eval_obj(x, sx): return self._evaluate_objectives(x, sx)
         def obj_fwd(x, sx): return self._obj_fwd(x, sx)
         def obj_bwd(res, w): return self._obj_bwd(res, w)
         eval_obj.defvjp(obj_fwd, obj_bwd)
         self.evaluate_objectives = eval_obj
-
         @jax.custom_vjp
         def eval_con(x, sx): return self._evaluate_constraints(x, sx)
         def con_fwd(x, sx): return self._con_fwd(x, sx)
         def con_bwd(res, w): return self._con_bwd(res, w)
         eval_con.defvjp(con_fwd, con_bwd)
         self.evaluate_constraints = eval_con
-
         @jax.custom_vjp
         def eval_pen(x, sx): return self._evaluate_penalty(x, sx)
         def pen_fwd(x, sx): return self._pen_fwd(x, sx)
         def pen_bwd(res, w): return self._pen_bwd(res, w)
         eval_pen.defvjp(pen_fwd, pen_bwd)
         self.evaluate_penalty = eval_pen
+        logging.info("    Done.")
