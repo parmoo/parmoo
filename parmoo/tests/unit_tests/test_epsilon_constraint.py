@@ -27,37 +27,36 @@ def test_RandomConstraint():
     acqu = RandomConstraint(3, np.zeros(3), np.ones(3), {})
     # Try some bad targets to test error handling
     with pytest.raises(TypeError):
-        acqu.setTarget(5, lambda x: np.zeros(1), {})
+        acqu.setTarget(5, lambda x: np.zeros(1))
     with pytest.raises(AttributeError):
-        acqu.setTarget({'x_vals': []}, lambda x: np.zeros(0), {})
+        acqu.setTarget({'x_vals': []}, lambda x: np.zeros(0))
     with pytest.raises(ValueError):
         acqu.setTarget({'x_vals': np.ones(1), 'f_vals': np.ones(2)},
-                       lambda x: np.zeros(0), {})
+                       lambda x: np.zeros(0))
     with pytest.raises(ValueError):
         acqu.setTarget({'x_vals': np.ones((1, 1)), 'f_vals': np.ones((1, 3))},
-                       lambda x: np.zeros(0), {})
+                       lambda x: np.zeros(0))
     with pytest.raises(ValueError):
         acqu.setTarget({'x_vals': np.ones((1, 3)), 'f_vals': np.ones((1, 1))},
-                       lambda x: np.zeros(0), {})
+                       lambda x: np.zeros(0))
     with pytest.raises(TypeError):
-        acqu.setTarget(data, 5, {})
+        acqu.setTarget(data, 5)
     with pytest.raises(ValueError):
-        acqu.setTarget(data, lambda x, y, z: np.zeros(0), {})
+        acqu.setTarget(data, lambda x, y, z: np.zeros(0))
     data['c_vals'] = np.zeros((10, 1))
     # Set a few good target
-    assert (np.all(acqu.setTarget({}, lambda x: np.zeros(3), {}) < 1.0))
-    assert (np.all(acqu.setTarget({}, lambda x: np.zeros(3), {}) > 0.0))
+    assert (np.all(acqu.setTarget({}, lambda x: np.zeros(3)) < 1.0))
+    assert (np.all(acqu.setTarget({}, lambda x: np.zeros(3)) > 0.0))
     assert (np.all(acqu.setTarget({'x_vals': np.zeros((1, 3)),
                                    'f_vals': np.zeros((1, 3)),
                                    'c_vals': np.zeros((1, 1))},
-                                  lambda x: np.ones(3) * (0.01 - sum(x)),
-                                  {}) < 1.0))
-    assert (acqu.setTarget(data, lambda x: np.zeros(3), {}) in data['x_vals'])
+                                  lambda x: np.ones(3) * (0.01 - sum(x))) < 1.0))
+    assert (acqu.setTarget(data, lambda x: np.zeros(3)) in data['x_vals'])
     # Generate a random scalarization target and check the scalarization
     acqu = RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
-                   lambda x: np.zeros(3), {})
-    acqu.setTarget(data, lambda x: np.zeros(3), {})
+                   lambda x: np.zeros(3))
+    acqu.setTarget(data, lambda x: np.zeros(3))
     # Get a copy of the Pareto front for checking correctness
     pf = updatePF(data, {})
     # Check that the scalar value is either less than the sum of fi or bad
@@ -100,38 +99,37 @@ def test_EI_RandomConstraint():
     acqu = EI_RandomConstraint(3, np.zeros(3), np.ones(3), {})
     # Try some bad targets to test error handling
     with pytest.raises(TypeError):
-        acqu.setTarget(5, lambda x: np.zeros(1), {})
+        acqu.setTarget(5, lambda x: np.zeros(1))
     with pytest.raises(AttributeError):
-        acqu.setTarget({'x_vals': []}, lambda x: np.zeros(0), {})
+        acqu.setTarget({'x_vals': []}, lambda x: np.zeros(0))
     with pytest.raises(ValueError):
         acqu.setTarget({'x_vals': np.ones(1), 'f_vals': np.ones(2)},
-                       lambda x: np.zeros(0), {})
+                       lambda x: np.zeros(0))
     with pytest.raises(ValueError):
         acqu.setTarget({'x_vals': np.ones((1, 1)), 'f_vals': np.ones((1, 3))},
-                       lambda x: np.zeros(0), {})
+                       lambda x: np.zeros(0))
     with pytest.raises(ValueError):
         acqu.setTarget({'x_vals': np.ones((1, 3)), 'f_vals': np.ones((1, 1))},
-                       lambda x: np.zeros(0), {})
+                       lambda x: np.zeros(0))
     with pytest.raises(TypeError):
-        acqu.setTarget(data, 5, {})
+        acqu.setTarget(data, 5)
     with pytest.raises(ValueError):
-        acqu.setTarget(data, lambda x, y, z: np.zeros(0), {})
+        acqu.setTarget(data, lambda x, y, z: np.zeros(0))
     data['c_vals'] = np.zeros((10, 1))
     # Set a few good target
-    assert (np.all(acqu.setTarget({}, lambda x, sx=0: np.zeros(3), {}) < 1.0))
-    assert (np.all(acqu.setTarget({}, lambda x, sx=0: np.zeros(3), {}) > 0.0))
+    assert (np.all(acqu.setTarget({}, lambda x, sx=0: np.zeros(3)) < 1.0))
+    assert (np.all(acqu.setTarget({}, lambda x, sx=0: np.zeros(3)) > 0.0))
     assert (np.all(acqu.setTarget({'x_vals': np.zeros((1, 3)),
                                    'f_vals': np.zeros((1, 3)),
                                    'c_vals': np.zeros((1, 1))},
-                                  lambda x, sx=0: np.ones(3) * (0.01 - sum(x)),
-                                  {}) < 1.0))
-    assert (acqu.setTarget(data, lambda x, sx=0: np.zeros(3), {})
+                                  lambda x, sx=0: np.ones(3) * (0.01 - sum(x))) < 1.0))
+    assert (acqu.setTarget(data, lambda x, sx=0: np.zeros(3))
             in data['x_vals'])
     # Generate a random 1D scalarization target and check the scalarization
     acqu = EI_RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
-                   lambda x, sx=0: np.zeros(3), {})
-    acqu.setTarget(data, lambda x, sx=0: np.zeros(3), {})
+                   lambda x, sx=0: np.zeros(3))
+    acqu.setTarget(data, lambda x, sx=0: np.zeros(3))
     # Get a copy of the Pareto front for checking correctness
     pf = updatePF(data, {})
     # Check that the scalar value is either less than the sum of fi or bad
@@ -141,8 +139,8 @@ def test_EI_RandomConstraint():
     # Generate a random 2D scalarization target and check the scalarization
     acqu = EI_RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
-                   lambda x, sx=0: np.zeros(3), {})
-    acqu.setTarget(data, lambda x, sx=0: np.zeros(3), {})
+                   lambda x, sx=0: np.zeros(3))
+    acqu.setTarget(data, lambda x, sx=0: np.zeros(3))
     # Get a copy of the Pareto front for checking correctness
     pf = updatePF(data, {})
     # Check that the scalar value is either less than the sum of fi or bad
@@ -152,8 +150,8 @@ def test_EI_RandomConstraint():
     # Generate a random 3D scalarization target and check the scalarization
     acqu = EI_RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
-                   lambda x, sx=0: np.zeros(3), {})
-    acqu.setTarget(data, lambda x, sx=0: np.zeros(3), {})
+                   lambda x, sx=0: np.zeros(3))
+    acqu.setTarget(data, lambda x, sx=0: np.zeros(3))
     # Get a copy of the Pareto front for checking correctness
     pf = updatePF(data, {})
     # Check that the scalar value is either less than the sum of fi or bad

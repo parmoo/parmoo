@@ -39,15 +39,15 @@ def test_GlobalSurrogate_BFGS():
     def L(z, sz): return f(z, sz) + 2*(jnp.maximum(0.1-z[2], 0) + jnp.maximum(z[2]-0.6, 0))
     # Create 3 acquisition functions targeting various pure/tradeoff solutions
     acqu1 = UniformWeights(o, lb, ub, {})
-    acqu1.setTarget({}, L, {})
+    acqu1.setTarget({}, L)
     acqu1.weights[:] = 0.0
     acqu1.weights[0] = 1.0
     acqu2 = UniformWeights(o, lb, ub, {})
-    acqu2.setTarget({}, L, {})
+    acqu2.setTarget({}, L)
     acqu2.weights[:] = 0.0
     acqu2.weights[1] = 1.0
     acqu3 = UniformWeights(o, lb, ub, {})
-    acqu3.setTarget({}, L, {})
+    acqu3.setTarget({}, L)
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(TypeError):
@@ -144,15 +144,15 @@ def test_LocalSurrogate_BFGS():
     def L(z, sz): return f(z, sz) + 2*(jnp.maximum(0.1-z[2], 0) + jnp.maximum(z[2]-0.6, 0))
     # Create 3 acquisition functions targeting various pure/tradeoff solutions
     acqu1 = UniformWeights(o, lb, ub, {})
-    acqu1.setTarget({}, L, {})
+    acqu1.setTarget({}, L)
     acqu1.weights[:] = 0.0
     acqu1.weights[0] = 1.0
     acqu2 = UniformWeights(o, lb, ub, {})
-    acqu2.setTarget({}, L, {})
+    acqu2.setTarget({}, L)
     acqu2.weights[:] = 0.0
     acqu2.weights[1] = 1.0
     acqu3 = UniformWeights(o, lb, ub, {})
-    acqu3.setTarget({}, L, {})
+    acqu3.setTarget({}, L)
     acqu3.weights[:] = 0.5
     # Try some bad initializations to test error handling
     with pytest.raises(TypeError):
