@@ -96,6 +96,9 @@ class MOOP:
      * ``MOOP._evaluate_objectives(x, sx)``
      * ``MOOP._evaluate_constraints(x, sx)``
      * ``MOOP._evaluate_penalty(x, sx)``
+     * ``MOOP._vobj_funcs(x, sx)``
+     * ``MOOP._vcon_funcs(x, sx)``
+     * ``MOOP._vpen_funcs(x, sx, cx)``
 
     """
 
@@ -109,12 +112,13 @@ class MOOP:
                  # Schemas
                  'des_schema', 'sim_schema', 'obj_schema', 'con_schema',
                  # Constants, counters, and adaptive parameters
-                 'compiled', 'epsilon', 'iteration', 'lam',
+                 'compiled', 'empty', 'epsilon', 'iteration', 'lam',
                  # Checkpointing markers
                  'checkpoint', 'checkpoint_data', 'checkpoint_file',
                  'new_checkpoint', 'new_data',
                  # Design variables, simulations, objectives, and constraints
-                 'embedders', 'emb_hp', 'sim_funcs', 'obj_funcs', 'con_funcs',
+                 'embedders', 'emb_hp', 'sim_funcs',
+                 'obj_funcs', 'obj_grads', 'con_funcs', 'con_grads',
                  # Solver components
                  'acquisitions', 'searches', 'surrogates', 'optimizer',
                  # Database information
@@ -123,11 +127,13 @@ class MOOP:
                  'acq_tmp', 'opt_tmp', 'search_tmp', 'sur_tmp',
                  'acq_hp', 'opt_hp', 'sim_hp',
                  # Compiled function definitions -- These are only defined
-                 # after calling the MOOP._compile() method
+                 # after calling the MOOP.compile() method
                  'embed', 'extract', 'pack_sim', 'unpack_sim',
                  'evaluate_objectives', 'evaluate_constraints',
                  'evaluate_penalty',
-                 'evaluate_surrogates', 'surrogate_uncertainty'
+                 'evaluate_surrogates', 'surrogate_uncertainty',
+                 'vobj_funcs', 'vcon_funcs', 'vpen_funcs',
+                 'obj_bwd', 'con_bwd', 'pen_bwd'
                 ]
 
     def __init__(self, opt_func, hyperparams=None):
@@ -158,6 +164,7 @@ class MOOP:
         self.obj_schema, self.con_schema = [], []
         # Initialize the constants, counters, and adaptive parameters
         self.compiled = False
+        self.empty = jnp.zeros(0)
         self.epsilon = jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)
         self.iteration = 0
         self.lam = 1.0
@@ -168,13 +175,15 @@ class MOOP:
         # Initialize design variable embeddings
         self.embedders, self.emb_hp = [], []
         # Initialize simulations, objectives, constraints, and their metadata
-        self.sim_funcs, self.obj_funcs, self.con_funcs = [], [], []
+        self.sim_funcs = []
+        self.obj_funcs, self.obj_grads = [], []
+        self.con_funcs, self.con_grads = [], []
         # Initialize solver components and their metadata
         self.acquisitions, self.searches, self.surrogates = [], [], []
-        self.optimizer = None
-        self.acq_tmp, self.opt_tmp = [], None
-        self.search_tmp, self.sur_tmp = [], []
-        self.acq_hp, self.opt_hp, self.sim_hp = [], {}, []
+        self.acq_tmp, self.search_tmp, self.sur_tmp = [], [], []
+        self.acq_hp, self.sim_hp = [], []
+        self.optimizer, self.opt_tmp = None, None
+        self.opt_hp = {}
         # Initialize the database
         self.data, self.sim_db = {}, []
         self.n_dat = 0
@@ -330,8 +339,9 @@ class MOOP:
                    MOOP).
                  * m (int): The number of outputs for this simulation.
                  * sim_func (function): An implementation of the simulation
-                   function, mapping from R^n -> R^m. The interface should
-                   match: ``sim_out = sim_func(x)``.
+                   function, mapping from X -> R^m (where X is the design
+                   space). The interface should match:
+                   ``sim_out = sim_func(x)``.
                  * search (GlobalSearch): A GlobalSearch object for performing
                    the initial search over this simulation's design space.
                  * surrogate (SurrogateFunction): A SurrogateFunction object
@@ -389,13 +399,17 @@ class MOOP:
                    (defaults to "obj" + str(i), where i = 1, 2, 3, ... for the
                    first, second, third, ... simulation added to the MOOP).
                  * 'obj_func' (function): An algebraic objective function that
-                   maps from R^n X R^m --> R. Interface should match:
-                   ``cost = obj_func(x, sim_func(x), der=0)``,
-                   where ``der`` is an optional argument specifying whether to
-                   take the derivative of the objective function
-                    * 0 -- no derivative taken, return ``f(x, sim_func(x))``
-                    * 1 -- return derivative wrt x, or
-                    * 2 -- return derivative wrt sim(x).
+                   maps from X, S --> R, where X is the design space and S is
+                   the space of simulation outputs. Interface should match:
+                   ``cost = obj_func(x, sx)`` where the value ``sx`` is
+                   given by
+                   ``sx = sim_func(x)`` at runtime.
+                 * 'obj_grad' (function): Evaluates the gradients of
+                   ``obj_func`` wrt s and sx. Interface should match:
+                   ``dx, ds = obj_grad(x, sx)`` where the value ``sx`` is
+                   given by ``sx = sim_func(x)`` at runtime.
+                   The outputs ``dx`` and ``ds`` represent the gradients with
+                   respect to ``x`` and ``sx``, respectively.
 
         """
 
@@ -404,26 +418,29 @@ class MOOP:
             if not isinstance(arg, dict):
                 raise TypeError("Each arg must be a Python dict")
             if 'obj_func' in arg:
-                if callable(arg['obj_func']):
-                    if not (len(inspect.signature(arg['obj_func']).parameters)
-                            in [2, 3]):
-                        raise ValueError("The 'obj_func' must take 2 "
-                                         + "(no derivatives) or 3 "
-                                         + "(derivative option) arguments")
-                else:
+                if not callable(arg['obj_func']):
                     raise TypeError("The 'obj_func' must be callable")
+                if len(inspect.signature(arg['obj_func']).parameters) != 2:
+                    raise ValueError("The 'obj_func' must take 2 args")
             else:
-                raise AttributeError("Each arg must conatain an 'obj_func'")
-            # Add the objective name to the schema
+                raise AttributeError("Each arg must contain an 'obj_func'")
+            if 'obj_grad' in arg:
+                if not callable(arg['obj_grad']):
+                    raise TypeError("The 'obj_grad' must be callable")
+                if len(inspect.signature(arg['obj_grad']).parameters) != 2:
+                    raise ValueError("If present, 'obj_grad' must take 2 args")
+            # Check the objective name
             if 'name' in arg:
                 name = arg['name']
             else:
                 name = f"f{self.o + 1}"
             check_names(name, self.des_schema, self.sim_schema,
                         self.obj_schema, self.con_schema)
-            self.obj_schema.append((name, 'f8'))
             # Finally, if all else passed, add the objective
+            self.obj_schema.append((name, 'f8'))
             self.obj_funcs.append(arg['obj_func'])
+            if 'obj_grad' in arg:
+                self.obj_grads.append(arg['obj_grad'])
             self.o += 1
         return
 
@@ -436,16 +453,15 @@ class MOOP:
                  * 'name' (str, optional): The name of this constraint
                    (defaults to "const" + str(i), where i = 1, 2, 3, ... for
                    the first, second, third, ... constraint added to the MOOP).
-                 * 'constraint' (function): An algebraic constraint function
-                   that maps from R^n X R^m --> R and evaluates to zero or a
-                   negative number when feasible and positive otherwise.
-                   Interface should match:
-                   ``violation = constraint(x, sim_func(x), der=0)``,
-                   where `der` is an optional argument specifying whether to
-                   take the derivative of the constraint function
-                    * 0 -- no derivative taken, return c(x, sim_func(x))
-                    * 1 -- return derivative wrt x, or
-                    * 2 -- return derivative wrt  sim(x).
+                 * 'con_func' or 'constraint' (function): An algebraic
+                   constraint function that maps from X, S --> R where X and
+                   S are the design space and space of aggregated simulation
+                   outputs, respectively. The constraint function should
+                   evaluate to zero or a negative number when feasible and
+                   positive otherwise. The interface should match:
+                   ``violation = con_func(x, sx)`` where the value ``sx`` is
+                   given by
+                   ``sx = sim_func(x)`` at runtime.
                    Note that any
                    ``constraint(x, sim_func(x), der=0) <= 0``
                    indicates that x is feaseible, while
@@ -455,6 +471,12 @@ class MOOP:
                    It is the user's responsibility to ensure that after adding
                    all constraints, the feasible region is nonempty and has
                    nonzero measure in the design space.
+                 * 'con_grad' (function): Evaluates the gradients of
+                   ``con_func`` wrt s and sx. Interface should match:
+                   ``dx, ds = con_grad(x, sx)`` where the value ``sx`` is
+                   given by ``sx = sim_func(x)`` at runtime.
+                   The outputs ``dx`` and ``ds`` represent the gradients with
+                   respect to ``x`` and ``sx``, respectively.
 
         """
 
@@ -462,27 +484,38 @@ class MOOP:
             # Check that the constraint dictionary is a legal format
             if not isinstance(arg, dict):
                 raise TypeError("Each arg must be a Python dict")
-            if 'constraint' in arg:
-                if callable(arg['constraint']):
-                    if not (len(inspect.signature(arg['constraint']).
-                                parameters) in [2, 3]):
-                        raise ValueError("The 'constraint' must take 2 "
-                                         + "(no derivatives) or 3 "
-                                         + "(derivative option) arguments")
-                else:
+            if 'con_func' in arg:
+                if not callable(arg['con_func']):
+                    raise TypeError("The 'con_func' must be callable")
+                if len(inspect.signature(arg['con_func']).parameters) != 2:
+                    raise ValueError("The 'con_func' must take 2 args")
+            elif 'constraint' in arg:
+                if not callable(arg['constraint']):
                     raise TypeError("The 'constraint' must be callable")
+                if len(inspect.signature(arg['constraint']).parameters) != 2:
+                    raise ValueError("The 'constraint' must take 2 args")
             else:
-                raise AttributeError("Each arg must contain a 'constraint'")
-            # Add the constraint name
+                raise AttributeError("Each arg must contain a 'con_func'")
+            if 'con_grad' in arg:
+                if not callable(arg['con_grad']):
+                    raise TypeError("The 'con_grad' must be callable")
+                if len(inspect.signature(arg['con_grad']).parameters) != 2:
+                    raise ValueError("If present, 'con_grad' must take 2 args")
+            # Check the constraint name
             if 'name' in arg:
                 name = arg['name']
             else:
                 name = f"c{self.p + 1}"
             check_names(name, self.des_schema, self.sim_schema,
                         self.obj_schema, self.con_schema)
-            self.con_schema.append((name, 'f8'))
             # Finally, if all else passed, add the constraint
-            self.con_funcs.append(arg['constraint'])
+            self.con_schema.append((name, 'f8'))
+            if 'con_func' in arg:
+                self.con_funcs.append(arg['con_func'])
+            else:
+                self.con_funcs.append(arg['constraint'])
+            if 'con_grad' in arg:
+                self.con_grads.append(arg['con_grad'])
             self.p += 1
         return
 
@@ -539,7 +572,7 @@ class MOOP:
 
         """
 
-        logging.info("  Compiling the MOOP object...")
+        logging.info(" Compiling the MOOP object...")
         # For safety reasons, don't let silly users delete their data
         if self.n_dat > 0 or (len(self.sim_db) > 0 and
                               any([sdi['n'] > 0 for sdi in self.sim_db])):
@@ -558,7 +591,7 @@ class MOOP:
                           "purposes, but the ``solve()`` command won't "
                           "work correctly until you recompile with "
                           "one or more acquisition functions...")
-        logging.info("    Initializing MOOP solver component objects...")
+        logging.info("   Initializing MOOP solver's component objects...")
         # Reset the internal lists
         self.searches, self.surrogates = [], []
         self.acquisitions = []
@@ -567,6 +600,96 @@ class MOOP:
         lbs = np.asarray(self.latent_lb)
         ubs = np.asarray(self.latent_ub)
         des_tols = np.asarray(self.latent_des_tols)
+        # Jitting ParMOO embedders and extractors
+        logging.info("   jitting and testing ParMOO's embedders...")
+        xx1 = (lbs + ubs) / 2
+        sx1 = np.zeros(self.m)
+        try:
+            self.extract = jax.jit(self._extract)
+            x = self.extract(xx1)
+            for key in self.des_schema:
+                assert (key[0] in x)
+        except BaseException:
+            self.extract = self._extract
+            x = self.extract(xx1)
+            for key in self.des_schema:
+                assert (key[0] in x)
+            logging.info("     WARNING: 1 or more extractors failed to jit...")
+        try:
+            self.embed = jax.jit(self._embed)
+            xx2 = self.embed(x)
+            assert (xx2.shape == xx1.shape)
+        except BaseException:
+            self.embed = self._embed
+            xx2 = self.embed(x)
+            assert (xx2.shape == xx1.shape)
+            logging.info("     WARNING: 1 or more embedders failed to jit...")
+        try:
+            self.unpack_sim = jax.jit(self._unpack_sim)
+            sx = self.unpack_sim(sx1)
+            for key in self.sim_schema:
+                assert (key[0] in sx)
+        except BaseException:
+            self.unpack_sim = self._unpack_sim
+            sx = self.unpack_sim(sx1)
+            for key in self.sim_schema:
+                assert (key[0] in sx)
+            logging.info("     WARNING: MOOP._unpack_sim failed to jit...")
+        try:
+            self.pack_sim = jax.jit(self._pack_sim)
+            sx2 = self.pack_sim(sx)
+            assert (sx2.shape == sx1.shape)
+        except BaseException:
+            self.pack_sim = self._pack_sim
+            sx2 = self.pack_sim(sx)
+            assert (sx2.shape == sx1.shape)
+            logging.info("     WARNING: MOOP._pack_sim failed to jit...")
+        logging.info("   Done.")
+        # Jitting ParMOO objectives and constraints
+        logging.info("   jitting ParMOO's objective and constraints...")
+        def gerr(x, sx): raise ValueError("1 or more grad func is undefined")
+        try:
+            self.vobj_funcs = self._vobj_funcs
+        except BaseException:
+            self.vobj_funcs = self._vobj_funcs
+            logging.info("     WARNING: 1 or more obj_funcs failed to jit...")
+        try:
+            self.vcon_funcs = self._vcon_funcs
+        except BaseException:
+            self.vcon_funcs = self._vcon_funcs
+            logging.info("     WARNING: 1 or more con_funcs failed to jit...")
+        try:
+            self.vpen_funcs = self._vpen_funcs
+        except BaseException:
+            self.vpen_funcs = self._vpen_funcs
+            logging.info("     WARNING: MOOP._vpen_funcs failed to jit...")
+        if len(self.obj_grads) == self.o:
+            try:
+                self.obj_bwd = self._obj_bwd
+            except BaseException:
+                self.obj_bwd = self._obj_bwd
+                logging.info("     WARNING: 1 or more obj_grads failed to "
+                             "jit...")
+        else:
+            self.obj_bwd = gerr
+        if len(self.con_grads) == self.p:
+            try:
+                self.con_bwd = self._con_bwd
+            except BaseException:
+                self.con_bwd = self._con_bwd
+                logging.info("     WARNING: 1 or more con_grads failed to "
+                             "jit...")
+        else:
+            self.con_bwd = gerr
+        if len(self.obj_grads) == self.o and len(self.con_grads) == self.p:
+            try:
+                self.pen_bwd = self._pen_bwd
+            except BaseException:
+                self.pen_bwd = self._pen_bwd
+                logging.info("     WARNING: MOOP._pen_grads failed to jit...")
+        else:
+            self.pen_bwd = gerr
+        logging.info("   Done.")
         # Initialize the simulation components
         for i in range(self.s):
             mi = self.m_list[i]
@@ -594,56 +717,9 @@ class MOOP:
         for i, acquisition in enumerate(self.acquisitions):
             self.optimizer.addAcquisition(acquisition)
         self.optimizer.setTrFunc(self._set_surrogate_tr)
-        logging.info("    Done.")
-        # Jitting ParMOO embedders and extractors
-        logging.info("    jitting and testing ParMOO's embedders...")
-        try:
-            self.extract = jax.jit(self._extract)
-            xx1 = (np.asarray(self.latent_lb) + np.asarray(self.latent_ub)) / 2
-            x = self.extract(xx1)
-            for key in self.des_schema:
-                assert (key[0] in x)
-        except BaseException:
-            self.extract = self._extract
-            xx1 = (np.asarray(self.latent_lb) + np.asarray(self.latent_ub)) / 2
-            x = self.extract(xx1)
-            for key in self.des_schema:
-                assert (key[0] in x)
-            logging.info("      WARNING: MOOP._extract failed to jit...")
-        try:
-            self.embed = jax.jit(self._embed)
-            xx2 = self.embed(x)
-            assert (xx2.shape == xx1.shape)
-        except BaseException:
-            self.embed = self._embed
-            xx2 = self.embed(x)
-            assert (xx2.shape == xx1.shape)
-            logging.info("      WARNING: MOOP._embed failed to jit...")
-        try:
-            self.unpack_sim = jax.jit(self._unpack_sim)
-            sx1 = np.zeros(self.m)
-            sx = self.unpack_sim(sx1)
-            for key in self.sim_schema:
-                assert (key[0] in sx)
-        except BaseException:
-            self.unpack_sim = self._unpack_sim
-            sx1 = np.zeros(self.m)
-            sx = self.unpack_sim(sx1)
-            for key in self.sim_schema:
-                assert (key[0] in sx)
-            logging.info("      WARNING: MOOP._unpack_sim failed to jit...")
-        try:
-            self.pack_sim = jax.jit(self._pack_sim)
-            sx2 = self.pack_sim(sx)
-            assert (sx2.shape == sx1.shape)
-        except BaseException:
-            self.pack_sim = self._pack_sim
-            sx2 = self.pack_sim(sx)
-            assert (sx2.shape == sx1.shape)
-            logging.info("      WARNING: MOOP._pack_sim failed to jit...")
-        logging.info("    Done.")
+        logging.info("   Done.")
         # Initialize the optimizer database
-        logging.info("    Initializing ParMOO's internal databases...")
+        logging.info("   Initializing ParMOO's internal databases...")
         self.n_dat = 0
         self.data = {'x_vals': np.zeros((1, self.n_latent)),
                      'f_vals': np.zeros((1, self.o)),
@@ -658,9 +734,9 @@ class MOOP:
                                 's_vals': np.zeros((1, mi)),
                                 'n': 0,
                                 'old': 0})
-        logging.info("    Done.")
+        logging.info("   Done.")
         # Set compiled flat go True
-        logging.info("  Compilation finished.")
+        logging.info(" Compilation finished.")
         self.compiled = True
         # Print problem summary
         logging.info(" Summary of ParMOO problem and settings:")
@@ -1889,7 +1965,7 @@ class MOOP:
 
         xx = []
         for i, ei in enumerate(self.embedders):
-            xx.append(jnp.array(ei.embed(x[self.des_schema[i][0]])))
+            xx.append(ei.embed(x[self.des_schema[i][0]]))
         return jnp.concatenate(xx, axis=None)
 
     def _extract(self, x):
@@ -1926,9 +2002,9 @@ class MOOP:
 
         """
 
-        sx_list = [jnp.zeros(0)]
+        sx_list = [self.empty]
         for i in range(self.s):
-            sx_list.append(jnp.array(sx[self.sim_schema[i][0]]))
+            sx_list.append(sx[self.sim_schema[i][0]])
         return jnp.concatenate(sx_list, axis=None)
 
     def _unpack_sim(self, sx):
@@ -1951,6 +2027,72 @@ class MOOP:
             sx_out[self.sim_schema[i][0]] = sx[istart:iend]
             istart = iend
         return sx_out
+
+    def _vobj_funcs(self, x, sx):
+        """ Jittable evaluation of all objectives from the feature space.
+
+        Args:
+            x (dict): A Python dictionary containing the design point to
+                evaluate.
+
+            sx (dict): A Python dictionary containing the simulation outputs
+                at x.
+
+        Returns:
+            ndarray: A 1D array containing the result of the evaluation.
+
+        """
+
+        fx_list = [self.empty]
+        for obj_func in self.obj_funcs:
+            fx_list.append(obj_func(x, sx))
+        return jnp.concatenate(fx_list, axis=None)
+
+    def _vcon_funcs(self, x, sx):
+        """ Jittable evaluation of all constraints from the feature space.
+
+        Args:
+            x (dict): A Python dictionary containing the design point to
+                evaluate.
+
+            sx (dict): A Python dictionary containing the simulation outputs
+                at x.
+
+        Returns:
+            ndarray: A 1D array containing the list of constraint violations
+            at x, where a negative or zero score implies feasibility.
+
+        """
+
+        cx_list = [self.empty]
+        for con_func in self.con_funcs:
+            cx_list.append(con_func(x, sx))
+        return jnp.concatenate(cx_list, axis=None)
+
+    def _vpen_funcs(self, x, sx, cx, lamx):
+        """ Jittable evaluation of all penalties from the feature space.
+
+        Args:
+            x (dict): A Python dictionary containing the design point to
+                evaluate.
+
+            sx (dict): A Python dictionary containing the simulation outputs
+                at x.
+
+            cx (float): The aggregated constraint violations at x.
+
+            lamx (float): The penalty parameter to apply.
+
+        Returns:
+            ndarray: A 1D array containing the result of the evaluation.
+
+        """
+
+        px = cx * lamx
+        fx_list = [self.empty]
+        for obj_func in self.obj_funcs:
+            fx_list.append(obj_func(x, sx) + px)
+        return jnp.concatenate(fx_list, axis=None)
 
     def _fit_surrogates(self):
         """ Fit the surrogate models using the current sim databases. """
@@ -2006,7 +2148,7 @@ class MOOP:
 
         """
 
-        sx_list = [jnp.zeros(0)]
+        sx_list = [self.empty]
         for surrogate in self.surrogates:
             sx_list.append(surrogate.evaluate(x))
         return jnp.concatenate(sx_list, axis=None)
@@ -2024,13 +2166,13 @@ class MOOP:
 
         """
 
-        sdx_list = [jnp.zeros(0)]
+        sdx_list = [self.empty]
         for surrogate in self.surrogates:
             sdx_list.append(surrogate.stdDev(x))
         return jnp.concatenate(sdx_list, axis=None)
 
     def _evaluate_objectives(self, x, sx):
-        """ Evaluate all objectives using the simulation surrogates as needed.
+        """ Evaluate all objectives from the latent space.
 
         Args:
             x (ndarray): A 1D array containing the (embedded) design point to
@@ -2046,10 +2188,7 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        fx_list = [jnp.zeros(0)]
-        for obj_func in self.obj_funcs:
-            fx_list.append(jnp.array(obj_func(xx, ssx)))
-        return jnp.concatenate(fx_list, axis=None)
+        return self.vobj_funcs(xx, ssx)
 
     def _obj_fwd(self, x, sx):
         """ Evaluate a forward pass over the objective functions.
@@ -2070,10 +2209,7 @@ class MOOP:
     
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        fx_list = [jnp.zeros(0)]
-        for obj_func in self.obj_funcs:
-            fx_list.append(jnp.array(obj_func(xx, ssx)))
-        return jnp.concatenate(fx_list, axis=None), (xx, ssx)
+        return self.vobj_funcs(xx, ssx), (xx, ssx)
 
     def _obj_bwd(self, res, w):
         """ Evaluate a backward pass over the objective functions.
@@ -2092,14 +2228,10 @@ class MOOP:
         """
     
         xx, ssx = res
-        dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
-        for i, obj_func in enumerate(self.obj_funcs):
-            dfdx = dfdx + self.embed(obj_func(xx, ssx, der=1)) * w[i]
-            dfds = dfds + self.pack_sim(obj_func(xx, ssx, der=2)) * w[i]
-        return dfdx, dfds
+        return self.vobj_grads(xx, ssx, w)
 
     def _evaluate_constraints(self, x, sx):
-        """ Evaluate the constraints using the simulation surrogates as needed.
+        """ Evaluate the constraints from the latent space.
 
         Args:
             x (ndarray): A 1D array containing the (embedded) design point to
@@ -2116,10 +2248,7 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        cx_list = [jnp.zeros(0)]
-        for con_func in self.con_funcs:
-            cx_list.append(jnp.array(con_func(xx, ssx)))
-        return jnp.concatenate(cx_list, axis=None)
+        return self.vcon_funcs(xx, ssx)
 
     def _con_fwd(self, x, sx):
         """ Evaluate a forward pass over the constraint functions.
@@ -2140,10 +2269,7 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        cx_list = [jnp.zeros(0)]
-        for con_func in self.con_funcs:
-            cx_list.append(jnp.array(con_func(xx, ssx)))
-        return jnp.concatenate(cx_list, axis=None), (xx, ssx)
+        return self.vcon_funcs(xx, ssx), (xx, ssx)
 
     def _con_bwd(self, res, w):
         """ Evaluate a backward pass over the constraint functions.
@@ -2163,13 +2289,14 @@ class MOOP:
 
         xx, ssx = res
         dcdx, dcds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
-        for i, con_func in enumerate(self.con_funcs):
-            dcdx = dfdx + self.embed(con_func(xx, ssx, der=1)) * w[i]
-            dcds = dfdx + self.pack_sim(con_func(xx, ssx, der=2)) * w[i]
+        for i, con_grad in enumerate(self.con_grads):
+            x_grad, s_grad = con_grad(xx, ssx)
+            dcdx += self.embed(x_grad) * w[i]
+            dcds += self.pack_sim(s_grad) * w[i]
         return dcdx, dcds
 
     def _evaluate_penalty(self, x, sx):
-        """ Evaluate the penalized objective using the surrogates as needed.
+        """ Evaluate the penalized objective from the latent space.
 
         Args:
             x (ndarray): A 1D array containing the (embedded) design point to
@@ -2186,13 +2313,8 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        fx_list = [jnp.zeros(0)]
-        for obj_func in self.obj_funcs:
-            fx_list.append(jnp.array(obj_func(xx, ssx)))
-        cx = 0.0
-        for con_func in self.con_funcs:
-            cx += jnp.maximum(con_func(xx, ssx), 0)
-        return jnp.concatenate(fx_list, axis=None) + (self.lam * cx)
+        cx = jnp.sum(jnp.maximum(self.vcon_funcs(xx, ssx), 0.0))
+        return self.vpen_func(xx, ssx, cx, self.lam)
 
     def _pen_fwd(self, x, sx):
         """ Evaluate a forward pass over the penalized objective functions.
@@ -2205,25 +2327,18 @@ class MOOP:
                 vector at x.
     
         Returns:
-            (ndarray, (ndarray, ndarray)): The first entry is a 1D array
-            containing the result of the evaluation, and the second entry
-            contains (xx, ssx, activities) where (xx, ssx) are the extracted
-            values of x and sx, "activities" gives the pre-penalized constraint
-            activities.
+            (ndarray, tuple): The first entry is a 1D array containing the
+            result of the evaluation, and the second entry contains the tuple
+            (xx, ssx, activities) where xx and ssx are the extracted values of
+            x and sx, and "activities" gives the active constraint penalties.
     
         """
     
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        fx_list, cx_list = [jnp.zeros(0)], [jnp.zeros(0)]
-        for con_func in self.con_funcs:
-            cx_list.append(jnp.array(jnp.maximum(con_func(xx, ssx), 0)))
-        cx_cat = jnp.concatenate(cx_list, axis=None)
-        cx_lam = jnp.sum(cx_cat) * self.lam
-        for obj_func in self.obj_funcs:
-            fx_list.append(jnp.array(obj_func(xx, ssx)) + cx_lam)
-        act = (jnp.isclose(cx_cat, jnp.zeros(cx_cat.shape)) - 1) * -self.lam
-        return jnp.concatenate(fx_list, axis=None), (xx, ssx, act)
+        cx = jnp.maximum(self.vcon_funcs(xx, ssx), 0.0)
+        act = (jnp.isclose(cx, jnp.zeros(cx.shape)) - 1) * -self.lam
+        return self.vpen_funcs(xx, ssx, jnp.sum(cx), self.lam), (xx, ssx, act)
 
     def _pen_bwd(self, res, w):
         """ Evaluate a backward pass over the penalized objective functions.
@@ -2244,20 +2359,18 @@ class MOOP:
         """
 
         xx, ssx, act = res
-        dcdx, dcds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
-        for i, con_func in enumerate(self.con_funcs):
-            dcdx = dcdx + self.embed(con_func(xx, ssx, der=1)) * act[i]
-            dcds = dcds + self.pack_sim(con_func(xx, ssx, der=2)) * act[i]
-        dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
+        dcdx, dcds = self._con_bwd((xx, ssx), act)
+        dfdx = dcdx * jnp.sum(w)
+        dfds = dcds * jnp.sum(w)
         for i, obj_func in enumerate(self.obj_funcs):
-            dfdx = dfdx + (self.embed(obj_func(xx, ssx, der=1)) + dcdx) * w[i]
-            dfds = dfds + (self.pack_sim(obj_func(xx, ssx, der=2)) + dcds) * w[i]
+            x_grad, s_grad = obj_grad(xx, ssx)
+            dfdx += self.embed(x_grad) * w[i]
+            dfds += self.pack_sim(s_grad) * w[i]
         return dfdx, dfds
 
     def _compile(self):
         """ Compile the helper functions and link the fwd/bwd pass functions """
 
-        logging.info("    jitting ParMOO's helper functions...")
         try:
             self.evaluate_surrogates = jax.jit(self._evaluate_surrogates)
         except BaseException:
@@ -2271,25 +2384,19 @@ class MOOP:
             self.surrogate_uncertainty = self._surrogate_uncertainty
             logging.info("      WARNING: MOOP._surrogate_uncertainty"
                          "failed to jit...")
-        logging.info("    Done.")
 
-        logging.info("    Linking fwd and bwd passes for user functions...")
         @jax.custom_vjp
         def eval_obj(x, sx): return self._evaluate_objectives(x, sx)
         def obj_fwd(x, sx): return self._obj_fwd(x, sx)
-        def obj_bwd(res, w): return self._obj_bwd(res, w)
-        eval_obj.defvjp(obj_fwd, obj_bwd)
+        eval_obj.defvjp(obj_fwd, self.obj_bwd)
         self.evaluate_objectives = eval_obj
         @jax.custom_vjp
         def eval_con(x, sx): return self._evaluate_constraints(x, sx)
         def con_fwd(x, sx): return self._con_fwd(x, sx)
-        def con_bwd(res, w): return self._con_bwd(res, w)
-        eval_con.defvjp(con_fwd, con_bwd)
+        eval_con.defvjp(con_fwd, self.con_bwd)
         self.evaluate_constraints = eval_con
         @jax.custom_vjp
         def eval_pen(x, sx): return self._evaluate_penalty(x, sx)
         def pen_fwd(x, sx): return self._pen_fwd(x, sx)
-        def pen_bwd(res, w): return self._pen_bwd(res, w)
-        eval_pen.defvjp(pen_fwd, pen_bwd)
+        eval_pen.defvjp(pen_fwd, self.pen_bwd)
         self.evaluate_penalty = eval_pen
-        logging.info("    Done.")

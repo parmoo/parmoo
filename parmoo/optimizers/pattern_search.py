@@ -136,12 +136,12 @@ class LocalSurrogate_PS(SurrogateOptimizer):
 
         """
 
-        sx_in = np.asarray(self.simulations(x_in))
+        sx_in = self.simulations(x_in)
         if self.acquisitions[self.q_ind].useSD():
-            sdx_in = np.asarray(self.sim_sd(x_in))
+            sdx_in = self.sim_sd(x_in)
         else:
-            sdx_in = np.zeros(sx_in.size)
-        fx_in = np.asarray(self.penalty_func(x_in, sx_in)).flatten()
+            sdx_in = jnp.zeros(sx_in.size)
+        fx_in = self.penalty_func(x_in, sx_in)
         ax = self.acquisitions[self.q_ind].scalarize(fx_in, x_in,
                                                      sx_in, sdx_in)
         return ax

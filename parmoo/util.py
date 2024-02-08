@@ -6,10 +6,11 @@ These functions may also be of external interest. They are:
  * check_sims(n, arg1, arg2, ...)
  * lex_leq(a, b)
  * updatePF(data, nondom)
- * unpack(x, dtype)
+ * to_array(x, dtype)
 
 """
 
+from jax import numpy as jnp
 import numpy as np
 from parmoo import structs
 import inspect
@@ -392,51 +393,46 @@ def updatePF(data, nondom):
             'c_vals': nondom_out['c_vals'][:ndpts, :]}
 
 
-def unpack(x, dtype):
-    """ Unpack an input vector of given dtype into a numpy.ndarray.
+def to_array(x, dtype):
+    """ Unroll a ParMOO variable of the given dtype into a flat numpy array.
 
     Args:
-        x (numpy.ndarray or numpy structured array): The input vector,
-            which needs to be unpacked.
+        x (dict or numpy structured array): A ParMOO variable, which needs to
+            be unrolled in a ndarray for convenience.
 
-        dtype (numpy.dtype): The dtype of the input x.
+        dtype (numpy.dtype): The numpy.dtype of x.
 
     Returns:
-        numpy.ndarray: x unpacked into a 1-dimensional numpy.ndarray.
+        ndarray: a 1D array containing the values in x unrolled into an
+        ndarray format, ordered by their order in the dtype.names.
 
     """
 
-    # Check for illegal inputs
-    try:
-        xdt = np.dtype(dtype)
-    except BaseException:
-        raise TypeError("dtype does not match any known numpy dtype")
-    try:
-        x_in = np.array(x)
-    except BaseException:
-        raise TypeError("x could not be cast as a numpy.array")
-    if (xdt.names is None) != (x_in.dtype.names is None):
-        raise TypeError("x and given dtype are incompatible")
-    elif (xdt.names is not None) and any([name not in x_in.dtype.names
-                                          for name in xdt.names]):
-        raise TypeError("x and given dtype are incompatible")
-    elif (xdt.names is None) and np.prod(xdt.shape) != np.prod(x_in.shape):
-        raise TypeError("x and given dtype are incompatible")
-    # Convert inputs to a numpy ndarray if necessary
-    use_names = xdt.names is not None
-    if use_names:
-        # Allocate output ndarray
-        n = 0
-        for name in xdt.names:
-            n += x_in[name].size
-        xx = np.zeros(n)
-        # Unpack the x vector
-        i = 0
-        for name in xdt.names:
-            j = x_in[name].size
-            xx[i:i+j] = x_in[name].flatten()
-            i += j
-    # Otherwise, do nothing
-    else:
-        xx = x_in
+    xx = []
+    for namei in dtype.names:
+        xx.append(x[namei])
+    return jnp.concatenate(xx, axis=None)
+
+
+def from_array(x, dtype):
+    """ Roll a flat ndarray back up into a ParMOO variable of the given dtype.
+
+    Args:
+        x (ndarray): A 1D array whose length matches the sum of the lengths of
+            all fields for the dtype.
+
+        dtype (numpy.dtype): The numpy.dtype of the needed output.
+
+    Returns:
+        dict: a ParMOO dictionary representation of x whose keys match the
+        names in dtype and contains the values in x.
+
+    """
+
+    xx = {}
+    istart = 0
+    for namei in dtype.names:
+        iend = istart + dtype[namei].shape[0]
+        xx{namei} = x[istart:iend]
+        istart = iend
     return xx

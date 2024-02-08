@@ -188,13 +188,13 @@ def test_MOOP_addObjective():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
+          'sim_func': lambda x: 0.0,
           'surrogate': GaussRBF}
     g2 = {'n': 3,
           'm': 2,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
+          'sim_func': lambda x: [1.0, 0.5],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
     # Try to add bad objectives and check that appropriate errors are raised
@@ -209,16 +209,17 @@ def test_MOOP_addObjective():
     # Check that no objectives were added yet
     assert (moop.o == 0)
     # Now add 3 good objectives
-    moop.addObjective({'obj_func': lambda x, s: x[0]})
+    moop.addObjective({'obj_func': lambda x, s: 0.0})
     assert (moop.o == 1)
-    moop.addObjective({'obj_func': lambda x, s: s[0]},
-                      {'obj_func': lambda x, s, der=0: s[1]})
+    moop.addObjective({'obj_func': lambda x, s: 0.0},
+                      {'obj_func': lambda x, s: 0.0,
+                       'obj_grad': lambda x, s: (x, s)})
     assert (moop.o == 3)
-    moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: s[0]})
+    moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: 0.0})
     assert (moop.o == 4)
     # Try to use a repeated name to test error handling
     with pytest.raises(ValueError):
-        moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: s[0]})
+        moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: 0.0})
     assert (moop.obj_schema[0] == ("f1", 'f8'))
     assert (moop.obj_schema[1] == ("f2", 'f8'))
     assert (moop.obj_schema[2] == ("f3", 'f8'))
@@ -248,13 +249,13 @@ def test_MOOP_addConstraint():
           'm': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
+          'sim_func': lambda x: 0.0,
           'surrogate': GaussRBF}
     g2 = {'n': 3,
           'm': 2,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
+          'sim_func': lambda x: [1.0, 0.5],
           'surrogate': GaussRBF}
     moop.addSimulation(g1, g2)
     # Try to add bad constraints and check that appropriate errors are raised
@@ -263,22 +264,27 @@ def test_MOOP_addConstraint():
     with pytest.raises(AttributeError):
         moop.addConstraint({})
     with pytest.raises(TypeError):
+        moop.addConstraint({'con_func': 0})
+    with pytest.raises(ValueError):
+        moop.addConstraint({'con_func': lambda x: 0.0})
+    with pytest.raises(TypeError):
         moop.addConstraint({'constraint': 0})
     with pytest.raises(ValueError):
         moop.addConstraint({'constraint': lambda x: 0.0})
     # Check that no constraints were added yet
     assert (moop.p == 0)
     # Now add 3 good constraints
-    moop.addConstraint({'constraint': lambda x, s: x[0]})
+    moop.addConstraint({'constraint': lambda x, s: 0.0})
     assert (moop.p == 1)
-    moop.addConstraint({'constraint': lambda x, s: s[0]},
-                       {'constraint': lambda x, s, der=0: s[1] + s[2]})
+    moop.addConstraint({'con_func': lambda x, s: 0.0},
+                       {'con_func': lambda x, s: 0.0,
+                        'con_grad': lambda x, s: (x, s)})
     assert (moop.p == 3)
-    moop.addConstraint({'name': "Bobo", 'constraint': lambda x, s: s[0]})
+    moop.addConstraint({'name': "Bobo", 'constraint': lambda x, s: 0.0})
     assert (moop.p == 4)
     # Try to use a repeated name to test error handling
     with pytest.raises(ValueError):
-        moop.addConstraint({'name': "Bobo", 'constraint': lambda x, s: s[0]})
+        moop.addConstraint({'name': "Bobo", 'con_func': lambda x, s: 0.0})
     assert (moop.con_schema[0] == ("c1", 'f8'))
     assert (moop.con_schema[1] == ("c2", 'f8'))
     assert (moop.con_schema[2] == ("c3", 'f8'))
@@ -305,9 +311,9 @@ def test_MOOP_addAcquisition():
     moop = MOOP(LocalSurrogate_PS)
     for i in range(3):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop.addObjective({'obj_func': lambda x, s: x[0]},
-                      {'obj_func': lambda x, s: x[1]},
-                      {'obj_func': lambda x, s: x[2]})
+    moop.addObjective({'obj_func': lambda x, s: 0.0},
+                      {'obj_func': lambda x, s: 0.0},
+                      {'obj_func': lambda x, s: 0.0})
     # Try to add bad acquisition functions and check for an appropriate error
     with pytest.raises(TypeError):
         moop.addAcquisition(0)
@@ -359,11 +365,11 @@ def test_MOOP_getTypes():
     g1 = {'m': 1,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
+          'sim_func': lambda x: [0.0],
           'surrogate': GaussRBF}
     moop.addSimulation(g1)
-    moop.addObjective({'obj_func': lambda x, s: [sum(s)]})
-    moop.addConstraint({'constraint': lambda x, s: [sum(s) - 1]})
+    moop.addObjective({'obj_func': lambda x, s: 0.0})
+    moop.addConstraint({'constraint': lambda x, s: 0.0})
     # Check the dtypes
     assert (np.zeros(1, dtype=moop.getDesignType()).size == 1)
     assert (np.zeros(1, dtype=moop.getSimulationType()).size == 1)

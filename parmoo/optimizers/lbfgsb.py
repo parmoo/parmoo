@@ -139,7 +139,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
 
                 def scalar_f(x, *args):
                     sx = self.simulations(x)
-                    sdx = np.zeros(sx.size)
+                    sdx = jnp.zeros(sx.size)
                     fx = self.penalty_func(x, sx)
                     return acquisition.scalarize(fx, x, sx, sdx)
 

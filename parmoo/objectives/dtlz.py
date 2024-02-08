@@ -30,7 +30,7 @@ The 7 DTLZ problems included here are:
 """
 
 from parmoo.objectives import obj_func
-from parmoo.util import unpack
+from parmoo.util import to_array, from_array
 import numpy as np
 
 
@@ -93,76 +93,49 @@ class dtlz1_obj(obj_func):
         self.o = num_obj
         return
 
-    def __call__(self, x, sim, der=0):
+    def __call__(self, x, sx):
         """ Define simulation evaluation.
 
         Args:
             x (numpy.array): A numpy.ndarray (unnamed) or numpy structured
                 array (named), containing the design point to evaluate.
 
-            sim (numpy.array): A numpy.ndarray (unnamed) or numpy structured
+            sx (numpy.array): A numpy.ndarray (unnamed) or numpy structured
                 array (named), containing the corresponding simulation
                 outputs.
-
-            der (int, optional): Specifies whether to take derivative
-                (and wrt which variables).
-                 * der=1: take derivatives wrt x
-                 * der=2: take derivatives wrt sim
-                 * other: no derivatives
-                Default value is der=0.
 
         Returns:
             numpy.ndarray: The output of this simulation for the input x.
 
         """
 
-        # Extract x into xx and sim into sx, if names are used
-        xx = unpack(x, self.des_type)
-        sx = unpack(sim, self.sim_type)
+        # Roll x into xx and sx into ssx
+        xx = to_array(x, self.des_type)
+        ssx = to_array(sx, self.sim_type)
         # Evaluate derivative wrt xx
-        if der == 1:
+        if False:
             dx = np.zeros(self.n)
             i = self.obj_ind
             for j in range(self.o - i):
                 if j < self.o - i - 1:
                     dx[j] = (np.prod(xx[0:j]) * np.prod(xx[j+1:self.o-i-1])
-                             * (1 + sx[0]) / 2)
+                             * (1 + ssx[0]) / 2)
                     if i > 0:
                         dx[j] *= (1.0 - xx[self.o - i - 1])
                 elif j == self.o - i - 1 and i != 0:
-                    dx[j] = -(np.prod(xx[0:self.o-i-1]) * (1 + sx[0]) / 2)
-            if self.use_names:
-                result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type.names):
-                    result[0][name] = dx[i]
-                return result[0]
-            else:
-                return dx
-        # Evaluate derivative wrt sx
-        elif der == 2:
-            # Initialize output array
-            ds = np.zeros(self.m)
+                    dx[j] = -(np.prod(xx[0:self.o-i-1]) * (1 + ssx[0]) / 2)
             i = self.obj_ind
-            ds[0] = np.prod(xx[:self.o - i - 1]) / 2
+            ds = np.array(np.prod(xx[:self.o - i - 1]) / 2).flatten()
             if i > 0:
-                ds[0] *= (1 - xx[self.o - i - 1])
-            if self.use_names:
-                result = np.zeros(1, dtype=self.sim_type)
-                for name in self.sim_type.names:
-                    result[0][name] = ds[0]
-                return result[0]
-            else:
-                return ds
-        # Evaluate fx
-        else:
-            # Initialize output array
-            fx = 1.0 + sx[0]
-            # Calculate the output array
-            i = self.obj_ind
-            fx = np.prod(xx[:self.o - 1 - i]) * (1 + sx[0]) / 2
-            if i > 0:
-                fx *= (1 - xx[self.o - 1 - i])
-            return fx
+                ds *= (1 - xx[self.o - i - 1])
+            return from_array(dx, self.des_type), from_array(ds, self.sim_type)
+        # Initialize output array
+        fx = 1.0 + ssx[0]
+        i = self.obj_ind
+        fx = jnp.prod(xx[:self.o - 1 - i]) * (1 + ssx[0]) / 2
+        if i > 0:
+            fx *= (1 - xx[self.o - 1 - i])
+        return fx
 
 
 class dtlz2_obj(obj_func):
@@ -223,23 +196,16 @@ class dtlz2_obj(obj_func):
         self.o = num_obj
         return
 
-    def __call__(self, x, sim, der=0):
+    def __call__(self, x, s):
         """ Define simulation evaluation.
 
         Args:
             x (numpy.array): A numpy.ndarray (unnamed) or numpy structured
                 array (named), containing the design point to evaluate.
 
-            sim (numpy.array): A numpy.ndarray (unnamed) or numpy structured
+            sx (numpy.array): A numpy.ndarray (unnamed) or numpy structured
                 array (named), containing the corresponding simulation
                 outputs.
-
-            der (int, optional): Specifies whether to take derivative
-                (and wrt which variables).
-                 * der=1: take derivatives wrt x
-                 * der=2: take derivatives wrt sim
-                 * other: no derivatives
-                Default value is der=0.
 
         Returns:
             numpy.ndarray: The output of this simulation for the input x.
@@ -248,9 +214,9 @@ class dtlz2_obj(obj_func):
 
         # Extract x into xx and sim into sx, if names are used
         xx = unpack(x, self.des_type)
-        sx = unpack(sim, self.sim_type)
+        ssx = unpack(sx, self.sim_type)
         # Evaluate derivative wrt xx
-        if der == 1:
+        if False:
             dx = np.zeros(self.n)
             i = self.obj_ind
             for j in range(self.o - i):
@@ -258,45 +224,25 @@ class dtlz2_obj(obj_func):
                     dx[j] = (np.prod(np.cos(xx[:j] * np.pi / 2)) *
                              (-np.pi / 2) * np.sin(xx[j] * np.pi / 2) *
                              np.prod(np.cos(xx[j+1:self.o-i-1] * np.pi / 2)) *
-                             (1 + sx[0]))
+                             (1 + ssx[0]))
                     if i > 0:
                         dx[j] *= np.sin(xx[self.o - i - 1] * np.pi / 2)
                 elif j == self.o - i - 1 and i != 0:
                     dx[j] = (np.prod(np.cos(xx[0:self.o-i-1] * np.pi / 2)) *
-                             (1 + sx[0]) * (np.pi / 2) *
+                             (1 + ssx[0]) * (np.pi / 2) *
                              np.cos(xx[self.o - i - 1] * np.pi / 2))
-            if self.use_names:
-                result = np.zeros(1, dtype=self.des_type)
-                for i, name in enumerate(self.des_type.names):
-                    result[0][name] = dx[i]
-                return result[0]
-            else:
-                return dx
-        # Evaluate derivative wrt sx
-        elif der == 2:
-            # Initialize output array
-            ds = np.zeros(self.m)
             i = self.obj_ind
-            ds[0] = np.prod(np.cos(xx[:self.o - i - 1] * np.pi / 2))
+            ds = np.array(np.prod(np.cos(xx[:self.o - i - 1] * np.pi / 2))).flatten()
             if i > 0:
-                ds[0] *= np.sin(np.pi * xx[self.o - i - 1] / 2)
-            if self.use_names:
-                result = np.zeros(1, dtype=self.sim_type)
-                for name in self.sim_type.names:
-                    result[0][name] = ds[0]
-                return result[0]
-            else:
-                return ds
+                ds *= np.sin(np.pi * xx[self.o - i - 1] / 2)
+            return from_array(dx, self.des_type), from_array(ds, self.sim_type)
         # Evaluate fx
-        else:
-            # Initialize output array
-            fx = 1.0 + sx[0]
-            # Calculate the output array
-            i = self.obj_ind
-            fx *= np.prod(np.cos(xx[:self.o - i - 1] * np.pi / 2))
-            if i > 0:
-                fx *= np.sin(np.pi * xx[self.o - i - 1] / 2)
-            return fx
+        fx = 1.0 + ssx[0]
+        i = self.obj_ind
+        fx *= jnp.prod(jnp.cos(xx[:self.o - i - 1] * jnp.pi / 2))
+        if i > 0:
+            fx *= jnp.sin(jnp.pi * xx[self.o - i - 1] / 2)
+        return fx
 
 
 class dtlz3_obj(obj_func):

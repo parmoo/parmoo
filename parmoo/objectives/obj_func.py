@@ -1,6 +1,6 @@
 """ Abstract base class (ABC) for objective functions.
 
-Defines an ABC for the callable ``obj_func`` class.
+Defines an ABC for the callable ``ObjectiveFunction`` class.
 
 """
 
@@ -8,12 +8,12 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 
-class obj_func(ABC):
+class ObjectiveFunction(ABC):
     """ Abstract base class (ABC) for objective function outputs.
 
     Contains 2 methods:
-     * ``__init__(des, sim)``
-     * ``__call__(x, sx, der=0)``
+     * ``__init__(des_type, sim_type)``
+     * ``__call__(x, sx)``
 
     The ``__init__`` method is already implemented, and is the constructor.
 
@@ -22,78 +22,51 @@ class obj_func(ABC):
 
     """
 
-    __slots__ = ['n', 'm', 'des_type', 'sim_type', 'use_names']
+    __slots__ = ['n', 'm', 'des_type', 'sim_type']
 
-    def __init__(self, des, sim):
+    def __init__(self, des_type, sim_type):
         """ Constructor for objective functions.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des_type (np.dtype): The numpy.dtype of the design variables.
 
-            sim (list, tuple, or int): Either the numpy.dtype of the
-                simultation outputs (list or tuple) or the number of
-                simulation outputs (assumed to all be continuous,
-                unnamed).
+            sim_type (list or tuple): The numpy.dtype of the simulation
+                outputs.
 
         """
 
-        # Decide whether to use named variables
-        self.use_names = False
         # Try to read design variable type
         try:
-            self.des_type = np.dtype(des)
+            self.des_type = np.dtype(des_type)
         except TypeError:
-            if isinstance(des, int):
-                self.des_type = np.dtype(("f8", (des, )))
-            else:
-                raise TypeError("des must contain a valid numpy.dtype or int")
-        if self.des_type.names is not None:
-            self.n = len(self.des_type.names)
-            self.use_names = True
-        else:
-            self.n = sum(self.des_type.shape)
+            raise TypeError("des_type must contain a valid numpy.dtype")
+        self.n = len(self.des_type.names)
         if self.n <= 0:
             raise ValueError("An illegal des_type was given")
         # Try to read simulation variable type
-        if (not self.use_names) and isinstance(sim, int):
-            self.sim_type = np.dtype(("f8", (sim, )))
-            self.m = sim
-        else:
-            try:
-                self.sim_type = np.dtype(sim)
-            except TypeError:
-                if isinstance(sim, int):
-                    self.sim_type = np.dtype(("f8", (sim, )))
-                else:
-                    raise TypeError("sim must contain a numpy.dtype or int")
-            if self.sim_type.names is not None:
-                self.m = 0
-                for name in self.sim_type.names:
-                    if len(self.sim_type[name].shape) >= 1:
-                        self.m += sum(self.sim_type[name].shape)
-                    else:
-                        self.m += 1
-            else:
-                if len(self.sim_type.shape) >= 1:
-                    self.m = sum(self.sim_type.shape)
-                else:
-                    self.m = 1
-            if (self.sim_type.names is not None) != self.use_names:
-                raise ValueError("When using names for des_type, sim_type " +
-                                 "must also give named fields")
+        try:
+            self.sim_type = np.dtype(sim_type)
+        except TypeError:
+            raise TypeError("sim_type must contain a valid numpy.dtype")
+        self.m = 0
+        for name in self.sim_type.names:
+            self.m += np.maximum(np.sum(self.sim_type[name].shape), 1)
         if self.m <= 0:
             raise ValueError("An illegal sim_type was given")
         return
 
     @abstractmethod
-    def __call__(self, x, sx, der=0):
-        """ Make obj_func objects callable.
+    def __call__(self, x, sx):
+        """ Make ObjectiveFunction objects callable.
 
         Args:
-            x (numpy.array): A numpy.ndarray (unnamed) or numpy structured
-                array (named), containing the design point to evaluate.
+            x (dict or structured array): A Python dictionary or numpy
+                structured array containing the names (as keys) and
+                corresponding values of a design point to evaluate.
+
+            sx (dict or structured array): A Python dictionary or numpy
+                structured array containing the names (as keys) and
+                corresponding values of the simulation output(s) at x.
 
         Returns:
             float: The output of this objective for the input x.
