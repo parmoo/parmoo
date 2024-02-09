@@ -439,15 +439,15 @@ def test_MOOP_save_load_classes():
     from parmoo import MOOP
     from parmoo.acquisitions import UniformWeights
     from parmoo.constraints import single_sim_bound
-    from parmoo.objectives import single_sim_out
+    from parmoo.objectives import SingleSimObjective
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.simulations.dtlz import dtlz2_sim
 
     # Initialize the simulation group with 3 outputs
-    f1 = single_sim_out(3, 2, 0)
-    f2 = single_sim_out(3, 2, 1)
+    f1 = SingleSimObjective(3, 2, 0)
+    f2 = SingleSimObjective(3, 2, 1)
     c1 = single_sim_bound(3, 2, 1)
     # Create a mixed-variable MOOP with 3 variables, 2 sims, 2 objs, 1 const
     moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})

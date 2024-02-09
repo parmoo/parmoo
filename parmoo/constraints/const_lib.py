@@ -2,28 +2,34 @@
 ParMOO's interface.
 
 The common constraints are:
- * ``single_sim_bound`` -- min or max bound on a single simulation output
- * ``sos_sim_bound`` -- min or max bound on the SOS for several sim outputs
+ * ``SingleSimBound`` -- min or max bound on a single simulation output
+ * ``SumOfSimSquaresBound`` -- min or max bound on the SOS for several sim outputs
  * ``sum_sim_out`` -- min or max bound on the (abs) sum of several sim outputs
 
 """
 
-from parmoo.constraints import const_func
+from parmoo.structs import CompositeFunction
 import numpy as np
 
 
-class single_sim_bound(const_func):
+class SingleSimBound(CompositeFunction):
     """ Class for bounding a single simulation's output.
 
     Upper or lower bound a single simulation output.
 
     If upper-bounding:
 
-    ``def const_func(x, sx, der=0): return sx[self.sim_ind] - upper_bound``
+    ```
+    def ConstraintFunction(x, sx, der=0):
+        return sx[self.sim_ind] - upper_bound
+    ```
 
     If lower-bounding:
 
-    ``def obj_func(x, sx, der=0): return lower_bound - sx[self.sim_ind]``
+    ```
+    def ConstraintFunction(x, sx, der=0):
+        return lower_bound - sx[self.sim_ind]
+    ```
 
     Also supports derivative usage.
 
@@ -31,14 +37,14 @@ class single_sim_bound(const_func):
      * ``__init__(des, sim, sim_ind, type='min', bound=0.0)``
      * ``__call__(x, sim, der=0)``
 
-    The ``__init__`` method inherits from the const_func ABC.
+    The ``__init__`` method inherits from the CompositeFunction ABC.
 
-    The ``__call__`` returns the slace (negative when feasible).
+    The ``__call__`` returns the slack (negative when feasible).
 
     """
 
     def __init__(self, des, sim, sim_ind, type='upper', bound=0.0):
-        """ Constructor for single_sim_bound class.
+        """ Constructor for SingleSimBound class.
 
         Args:
             des (np.dtype or int): Either the numpy.dtype of the
@@ -99,8 +105,6 @@ class single_sim_bound(const_func):
             self.type = 1.0
         else:
             self.type = -1.0
-        if not isinstance(bound, float) and not isinstance(bound, int):
-            raise TypeError("The upper/lower bound must be a numeric type")
         self.bound = bound
         return
 
@@ -149,18 +153,24 @@ class single_sim_bound(const_func):
                 return (sim[self.sim_ind] - self.bound) * self.type
 
 
-class sos_sim_bound(const_func):
+class SumOfSimSquaresBound(CompositeFunction):
     """ Class for constraining the sum-of-squared simulation outputs.
 
     Upper or lower bound the sum-of-squared simulation outputs.
 
     If upper bounding:
 
-    ``def obj_func(x, sx): return sum([sx[i]**2 for all i]) - upper_bound``
+    ```
+    ConstraintFunction(x, sx):
+        return sum([sx[i]**2 for all i]) - upper_bound
+    ```
 
     If lower bounding:
 
-    ``def obj_func(x, sx): return lower_bound - sum([sx[i]**2 for all i])``
+    ```
+    def ConstraintFunction(x, sx):
+        return lower_bound - sum([sx[i]**2 for all i])
+    ```
 
     Also supports derivative usage.
 
@@ -168,14 +178,14 @@ class sos_sim_bound(const_func):
      * ``__init__(des, sim, sim_inds, type='upper', bound=0.0)``
      * ``__call__(x, sx, der=0)``
 
-    The ``__init__`` method inherits from the const_func ABC.
+    The ``__init__`` method inherits from the CompositeFunction ABC.
 
     The ``__call__`` evaluate the slack (negative values are feasible).
 
     """
 
     def __init__(self, des, sim, sim_inds, type='upper', bound=0.0):
-        """ Constructor for sos_sim_bound class.
+        """ Constructor for SumOfSimSquaresBound class.
 
         Args:
             des (np.dtype or int): Either the numpy.dtype of the
@@ -299,7 +309,7 @@ class sos_sim_bound(const_func):
             return (fx - self.bound) * self.type
 
 
-class sum_sim_bound(const_func):
+class sum_sim_bound(CompositeFunction):
     """ Class for bounding the sum of simulation outputs.
 
     Upper or lower bound the (absolute) sum of simulation output.
@@ -326,7 +336,7 @@ class sum_sim_bound(const_func):
      * ``__init__(des, sim, sim_inds, type='upper', bound=0, absolute=False)``
      * ``__call__(x, sim, der=0)``
 
-    The ``__init__`` method inherits from the const_func ABC.
+    The ``__init__`` method inherits from the CompositeFunction ABC.
 
     The ``__call__`` evaluate the slack (negative values are feasible).
 

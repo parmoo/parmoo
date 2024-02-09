@@ -410,7 +410,7 @@ def to_array(x, dtype):
 
     xx = []
     for namei in dtype.names:
-        xx.append(x[namei])
+        xx.append(jnp.array(x[namei]).flatten())
     return jnp.concatenate(xx, axis=None)
 
 
@@ -433,6 +433,6 @@ def from_array(x, dtype):
     istart = 0
     for namei in dtype.names:
         iend = istart + dtype[namei].shape[0]
-        xx{namei} = x[istart:iend]
+        xx[namei] = x[istart:iend]
         istart = iend
     return xx
