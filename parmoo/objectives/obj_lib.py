@@ -6,6 +6,11 @@ The common objectives are:
  * ``SumOfSimSquaresObjective`` -- min or max several squared sim outputs
  * ``SumOfSimsObjective`` -- min or max the (absolute) sum of sim outputs
 
+And the corresponding gradients are defined in:
+ * ``SingleSimGradient``
+ * ``SumOfSimSquaresGradient``
+ * ``SumOfSimsGradient``
+
 """
 
 from jax import numpy as jnp
@@ -14,10 +19,7 @@ from parmoo.structs import CompositeFunction
 
 
 class SingleSimObjective(CompositeFunction):
-    """ Class for optimizing a single simulation's output.
-
-    Minimize or maximize a single simulation output. This simulation's
-    value will be used as an objective.
+    """ Class for min/maxing a single simulation's output.
 
     If minimizing:
 
@@ -108,10 +110,7 @@ class SingleSimObjective(CompositeFunction):
 
 
 class SumOfSimSquaresObjective(CompositeFunction):
-    """ Class for optimizing the sum-of-squared simulation outputs.
-
-    Minimize or maximize the sum-of-squared simulation outputs. This
-    sum-of-squares (SOS) will be used as an objective.
+    """ Class for min/maxing the sum-of-squared simulation outputs.
 
     If minimizing, equivalent to:
 
@@ -226,10 +225,7 @@ class SumOfSimSquaresObjective(CompositeFunction):
 
 
 class SumOfSimsObjective(CompositeFunction):
-    """ Class for optimizing the sum of simulation outputs.
-
-    Minimize or maximize the (absolute) sum of simulation output.
-    This sum will be used as an objective.
+    """ Class for min/maxing the sum of simulation outputs.
 
     If minimizing:
 
@@ -385,9 +381,10 @@ class SingleSimGradient(SingleSimObjective):
 
         dx, ds = {}, {}
         for name in self.des_type.names:
-            dx[name] = 0.0
+            dx[name] = jnp.zeros(1)
         for name in self.sim_type.names:
-            ds[name] = 0.0
+            size = max(sum(self.sim_type[name].shape), 1)
+            ds[name] = jnp.zeros(size)
         ds[self.sim_name] = self.goal
         return dx, ds
 
@@ -420,9 +417,10 @@ class SumOfSimSquaresGradient(SumOfSimSquaresObjective):
 
         dx, ds = {}, {}
         for name in self.des_type.names:
-            dx[name] = 0.0
+            dx[name] = jnp.zeros(1)
         for name in self.sim_type.names:
-            ds[name] = 0.0
+            size = max(sum(self.sim_type[name].shape), 1)
+            ds[name] = jnp.zeros(size)
         for sn, si in zip(self.sim_names, self.sim_inds):
             ds[sn] = sx[sn] * si * 2.0 * self.goal
         return dx, ds
@@ -456,9 +454,10 @@ class SumOfSimsGradient(SumOfSimsObjective):
 
         dx, ds = {}, {}
         for name in self.des_type.names:
-            dx[name] = 0.0
+            dx[name] = jnp.zeros(1)
         for name in self.sim_type.names:
-            ds[name] = 0.0
+            size = max(sum(self.sim_type[name].shape), 1)
+            ds[name] = jnp.zeros(size)
         for sn, si in zip(self.sim_names, self.sim_inds):
             ds[sn] = self.absolute(sx[sn]) * si * self.goal
         return dx, ds
