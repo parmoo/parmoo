@@ -6,6 +6,11 @@ The common constraints are:
  * ``SumOfSimSquaresBound`` -- min or max bound on the SOS for several sim outputs
  * ``SumOfSimsBound`` -- min or max bound on the (abs) sum of several sim outputs
 
+And their corresponding gradient functions are:
+ * ``SingleSimBoundGradient``
+ * ``SumOfSimSquaresBoundGradient``
+ * ``SumOfSimsBoundGradient``
+
 """
 
 from jax import numpy as jnp
@@ -453,7 +458,7 @@ class SingleSimBoundGradient(SingleSimBound):
         return dx, ds
 
 
-class SumOfSimSquaresGradient(SumOfSimSquaresBound):
+class SumOfSimSquaresBoundGradient(SumOfSimSquaresBound):
     """ Gradient class for SumOfSimSquaresBound.
 
     Inherits from the ``SumOfSimSquaresBound`` class, but overwrites the
@@ -490,7 +495,7 @@ class SumOfSimSquaresGradient(SumOfSimSquaresBound):
         return dx, ds
 
 
-class SumOfSimsGradient(SumOfSimsBound):
+class SumOfSimsBoundGradient(SumOfSimsBound):
     """ Gradient class for SumOfSimsBound.
 
     Inherits from the ``SumOfSimsBound`` class, but overwrites the
