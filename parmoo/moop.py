@@ -2314,7 +2314,7 @@ class MOOP:
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
         cx = jnp.sum(jnp.maximum(self.vcon_funcs(xx, ssx), 0.0))
-        return self.vpen_func(xx, ssx, cx, self.lam)
+        return self.vpen_funcs(xx, ssx, cx, self.lam)
 
     def _pen_fwd(self, x, sx):
         """ Evaluate a forward pass over the penalized objective functions.
@@ -2362,7 +2362,7 @@ class MOOP:
         dcdx, dcds = self._con_bwd((xx, ssx), act)
         dfdx = dcdx * jnp.sum(w)
         dfds = dcds * jnp.sum(w)
-        for i, obj_func in enumerate(self.obj_funcs):
+        for i, obj_grad in enumerate(self.obj_grads):
             x_grad, s_grad = obj_grad(xx, ssx)
             dfdx += self.embed(x_grad) * w[i]
             dfds += self.pack_sim(s_grad) * w[i]

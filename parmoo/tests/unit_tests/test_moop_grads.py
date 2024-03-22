@@ -9,10 +9,10 @@ def eval_pen_jac(moop, x):
     sx = moop._evaluate_surrogates(x)
     dsdx = jacrev(moop._evaluate_surrogates)(x)
     _, res = moop._pen_fwd(x, sx)
-    dfdx = jnp.zeros((moop.o, x.size))
+    dfdx = jnp.zeros((moop.o, moop.n_latent))
     for i, ei in enumerate(jnp.eye(moop.o)):
         dfdxi, dfdsi = moop._pen_bwd(res, ei)
-        dfdx = dfdx.at[i, :].set(dfdxi + jnp.dot(dfdsi, dsdx))
+        dfdx = dfdx.at[i].set(dfdxi + jnp.dot(dfdsi, dsdx))
     return dfdx
 
 def eval_obj_jac(moop, x, sx):
@@ -21,8 +21,11 @@ def eval_obj_jac(moop, x, sx):
     sx = moop._evaluate_surrogates(x)
     dsdx = jacrev(moop._evaluate_surrogates)(x)
     _, res = moop._obj_fwd(x, sx)
-    dfdx, dfds = moop._obj_bwd(res, jnp.ones(moop.o))
-    return dfdx + jnp.dot(dfds, dsdx)
+    dfdx = jnp.zeros((moop.o, moop.n_latent))
+    for i, ei in enumerate(jnp.eye(moop.o)):
+        dfdxi, dfdsi = moop._obj_bwd(res, ei)
+        dfdx = dfdx.at[i].set(dfdxi + jnp.dot(dfdsi, dsdx))
+    return dfdx
 
 def eval_con_jac(moop, x, sx):
     """ Helper for testing constraint fwd/bwd evaluations """
@@ -30,8 +33,11 @@ def eval_con_jac(moop, x, sx):
     sx = moop._evaluate_surrogates(x)
     dsdx = jacrev(moop._evaluate_surrogates)(x)
     _, res = moop._con_fwd(x, sx)
-    dcdx, dcds = moop._con_bwd(res, jnp.ones(moop.o))
-    return dcdx + jnp.dot(dcds, dsdx)
+    dcdx = jnp.zeros((moop.p, moop.n_latent))
+    for i, ei in enumerate(jnp.eye(moop.o)):
+        dcdxi, dcdsi = moop._con_bwd(res, ei)
+        dcdx = dcdx.at[i].set(dcdxi + jnp.dot(dcdsi, dsdx))
+    return dcdx
 
 def test_MOOP_evaluate_penalty_grads():
     """ Check that the MOOP class handles evaluating gradients properly.
@@ -50,45 +56,39 @@ def test_MOOP_evaluate_penalty_grads():
     import pytest
 
     # Create several differentiable functions and constraints.
-    def f1(x, s, der=0):
+    def f1(x, s):
         names = ["x1", "x2", "x3"]
-        if der == 0:
-            return np.sum([x[i] * x[i] for i in names])
-        if der == 1:
-            return {"x1": 2*x["x1"], "x2": 2*x["x2"], "x3": 2*x["x3"]}
-        if der == 2:
-            return {"sim1": 0, "sim2": np.zeros(2)}
+        return np.sum([x[i] * x[i] for i in names])
 
-    def f2(x, s, der=0):
+    def df1(x, s):
+        return ({"x1": 2*x["x1"], "x2": 2*x["x2"], "x3": 2*x["x3"]},
+                {"sim1": 0, "sim2": jnp.zeros(2)})
+
+    def f2(x, s):
         names = ["sim1", "sim2"]
-        if der == 0:
-            return np.sum([np.dot(s[i] - 0.5, s[i] - 0.5) for i in names])
-        if der == 1:
-            return {"x1": 0, "x2": 0, "x3": 0}
-        if der == 2:
-            return {"sim1": 2*s["sim1"] - 1, "sim2": 2*s["sim2"] - np.ones(2)}
+        return np.sum([jnp.dot(s[i] - 0.5, s[i] - 0.5) for i in names])
 
-    def c1(x, s, der=0):
-        if der == 0:
-            return x["x1"] - 0.25
-        if der == 1:
-            return {"x1": 1, "x2": 0, "x3": 0}
-        if der == 2:
-            return {"sim1": 0, "sim2": np.zeros(2)}
+    def df2(x, s):
+        return ({"x1": 0, "x2": 0, "x3": 0},
+                {"sim1": 2*s["sim1"] - 1, "sim2": 2*s["sim2"] - jnp.ones(2)})
 
-    def c2(x, s, der=0):
-        if der == 0:
-            return s["sim1"] - 0.25
-        if der == 1:
-            return {"x1": 0, "x2": 0, "x3": 0}
-        if der == 2:
-            return {"sim1": 1, "sim2": np.zeros(2)}
+    def c1(x, s):
+        return x["x1"] - 0.25
+
+    def dc1(x, s):
+        return {"x1": 1, "x2": 0, "x3": 0}, {"sim1": 0, "sim2": jnp.zeros(2)}
+
+    def c2(x, s):
+        return s["sim1"] - 0.25
+
+    def dc2(x, s):
+        return {"x1": 0, "x2": 0, "x3": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
 
     # Initialize a continuous MOOP with 3 variables, no sims, 1 objective
     moop1 = MOOP(GlobalSurrogate_PS)
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addObjective({'obj_func': f1})
+    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
     moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()
     # Check the shape and values of the penalty jacobian
@@ -97,7 +97,8 @@ def test_MOOP_evaluate_penalty_grads():
     fx1 = 2.0 * np.ones((1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
     # Add a constraint and make sure that the penalty appears in the jacobian
-    moop1.addConstraint({'constraint': c1})
+    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
+    moop1.compile()
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1[0, 0] = 3.0
@@ -118,7 +119,7 @@ def test_MOOP_evaluate_penalty_grads():
                                  np.sqrt(sum([(x[i] - 0.5)**2 for i in x]))],
           'surrogate': GaussRBF}
     moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1})
+    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
     moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()
     # Add some data and set the surrogates
@@ -136,8 +137,8 @@ def test_MOOP_evaluate_penalty_grads():
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1})
-    moop1.addConstraint({'constraint': c1})
+    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
+    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
     moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()
     for sn in ["sim1", "sim2"]:
@@ -153,10 +154,10 @@ def test_MOOP_evaluate_penalty_grads():
     for i in range(3):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1})
-    moop1.addObjective({'obj_func': f2})
-    moop1.addConstraint({'constraint': c1})
-    moop1.addConstraint({'constraint': c2})
+    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
+    moop1.addObjective({'obj_func': f2, 'obj_grad': df2})
+    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
+    moop1.addConstraint({'con_func': c2, 'con_grad': dc2})
     moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()
     for sn in ["sim1", "sim2"]:
@@ -174,10 +175,10 @@ def test_MOOP_evaluate_penalty_grads():
                     {'lb': 0.0, 'ub': 2.0},
                     {'lb': -0.5, 'ub': 1.5})
     moop2.addSimulation(g1, g2)
-    moop2.addObjective({'obj_func': f1})
-    moop2.addObjective({'obj_func': f2})
-    moop2.addConstraint({'constraint': c1})
-    moop2.addConstraint({'constraint': c2})
+    moop2.addObjective({'obj_func': f1, 'obj_grad': df1})
+    moop2.addObjective({'obj_func': f2, 'obj_grad': df2})
+    moop2.addConstraint({'con_func': c1, 'con_grad': dc1})
+    moop2.addConstraint({'con_func': c2, 'con_grad': dc2})
     moop2.addAcquisition({'acquisition': UniformWeights})
     moop2.compile()
     for sn in ["sim1", "sim2"]:
@@ -214,7 +215,7 @@ def test_MOOP_solve_with_grads():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
 
-    # Create several differentiable sims, objecives, and constraints.
+    # Create several differentiable simulation groups
     g1 = {'m': 1,
           'search': LatinHypercube,
           'sim_func': lambda x: [np.sqrt(sum([x[i]**2 for i in x]))],
@@ -227,46 +228,42 @@ def test_MOOP_solve_with_grads():
           'surrogate': GaussRBF,
           'hyperparams': {'search_budget': 100}}
 
-    def f1(x, s, der=0):
-        if der == 0:
-            return sum([x[i] * x[i] for i in x])
-        if der == 1:
-            return {"x1": 2 * x["x1"]}
-        if der == 2:
-            return {"sim1": 0, "sim2": np.zeros(2)}
+    # Create several differentiable functions and constraints
+    def f1(x, s):
+        return x["x1"] ** 2
 
-    def f2(x, s, der=0):
-        if der == 0:
-            return sum([np.dot(s[i] - 0.5, s[i] - 0.5) for i in s])
-        if der == 1:
-            return {"x1": 0}
-        if der == 2:
-            return {"sim1": 2 * s["sim1"] - 1, "sim2": 2 * s["sim2"] - np.ones(2)}
+    def df1(x, s):
+        return ({"x1": 2*x["x1"]},
+                {"sim1": 0, "sim2": jnp.zeros(2)})
 
-    def c1(x, s, der=0):
-        if der == 0:
-            return x["x1"] - 0.25
-        if der == 1:
-            return {"x1": 1}
-        if der == 2:
-            return {"sim1": 0, "sim2": np.zeros(2)}
+    def f2(x, s):
+        names = ["sim1", "sim2"]
+        return np.sum([jnp.dot(s[i] - 0.5, s[i] - 0.5) for i in names])
 
-    def c2(x, s, der=0):
-        if der == 0:
-            return s["sim1"] - 0.25
-        if der == 1:
-            return {"x1": 0}
-        if der == 2:
-            return {"sim1": 1, "sim2": np.zeros(2)}
+    def df2(x, s):
+        return ({"x1": 0},
+                {"sim1": 2*s["sim1"] - 1, "sim2": 2*s["sim2"] - jnp.ones(2)})
+
+    def c1(x, s):
+        return x["x1"] - 0.25
+
+    def dc1(x, s):
+        return {"x1": 1}, {"sim1": 0, "sim2": jnp.zeros(2)}
+
+    def c2(x, s):
+        return s["sim1"] - 0.25
+
+    def dc2(x, s):
+        return {"x1": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
 
     # Initialize 2 continuous MOOPs with 1 design var, 2 sims, and 3 objs
     moop1 = MOOP(GlobalSurrogate_BFGS, hyperparams={'opt_restarts': 20})
     moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1})
-    moop1.addObjective({'obj_func': f2})
-    moop1.addConstraint({'constraint': c1})
-    moop1.addConstraint({'constraint': c2})
+    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
+    moop1.addObjective({'obj_func': f2, 'obj_grad': df2})
+    moop1.addConstraint({'constraint': c1, 'con_grad': dc1})
+    moop1.addConstraint({'constraint': c2, 'con_grad': dc2})
     moop1.addAcquisition({'acquisition': FixedWeights,
                           'hyperparams': {'weights': np.ones(2) / 2}})
     np.random.seed(0)
@@ -286,6 +283,7 @@ def test_MOOP_solve_with_grads():
     b1 = moop1.iterate(1)
     np.random.seed(0)
     b2 = moop2.iterate(1)
+    print(b1, b2)
     # Check that same solutions were found
     for x1, x2 in zip(b1, b2):
         assert (np.abs(x1[0]["x1"] - x2[0]["x1"]) < 0.1)

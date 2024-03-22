@@ -62,7 +62,7 @@ corresponding to an objective:
 """
 
 from parmoo.simulations import sim_func
-from parmoo.util import unpack
+from parmoo.util import to_array
 import numpy as np
 
 
@@ -120,7 +120,7 @@ class g1_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Calculate output
         result = (1 + self.n - self.o +
                   np.sum((xx[self.o-1:self.n] - self.offset) ** 2 -
@@ -182,7 +182,7 @@ class g2_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         return np.array([np.sum((xx[self.o-1:self.n] - self.offset) ** 2)])
 
 
@@ -239,7 +239,7 @@ class g3_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         return np.array([np.sum(np.abs(xx[self.o-1:self.n] - self.offset)
                                 ** 0.1)])
 
@@ -297,7 +297,7 @@ class g4_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         return np.array([(9 * np.sum(np.abs(xx[self.o-1:self.n] - self.offset))
                           / float(self.n + 1 - self.o)) + 1.0])
 
@@ -356,7 +356,7 @@ class dtlz1_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize kernel function
         ker = g1_sim(self.n, self.o, self.offset)
         # Initialize output array
@@ -424,7 +424,7 @@ class dtlz2_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize kernel function
         ker = g2_sim(self.n, self.o, self.offset)
         # Initialize output array
@@ -493,7 +493,7 @@ class dtlz3_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize kernel function
         ker = g1_sim(self.n, self.o, self.offset)
         # Initialize output array
@@ -570,7 +570,7 @@ class dtlz4_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize kernel function
         ker = g2_sim(self.n, self.o, self.offset)
         # Initialize output array
@@ -638,7 +638,7 @@ class dtlz5_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize kernel function
         ker = g2_sim(self.n, self.o, self.offset)
         # Calculate theta values
@@ -713,7 +713,7 @@ class dtlz6_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize kernel function
         ker = g3_sim(self.n, self.o, self.offset)
         # Calculate theta values
@@ -788,7 +788,7 @@ class dtlz7_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize kernel function
         ker = g4_sim(self.n, self.o, self.offset)
         # Initialize first o-1 entries in the output array
@@ -857,7 +857,7 @@ class dtlz8_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize the output array
         fx = np.zeros(self.o)
         # Calculate outputs
@@ -921,7 +921,7 @@ class dtlz9_sim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Initialize the output array
         fx = np.zeros(self.o)
         # Calculate outputs

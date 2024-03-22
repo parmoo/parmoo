@@ -438,17 +438,13 @@ def test_MOOP_save_load_classes():
     import os
     from parmoo import MOOP
     from parmoo.acquisitions import UniformWeights
-    from parmoo.constraints import single_sim_bound
-    from parmoo.objectives import SingleSimObjective
+    from parmoo.constraints import SingleSimBound, SingleSimBoundGradient
+    from parmoo.objectives import SingleSimObjective, SingleSimGradient
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.simulations.dtlz import dtlz2_sim
 
-    # Initialize the simulation group with 3 outputs
-    f1 = SingleSimObjective(3, 2, 0)
-    f2 = SingleSimObjective(3, 2, 1)
-    c1 = single_sim_bound(3, 2, 1)
     # Create a mixed-variable MOOP with 3 variables, 2 sims, 2 objs, 1 const
     moop1 = MOOP(LocalSurrogate_PS, hyperparams={'opt_budget': 100})
     # Test empty save
@@ -456,6 +452,7 @@ def test_MOOP_save_load_classes():
     for i in range(2):
         moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addDesign({'des_type': "categorical", 'levels': 3})
+    # Initialize the simulation group with 3 outputs
     g1 = {'m': 2,
           'hyperparams': {},
           'search': LatinHypercube,
@@ -463,9 +460,28 @@ def test_MOOP_save_load_classes():
           'sim_func': dtlz2_sim(moop1.getDesignType(), num_obj=2),
           'surrogate': GaussRBF}
     moop1.addSimulation(g1)
-    moop1.addObjective({'obj_func': f1},
-                       {'obj_func': f2})
-    moop1.addConstraint({'constraint': c1})
+    # Define and add the objectives and constraints
+    f1 = SingleSimObjective(moop1.getDesignType(),
+                            moop1.getSimulationType(),
+                            ("sim1", 0))
+    f2 = SingleSimObjective(moop1.getDesignType(),
+                            moop1.getSimulationType(),
+                            ("sim1", 1))
+    df1 = SingleSimGradient(moop1.getDesignType(),
+                            moop1.getSimulationType(),
+                            ("sim1", 0))
+    df2 = SingleSimGradient(moop1.getDesignType(),
+                            moop1.getSimulationType(),
+                            ("sim1", 1))
+    c1 = SingleSimBound(moop1.getDesignType(),
+                        moop1.getSimulationType(),
+                        ("sim1", 1))
+    dc1 = SingleSimBoundGradient(moop1.getDesignType(),
+                                 moop1.getSimulationType(),
+                                 ("sim1", 1))
+    moop1.addObjective({'obj_func': f1, 'obj_grad': df1},
+                       {'obj_func': f2, 'obj_grad': df2})
+    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
     for i in range(3):
         moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()

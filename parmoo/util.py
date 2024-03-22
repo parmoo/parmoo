@@ -7,6 +7,7 @@ These functions may also be of external interest. They are:
  * lex_leq(a, b)
  * updatePF(data, nondom)
  * to_array(x, dtype)
+ * from_array(x, dtype)
 
 """
 
