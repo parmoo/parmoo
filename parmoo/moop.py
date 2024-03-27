@@ -1603,7 +1603,7 @@ class MOOP:
                         'checkpoint': self.checkpoint,
                         'checkpoint_data': self.checkpoint_data,
                         'checkpoint_file': self.checkpoint_file,
-                        'np_random_state': self.np_random_gen.get_state(),
+                        'np_random_state': self.np_random_gen.bit_generator.state,
                        }
         # Pickle and add a list of the model and solver hyperparameters
         parmoo_state['hyperparams'] = []
@@ -1764,12 +1764,16 @@ class MOOP:
         self.checkpoint_data = parmoo_state['checkpoint_data']
         self.checkpoint_file = parmoo_state['checkpoint_file']
         self.np_random_gen = np.random.default_rng()
-        self.np_random_gen.set_state(parmoo_state['np_random_state'])
+        self.np_random_gen.bit_generator.state = parmoo_state['np_random_state']
         # Recover the pickled hyperparameter dictionaries
         hps = []
         for i, hpi in enumerate(parmoo_state['hyperparams']):
             hps.append(pickle.loads(codecs.decode(hpi.encode(), "base64")))
-            hps[i]['np_random_gen'] = self.np_random_gen
+            if i != 2:
+                for j in range(len(hps[i])):
+                    hps[i][j]['np_random_gen'] = self.np_random_gen
+            else:
+                hps[i]['np_random_gen'] = self.np_random_gen
         self.emb_hp = hps[0]
         self.acq_hp = hps[1]
         self.opt_hp = hps[2]
