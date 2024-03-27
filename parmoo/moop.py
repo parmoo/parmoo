@@ -126,6 +126,8 @@ class MOOP:
                  # Temporary solver components and metadata used during setup
                  'acq_tmp', 'opt_tmp', 'search_tmp', 'sur_tmp',
                  'acq_hp', 'opt_hp', 'sim_hp',
+                 # Random generator object with state information
+                 'np_random_gen',
                  # Compiled function definitions -- These are only defined
                  # after calling the MOOP.compile() method
                  'embed', 'extract', 'pack_sim', 'unpack_sim',
@@ -193,6 +195,15 @@ class MOOP:
                 self.opt_hp = hyperparams
             else:
                 raise TypeError("hyperparams must be a Python dict")
+        if "np_random_gen" in self.opt_hp:
+            if isinstance(self.opt_hp["np_random_gen"], np.random.Generator):
+                self.np_random_gen = self.opt_hp["np_random_gen"]
+            else:
+                self.np_random_gen = np.random.default_rng(
+                                            seed=self.opt_hp["np_random_gen"])
+        else:
+            self.np_random_gen = np.random.default_rng()
+        self.opt_hp["np_random_gen"] = self.np_random_gen
         try:
             self.optimizer = opt_func(1, np.zeros(1), np.ones(1), self.opt_hp)
         except BaseException:
@@ -288,6 +299,7 @@ class MOOP:
                 for key in arg:
                     if key != 'embedder':
                         arg1[key] = arg[key]
+                arg1['np_random_gen'] = self.np_random_gen
                 try:
                     embedder = arg['embedder'](arg1)
                 except BaseException:
@@ -376,6 +388,7 @@ class MOOP:
                 hps = arg['hyperparams']
             else:
                 hps = {}
+            hps["np_random_gen"] = self.np_random_gen
             # Add the simulation's search and surrogate techniques
             self.search_tmp.append(arg['search'])
             self.sur_tmp.append(arg['surrogate'])
@@ -546,6 +559,7 @@ class MOOP:
                 hps = arg['hyperparams']
             else:
                 hps = {}
+            hps["np_random_gen"] = self.np_random_gen
             try:
                 acq = arg['acquisition'](1, np.zeros(1), np.ones(1), {})
             except BaseException:
@@ -1589,6 +1603,7 @@ class MOOP:
                         'checkpoint': self.checkpoint,
                         'checkpoint_data': self.checkpoint_data,
                         'checkpoint_file': self.checkpoint_file,
+                        'np_random_state': self.np_random_gen.get_state(),
                        }
         # Pickle and add a list of the model and solver hyperparameters
         parmoo_state['hyperparams'] = []
@@ -1748,10 +1763,13 @@ class MOOP:
         self.checkpoint = parmoo_state['checkpoint']
         self.checkpoint_data = parmoo_state['checkpoint_data']
         self.checkpoint_file = parmoo_state['checkpoint_file']
+        self.np_random_gen = np.random.default_rng()
+        self.np_random_gen.set_state(parmoo_state['np_random_state'])
         # Recover the pickled hyperparameter dictionaries
         hps = []
-        for hpi in parmoo_state['hyperparams']:
+        for i, hpi in enumerate(parmoo_state['hyperparams']):
             hps.append(pickle.loads(codecs.decode(hpi.encode(), "base64")))
+            hps[i]['np_random_gen'] = self.np_random_gen
         self.emb_hp = hps[0]
         self.acq_hp = hps[1]
         self.opt_hp = hps[2]
