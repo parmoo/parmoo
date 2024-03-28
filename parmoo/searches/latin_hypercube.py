@@ -24,7 +24,7 @@ class LatinHypercube(GlobalSearch):
     """
 
     # Slots for the LatinHypercube class
-    __slots__ = ['lb', 'ub', 'budget', 'sampler']
+    __slots__ = ['lb', 'ub', 'budget', 'sampler', 'np_rng']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the LatinHypercube GlobalSearch class.
@@ -68,6 +68,13 @@ class LatinHypercube(GlobalSearch):
         else:
             self.budget = 100
         self.sampler = qmc.LatinHypercube(d=self.n)
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         return
 
     def startSearch(self, lb, ub):

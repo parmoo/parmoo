@@ -35,7 +35,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'simulations', 'setTR',
                  'penalty_func', 'sim_sd', 'restarts', 'momentum', 'q_ind',
-                 'prev_centers', 'des_tols', 'targets']
+                 'prev_centers', 'des_tols', 'targets', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalSurrogate_PS class.
@@ -120,6 +120,13 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         else:
             self.des_tols = (np.ones(self.n) *
                              float(jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)))
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         self.acquisitions = []
         self.prev_centers = []
         self.targets = []
@@ -329,7 +336,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
     __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints',
                  'objectives', 'simulations', 'setTR',
                  'penalty_func', 'opt_budget', 'gps_budget', 'sim_sd',
-                 'momentum']
+                 'momentum', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the GlobalPS class.
@@ -404,6 +411,13 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                                  "must be a float")
         else:
             self.momentum = 9e-1
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         self.acquisitions = []
         return
 

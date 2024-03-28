@@ -26,7 +26,7 @@ class UniformWeights(AcquisitionFunction):
     """
 
     # Slots for the UniformWeights class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the UniformWeights class.
@@ -60,6 +60,13 @@ class UniformWeights(AcquisitionFunction):
         self.ub = ub
         # Initialize the weights array
         self.weights = np.zeros(o)
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         return
 
     def useSD(self):
@@ -208,7 +215,7 @@ class FixedWeights(AcquisitionFunction):
     """
 
     # Slots for the FixedWeights class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the FixedWeights class.
@@ -260,6 +267,13 @@ class FixedWeights(AcquisitionFunction):
             # If no weights provided, sample from the unit simplex
             self.weights = -np.log(1.0 - np.random.random_sample(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         return
 
     def useSD(self):

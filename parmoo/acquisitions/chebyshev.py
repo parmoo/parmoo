@@ -25,7 +25,7 @@ class UniformAugChebyshev(AcquisitionFunction):
     """
 
     # Slots for the UniformAugChebyshev class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the UniformAugChebyshev class.
@@ -74,6 +74,13 @@ class UniformAugChebyshev(AcquisitionFunction):
             else:
                 raise TypeError("When present, hyperparams['alpha'] " +
                                 "must be a float type")
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         return
 
     def useSD(self):
@@ -258,7 +265,7 @@ class FixedAugChebyshev(AcquisitionFunction):
     """
 
     # Slots for the FixedAugChebyshev class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the FixedAugChebyshev class.
@@ -325,6 +332,13 @@ class FixedAugChebyshev(AcquisitionFunction):
             else:
                 raise TypeError("When present, hyperparams['alpha'] " +
                                 "must be a float type")
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         return
 
     def useSD(self):

@@ -27,7 +27,7 @@ class RandomConstraint(AcquisitionFunction):
     """
 
     # Slots for the RandomConstraint class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the RandomConstraint class.
@@ -60,6 +60,13 @@ class RandomConstraint(AcquisitionFunction):
         self.weights = np.zeros(self.o)
         self.ub = ub
         self.lb = lb
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         return
 
     def useSD(self):
@@ -247,7 +254,8 @@ class EI_RandomConstraint(AcquisitionFunction):
     """
 
     # Slots for the RandomConstraint class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'best', 'f']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'best', 'f',
+                 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the RandomConstraint class.
@@ -286,6 +294,13 @@ class EI_RandomConstraint(AcquisitionFunction):
             self.sample_size = hyperparams['mc_sample_size']
         else:
             self.sample_size = None
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         return
 
     def useSD(self):

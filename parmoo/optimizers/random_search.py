@@ -29,7 +29,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
     # Slots for the GlobalSurrogate_RS class
     __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints', 'objectives',
                  'budget', 'simulations', 'setTR',
-                 'penalty_func', 'sim_sd']
+                 'penalty_func', 'sim_sd', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the GlobalSurrogate_RS class.
@@ -72,6 +72,13 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.budget = 10000
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
         # Initialize the list of acquisition functions
         self.acquisitions = []
         return
