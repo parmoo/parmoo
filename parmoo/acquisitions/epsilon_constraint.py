@@ -60,6 +60,7 @@ class RandomConstraint(AcquisitionFunction):
         self.weights = np.zeros(self.o)
         self.ub = ub
         self.lb = lb
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -67,6 +68,8 @@ class RandomConstraint(AcquisitionFunction):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         return
 
     def useSD(self):
@@ -148,12 +151,12 @@ class RandomConstraint(AcquisitionFunction):
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             self.f_ub[:] = np.inf
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             self.f_ub[:] = np.inf
             # Check for "most feasible" starting x
@@ -168,8 +171,8 @@ class RandomConstraint(AcquisitionFunction):
             return x_best
         else:
             # Randomly select pts in the convex hull of the nondominate pts
-            ipts = np.random.randint(0, pf['f_vals'].shape[0], size=self.o)
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            ipts = self.np_rng.integers(0, pf['f_vals'].shape[0], size=self.o)
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             target = np.dot(self.weights, pf['f_vals'][ipts, :])
             fi = pf['f_vals'][ipts[0], :]
@@ -290,10 +293,12 @@ class EI_RandomConstraint(AcquisitionFunction):
         self.weights = np.zeros(self.o)
         self.ub = ub
         self.lb = lb
+        # Check the hyperparameter dictionary for custom MC sample size
         if 'mc_sample_size' in hyperparams.keys():
             self.sample_size = hyperparams['mc_sample_size']
         else:
             self.sample_size = None
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -301,6 +306,8 @@ class EI_RandomConstraint(AcquisitionFunction):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         return
 
     def useSD(self):
@@ -380,16 +387,16 @@ class EI_RandomConstraint(AcquisitionFunction):
             pf = updatePF(data, {})
         # If data is empty, randomly select weights and starting point
         if no_data:
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             self.f_ub[:] = np.inf
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             self.f_ub[:] = np.inf
             # Check for "most feasible" starting x
@@ -404,8 +411,8 @@ class EI_RandomConstraint(AcquisitionFunction):
             return x_best
         else:
             # Randomly select pts in the convex hull of the nondominate pts
-            ipts = np.random.randint(0, pf['f_vals'].shape[0], size=self.o)
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            ipts = self.np_rng.integers(0, pf['f_vals'].shape[0], size=self.o)
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             target = np.dot(self.weights, pf['f_vals'][ipts, :])
             fi = pf['f_vals'][ipts[0], :]

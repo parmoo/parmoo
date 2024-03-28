@@ -257,7 +257,8 @@ def test_MOOP_solve_with_grads():
         return {"x1": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
 
     # Initialize 2 continuous MOOPs with 1 design var, 2 sims, and 3 objs
-    moop1 = MOOP(GlobalSurrogate_BFGS, hyperparams={'opt_restarts': 20})
+    moop1 = MOOP(GlobalSurrogate_BFGS, hyperparams={'opt_restarts': 20,
+                                                    'np_random_gen': 0})
     moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)
     moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
@@ -266,9 +267,8 @@ def test_MOOP_solve_with_grads():
     moop1.addConstraint({'constraint': c2, 'con_grad': dc2})
     moop1.addAcquisition({'acquisition': FixedWeights,
                           'hyperparams': {'weights': np.ones(2) / 2}})
-    np.random.seed(0)
     moop1.solve(0)
-    moop2 = MOOP(GlobalSurrogate_PS)
+    moop2 = MOOP(GlobalSurrogate_PS, hyperparams={'np_random_gen': 0})
     moop2.addDesign({'lb': 0.0, 'ub': 1.0})
     moop2.addSimulation(g1, g2)
     moop2.addObjective({'obj_func': f1})
@@ -277,11 +277,8 @@ def test_MOOP_solve_with_grads():
     moop2.addConstraint({'constraint': c2})
     moop2.addAcquisition({'acquisition': FixedWeights,
                           'hyperparams': {'weights': np.ones(2) / 2}})
-    np.random.seed(0)
     moop2.solve(0)
-    np.random.seed(0)
     b1 = moop1.iterate(1)
-    np.random.seed(0)
     b2 = moop2.iterate(1)
     print(b1, b2)
     # Check that same solutions were found

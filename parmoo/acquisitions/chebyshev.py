@@ -74,6 +74,7 @@ class UniformAugChebyshev(AcquisitionFunction):
             else:
                 raise TypeError("When present, hyperparams['alpha'] " +
                                 "must be a float type")
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -81,6 +82,8 @@ class UniformAugChebyshev(AcquisitionFunction):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         return
 
     def useSD(self):
@@ -153,12 +156,12 @@ class UniformAugChebyshev(AcquisitionFunction):
             # Get the Pareto front
             pf = updatePF(data, {})
         # Sample the weights uniformly from the unit simplex
-        self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+        self.weights = -np.log(1.0 - self.np_rng.random(self.o))
         self.weights = self.weights[:] / sum(self.weights[:])
         # If data is empty, randomly select weights and starting point
         if no_data:
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
@@ -303,6 +306,16 @@ class FixedAugChebyshev(AcquisitionFunction):
         # Set the bound constraints
         self.lb = lb
         self.ub = ub
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         # Check the hyperparams dictionary for weights
         if 'weights' in hyperparams:
             # If weights are provided, check that they are legal
@@ -318,7 +331,7 @@ class FixedAugChebyshev(AcquisitionFunction):
                     self.weights = hyperparams['weights'].flatten()
         else:
             # If no weights provided, sample from the unit simplex
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
         # Check hyperparameters dictionary for alpha
         self.alpha = 1.0e-4 / self.o
@@ -332,13 +345,6 @@ class FixedAugChebyshev(AcquisitionFunction):
             else:
                 raise TypeError("When present, hyperparams['alpha'] " +
                                 "must be a float type")
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
         return
 
     def useSD(self):
@@ -413,7 +419,7 @@ class FixedAugChebyshev(AcquisitionFunction):
         # If data is empty, randomly select weights and starting point
         if no_data:
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select

@@ -67,7 +67,7 @@ class LatinHypercube(GlobalSearch):
                                  "be an int")
         else:
             self.budget = 100
-        self.sampler = qmc.LatinHypercube(d=self.n)
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -75,6 +75,9 @@ class LatinHypercube(GlobalSearch):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
+        self.sampler = qmc.LatinHypercube(d=self.n, seed=self.np_rng)
         return
 
     def startSearch(self, lb, ub):

@@ -120,6 +120,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         else:
             self.des_tols = (np.ones(self.n) *
                              float(jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)))
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -127,6 +128,8 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         self.acquisitions = []
         self.prev_centers = []
         self.targets = []
@@ -251,7 +254,8 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                                                     ibudget=self.budget,
                                                     mesh_tol=mesh_tol,
                                                     momentum=self.momentum,
-                                                    istarts=self.restarts)
+                                                    istarts=self.restarts,
+                                                    np_rng=self.np_rng)
             result.append(xj)
             # We need to remember this "target" for later
             self.targets.append([x[j, :], rad, fj, j])
@@ -411,6 +415,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                                  "must be a float")
         else:
             self.momentum = 9e-1
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -418,6 +423,8 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         self.acquisitions = []
         return
 
@@ -487,7 +494,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                 if i < len(self.acquisitions):
                     xi = x[i, :]
                 else:
-                    xi = (np.random.sample(self.n) *
+                    xi = (self.np_rng.random(self.n) *
                           (self.ub[:] - self.lb[:]) + self.lb[:])
                 sxi = self.simulations(xi)
                 data['x_vals'][i, :] = xi[:]
@@ -529,7 +536,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
 
 def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                                    mesh_start=None, mesh_tol=1.0e-8,
-                                   momentum=0.9, istarts=1):
+                                   momentum=0.9, istarts=1, np_rng=None):
     """ Solve the optimization problem min obj_func(x) over x in [lb, ub].
 
     Uses pattern search with an additional search direction inspired by
@@ -568,6 +575,11 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
         istarts (int, optional): Number of times to (re)start if
             using the multistart option. Defaults to 1 (no restarts).
 
+        np_rng (numpy.random.Generator, optional): An instance of a numpy
+            generator object that will be used for generating consistent
+            restarts. Defaults to None, which results in a new generator
+            being created.
+
     Returns:
         numpy.ndarray(n): The best x observed so far (minimizer of obj_func).
 
@@ -588,7 +600,9 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
     else:
         mesh_start_array[:] = mesh_start
     if istarts > 1:
-        lhs = LatinHypercube(n).random(istarts - 1)
+        lhs = LatinHypercube(n, seed=np_rng).random(istarts - 1)
+    if np_rng is None:
+        np_rng = np.random.default_rng()
     # Loop over all starts
     for kk in range(istarts):
         # Reset the mesh dimensions

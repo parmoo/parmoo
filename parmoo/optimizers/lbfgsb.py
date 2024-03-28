@@ -90,6 +90,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.budget = 1000
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -97,6 +98,8 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         self.acquisitions = []
         return
 
@@ -170,7 +173,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                             x0[ii] = self.bounds[ii, 0]
                 else:
                     # Random starting point within bounds for all other starts
-                    x0 = (np.random.random_sample(self.n) *
+                    x0 = (self.np_rng.random(self.n) *
                           (self.bounds[:, 1] - self.bounds[:, 0]) +
                           self.bounds[:, 0])
 
@@ -271,6 +274,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
         else:
             self.des_tols = (np.ones(self.n) *
                              float(jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)))
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -278,6 +282,8 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         self.acquisitions = []
         self.prev_centers = []
         self.targets = []
@@ -419,7 +425,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                             x0[ii] = bounds[ii, 0]
                 else:
                     # Random starting point within bounds for all other starts
-                    x0 = (np.random.random_sample(self.n) *
+                    x0 = (self.np_rng.random(self.n) *
                           (bounds[:, 1] - bounds[:, 0]) + bounds[:, 0])
 
                 # Solve the problem within the local trust region

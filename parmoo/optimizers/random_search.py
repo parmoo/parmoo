@@ -72,6 +72,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.budget = 10000
+        # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
@@ -79,6 +80,8 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
                 raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         # Initialize the list of acquisition functions
         self.acquisitions = []
         return
@@ -125,7 +128,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
                 data['c_vals'] = np.zeros((k_new, 0))
             # Randomly generate k_new new points
             for i in range(k_new):
-                xi = (np.random.sample(self.n) *
+                xi = (self.np_rng.random(self.n) *
                       (self.ub[:] - self.lb[:]) + self.lb[:])
                 data['x_vals'][i, :] = xi[:]
                 sxi = self.simulations(xi)
