@@ -341,6 +341,7 @@ class dtlz1_sim(sim_func):
         __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
         self.offset = offset
+        self.ker = g1_sim(self.des_type, self.o, self.offset)
         return
 
     def __call__(self, x):
@@ -357,11 +358,9 @@ class dtlz1_sim(sim_func):
 
         # Extract x into xx, if names are used
         xx = to_array(x, self.des_type)
-        # Initialize kernel function
-        ker = g1_sim(self.n, self.o, self.offset)
         # Initialize output array
         fx = np.zeros(self.o)
-        fx[:] = (1.0 + ker(xx)[0]) / 2.0
+        fx[:] = (1.0 + self.ker(x)[0]) / 2.0
         # Calculate the output array
         for i in range(self.o):
             for j in range(self.o - 1 - i):
@@ -409,6 +408,7 @@ class dtlz2_sim(sim_func):
         __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
         self.offset = offset
+        self.ker = g2_sim(self.des_type, self.o, self.offset)
         return
 
     def __call__(self, x):
@@ -425,11 +425,9 @@ class dtlz2_sim(sim_func):
 
         # Extract x into xx, if names are used
         xx = to_array(x, self.des_type)
-        # Initialize kernel function
-        ker = g2_sim(self.n, self.o, self.offset)
         # Initialize output array
         fx = np.zeros(self.o)
-        fx[:] = (1.0 + ker(xx)[0])
+        fx[:] = (1.0 + self.ker(x)[0])
         # Calculate the output array
         for i in range(self.o):
             for j in range(self.o - 1 - i):
@@ -478,6 +476,7 @@ class dtlz3_sim(sim_func):
         __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
         self.offset = offset
+        self.ker = g1_sim(self.des_type, self.o, self.offset)
         return
 
     def __call__(self, x):
@@ -494,11 +493,9 @@ class dtlz3_sim(sim_func):
 
         # Extract x into xx, if names are used
         xx = to_array(x, self.des_type)
-        # Initialize kernel function
-        ker = g1_sim(self.n, self.o, self.offset)
         # Initialize output array
         fx = np.zeros(self.o)
-        fx[:] = (1.0 + ker(xx)[0])
+        fx[:] = (1.0 + self.ker(x)[0])
         # Calculate the output array
         for i in range(self.o):
             for j in range(self.o - 1 - i):
@@ -555,6 +552,7 @@ class dtlz4_sim(sim_func):
         self.o = num_obj
         self.offset = offset
         self.alpha = alpha
+        self.ker = g2_sim(self.des_type, self.o, self.offset)
         return
 
     def __call__(self, x):
@@ -571,11 +569,9 @@ class dtlz4_sim(sim_func):
 
         # Extract x into xx, if names are used
         xx = to_array(x, self.des_type)
-        # Initialize kernel function
-        ker = g2_sim(self.n, self.o, self.offset)
         # Initialize output array
         fx = np.zeros(self.o)
-        fx[:] = (1.0 + ker(xx)[0])
+        fx[:] = (1.0 + self.ker(x)[0])
         # Calculate the output array
         for i in range(self.o):
             for j in range(self.o - 1 - i):
@@ -623,6 +619,7 @@ class dtlz5_sim(sim_func):
         __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
         self.offset = offset
+        self.ker = g2_sim(self.des_type, self.o, self.offset)
         return
 
     def __call__(self, x):
@@ -639,11 +636,9 @@ class dtlz5_sim(sim_func):
 
         # Extract x into xx, if names are used
         xx = to_array(x, self.des_type)
-        # Initialize kernel function
-        ker = g2_sim(self.n, self.o, self.offset)
         # Calculate theta values
         theta = np.zeros(self.o)
-        g2x = ker(xx)[0]
+        g2x = self.ker(x)[0]
         theta[0] = xx[0]
         for i in range(1, self.o):
             theta[i] = (1 + 2 * g2x * xx[i]) / (2 * (1 + g2x))
@@ -698,6 +693,7 @@ class dtlz6_sim(sim_func):
         __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
         self.offset = offset
+        self.ker = g3_sim(self.des_type, self.o, self.offset)
         return
 
     def __call__(self, x):
@@ -714,11 +710,9 @@ class dtlz6_sim(sim_func):
 
         # Extract x into xx, if names are used
         xx = to_array(x, self.des_type)
-        # Initialize kernel function
-        ker = g3_sim(self.n, self.o, self.offset)
         # Calculate theta values
         theta = np.zeros(self.o)
-        g3x = ker(xx)[0]
+        g3x = self.ker(x)[0]
         theta[0] = xx[0]
         for i in range(1, self.o):
             theta[i] = (1 + 2 * g3x * xx[i]) / (2 * (1 + g3x))
@@ -773,6 +767,7 @@ class dtlz7_sim(sim_func):
         __check_optionals__(num_obj=num_obj, offset=offset)
         self.o = num_obj
         self.offset = offset
+        self.ker = g4_sim(self.des_type, self.o, self.offset)
         return
 
     def __call__(self, x):
@@ -789,13 +784,11 @@ class dtlz7_sim(sim_func):
 
         # Extract x into xx, if names are used
         xx = to_array(x, self.des_type)
-        # Initialize kernel function
-        ker = g4_sim(self.n, self.o, self.offset)
         # Initialize first o-1 entries in the output array
         fx = np.zeros(self.o)
         fx[:self.o-1] = xx[:self.o-1]
         # Calculate kernel functions
-        gx = 1.0 + ker(xx)[0]
+        gx = 1.0 + self.ker(x)[0]
         hx = (-np.sum(xx[:self.o-1] *
                       (1.0 + np.sin(3.0 * np.pi * xx[:self.o-1])) / gx)
                       + float(self.o))

@@ -2250,7 +2250,12 @@ class MOOP:
         """
     
         xx, ssx = res
-        return self.vobj_grads(xx, ssx, w)
+        dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
+        for i, obj_grad in enumerate(self.obj_grads):
+            x_grad, s_grad = obj_grad(xx, ssx)
+            dfdx += self.embed(x_grad) * w[i]
+            dfds += self.pack_sim(s_grad) * w[i]
+        return dfdx, dfds
 
     def _evaluate_constraints(self, x, sx):
         """ Evaluate the constraints from the latent space.

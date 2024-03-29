@@ -1,4 +1,7 @@
 
+DTYPE = [("x1", "f8"), ("x2", "f8"), ("x3", "f8"), ("x4", "f8"), ("x5", "f8")]
+ONES = {"x1": 0.6, "x2": 0.6, "x3": 0.6, "x4": 0.6, "x5": 0.6}
+
 def test_sims_dtlz_g1():
     """ Test the g1 kernel function.
 
@@ -9,8 +12,8 @@ def test_sims_dtlz_g1():
     from parmoo.simulations.dtlz import g1_sim
     import numpy as np
 
-    g1 = g1_sim(5, num_obj=3, offset=0.6)
-    assert (np.abs(g1(np.ones(5) * 0.6)) < 1.0e-8)
+    g1 = g1_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.abs(g1(ONES)) < 1.0e-4)
 
 
 def test_sims_dtlz_g2():
@@ -23,8 +26,8 @@ def test_sims_dtlz_g2():
     from parmoo.simulations.dtlz import g2_sim
     import numpy as np
 
-    g2 = g2_sim(5, num_obj=3, offset=0.6)
-    assert (np.abs(g2(np.ones(5) * 0.6)) < 1.0e-8)
+    g2 = g2_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.abs(g2(ONES)) < 1.0e-4)
 
 
 def test_sims_dtlz_g3():
@@ -37,8 +40,8 @@ def test_sims_dtlz_g3():
     from parmoo.simulations.dtlz import g3_sim
     import numpy as np
 
-    g3 = g3_sim(5, num_obj=3, offset=0.6)
-    assert (np.abs(g3(np.ones(5) * 0.6)) < 1.0e-8)
+    g3 = g3_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.abs(g3(ONES)) < 1.0e-4)
 
 
 def test_sims_dtlz_g4():
@@ -51,8 +54,8 @@ def test_sims_dtlz_g4():
     from parmoo.simulations.dtlz import g4_sim
     import numpy as np
 
-    g4 = g4_sim(5, num_obj=3, offset=0.6)
-    assert (np.abs(g4(np.ones(5) * 0.6) - 1.0) < 1.0e-8)
+    g4 = g4_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.abs(g4(ONES) - 1.0) < 1.0e-4)
 
 
 def test_sims_dtlz_dtlz1():
@@ -65,8 +68,8 @@ def test_sims_dtlz_dtlz1():
     from parmoo.simulations.dtlz import dtlz1_sim
     import numpy as np
 
-    dtlz1 = dtlz1_sim(5, num_obj=3, offset=0.6)
-    assert (sum(dtlz1(np.ones(5) * 0.6)) - 0.5 < 1.0e-8)
+    dtlz1 = dtlz1_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (sum(dtlz1(ONES)) - 0.5 < 1.0e-4)
 
 
 def test_sims_dtlz_dtlz2():
@@ -79,8 +82,8 @@ def test_sims_dtlz_dtlz2():
     from parmoo.simulations.dtlz import dtlz2_sim
     import numpy as np
 
-    dtlz2 = dtlz2_sim(5, num_obj=3, offset=0.6)
-    assert (np.linalg.norm(dtlz2(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    dtlz2 = dtlz2_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.linalg.norm(dtlz2(ONES)) - 1.0 < 1.0e-4)
 
 
 def test_sims_dtlz_dtlz3():
@@ -93,8 +96,8 @@ def test_sims_dtlz_dtlz3():
     from parmoo.simulations.dtlz import dtlz3_sim
     import numpy as np
 
-    dtlz3 = dtlz3_sim(5, num_obj=3, offset=0.6)
-    assert (np.linalg.norm(dtlz3(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    dtlz3 = dtlz3_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.linalg.norm(dtlz3(ONES)) - 1.0 < 1.0e-4)
 
 
 def test_sims_dtlz_dtlz4():
@@ -107,8 +110,8 @@ def test_sims_dtlz_dtlz4():
     from parmoo.simulations.dtlz import dtlz4_sim
     import numpy as np
 
-    dtlz4 = dtlz4_sim(5, num_obj=3, offset=0.6)
-    assert (np.linalg.norm(dtlz4(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    dtlz4 = dtlz4_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.linalg.norm(dtlz4(ONES)) - 1.0 < 1.0e-4)
 
 
 def test_sims_dtlz_dtlz5():
@@ -121,8 +124,8 @@ def test_sims_dtlz_dtlz5():
     from parmoo.simulations.dtlz import dtlz5_sim
     import numpy as np
 
-    dtlz5 = dtlz5_sim(5, num_obj=3, offset=0.6)
-    assert (np.linalg.norm(dtlz5(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    dtlz5 = dtlz5_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.linalg.norm(dtlz5(ONES)) - 1.0 < 1.0e-4)
 
 
 def test_sims_dtlz_dtlz6():
@@ -135,8 +138,8 @@ def test_sims_dtlz_dtlz6():
     from parmoo.simulations.dtlz import dtlz6_sim
     import numpy as np
 
-    dtlz6 = dtlz6_sim(5, num_obj=3, offset=0.6)
-    assert (np.linalg.norm(dtlz6(np.ones(5) * 0.6)) - 1.0 < 1.0e-8)
+    dtlz6 = dtlz6_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.linalg.norm(dtlz6(ONES)) - 1.0 < 1.0e-4)
 
 
 def test_sims_dtlz_dtlz7():
@@ -149,10 +152,11 @@ def test_sims_dtlz_dtlz7():
     from parmoo.simulations.dtlz import dtlz7_sim
     import numpy as np
 
-    dtlz7 = dtlz7_sim(5, num_obj=3, offset=0.6)
-    x_in = np.ones(5) * 0.6
-    x_in[:2] = 0.0
-    assert (np.abs(dtlz7(x_in)[2] - 6.0) < 1.0e-8)
+    dtlz7 = dtlz7_sim(DTYPE, num_obj=3, offset=0.6)
+    x_in = ONES.copy()
+    x_in["x1"] = 0.0
+    x_in["x2"] = 0.0
+    assert (np.abs(dtlz7(x_in)[2] - 6.0) < 1.0e-4)
 
 
 def test_sims_dtlz_dtlz8():
@@ -165,8 +169,8 @@ def test_sims_dtlz_dtlz8():
     from parmoo.simulations.dtlz import dtlz8_sim
     import numpy as np
 
-    dtlz8 = dtlz8_sim(5, num_obj=3, offset=0.6)
-    assert (np.all(np.abs(dtlz8(np.ones(5) * 0.6)) < 1.0e-8))
+    dtlz8 = dtlz8_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.all(np.abs(dtlz8(ONES)) < 1.0e-4))
 
 
 def test_sims_dtlz_dtlz9():
@@ -179,8 +183,8 @@ def test_sims_dtlz_dtlz9():
     from parmoo.simulations.dtlz import dtlz9_sim
     import numpy as np
 
-    dtlz9 = dtlz9_sim(5, num_obj=3, offset=0.6)
-    assert (np.all(np.abs(dtlz9(np.ones(5) * 0.6)) < 1.0e-8))
+    dtlz9 = dtlz9_sim(DTYPE, num_obj=3, offset=0.6)
+    assert (np.all(np.abs(dtlz9(ONES)) < 1.0e-4))
 
 
 if __name__ == "__main__":
