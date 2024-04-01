@@ -433,7 +433,10 @@ def from_array(x, dtype):
     xx = {}
     istart = 0
     for namei in dtype.names:
-        iend = istart + dtype[namei].shape[0]
+        if len(dtype[namei].shape) > 0:
+            iend = istart + dtype[namei].shape[0]
+        else:
+            iend = istart + 1
         xx[namei] = x[istart:iend]
         istart = iend
     return xx

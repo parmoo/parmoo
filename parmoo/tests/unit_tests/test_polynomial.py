@@ -9,10 +9,12 @@ def test_Linear():
 
     """
 
-    from parmoo.surrogates import Linear
+    from jax import config, jacrev
+    config.update("jax_enable_x64", True)
     import numpy as np
-    import pytest
     import os
+    from parmoo.surrogates import Linear
+    import pytest
 
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -90,9 +92,11 @@ def test_Linear():
     # Check that the models compute the same grad, up to 8 digits of precision
     lsm1.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.5)
     lsm2.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.5)
+    lsm1_grad = jacrev(lsm1.evaluate)
+    lsm2_grad = jacrev(lsm2.evaluate)
     for i in range(x_vals_full.shape[0]):
-        assert (np.linalg.norm(lsm1.gradient(x_vals_full[i]) -
-                               lsm2.gradient(x_vals_full[i])) < 0.00000001)
+        assert (np.linalg.norm(lsm1_grad(x_vals_full[i]) -
+                               lsm2_grad(x_vals_full[i])) < 1.0e-8)
     # Check that the model generates feasible local improvement points
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
@@ -158,8 +162,7 @@ def test_Linear():
     lsm6.fit(x_vals4, y_vals4)
     lsm6.setTrustRegion(np.array([0.5]), np.ones(1) * 0.1)
     assert (np.linalg.norm(lsm6.evaluate(np.array([0.5])) - 1.0) < 1.0e-8)
-    assert (np.linalg.norm(lsm6.gradient(np.array([0.5]))) < 1.0e-8)
-    return
+    assert (np.linalg.norm(jacrev(lsm6.evaluate)(np.array([0.5]))) < 1.0e-8)
 
 
 if __name__ == "__main__":

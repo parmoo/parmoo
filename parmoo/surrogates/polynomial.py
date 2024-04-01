@@ -9,10 +9,11 @@ The classes include:
 
 """
 
+from jax import numpy as jnp
 import numpy as np
-from scipy.stats import tstd
 from parmoo.structs import SurrogateFunction
 from parmoo.util import xerror
+from scipy.stats import tstd
 
 
 class Linear(SurrogateFunction):
@@ -214,7 +215,7 @@ class Linear(SurrogateFunction):
 
         """
 
-        return np.dot(self.weights[:-1].T, x).flatten() + self.weights[-1]
+        return jnp.dot(self.weights[:-1].T, x).flatten() + self.weights[-1]
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.
