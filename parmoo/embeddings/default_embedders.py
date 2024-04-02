@@ -159,7 +159,7 @@ class ContinuousEmbedder(Embedder):
 
         """
 
-        return (x - self.shift) / self.scale
+        return jnp.minimum(jnp.maximum((x - self.shift) / self.scale, 0), 1)
 
     def _extract(self, x):
         """ Extract a design variable from an n-dimensional vector.
@@ -308,7 +308,7 @@ class IntegerEmbedder(Embedder):
 
         """
 
-        return (x - self.shift) / self.scale
+        return jnp.minimum(jnp.maximum((x - self.shift) / self.scale, 0), 1)
 
     def _extract(self, x):
         """ Extract a design variable from an n-dimensional vector.
@@ -471,7 +471,8 @@ class CategoricalEmbedder(Embedder):
         """
 
         xx = jnp.where(self.labels == x, self.ones, self.zeros)
-        return (jnp.dot(xx - self.cent, self.rot) - self.shift) / self.scale
+        xx1 = (jnp.dot(xx - self.cent, self.rot) - self.shift) / self.scale
+        return jnp.minimum(jnp.maximum(xx1, 0), 1)
 
     def _extract(self, x):
         """ Extract a design variable from an n-dimensional vector.

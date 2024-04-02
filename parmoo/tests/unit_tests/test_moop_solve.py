@@ -147,21 +147,24 @@ def test_MOOP_iterate():
     # Assert that solutions were found
     assert (soln.size > 0)
     # Assert that the x_vals and f_vals match
-    sim = np.zeros(4)
-    for i in range(np.shape(soln['x_vals'])[0]):
-        sim = soln['x_vals'][i]
-        assert (np.linalg.norm(np.array([f3(soln['x_vals'][i], sim),
-                                         f4(soln['x_vals'][i], sim),
-                                         f5(soln['x_vals'][i], sim)]
-                                        ).flatten()
-                               - soln['f_vals'][i])
-                < 0.00000001)
-        assert (all(soln['x_vals'][i, :4] <= 0.2))
+    si = {}
+    for xsi in soln:
+        xi = {"x1": xsi["x1"],
+              "x2": xsi["x2"],
+              "x3": xsi["x3"],
+              "x4": xsi["x4"]}
+        si["sim1"] = s3["sim_func"](xi)
+        fi = [xsi["f1"], xsi["f2"], xsi["f3"]]
+        assert (np.linalg.norm(np.array([f3(xi, si), f4(xi, si), f5(xi, si)]
+                                        ).flatten() - fi) < 1.0e-8)
+        for j in xi:
+            assert (xi[j] <= 0.2)
 
-    g4 = {'m': 4,
+    s4 = {'m': 4,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: x[0:4] + abs(x[4] - 1.0),
+          'sim_func': lambda x: abs(x["x5"] - 1) + np.array([x["x1"], x["x2"],
+                                                             x["x3"], x["x4"]]),
           'surrogate': GaussRBF,
           'search_budget': 500}
     # Create a three objective toy problem, with one simulation
@@ -169,52 +172,57 @@ def test_MOOP_iterate():
     for i in range(4):
         moop3.addDesign({'lb': 0.0, 'ub': 1.0})
     moop3.addDesign({'des_type': "categorical", 'levels': 3})
-    moop3.addSimulation(g4)
+    moop3.addSimulation(s4)
 
     # Now add the three objectives
-    def f6(x, sim, der=0):
-        if der == 1:
-            return np.zeros(x.size)
-        elif der == 2:
-            return np.array([2.0 * sim[0] - 2.0,
-                             2.0 * sim[1],
-                             2.0 * sim[2],
-                             2.0 * sim[3]])
-        else:
-            return np.linalg.norm(sim - np.eye(4)[0, :]) ** 2.0
+    def f6(x, sim):
+        return np.linalg.norm(sim["sim1"] - np.eye(4)[0, :]) ** 2
 
-    def f7(x, sim, der=0):
-        if der == 1:
-            return np.zeros(x.size)
-        elif der == 2:
-            return np.array([2.0 * sim[0],
-                             2.0 * sim[1] - 2.0,
-                             2.0 * sim[2],
-                             2.0 * sim[3]])
-        else:
-            return np.linalg.norm(sim - np.eye(4)[1, :]) ** 2.0
+    def g6(x, sim):
+        dx = {"x1": 0, "x2": 0, "x3": 0, "x4": 0, "x5": 0}
+        ds = {"sim1": np.array([2.0 * sim["sim1"][0] - 2.0,
+                                2.0 * sim["sim1"][1],
+                                2.0 * sim["sim1"][2],
+                                2.0 * sim["sim1"][3]])}
+        return dx, ds
 
-    def f8(x, sim, der=0):
-        if der == 1:
-            return np.zeros(x.size)
-        elif der == 2:
-            return np.array([2.0 * sim[0],
-                             2.0 * sim[1],
-                             2.0 * sim[2] - 2.0,
-                             2.0 * sim[3]])
-        else:
-            return np.linalg.norm(sim - np.eye(4)[2, :]) ** 2.0
+    def f7(x, sim):
+        return np.linalg.norm(sim["sim1"] - np.eye(4)[1, :]) ** 2
 
-    moop3.addObjective({'obj_func': f6},
-                       {'obj_func': f7},
-                       {'obj_func': f8})
+    def g7(x, sim):
+        dx = {"x1": 0, "x2": 0, "x3": 0, "x4": 0, "x5": 0}
+        ds = {"sim1": np.array([2.0 * sim["sim1"][0],
+                                2.0 * sim["sim1"][1] - 2.0,
+                                2.0 * sim["sim1"][2],
+                                2.0 * sim["sim1"][3]])}
+        return dx, ds
+
+    def f8(x, sim):
+        return np.linalg.norm(sim["sim1"] - np.eye(4)[2, :]) ** 2
+
+    def g8(x, sim):
+        dx = {"x1": 0, "x2": 0, "x3": 0, "x4": 0, "x5": 0}
+        ds = {"sim1": np.array([2.0 * sim["sim1"][0],
+                                2.0 * sim["sim1"][1],
+                                2.0 * sim["sim1"][2] - 2.0,
+                                2.0 * sim["sim1"][3]])}
+        return dx, ds
+
+    moop3.addObjective({'obj_func': f6, 'obj_grad': g6},
+                       {'obj_func': f7, 'obj_grad': g7},
+                       {'obj_func': f8, 'obj_grad': g8})
     # Add 3 acquisition functions
     for i in range(3):
         moop3.addAcquisition({'acquisition': UniformWeights})
     # Do 2 iterates of the MOOP and extract the final database
     moop3.iterate(0)
-    batch = [(xi, 0) for xi in np.eye(5)]
-    batch.append((np.ones(5), 0))
+    batch = []
+    for i in range(1, 6):
+        xi = {"x1": 0, "x2": 0, "x3": 0, "x4": 0, "x5": 0}
+        xi[f"x{i}"] = 1
+        batch.append((xi.copy(), "sim1"))
+    batch.append(({"x1": 1, "x2": 1, "x3": 1, "x4": 1, "x5": 1}, "sim1"))
+    batch.append(({"x1": 1, "x2": 1, "x3": 1, "x4": 1, "x5": 2}, "sim1"))
     for (x, i) in batch:
         moop3.evaluateSimulation(x, i)
     moop3.updateAll(0, batch)
@@ -225,23 +233,22 @@ def test_MOOP_iterate():
     moop3.updateAll(1, batch)
     soln = moop3.getPF()
     # Assert that solutions were found
-    assert (np.size(soln['x_vals']) > 0)
+    assert (np.size(soln) > 0)
     # Assert that the x_vals and f_vals match
-    sim = np.zeros(4)
-    for i in range(np.shape(soln['x_vals'])[0]):
-        sim = soln['x_vals'][i, :4] - abs(soln['x_vals'][i, 4] - 1.0)
-        assert (np.linalg.norm(np.array([f6(soln['x_vals'][i], sim),
-                                         f7(soln['x_vals'][i], sim),
-                                         f8(soln['x_vals'][i], sim)]
-                                        ).flatten()
-                               - soln['f_vals'][i])
-                < 0.00000001)
-        assert (soln['x_vals'][i, 3] <= 0.1 and soln['x_vals'][i, 4] == 1.0)
+    si = {}
+    for xsi in soln:
+        xi = {"x1": xsi["x1"],
+              "x2": xsi["x2"],
+              "x3": xsi["x3"],
+              "x4": xsi["x4"],
+              "x5": xsi["x5"]}
+        si["sim1"] = s4["sim_func"](xi)
+        fi = [xsi["f1"], xsi["f2"], xsi["f3"]]
+        assert (np.linalg.norm(np.array([f6(xi, si), f7(xi, si), f8(xi, si)]
+                                        ).flatten() - fi) < 1.0e-8)
+        assert (abs(xi["x4"]) <= 0.1 and abs(xi["x5"] - 1) <= 0.1)
 
-    x_entry = np.zeros(1, dtype=np.dtype([("x0", float), ("x1", float),
-                                          ("x2", object)]))
-    x_entry[0]["x2"] = "0"
-    g5 = {'m': 1,
+    s5 = {'m': 1,
           'hyperparams': {},
           'search': LatinHypercube,
           'sim_func': lambda x: [(x["x0"] - 1.0) * (x["x0"] - 1.0) +
@@ -254,33 +261,31 @@ def test_MOOP_iterate():
     moop4.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
     moop4.addDesign({'name': "x2", 'des_type': "categorical",
                      'levels': ["0", "1"]})
-    moop4.addSimulation(g5)
+    moop4.addSimulation(s5)
 
     # Now add the two objectives
-    def f9(x, sim, der=0):
-        if der == 1:
-            return np.zeros(1, dtype=x.dtype)[0]
-        elif der == 2:
-            result = np.ones(1, dtype=sim.dtype)
-            return result[0]
-        else:
-            return sim[0]
+    def f9(x, sim):
+        return sim["sim1"]
 
-    def f10(x, sim, der=0):
-        if der == 1:
-            out = np.zeros(1, dtype=x.dtype)
-            out['x0'] = 2.0 * x["x0"]
-            out['x1'] = 2.0 * x["x1"] - 2.0
-            out['x2'] = 0.0
-            return out[0]
-        elif der == 2:
-            return np.zeros(1, dtype=sim.dtype)[0]
-        else:
-            return ((x["x0"]) * (x["x0"]) +
-                    (x["x1"] - 1.0) * (x["x1"] - 1.0) + float(x["x2"]))
+    def g9(x, sim):
+        dx = {"x0": 0, "x1": 0, "x2": "0"}
+        ds = {"sim1": 1}
+        return dx, ds
 
-    moop4.addObjective({'obj_func': f9},
-                       {'obj_func': f10})
+    def f10(x, sim):
+        return ((x["x0"]) * (x["x0"]) +
+                (x["x1"] - 1.0) * (x["x1"] - 1.0) + float(x["x2"]))
+
+    def g10(x, sim):
+        dx = {}
+        dx['x0'] = 2.0 * x["x0"]
+        dx['x1'] = 2.0 * x["x1"] - 2.0
+        dx['x2'] = "0"
+        ds = {"sim1": 0}
+        return dx, ds
+
+    moop4.addObjective({'obj_func': f9, 'obj_grad': g9},
+                       {'obj_func': f10, 'obj_grad': g10})
     # Add 3 acquisition functions
     for i in range(3):
         moop4.addAcquisition({'acquisition': UniformWeights})
@@ -299,10 +304,10 @@ def test_MOOP_iterate():
     # Assert that solutions were found
     assert (soln.size > 0)
     # Assert that the x_vals and f_vals match
-    sim = np.zeros(1)
+    sim = {}
     for i, xi in enumerate(soln):
-        sim[0] = ((xi["x0"] - 1.0) * (xi["x0"] - 1.0) +
-                  (xi["x1"]) * (xi["x1"]) + float(xi["x2"]))
+        sim["sim1"] = ((xi["x0"] - 1.0) * (xi["x0"] - 1.0) +
+                       (xi["x1"]) * (xi["x1"]) + float(xi["x2"]))
         assert (f9(soln[i], sim) - soln['f1'][i] < 1.0e-8 and
                 f10(soln[i], sim) - soln['f2'][i] < 1.0e-8)
         assert (xi["x2"] == "0")
@@ -376,7 +381,7 @@ def test_MOOP_solve():
           'surrogate': GaussRBF,
           'search': LatinHypercube,
           'hyperparams': {'search_budget': 10}}
-    g4 = {'m': 1,
+    s4 = {'m': 1,
           'sim_func': lambda x: [x[2] + x[3]],
           'surrogate': GaussRBF,
           'search': LatinHypercube,
@@ -384,7 +389,7 @@ def test_MOOP_solve():
     moop2 = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop2.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop2.addSimulation(g3, g4)
+    moop2.addSimulation(g3, s4)
     # Now add 1 objective
     def f3(x, sim): return sim[0] + sim[1]
     moop2.addObjective({'obj_func': f3})
@@ -399,7 +404,7 @@ def test_MOOP_solve():
     # Assert that the x_vals and f_vals match
     for i in range(np.shape(soln['x_vals'])[0]):
         assert (np.linalg.norm(np.array(g3['sim_func'](soln['x_vals'][i])) +
-                               np.array(g4['sim_func'](soln['x_vals'][i])) -
+                               np.array(s4['sim_func'](soln['x_vals'][i])) -
                                soln['f_vals'][i]) < 0.00000001)
 
     # Create a 3 objective toy problem, with no simulations
