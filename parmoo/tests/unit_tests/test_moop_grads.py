@@ -95,6 +95,7 @@ def test_MOOP_evaluate_penalty_grads():
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1 = 2.0 * np.ones((1, 3))
+    print(eval_pen_jac(moop1, np.ones(3)))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
     # Add a constraint and make sure that the penalty appears in the jacobian
     moop1.addConstraint({'con_func': c1, 'con_grad': dc1})

@@ -107,7 +107,7 @@ class MOOP:
                  'm', 'm_list', 'n_embed', 'n_feature', 'n_latent',
                  'o', 'p', 's',
                  # Tolerances and bounds
-                 'feature_des_tols', 'latent_des_tols',
+                 'feature_des_tols', 'latent_des_tols', 'cont_var_inds',
                  'latent_lb', 'latent_ub',
                  # Schemas
                  'des_schema', 'sim_schema', 'obj_schema', 'con_schema',
@@ -130,7 +130,7 @@ class MOOP:
                  'np_random_gen',
                  # Compiled function definitions -- These are only defined
                  # after calling the MOOP.compile() method
-                 'embed', 'extract', 'pack_sim', 'unpack_sim',
+                 'embed', 'extract', 'pack_sim', 'unpack_sim', 'embed_grads',
                  'evaluate_objectives', 'evaluate_constraints',
                  'evaluate_penalty',
                  'evaluate_surrogates', 'surrogate_uncertainty',
@@ -160,6 +160,7 @@ class MOOP:
         self.o, self.p, self.s = 0, 0, 0
         # Initialize the bounds and tolerances
         self.feature_des_tols, self.latent_des_tols = [], []
+        self.cont_var_inds = []
         self.latent_lb, self.latent_ub = [], []
         # Initialize the schemas
         self.des_schema, self.sim_schema = [], []
@@ -326,6 +327,8 @@ class MOOP:
             for ub in ubs:
                 self.latent_ub.append(ub)
             self.feature_des_tols.append(embedder.getFeatureDesTols())
+            if self.feature_des_tols[-1] >= 1.0e-16:
+                self.cont_var_inds.append(self.n_feature - 1)
             des_tols = embedder.getLatentDesTols()
             for des_tol in des_tols:
                 self.latent_des_tols.append(float(des_tol))
@@ -636,6 +639,15 @@ class MOOP:
         except BaseException:
             self.embed = self._embed
             xx2 = self.embed(x)
+            assert (xx2.shape == xx1.shape)
+            logging.info("     WARNING: 1 or more embedders failed to jit...")
+        try:
+            self.embed_grads = jax.jit(self._embed_grads)
+            xx2 = self.embed_grads(x)
+            assert (xx2.shape == xx1.shape)
+        except BaseException:
+            self.embed_grads = self._embed_grads
+            xx2 = self.embed_grads(x)
             assert (xx2.shape == xx1.shape)
             logging.info("     WARNING: 1 or more embedders failed to jit...")
         try:
@@ -1592,6 +1604,7 @@ class MOOP:
                         's': self.s,
                         'feature_des_tols': self.feature_des_tols,
                         'latent_des_tols': self.latent_des_tols,
+                        'cont_var_inds': self.cont_var_inds,
                         'latent_lb': self.latent_lb,
                         'latent_ub': self.latent_ub,
                         'des_schema': self.des_schema,
@@ -1751,6 +1764,7 @@ class MOOP:
         self.p = parmoo_state['p']
         self.s = parmoo_state['s']
         self.feature_des_tols = parmoo_state['feature_des_tols']
+        self.cont_var_inds = parmoo_state['cont_var_inds']
         self.latent_des_tols = parmoo_state['latent_des_tols']
         self.latent_lb = parmoo_state['latent_lb']
         self.latent_ub = parmoo_state['latent_ub']
@@ -2011,6 +2025,27 @@ class MOOP:
             istart = iend
         return xx
 
+    def _embed_grads(self, x):
+        """ Embed a design input as a n-dimensional vector for ParMOO.
+
+        Args:
+            x (dict): Either a numpy structured array or Python dictionary
+                whose keys match the design variable names, and whose
+                values contain design variable values.
+
+        Returns:
+            ndarray: A 1D array of length n_latent containing the embedded
+            design vector.
+
+        """
+
+        xx = jnp.zeros(sum(self.n_embed))
+        for i in self.cont_var_inds:
+            istart = sum(self.n_embed[:i])
+            iend = istart + self.n_embed[i]
+            xx = xx.at[istart:iend].set(self.embedders[i].embed(x[self.des_schema[i][0]]))
+        return xx
+
     def _pack_sim(self, sx):
         """ Pack a simulation output into a m-dimensional vector.
 
@@ -2253,7 +2288,7 @@ class MOOP:
         dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, obj_grad in enumerate(self.obj_grads):
             x_grad, s_grad = obj_grad(xx, ssx)
-            dfdx += self.embed(x_grad) * w[i]
+            dfdx += self.embed_grads(x_grad) * w[i]
             dfds += self.pack_sim(s_grad) * w[i]
         return dfdx, dfds
 
@@ -2318,7 +2353,7 @@ class MOOP:
         dcdx, dcds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, con_grad in enumerate(self.con_grads):
             x_grad, s_grad = con_grad(xx, ssx)
-            dcdx += self.embed(x_grad) * w[i]
+            dcdx += self.embed_grads(x_grad) * w[i]
             dcds += self.pack_sim(s_grad) * w[i]
         return dcdx, dcds
 
@@ -2390,8 +2425,8 @@ class MOOP:
         dfdx = dcdx * jnp.sum(w)
         dfds = dcds * jnp.sum(w)
         for i, obj_grad in enumerate(self.obj_grads):
-            x_grad, s_grad = obj_grad(xx, ssx)
-            dfdx += self.embed(x_grad) * w[i]
+            x_grad, s_grad = obj_grad(xx, ssx)  # TODO: Move this to fwd pass
+            dfdx += self.embed_grads(x_grad) * w[i]
             dfds += self.pack_sim(s_grad) * w[i]
         return dfdx, dfds
 

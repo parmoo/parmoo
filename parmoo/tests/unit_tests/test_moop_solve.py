@@ -268,7 +268,7 @@ def test_MOOP_iterate():
         return sim["sim1"]
 
     def g9(x, sim):
-        dx = {"x0": 0, "x1": 0, "x2": "0"}
+        dx = {"x0": 0, "x1": 0}
         ds = {"sim1": 1}
         return dx, ds
 
@@ -280,7 +280,6 @@ def test_MOOP_iterate():
         dx = {}
         dx['x0'] = 2.0 * x["x0"]
         dx['x1'] = 2.0 * x["x1"] - 2.0
-        dx['x2'] = "0"
         ds = {"sim1": 0}
         return dx, ds
 
@@ -295,6 +294,10 @@ def test_MOOP_iterate():
     for (x, i) in batch:
         moop4.evaluateSimulation(x, i)
     moop4.updateAll(0, batch)
+    x = np.zeros(3)
+    sx = np.zeros(1)
+    moop4._compile()
+    print(moop4.evaluate_penalty(x, sx))
     batch = moop4.iterate(1)
     batch = moop4.filterBatch(batch)
     for (x, i) in batch:

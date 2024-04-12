@@ -331,7 +331,7 @@ class CategoricalEmbedder(Embedder):
     space then round the result back to the nearest category. """
 
     __slots__ = ['cent', 'des_tol', 'ones', 'scale', 'shift',
-                 'in_type', 'labels', 'rot', 'zeros']
+                 'in_type', 'alabels', 'rot', 'zeros']
 
     def __init__(self, settings):
         """ Generate the encoding matrices for a categorical variable.
@@ -353,7 +353,7 @@ class CategoricalEmbedder(Embedder):
                     raise ValueError("a categorical variable must "
                                      "have at least 2 levels")
                 n_lvls = levels
-                self.labels = jnp.array([i for i in range(levels)], dtype=int)
+                self.alabels = jnp.array([i for i in range(levels)], dtype=int)
                 self.in_type = 'i4'
             elif isinstance(levels, list):
                 n_lvls = len(levels)
@@ -365,10 +365,10 @@ class CategoricalEmbedder(Embedder):
                     raise TypeError("all levels of categorical variable "
                                     "must have the same type (int or str)")
                 try:
-                    self.labels = jnp.array(levels)
+                    self.alabels = jnp.array(levels)
                     self.in_type = 'i4'
                 except TypeError:
-                    self.labels = np.array(levels)
+                    self.alabels = np.array(levels)
                     self.in_type = 'U25'
                     jittable = False
             else:
@@ -470,7 +470,7 @@ class CategoricalEmbedder(Embedder):
 
         """
 
-        xx = jnp.where(self.labels == x, self.ones, self.zeros)
+        xx = jnp.where(self.alabels == x, self.ones, self.zeros)
         xx1 = (jnp.dot(xx - self.cent, self.rot) - self.shift) / self.scale
         return jnp.minimum(jnp.maximum(xx1, 0), 1)
 
@@ -487,7 +487,7 @@ class CategoricalEmbedder(Embedder):
         """
 
         ind = jnp.dot(x * self.scale + self.shift, self.rot.T) + self.cent
-        return self.labels[jnp.argmax(ind).astype(int)]
+        return self.alabels[jnp.argmax(ind).astype(int)]
 
 
 class IdentityEmbedder(Embedder):
