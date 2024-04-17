@@ -9,11 +9,12 @@ The classes include:
 
 """
 
-import numpy as np
-from scipy import stats, integrate
 import inspect
+from jax import numpy as jnp
+import numpy as np
 from parmoo.structs import AcquisitionFunction
 from parmoo.util import xerror
+from scipy import stats, integrate
 
 
 class RandomConstraint(AcquisitionFunction):
@@ -214,10 +215,9 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        result = np.dot(f_vals, self.weights)
+        result = jnp.dot(f_vals, self.weights)
         for i in range(self.o):
-            if f_vals[i] > self.f_ub[i]:
-                result = result + 10.0 * (f_vals[i] - self.f_ub[i])
+            result += 10.0 * jnp.maximum(f_vals[i] - self.f_ub[i], 0)
         return result
 
     def scalarizeGrad(self, f_vals, g_vals):

@@ -10,6 +10,7 @@ The classes include:
 
 """
 
+from jax import numpy as jnp
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
@@ -208,9 +209,9 @@ class UniformAugChebyshev(AcquisitionFunction):
         """
 
         if not isinstance(manifold, int):
-            return np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
+            return jnp.max(f_vals * self.weights) + self.alpha * jnp.sum(f_vals)
         else:
-            return (f_vals * self.weights)[manifold] + self.alpha * np.sum(f_vals)
+            return (f_vals * self.weights)[manifold] + self.alpha * jnp.sum(f_vals)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -466,9 +467,9 @@ class FixedAugChebyshev(AcquisitionFunction):
         """
 
         if not isinstance(manifold, int):
-            return np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
+            return jnp.max(f_vals * self.weights) + self.alpha * jnp.sum(f_vals)
         else:
-            return (f_vals * self.weights)[manifold] + self.alpha * np.sum(f_vals)
+            return (f_vals * self.weights)[manifold] + self.alpha * jnp.sum(f_vals)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
