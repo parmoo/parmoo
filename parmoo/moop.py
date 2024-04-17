@@ -2043,7 +2043,8 @@ class MOOP:
         for i in self.cont_var_inds:
             istart = sum(self.n_embed[:i])
             iend = istart + self.n_embed[i]
-            xx = xx.at[istart:iend].set(self.embedders[i].embed(x[self.des_schema[i][0]]))
+            xx = xx.at[istart:iend].set(self.embedders[i].embed_grad(
+                                        x[self.des_schema[i][0]]))
         return xx
 
     def _pack_sim(self, sx):
@@ -2266,7 +2267,7 @@ class MOOP:
     
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        return self.vobj_funcs(xx, ssx), (xx, ssx)
+        return self.vobj_funcs(xx, ssx), (x, sx)
 
     def _obj_bwd(self, res, w):
         """ Evaluate a backward pass over the objective functions.
@@ -2284,7 +2285,9 @@ class MOOP:
     
         """
     
-        xx, ssx = res
+        x, sx = res
+        xx = self.extract(x)
+        ssx = self.unpack_sim(sx)
         dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, obj_grad in enumerate(self.obj_grads):
             x_grad, s_grad = obj_grad(xx, ssx)
@@ -2331,7 +2334,7 @@ class MOOP:
 
         xx = self.extract(x)
         ssx = self.unpack_sim(sx)
-        return self.vcon_funcs(xx, ssx), (xx, ssx)
+        return self.vcon_funcs(xx, ssx), (x, sx)
 
     def _con_bwd(self, res, w):
         """ Evaluate a backward pass over the constraint functions.
@@ -2349,7 +2352,9 @@ class MOOP:
 
         """
 
-        xx, ssx = res
+        x, sx = res
+        xx = self.extract(x)
+        ssx = self.unpack_sim(sx)
         dcdx, dcds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, con_grad in enumerate(self.con_grads):
             x_grad, s_grad = con_grad(xx, ssx)
@@ -2400,7 +2405,7 @@ class MOOP:
         ssx = self.unpack_sim(sx)
         cx = jnp.maximum(self.vcon_funcs(xx, ssx), 0.0)
         act = (jnp.isclose(cx, jnp.zeros(cx.shape)) - 1) * -self.lam
-        return self.vpen_funcs(xx, ssx, jnp.sum(cx), self.lam), (xx, ssx, act)
+        return self.vpen_funcs(xx, ssx, jnp.sum(cx), self.lam), (x, sx, act)
 
     def _pen_bwd(self, res, w):
         """ Evaluate a backward pass over the penalized objective functions.
@@ -2420,12 +2425,14 @@ class MOOP:
     
         """
 
-        xx, ssx, act = res
-        dcdx, dcds = self._con_bwd((xx, ssx), act)
+        x, sx, act = res
+        xx = self.extract(x)
+        ssx = self.unpack_sim(sx)
+        dcdx, dcds = self._con_bwd((x, sx), act)
         dfdx = dcdx * jnp.sum(w)
         dfds = dcds * jnp.sum(w)
         for i, obj_grad in enumerate(self.obj_grads):
-            x_grad, s_grad = obj_grad(xx, ssx)  # TODO: Move this to fwd pass
+            x_grad, s_grad = obj_grad(xx, ssx)
             dfdx += self.embed_grads(x_grad) * w[i]
             dfds += self.pack_sim(s_grad) * w[i]
         return dfdx, dfds
