@@ -35,7 +35,7 @@ class MOOP:
     Class methods are summarized below.
 
     To define the MOOP, add each design variable, simulation, objective, and
-    constraint (in that order) by using the following functions:
+    constraint by using the following functions:
      * ``MOOP.addDesign(*args)``
      * ``MOOP.addSimulation(*args)``
      * ``MOOP.addObjective(*args)``
@@ -46,6 +46,10 @@ class MOOP:
     Acquisition functions (used for scalarizing problems/setting targets) are
     added using:
      * ``MOOP.addAcquisition(*args)``
+
+    When you are done defining a MOOP, it can be "compiled" to finalize
+    the definition:
+     * ``MOOP.compile()``
 
     After creating a MOOP, the following methods may be useful for getting
     the numpy.dtype of the input/output arrays:
@@ -60,6 +64,11 @@ class MOOP:
     ParMOO also offers logging. To turn on logging, activate INFO-level
     logging by importing Python's built-in logging module.
 
+    If there is any pre-existing simulation data, it can be added by
+    calling the following method, where (x, sx) are the design, output
+    pair for the simulation "s_name":
+     * ``MOOP.updateSimDb(x, sx, s_name)``
+
     After defining the MOOP and setting up checkpointing and logging info,
     use the following method to solve the MOOP (serially):
      * ``MOOP.solve(iter_max=None, sim_max=None)``
@@ -67,10 +76,10 @@ class MOOP:
     The following methods are used for solving the MOOP and managing the
     internal simulation/objective databases:
      * ``MOOP.checkSimDb(x, s_name)``
-     * ``MOOP.updateSimDb(x, sx, s_name)``
      * ``MOOP.evaluateSimulation(x, s_name)``
      * ``MOOP.addObjData(x, sx)``
      * ``MOOP.iterate(k, ib=None)``
+     * ``MOOP.filterBatch(*args)``
      * ``MOOP.updateAll(k, batch)``
 
     Finally, the following methods are used to retrieve data after the
@@ -86,19 +95,27 @@ class MOOP:
     The following private methods are not recommended for external usage:
      * ``MOOP._embed(x)``
      * ``MOOP._extract(x)``
+     * ``MOOP._embed_grads(x)``
      * ``MOOP._pack_sim(sx)``
      * ``MOOP._unpack_sim(sx)``
+     * ``MOOP._vobj_funcs(x, sx)``
+     * ``MOOP._vcon_funcs(x, sx)``
+     * ``MOOP._vpen_funcs(x, sx, cx)``
      * ``MOOP._fit_surrogates()``
      * ``MOOP._update_surrogates()``
      * ``MOOP._set_surrogate_tr(center, radius)``
      * ``MOOP._evaluate_surrogates(x)``
      * ``MOOP._surrogate_uncertainty(x)``
      * ``MOOP._evaluate_objectives(x, sx)``
+     * ``MOOP._obj_fwd(x, sx)``
+     * ``MOOP._obj_bwd(res, w)``
      * ``MOOP._evaluate_constraints(x, sx)``
+     * ``MOOP._con_fwd(x, sx)``
+     * ``MOOP._con_bwd(res, w)``
      * ``MOOP._evaluate_penalty(x, sx)``
-     * ``MOOP._vobj_funcs(x, sx)``
-     * ``MOOP._vcon_funcs(x, sx)``
-     * ``MOOP._vpen_funcs(x, sx, cx)``
+     * ``MOOP._pen_fwd(x, sx)``
+     * ``MOOP._pen_bwd(res, w)``
+     * ``MOOP._compile()``
 
     """
 
@@ -2025,13 +2042,13 @@ class MOOP:
             istart = iend
         return xx
 
-    def _embed_grads(self, x):
+    def _embed_grads(self, dx):
         """ Embed a design input as a n-dimensional vector for ParMOO.
 
         Args:
-            x (dict): Either a numpy structured array or Python dictionary
+            dx (dict): Either a numpy structured array or Python dictionary
                 whose keys match the design variable names, and whose
-                values contain design variable values.
+                values contains a gradient wrt the design variables.
 
         Returns:
             ndarray: A 1D array of length n_latent containing the embedded
@@ -2039,13 +2056,13 @@ class MOOP:
 
         """
 
-        xx = jnp.zeros(sum(self.n_embed))
+        dxx = jnp.zeros(sum(self.n_embed))
         for i in self.cont_var_inds:
             istart = sum(self.n_embed[:i])
             iend = istart + self.n_embed[i]
-            xx = xx.at[istart:iend].set(self.embedders[i].embed_grad(
-                                        x[self.des_schema[i][0]]))
-        return xx
+            dxx = dxx.at[istart:iend].set(self.embedders[i].embed_grad(
+                                          dx[self.des_schema[i][0]]))
+        return dxx
 
     def _pack_sim(self, sx):
         """ Pack a simulation output into a m-dimensional vector.

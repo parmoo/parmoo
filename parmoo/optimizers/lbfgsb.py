@@ -13,6 +13,8 @@ The classes include:
 
 """
 
+from jax import config
+config.update("jax_enable_x64", True)  # scipy.optimize.lbfgsb requires 64-bit
 from jax import jacrev
 from jax import numpy as jnp
 import numpy as np

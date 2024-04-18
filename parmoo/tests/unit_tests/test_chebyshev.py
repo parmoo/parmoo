@@ -7,8 +7,9 @@ def test_UniformAugChebyshev():
 
     """
 
-    from parmoo.acquisitions import UniformAugChebyshev
+    from jax import jacrev
     import numpy as np
+    from parmoo.acquisitions import UniformAugChebyshev
     import pytest
 
     # Initilaize a good acquisition for future testing
@@ -68,8 +69,13 @@ def test_UniformAugChebyshev():
     assert (abs(acqu3.scalarize(f_vals, np.ones(2), np.ones(2), np.ones(2)) -
                 acqu3.weights[maxind] * f_vals[maxind]) < 3.0e-3)
     # Check the gradient scalarization appears to work correctly
-    assert (np.abs(np.sum(acqu1.scalarizeGrad(np.ones(3), np.ones((3, 4))))
-                   - 4.0 * np.max(acqu1.weights) - 3.0e-4) < 1.0e-4)
+    g1 = jacrev(acqu1.scalarize)
+    g2 = jacrev(acqu2.scalarize)
+    g3 = jacrev(acqu3.scalarize)
+    g4 = jacrev(acqu4.scalarize)
+    df1, _, _, _ = g1(np.ones(3), np.ones(3), np.ones(1), np.ones(1))
+    assert (np.abs(np.sum(dx1))
+                   - np.max(acqu1.weights) - 3.0e-4) < 1.0e-4)
     assert (np.abs(np.sum(acqu2.scalarizeGrad(np.ones(3), np.ones((3, 4))))
                    - 4.0 * np.max(acqu2.weights) - 3.0e-4) < 1.0e-4)
     assert (np.abs(np.sum(acqu3.scalarizeGrad(np.ones(3), np.ones((3, 4))))

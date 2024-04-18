@@ -841,7 +841,7 @@ def run_quickstart():
             'hyperparams': {}
         })
 
-    my_moop.solve(2)
+    my_moop.solve(1)
 
     return my_moop
 

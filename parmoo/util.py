@@ -430,6 +430,7 @@ def from_array(x, dtype):
 
     """
 
+    x1 = np.asarray(x).reshape((max(x.size, 1), ))
     xx = {}
     istart = 0
     for namei in dtype.names:
@@ -437,6 +438,6 @@ def from_array(x, dtype):
             iend = istart + dtype[namei].shape[0]
         else:
             iend = istart + 1
-        xx[namei] = x[istart:iend]
+        xx[namei] = x1[istart:iend]
         istart = iend
     return xx
