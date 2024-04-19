@@ -237,29 +237,6 @@ class UniformAugChebyshev(AcquisitionFunction):
                           (f_vals * self.weights).max(),
                           atol=1.0e-8).astype(int)
 
-    def scalarizeGrad(self, f_vals, g_vals, manifold=None):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient (not used here).
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        if not isinstance(manifold, int):
-            return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
-                          g_vals)
-        else:
-            wv = np.zeros(self.o)
-            wv[manifold] = self.weights[manifold]
-            return np.dot(wv + self.alpha, g_vals)
-
 
 class FixedAugChebyshev(AcquisitionFunction):
     """ Use fixed weights with the augmented Chebyshev scalarization.
@@ -494,26 +471,3 @@ class FixedAugChebyshev(AcquisitionFunction):
         return np.isclose(f_vals * self.weights,
                           (f_vals * self.weights).max(),
                           atol=1.0e-8).astype(int)
-
-    def scalarizeGrad(self, f_vals, g_vals, manifold=None):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient (not used here).
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        if not isinstance(manifold, int):
-            return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
-                          g_vals)
-        else:
-            wv = np.zeros(self.o)
-            wv[manifold] = self.weights[manifold]
-            return np.dot(wv + self.alpha, g_vals)

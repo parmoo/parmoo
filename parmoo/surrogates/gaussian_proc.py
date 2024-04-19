@@ -305,29 +305,6 @@ class GaussRBF(SurrogateFunction):
                         self.x_vals[self.loc_inds], self.x_std_dev,
                         self.weights, self.prior, x)
 
-    def gradient(self, x):
-        """ Evaluate the gradients of the Gaussian RBF at a design point.
-
-        Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the gradient of the RBF should be evaluated.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            RBF interpolants at x.
-
-        """
-
-        outs = np.zeros((len(self.loc_inds), self.n))
-        dists = _gaussian(_cdist(self.x_vals[self.loc_inds],
-                                 x), self.x_std_dev).flatten()
-        for i, xi in enumerate(self.x_vals[self.loc_inds]):
-            outs[i, :] = 2.0 * (xi - x) * dists[i] / (self.x_std_dev ** 2.0)
-        if self.order == 1:
-            return np.dot(self.weights, outs) + self.prior[:-1, :].T
-        else:
-            return np.dot(self.weights, outs)
-
     def stdDev(self, x):
         """ Evaluate the standard deviation (uncertainty) of the Gaussian RBF at x.
 
@@ -342,53 +319,6 @@ class GaussRBF(SurrogateFunction):
 
         return _evaluate_sd(self.x_vals[self.loc_inds], self.v, self.w,
                             self.x_std_dev, 1.0e-8, x) * self.y_std_dev
-
-    def stdDevGrad(self, x):
-        """ Evaluate the gradient of the standard deviation of the GaussRBF at x.
- 
-        Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the gradient of standard deviation should be evaluated.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            standard deviation at x.
-
-        """
-
-        # Check that the x is legal
-        if not isinstance(x, np.ndarray):
-            raise TypeError("x must be a numpy array")
-        else:
-            if x.size != self.n:
-                raise ValueError("x must have length n")
-            elif (np.any(x < self.lb - self.eps) or
-                  np.any(x > self.ub + self.eps)):
-                raise ValueError("x cannot be infeasible")
-        # Get vector of Gaussian-transformed distances
-        dists = _gaussian(_cdist(self.x_vals[self.loc_inds],
-                                   x), self.x_std_dev).flatten()
-        # Solve using previously factored Kernel matrix
-        stdd_weights = np.zeros(self.v.shape[0])
-        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
-        stdd_weights[:] = np.dot(self.v, tmp)
-        # Evaluate standard deviation of all m surrogates at x
-        stdd = np.sqrt(max(_gaussian(0.0, self.x_std_dev)
-                           - np.dot(stdd_weights, dists), 0))
-        # Evaluate all m gradients at x
-        kgrad = np.zeros((self.v.shape[0], self.n))
-        for i, xi in enumerate(self.x_vals[self.loc_inds]):
-            kgrad[i, :] = 2.0 * (xi - x) * dists[i] / (self.x_std_dev ** 2.0)
-        # Just return 0 when derivative is undefined (at training points)
-        if stdd < 1.0e-4:
-            result = np.zeros(self.n)
-        else:
-            result = -np.dot(kgrad.T, stdd_weights).flatten() / stdd
-        # Build Jacobian (all m rows identical)
-        jac = np.zeros((self.m, self.n))
-        for i in range(self.m):
-            jac[i, :] = result[:] * self.y_std_dev[i]
-        return jac
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.

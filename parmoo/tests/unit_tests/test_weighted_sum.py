@@ -7,8 +7,9 @@ def test_UniformWeights():
 
     """
 
-    from parmoo.acquisitions import UniformWeights
+    from jax import jacrev
     import numpy as np
+    from parmoo.acquisitions import UniformWeights
     import pytest
 
     # Initilaize a good acquisition for future testing
@@ -70,14 +71,16 @@ def test_UniformWeights():
                    + acqu3.scalarize(np.eye(3)[2], np.ones(2),
                                      np.ones(2), np.ones(2)) - 1.0)
             < 0.00000001)
-    # Use the gradient scalarization to check that the weights sum to 1
-    assert (np.abs(np.sum(acqu1.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
-                   - 1.0) < 0.00000001)
-    assert (np.abs(np.sum(acqu2.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
-                   - 1.0) < 0.00000001)
-    assert (np.abs(np.sum(acqu3.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
-                   - 1.0) < 0.00000001)
-    return
+    # Check the gradient scalarization appears to work correctly
+    df1 = jacrev(acqu1.scalarize)(np.eye(3)[0], np.ones(4),
+                                  np.ones(1), np.ones(1))
+    df2 = jacrev(acqu2.scalarize)(np.eye(3)[0], np.ones(4),
+                                  np.ones(1), np.ones(1))
+    df3 = jacrev(acqu3.scalarize)(np.eye(3)[0], np.ones(4),
+                                  np.ones(1), np.ones(1))
+    assert (np.linalg.norm(df1 - acqu1.weights) < 1.0e-4)
+    assert (np.linalg.norm(df2 - acqu2.weights) < 1.0e-4)
+    assert (np.linalg.norm(df3 - acqu3.weights) < 1.0e-4)
 
 
 def test_FixedWeights():
@@ -88,8 +91,9 @@ def test_FixedWeights():
 
     """
 
-    from parmoo.acquisitions import FixedWeights
+    from jax import jacrev
     import numpy as np
+    from parmoo.acquisitions import FixedWeights
     import pytest
 
     # Try some bad initializations to test error handling
@@ -140,10 +144,10 @@ def test_FixedWeights():
                    + acqu.scalarize(np.eye(3)[2], np.ones(2),
                                     np.ones(2), np.ones(2)) - 1.0)
             < 0.00000001)
-    # Use the gradient scalarization to check that the weights sum to 1
-    assert (np.abs(np.sum(acqu.scalarizeGrad(np.eye(3)[0], np.eye(4)[0:3, :]))
-                   - 1.0) < 0.00000001)
-    return
+    # Check the scalarization gradient
+    da = jacrev(acqu.scalarize)(np.eye(3)[0], np.zeros(4),
+                                np.zeros(1), np.zeros(1))
+    assert (np.abs(np.sum(da) - 1.0) < 1.0e-4)
 
 
 if __name__ == "__main__":

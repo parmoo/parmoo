@@ -220,30 +220,6 @@ class RandomConstraint(AcquisitionFunction):
             result += 10.0 * jnp.maximum(f_vals[i] - self.f_ub[i], 0)
         return result
 
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Scalarize a Jacobian of gradients using the current bounds.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient, which are used to
-                penalize exceeding the bounds.
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        # Compute the dot product between the weights and the gradient values
-        result = np.dot(np.transpose(g_vals), self.weights)
-        # Add the gradient of the penalty for any bound violations
-        for i in range(self.o):
-            if f_vals[i] > self.f_ub[i]:
-                result = result + 10.0 * g_vals[i]
-        return result
-
 
 class EI_RandomConstraint(AcquisitionFunction):
     """ Expected improvement of a randomly set target point.
@@ -503,12 +479,3 @@ class EI_RandomConstraint(AcquisitionFunction):
                 result = min(np.dot(fi, self.weights) - self.best, 0.0)
             result /= self.sample_size
             return result
-
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Not implemented for this acquisition function, do not use
-        gradient-based methods.
-
-        """
-
-        raise NotImplementedError("The EI-based acquisition does not " +
-                                  "support the usage of gradients")

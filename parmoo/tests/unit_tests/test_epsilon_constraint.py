@@ -7,9 +7,10 @@ def test_RandomConstraint():
 
     """
 
+    from jax import jacrev
+    import numpy as np
     from parmoo.acquisitions import RandomConstraint
     from parmoo.util import updatePF
-    import numpy as np
     import pytest
 
     # Define the objective function
@@ -63,12 +64,13 @@ def test_RandomConstraint():
     for fi in pf['f_vals']:
         assert (acqu.scalarize(fi, np.zeros(3), np.zeros(3), np.zeros(3))
                 <= np.sum(fi) or np.any(fi > acqu.f_ub))
-    # Check that the scalar grad is either less than the sum of fi or bad
+    # Check that the scalar grad is either less than sum of weights or bad
+    grad = jacrev(acqu.scalarize)
     for fi in pf['f_vals']:
-        gi = np.random.random_sample((3, 3))
-        assert (all(acqu.scalarizeGrad(fi, gi) <= np.sum(gi, axis=0)) or
+        fi = np.random.random_sample((3, 3))
+        xi, si, sdi = np.zeros(3), np.zeros(1), np.zeros(1)
+        assert (np.all(grad(fi, xi, si, sdi) <= np.sum(acqu.weights)) or
                 np.any(fi > acqu.f_ub))
-    return
 
 
 def test_EI_RandomConstraint():
@@ -158,12 +160,6 @@ def test_EI_RandomConstraint():
     for fi in pf['f_vals']:
         assert (acqu.scalarize(fi, np.zeros(3), np.zeros(3), np.ones(3))
                 <= np.sum(fi) or np.any(fi > acqu.f_ub))
-    # Check that the scalar grad is either less than the sum of fi or bad
-    fi = np.random.random_sample(3)
-    gi = np.random.random_sample((3, 3))
-    with pytest.raises(NotImplementedError):
-        acqu.scalarizeGrad(fi, gi)
-    return
 
 
 if __name__ == "__main__":

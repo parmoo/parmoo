@@ -192,23 +192,6 @@ class UniformWeights(AcquisitionFunction):
 
         return jnp.dot(f_vals, self.weights)
 
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient (not used here).
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        return np.dot(np.transpose(g_vals), self.weights)
-
 
 class FixedWeights(AcquisitionFunction):
     """ Use fixed scalarizing weights.
@@ -398,20 +381,3 @@ class FixedWeights(AcquisitionFunction):
         """
 
         return jnp.dot(f_vals, self.weights)
-
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient (not used here).
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        return np.dot(np.transpose(g_vals), self.weights)

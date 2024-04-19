@@ -32,6 +32,10 @@ class MOOP:
     dictionary of hyperparameters using the default constructor:
      * ``MOOP.__init__(ScalarOpt, [hyperparams={}])``
 
+    New: To fix the random seed, use the hyperparameter key "np_random_gen"
+    and set either an int or ``numpy.random.Generator`` instance
+    as the corresponding value.
+
     Class methods are summarized below.
 
     To define the MOOP, add each design variable, simulation, objective, and
@@ -894,9 +898,8 @@ class MOOP:
         """ Check self.sim_db[s_name] to see if the design x was evaluated.
 
         Args:
-            x (dict or numpy structured array): A numpy structured array or a
-                Python dictionary specifying the keys/names and corresponding
-                values of a design point to search for.
+            x (dict): A Python dictionary specifying the keys/names and
+                corresponding values of a design point to search for.
 
             s_name (str): The name of the simulation whose database will be
                 searched.
@@ -928,11 +931,10 @@ class MOOP:
         """ Update sim_db[s_name] by adding a design/simulation output pair.
 
         Args:
-            x (dict or numpy structured array): A numpy structured array or a
-                Python dictionary specifying the keys/names and corresponding
-                values of a design point to add.
+            x (dict): A Python dictionary specifying the keys/names and
+                corresponding values of a design point to add.
 
-            sx (np.ndarray): A 1D array containing the corresponding
+            sx (ndarray): A 1D array containing the corresponding
                 simulation output(s).
 
             s_name (str): The name of the simulation to whose database the
@@ -975,8 +977,7 @@ class MOOP:
         """ Evaluate sim_func[s_name] and store the result in the database.
 
         Args:
-            x (dict or numpy structured array): Either a numpy structured
-                array or a Python dictionary with keys/names corresponding
+            x (dict): A Python dictionary with keys/names corresponding
                 to the design variable names given and values containing
                 the corresponding values of the design point to evaluate.
 
@@ -1005,12 +1006,10 @@ class MOOP:
         """ Update the internal objective database by truly evaluating x.
 
         Args:
-            x (dict or numpy structured array): Either a numpy structured
-                array or Python dictionary containing the value of the design
+            x (dict): A Python dictionary containing the value of the design
                 variable to add to ParMOO's database.
 
-            sx (dict or numpy structured array): Either a numpy structured
-                array or Python dictionary containing the values of the
+            sx (dict): A Python dictionary containing the values of the
                 corresponding simulation outputs for ALL simulations involved
                 in this MOOP -- sx['s_name'][:] contains the output(s)
                 for sim_func['s_name'].
@@ -1078,9 +1077,8 @@ class MOOP:
             (list): A list of tuples (design points, simulation name)
             specifying the unfiltered list of candidates that ParMOO
             recommends for true simulation evaluations. Specifically:
-             * The first entry in each tuple is either a numpy structured
-               array or a Python dictionary specifying the design point
-               to evaluate.
+             * The first entry in each tuple is a Python dictionary
+               specifying the design point to evaluate.
              * The second entry in the tuple is the (str) name of the
                simulation to evaluate at the design point specified above.
 
@@ -1917,6 +1915,9 @@ class MOOP:
             new_acq = getattr(mod, a_name)
             self.acq_tmp.append(new_acq)
         # Re-compile the MOOP
+        self.data = {}
+        self.n_dat = 0
+        self.sim_db = []
         self.compile()
         # Try to re-load each solver component's previous state
         try:
@@ -2006,9 +2007,9 @@ class MOOP:
         """ Embed a design input as a n-dimensional vector for ParMOO.
 
         Args:
-            x (dict): Either a numpy structured array or Python dictionary
-                whose keys match the design variable names, and whose
-                values contain design variable values.
+            x (dict): A Python dictionary whose keys match the design
+                variable names, and whose values contain design variable
+                values.
 
         Returns:
             ndarray: A 1D array of length n_latent containing the embedded
@@ -2046,9 +2047,9 @@ class MOOP:
         """ Embed a design input as a n-dimensional vector for ParMOO.
 
         Args:
-            dx (dict): Either a numpy structured array or Python dictionary
-                whose keys match the design variable names, and whose
-                values contains a gradient wrt the design variables.
+            dx (dict): A Python dictionary whose keys match the design
+                variable names, and whose values contain the partials
+                with respect to each of the design variables.
 
         Returns:
             ndarray: A 1D array of length n_latent containing the embedded
