@@ -26,7 +26,7 @@ class UniformWeights(AcquisitionFunction):
     """
 
     # Slots for the UniformWeights class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'np_rng']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the UniformWeights class.
@@ -70,6 +70,7 @@ class UniformWeights(AcquisitionFunction):
                                 "numpy.random.Generator")
         else:
             self.np_rng = np.random.default_rng()
+        self.eps = jnp.finfo(jnp.ones(1)).eps
         return
 
     def useSD(self):
@@ -156,7 +157,7 @@ class UniformWeights(AcquisitionFunction):
             p_best = np.infty
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -201,7 +202,7 @@ class FixedWeights(AcquisitionFunction):
     """
 
     # Slots for the FixedWeights class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'np_rng']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the FixedWeights class.
@@ -247,6 +248,7 @@ class FixedWeights(AcquisitionFunction):
         else:
             self.np_rng = np.random.default_rng()
         # Check the hyperparams dictionary for weights
+        self.eps = jnp.finfo(jnp.ones(1)).eps
         if 'weights' in hyperparams:
             # If weights are provided, check that they are legal
             if not isinstance(hyperparams['weights'], np.ndarray):
@@ -346,7 +348,7 @@ class FixedWeights(AcquisitionFunction):
             p_best = np.infty
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp

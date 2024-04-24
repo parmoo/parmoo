@@ -28,7 +28,7 @@ class RandomConstraint(AcquisitionFunction):
     """
 
     # Slots for the RandomConstraint class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'np_rng']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the RandomConstraint class.
@@ -71,6 +71,7 @@ class RandomConstraint(AcquisitionFunction):
                                 "numpy.random.Generator")
         else:
             self.np_rng = np.random.default_rng()
+        self.eps = jnp.finfo(jnp.ones(1)).eps
         return
 
     def useSD(self):
@@ -165,7 +166,7 @@ class RandomConstraint(AcquisitionFunction):
             p_best = np.infty
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -179,7 +180,7 @@ class RandomConstraint(AcquisitionFunction):
             fi = pf['f_vals'][ipts[0], :]
             # Set the bounds
             self.f_ub[:] = np.inf
-            self.weights[:] = 1.0e-4
+            self.weights[:] = self.eps ** 0.25
             for j in range(self.o):
                 # If fi[j] is less than target[j], this is a bound
                 if fi[j] + 0.00000001 < target[j]:
@@ -234,7 +235,7 @@ class EI_RandomConstraint(AcquisitionFunction):
 
     # Slots for the RandomConstraint class
     __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'best', 'f',
-                 'np_rng']
+                 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the RandomConstraint class.
@@ -284,6 +285,7 @@ class EI_RandomConstraint(AcquisitionFunction):
                                 "numpy.random.Generator")
         else:
             self.np_rng = np.random.default_rng()
+        self.eps = jnp.finfo(jnp.ones(1)).eps
         return
 
     def useSD(self):
@@ -380,7 +382,7 @@ class EI_RandomConstraint(AcquisitionFunction):
             p_best = np.infty
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp

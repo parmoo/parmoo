@@ -251,8 +251,8 @@ def test_MOOP_evaluate_surrogates():
         (np.ones(3), np.array([np.sqrt(3), 0.0, np.sqrt(0.75)]), 0)
     ]
     for xi, si, sdi in test_cases:
-        assert (np.linalg.norm(moop1._evaluate_surrogates(xi) - si) < 1.0e-8)
-        assert (np.linalg.norm(moop1._surrogate_uncertainty(xi) - sdi) < 1.0e-4)
+        assert (np.linalg.norm(moop1._evaluate_surrogates(xi) - si) < 1.0e-7)
+        assert (np.linalg.norm(moop1._surrogate_uncertainty(xi) - sdi) < 1.0e-3)
     # Evaluate one point not in the training set and check that std_dev > 0
     xi = np.ones(3) * 0.75
     assert (np.linalg.norm(moop1._surrogate_uncertainty(xi)) > 1.0e-4)

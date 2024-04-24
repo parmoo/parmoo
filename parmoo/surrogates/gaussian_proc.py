@@ -29,7 +29,7 @@ class GaussRBF(SurrogateFunction):
     # Slots for the UniformRandom class
     __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'nugget',
                  'loc_inds', 'tr_center', 'weights', 'prior', 'v', 'w',
-                 'order', 'x_std_dev', 'y_std_dev']
+                 'order', 'x_std_dev', 'y_std_dev', 'mu']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the GaussRBF class.
@@ -90,6 +90,7 @@ class GaussRBF(SurrogateFunction):
         else:
             self.nugget = 0.0
         # Check for 'des_tols' optional key in hyperparams
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
@@ -106,7 +107,7 @@ class GaussRBF(SurrogateFunction):
                                  + " value")
         else:
             self.eps = np.zeros(self.n)
-            self.eps[:] = 1.0e-8
+            self.eps[:] = self.mu
         # Check for 'tail_order' optional key in hyperparams
         if 'tail_order' in hyperparams:
             if isinstance(hyperparams['tail_order'], int):
@@ -262,9 +263,9 @@ class GaussRBF(SurrogateFunction):
             self.w, self.v = np.linalg.eigh(cov)
             # Check the smallest singular value for a bad solution
             sigma_n = np.min(self.w)
-            if sigma_n < 1.0e-8:
+            if sigma_n < self.mu:
                 for i in range(len(self.loc_inds)):
-                    cov = cov.at[i, i].set(cov[i, i] + 1.0e-8 - sigma_n)
+                    cov = cov.at[i, i].set(cov[i, i] + self.mu - sigma_n)
                 self.w, self.v = np.linalg.eigh(cov)
             # Fit prior weights and remove tail effects from RHS
             rhs = self.f_vals[self.loc_inds, :].copy()
@@ -318,7 +319,7 @@ class GaussRBF(SurrogateFunction):
         """
 
         return _evaluate_sd(self.x_vals[self.loc_inds], self.v, self.w,
-                            self.x_std_dev, 1.0e-8, x) * self.y_std_dev
+                            self.x_std_dev, self.mu, x) * self.y_std_dev
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.

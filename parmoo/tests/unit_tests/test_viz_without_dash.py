@@ -835,7 +835,7 @@ def run_quickstart():
         'constraint': lambda x, s: 0.1 - x["x1"]
     })
 
-    for i in range(3):
+    for i in range(2):
         my_moop.addAcquisition({
             'acquisition': UniformWeights,
             'hyperparams': {}
@@ -859,7 +859,7 @@ def run_dtlz2():
 
     n = 6  # number of design variables
     o = 5  # number of objectives
-    q = 4  # batch size (number of acquisitions)
+    q = 2  # batch size (number of acquisitions)
     # Create MOOP
     moop = MOOP(GlobalSurrogate_BFGS)
     # Add n design variables

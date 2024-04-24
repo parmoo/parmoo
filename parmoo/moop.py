@@ -696,23 +696,27 @@ class MOOP:
         logging.info("   jitting ParMOO's objective and constraints...")
         def gerr(x, sx): raise ValueError("1 or more grad func is undefined")
         try:
-            self.vobj_funcs = self._vobj_funcs
+            self.vobj_funcs = jax.jit(self._vobj_funcs)
+            fx = self.vobj_funcs(x, sx)
         except BaseException:
             self.vobj_funcs = self._vobj_funcs
             logging.info("     WARNING: 1 or more obj_funcs failed to jit...")
         try:
-            self.vcon_funcs = self._vcon_funcs
+            self.vcon_funcs = jax.jit(self._vcon_funcs)
+            cx = self.vcon_funcs(x, sx)
         except BaseException:
             self.vcon_funcs = self._vcon_funcs
             logging.info("     WARNING: 1 or more con_funcs failed to jit...")
         try:
-            self.vpen_funcs = self._vpen_funcs
+            self.vpen_funcs = jax.jit(self._vpen_funcs)
+            fx = self.vpen_funcs(x, sx, 0.0, 1.0)
         except BaseException:
             self.vpen_funcs = self._vpen_funcs
             logging.info("     WARNING: MOOP._vpen_funcs failed to jit...")
         if len(self.obj_grads) == self.o:
             try:
-                self.obj_bwd = self._obj_bwd
+                self.obj_bwd = jax.jit(self._obj_bwd)
+                dx, ds = self.obj_bwd((xx1, sx1), jnp.zeros(self.o))
             except BaseException:
                 self.obj_bwd = self._obj_bwd
                 logging.info("     WARNING: 1 or more obj_grads failed to "
@@ -721,7 +725,8 @@ class MOOP:
             self.obj_bwd = gerr
         if len(self.con_grads) == self.p:
             try:
-                self.con_bwd = self._con_bwd
+                self.con_bwd = jax.jit(self._con_bwd)
+                dx, ds = self.con_bwd((xx1, sx1), jnp.zeros(self.p))
             except BaseException:
                 self.con_bwd = self._con_bwd
                 logging.info("     WARNING: 1 or more con_grads failed to "
@@ -730,7 +735,9 @@ class MOOP:
             self.con_bwd = gerr
         if len(self.obj_grads) == self.o and len(self.con_grads) == self.p:
             try:
-                self.pen_bwd = self._pen_bwd
+                self.pen_bwd = jax.jit(self._pen_bwd)
+                dx, ds = self.pen_bwd((xx1, sx1, jnp.zeros(self.p)),
+                                      jnp.zeros(self.o))
             except BaseException:
                 self.pen_bwd = self._pen_bwd
                 logging.info("     WARNING: MOOP._pen_grads failed to jit...")
@@ -2460,16 +2467,18 @@ class MOOP:
 
         try:
             self.evaluate_surrogates = jax.jit(self._evaluate_surrogates)
+            sx = self.evaluate_surrogates(jnp.zeros(self.n_latent))
         except BaseException:
             self.evaluate_surrogates = self._evaluate_surrogates
-            logging.info("      WARNING: MOOP._evaluate_surrogates"
+            logging.info("      WARNING: MOOP._evaluate_surrogates "
                          "failed to jit...")
 
         try:
             self.surrogate_uncertainty = jax.jit(self._surrogate_uncertainty)
+            sx = self.surrogate_uncertainty(jnp.zeros(self.n_latent))
         except BaseException:
             self.surrogate_uncertainty = self._surrogate_uncertainty
-            logging.info("      WARNING: MOOP._surrogate_uncertainty"
+            logging.info("      WARNING: MOOP._surrogate_uncertainty "
                          "failed to jit...")
 
         @jax.custom_vjp

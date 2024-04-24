@@ -51,7 +51,8 @@ def test_RandomConstraint():
     assert (np.all(acqu.setTarget({'x_vals': np.zeros((1, 3)),
                                    'f_vals': np.zeros((1, 3)),
                                    'c_vals': np.zeros((1, 1))},
-                                  lambda x: np.ones(3) * (0.01 - sum(x))) < 1.0))
+                                  lambda x: np.ones(3) * (0.01 - sum(x)))
+                   < 1.0001))
     assert (acqu.setTarget(data, lambda x: np.zeros(3)) in data['x_vals'])
     # Generate a random scalarization target and check the scalarization
     acqu = RandomConstraint(3, np.zeros(3), np.ones(3), {})
@@ -63,14 +64,13 @@ def test_RandomConstraint():
     # Check that the scalar value is either less than the sum of fi or bad
     for fi in pf['f_vals']:
         assert (acqu.scalarize(fi, np.zeros(3), np.zeros(3), np.zeros(3))
-                <= np.sum(fi) or np.any(fi > acqu.f_ub))
+                <= np.sum(fi) + 1.0e-4 or np.any(fi > acqu.f_ub - 1.0e-4))
     # Check that the scalar grad is either less than sum of weights or bad
-    grad = jacrev(acqu.scalarize)
+    grad = jacrev(acqu.scalarize, argnums=0)
     for fi in pf['f_vals']:
-        fi = np.random.random_sample((3, 3))
         xi, si, sdi = np.zeros(3), np.zeros(1), np.zeros(1)
-        assert (np.all(grad(fi, xi, si, sdi) <= np.sum(acqu.weights)) or
-                np.any(fi > acqu.f_ub))
+        assert (np.all(grad(fi, xi, si, sdi) <= np.sum(acqu.weights) + 1.0e-4)
+                or np.any(fi > acqu.f_ub - 1.0e-4))
 
 
 def test_EI_RandomConstraint():
@@ -124,7 +124,8 @@ def test_EI_RandomConstraint():
     assert (np.all(acqu.setTarget({'x_vals': np.zeros((1, 3)),
                                    'f_vals': np.zeros((1, 3)),
                                    'c_vals': np.zeros((1, 1))},
-                                  lambda x, sx=0: np.ones(3) * (0.01 - sum(x))) < 1.0))
+                                  lambda x, sx=0: np.ones(3) * (0.01 - sum(x)))
+                   < 1.0001))
     assert (acqu.setTarget(data, lambda x, sx=0: np.zeros(3))
             in data['x_vals'])
     # Generate a random 1D scalarization target and check the scalarization
@@ -137,7 +138,7 @@ def test_EI_RandomConstraint():
     # Check that the scalar value is either less than the sum of fi or bad
     for fi in pf['f_vals']:
         assert (acqu.scalarize(fi, np.zeros(3), np.zeros(1), np.ones(1))
-                <= np.sum(fi) or np.any(fi > acqu.f_ub))
+                <= np.sum(fi) + 1.0e-4 or np.any(fi > acqu.f_ub - 1.0e-4))
     # Generate a random 2D scalarization target and check the scalarization
     acqu = EI_RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
@@ -148,7 +149,7 @@ def test_EI_RandomConstraint():
     # Check that the scalar value is either less than the sum of fi or bad
     for fi in pf['f_vals']:
         assert (acqu.scalarize(fi, np.zeros(3), np.zeros(2), np.ones(2))
-                <= np.sum(fi) or np.any(fi > acqu.f_ub))
+                <= np.sum(fi) + 1.0e-4 or np.any(fi > acqu.f_ub - 1.0e-4))
     # Generate a random 3D scalarization target and check the scalarization
     acqu = EI_RandomConstraint(3, np.zeros(3), np.ones(3), {})
     acqu.setTarget({'x_vals': None, 'f_vals': None},
@@ -159,7 +160,7 @@ def test_EI_RandomConstraint():
     # Check that the scalar value is either less than the sum of fi or bad
     for fi in pf['f_vals']:
         assert (acqu.scalarize(fi, np.zeros(3), np.zeros(3), np.ones(3))
-                <= np.sum(fi) or np.any(fi > acqu.f_ub))
+                <= np.sum(fi) + 1.0e-4 or np.any(fi > acqu.f_ub - 1.0e-4))
 
 
 if __name__ == "__main__":

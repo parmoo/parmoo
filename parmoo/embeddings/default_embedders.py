@@ -39,7 +39,8 @@ class ContinuousEmbedder(Embedder):
                    tolerance for this variable, i.e., the minimum spacing
                    before two design values are considered equivalent up to
                    measurement error. If not specified, the
-                   default value is 1.0e-8 * max(ub - lb, 1.0e-4).
+                   default value is eps * max(ub - lb, sqrt(eps)), where
+                   eps is the unit roundoff.
 
         """
 
@@ -69,7 +70,8 @@ class ContinuousEmbedder(Embedder):
                     raise ValueError("design tolerance must be strictly "
                                      "greater than 0")
             else:
-                des_tol = 1.0e-8 * max(ub - lb, 1.0e-4)
+                eps = jnp.finfo(jnp.zeros(1).dtype).eps
+                des_tol = eps * max(ub - lb, np.sqrt(eps))
             if lb + des_tol > ub:
                 raise ValueError("lower bound must be strictly less than "
                                  "upper bound for all design variables "
@@ -213,7 +215,8 @@ class IntegerEmbedder(Embedder):
                    tolerance for this variable, i.e., the minimum spacing
                    before two design values are considered equivalent up to
                    measurement error. If not specified, the
-                   default value is 1.0e-8 * max(ub - lb, 1.0e-4).
+                   default value is eps * max(ub - lb, sqrt(ep)), where
+                   eps is the unit roundoff.
 
         """
 
@@ -557,7 +560,8 @@ class IdentityEmbedder(Embedder):
                    tolerance for this variable, i.e., the minimum spacing
                    before two design values are considered equivalent up to
                    measurement error. If not specified, the
-                   default value is 1.0e-8 * max(ub - lb, 1.0e-4).
+                   default value is eps * max(ub - lb, sqrt(eps)), where
+                   eps is the unit roundoff.
 
         """
 
@@ -587,7 +591,8 @@ class IdentityEmbedder(Embedder):
                     raise ValueError("design tolerance must be strictly "
                                      "greater than 0")
             else:
-                self.des_tol = 1.0e-8 * max(self.ub - self.lb, 1.0e-4)
+                eps = jnp.finfo(jnp.zeros(1).dtype).eps
+                self.des_tol = eps * max(self.ub - self.lb, np.sqrt(eps))
             if self.lb + self.des_tol > self.ub:
                 raise ValueError("lower bound must be strictly less than "
                                  "upper bound for all design variables "

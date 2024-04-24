@@ -26,7 +26,7 @@ class UniformAugChebyshev(AcquisitionFunction):
     """
 
     # Slots for the UniformAugChebyshev class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'np_rng']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the UniformAugChebyshev class.
@@ -64,7 +64,8 @@ class UniformAugChebyshev(AcquisitionFunction):
         # Initialize the weights array
         self.weights = np.zeros(o)
         # Check hyperparameters
-        self.alpha = 1.0e-4 / self.o
+        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.alpha = self.eps ** 0.25 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
                 if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
@@ -171,7 +172,7 @@ class UniformAugChebyshev(AcquisitionFunction):
             p_best = np.infty
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -235,7 +236,7 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         return np.isclose(f_vals * self.weights,
                           (f_vals * self.weights).max(),
-                          atol=1.0e-8).astype(int)
+                          atol=np.sqrt(self.eps)).astype(int)
 
 
 class FixedAugChebyshev(AcquisitionFunction):
@@ -246,7 +247,7 @@ class FixedAugChebyshev(AcquisitionFunction):
     """
 
     # Slots for the FixedAugChebyshev class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'np_rng']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the FixedAugChebyshev class.
@@ -312,7 +313,8 @@ class FixedAugChebyshev(AcquisitionFunction):
             self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
         # Check hyperparameters dictionary for alpha
-        self.alpha = 1.0e-4 / self.o
+        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.alpha = self.eps ** 0.25 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
                 if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
@@ -406,7 +408,7 @@ class FixedAugChebyshev(AcquisitionFunction):
             p_best = np.infty
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -470,4 +472,4 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         return np.isclose(f_vals * self.weights,
                           (f_vals * self.weights).max(),
-                          atol=1.0e-8).astype(int)
+                          atol=np.sqrt(self.eps)).astype(int)

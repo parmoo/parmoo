@@ -68,6 +68,7 @@ class Linear(SurrogateFunction):
         self.tr_center = np.zeros(0)
         self.loc_inds = []
         # Check for 'des_tols' optional key in hyperparams
+        mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
@@ -84,7 +85,7 @@ class Linear(SurrogateFunction):
                                  + " value")
         else:
             self.eps = np.zeros(self.n)
-            self.eps[:] = 1.0e-8
+            self.eps[:] = mu
         return
 
     def fit(self, x, f):
