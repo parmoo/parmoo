@@ -12,6 +12,7 @@ The classes include:
 
 """
 
+import jax
 from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
@@ -27,8 +28,8 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
     """
 
     # Slots for the GlobalSurrogate_RS class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints', 'objectives',
-                 'budget', 'simulations', 'setTR',
+    __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints',
+                 'objectives', 'budget', 'simulations', 'setTR',
                  'penalty_func', 'sim_sd', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
@@ -110,6 +111,14 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
         # Initialize the surrogates with an infinite trust region
         rad = np.ones(self.n) * np.infty
         self.setTR(x[0, :], rad)
+        # Compile the penalty function
+        try:
+            pen_func = jax.jit(self.penalty_func)
+            x0 = x[0, :]
+            sx0 = self.simulations(x0)
+            f0 = pen_func(x0, sx0)
+        except BaseException:
+            pen_func = self.penalty_func
         # Set the batch size
         batch_size = 1000
         # Initialize the database
@@ -132,25 +141,30 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
                       (self.ub[:] - self.lb[:]) + self.lb[:])
                 data['x_vals'][i, :] = xi[:]
                 sxi = self.simulations(xi)
-                data['f_vals'][i, :] = self.penalty_func(xi, sxi)
+                data['f_vals'][i, :] = pen_func(xi, sxi)
             # Update the PF
             nondom = updatePF(data, nondom)
             k += k_new
-        # Use acquisition functions to extract array of results
+        # Extract results for each scalarization via random search
         results = []
         for iq, acq in enumerate(self.acquisitions):
-            f_vals = []
+            # Compile the scalarization function
             if acq.useSD():
-                f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
-                                        self.sim_sd(xi))
-                          for fi, xi in zip(nondom['f_vals'],
-                                            nondom['x_vals'])]
+                _sca_func = lambda fi, xi: acq.scalarize(fi, xi,
+                                                         self.simulations(xi),
+                                                         self.sim_sd(xi))
             else:
-                m = self.simulations(nondom['x_vals'][0]).size
-                f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
-                                        np.zeros(m))
-                          for fi, xi in zip(nondom['f_vals'],
-                                            nondom['x_vals'])]
+                _sca_func = lambda fi, xi: acq.scalarize(fi, xi,
+                                                         self.simulations(xi),
+                                                         jnp.zeros(sxi.size))
+            try:
+                sca_func = jax.jit(_sca_func)
+                q0 = sca_func(f0, x0)
+            except BaseException:
+                sca_func = _sca_func
+            # Use acquisition functions to extract array of results
+            f_vals = [sca_func(fi, xi) for fi, xi in zip(nondom['f_vals'],
+                                                         nondom['x_vals'])]
             imin = np.argmin(np.asarray([f_vals]))
             results.append(nondom['x_vals'][imin, :])
         return np.asarray(results)

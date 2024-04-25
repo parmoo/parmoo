@@ -15,7 +15,7 @@ The classes include:
 
 from jax import config
 config.update("jax_enable_x64", True)  # scipy.optimize.lbfgsb requires 64-bit
-from jax import jacrev
+import jax
 from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
@@ -34,7 +34,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
     # Slots for the GlobalSurrogate_BFGS class
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'simulations', 'setTR', 'penalty_func',
-                 'sim_sd', 'np_rng']
+                 'sim_sd', 'np_rng', 'mu']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the GlobalSurrogate_BFGS class.
@@ -51,8 +51,8 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
 
             hyperparams (dict): A dictionary of hyperparameters for the
                 optimization procedure. It may contain the following:
-                 * opt_budget (int): The evaluation budget per solve
-                   (default: 1000).
+                 * opt_budget (int): The iteration limit per solve
+                   (default: 100).
                  * opt_restarts (int): Number of multisolve restarts per
                    scalarization (default: n+1).
 
@@ -67,6 +67,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
         self.bounds = np.zeros((self.n, 2))
         self.bounds[:, 0] = lb
         self.bounds[:, 1] = ub
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
         # Check that the contents of hyperparams is legal
         if 'opt_restarts' in hyperparams:
             if isinstance(hyperparams['opt_restarts'], int):
@@ -91,7 +92,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                 raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
-            self.budget = 1000
+            self.budget = 100
         # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
@@ -141,7 +142,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
             # Define the scalarized wrapper functions
             if acquisition.useSD():
 
-                def scalar_f(x, *args):
+                def _scal_f(x, *args):
                     sx = self.simulations(x)
                     sdx = self.sim_sd(x)
                     fx = self.penalty_func(x, sx)
@@ -149,40 +150,45 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
 
             else:
 
-                def scalar_f(x, *args):
+                def _scal_f(x, *args):
                     sx = self.simulations(x)
                     sdx = jnp.zeros(sx.size)
                     fx = self.penalty_func(x, sx)
                     return acquisition.scalarize(fx, x, sx, sdx)
 
-            scalar_g1 = jacrev(scalar_f)
-            def scalar_g(x, *args): return np.asarray(scalar_g1(x, *args)).flatten()
-
+            # Recompile the scalar functions
+            try:
+                scalar_f = jax.jit(_scal_f)
+                x0 = x[j, :].copy()
+                f0 = scalar_f(x0)
+            except BaseException:
+                scalar_f = _scal_f
+                x0 = x[j, :].copy()
+                f0 = scalar_f(x0)
+            _scal_g = jax.jacrev(_scal_f)
+            def scalar_g(x, *ag): return np.asarray(_scal_g(x, *ag)).flatten()
+            g0 = scalar_g(x0)
             # Get the solution via multistart solve
             soln = x[j, :].copy()
             for i in range(self.restarts):
-                if i == 0:
-                    # Use center point to warm-start first start
-                    x0 = x[j, :].copy()
-                elif i == 1:
+                if i == 1:
                     # Use predicted gradient step to warm-start second start
-                    x0 = x[j, :].copy()
-                    gg = scalar_g(x0)
                     for ii in range(self.n):
-                        if gg[ii] < 0:
+                        if g0[ii] < -1.0e-8:
                             x0[ii] = self.bounds[ii, 1]
-                        elif gg[ii] > 0:
+                        elif g0[ii] > 1.0e-8:
                             x0[ii] = self.bounds[ii, 0]
-                else:
+                elif i > 1:
                     # Random starting point within bounds for all other starts
                     x0 = (self.np_rng.random(self.n) *
                           (self.bounds[:, 1] - self.bounds[:, 0]) +
                           self.bounds[:, 0])
-
                 # Solve the problem globally within bound constraints
                 res = optimize.minimize(scalar_f, x0, method='L-BFGS-B',
                                         jac=scalar_g, bounds=self.bounds,
-                                        options={'maxiter': self.budget})
+                                        options={'maxiter': self.budget,
+                                                 'ftol': self.mu,
+                                                 'gtol': np.sqrt(self.mu)})
                 if scalar_f(res['x']) < scalar_f(soln):
                     soln = res['x']
             # Append the found minima to the results list
@@ -203,7 +209,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
     __slots__ = ['n', 'bounds', 'acquisitions', 'budget', 'constraints',
                  'objectives', 'penalty_func', 'setTR',
                  'restarts', 'simulations', 'sim_sd', 'prev_centers',
-                 'des_tols', 'targets', 'np_rng']
+                 'des_tols', 'targets', 'np_rng', 'mu']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalSurrogate_BFGS class.
@@ -220,8 +226,8 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
 
             hyperparams (dict): A dictionary of hyperparameters for the
                 optimization procedure. It may contain the following:
-                 * opt_budget (int): The evaluation budget per solve
-                   (default: 1000).
+                 * opt_budget (int): The iteration limit per solve
+                   (default: 500).
                  * opt_restarts (int): Number of multisolve restarts per
                    scalarization (default: 2).
 
@@ -248,7 +254,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                 raise TypeError("hyperparams['opt_budget'] "
                                  "must be an integer")
         else:
-            self.budget = 1000
+            self.budget = 500
         # Check that the contents of hyperparams is legal
         if 'opt_restarts' in hyperparams:
             if isinstance(hyperparams['opt_restarts'], int):
@@ -262,6 +268,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                                  "must be an integer")
         else:
             self.restarts = 2
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size != self.n:
@@ -274,8 +281,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                 raise TypeError("hyperparams['des_tols'] must be an array.")
             self.des_tols = np.asarray(hyperparams['des_tols'])
         else:
-            self.des_tols = (np.ones(self.n) *
-                             float(jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)))
+            self.des_tols = (np.ones(self.n) * self.mu)
         # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
@@ -385,7 +391,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             # Define the scalarized wrapper functions
             if acquisition.useSD():
 
-                def scalar_f(x, *args):
+                def _scal_f(x, *args):
                     sx = self.simulations(x)
                     sdx = self.sim_sd(x)
                     fx = self.penalty_func(x, sx)
@@ -393,47 +399,51 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
 
             else:
 
-                def scalar_f(x, *args):
+                def _scal_f(x, *args):
                     sx = self.simulations(x)
-                    sdx = np.zeros(sx.size)
+                    sdx = jnp.zeros(sx.size)
                     fx = self.penalty_func(x, sx)
                     return acquisition.scalarize(fx, x, sx, sdx)
 
-            scalar_g1 = jacrev(scalar_f)
-            def scalar_g(x, *args): return np.asarray(scalar_g1(x, *args)).flatten()
-
+            # Recompile the scalar functions
+            try:
+                scalar_f = jax.jit(_scal_f)
+                x0 = x[j, :].copy()
+                f0 = scalar_f(x0)
+            except BaseException:
+                scalar_f = _scal_f
+                x0 = x[j, :].copy()
+                f0 = scalar_f(x0)
+            _scal_g = jax.jacrev(_scal_f)
+            def scalar_g(x, *ag): return np.asarray(_scal_g(x, *ag)).flatten()
+            g0 = scalar_g(x0)
             # Create a new trust region
             rad = self.__checkTR(x[j, :])
             self.setTR(x[j, :], rad)
             bounds = np.zeros((self.n, 2))
             bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
             bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
-
             # Get the solution via multistart solve
             soln = x[j, :].copy()
             f0 = scalar_f(soln)
             for i in range(self.restarts):
-                if i == 0:
-                    # Use center point to warm-start first start
-                    x0 = x[j, :].copy()
-                elif i == 1:
+                if i == 1:
                     # Use predicted gradient step to warm-start second start
-                    x0 = x[j, :].copy()
-                    gg = scalar_g(x0)
                     for ii in range(self.n):
-                        if gg[ii] < 0:
+                        if g0[ii] < -1.0e-8:
                             x0[ii] = bounds[ii, 1]
-                        elif gg[ii] > 0:
+                        elif g0[ii] > 1.0e-8:
                             x0[ii] = bounds[ii, 0]
-                else:
+                elif i > 1:
                     # Random starting point within bounds for all other starts
                     x0 = (self.np_rng.random(self.n) *
                           (bounds[:, 1] - bounds[:, 0]) + bounds[:, 0])
-
                 # Solve the problem within the local trust region
                 res = optimize.minimize(scalar_f, x0, method='L-BFGS-B',
                                         jac=scalar_g, bounds=bounds,
-                                        options={'maxiter': self.budget})
+                                        options={'maxiter': self.budget,
+                                                 'ftol': self.mu,
+                                                 'gtol': np.sqrt(self.mu)})
                 xj = res['x']
                 fj = scalar_f(res['x'])
                 if fj < scalar_f(soln):

@@ -19,9 +19,10 @@ def test_GlobalSurrogate_RS():
 
     """
 
+    from jax import numpy as jnp
+    import numpy as np
     from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import GlobalSurrogate_RS
-    import numpy as np
     import pytest
 
     # Initialize the problem dimensions
@@ -30,10 +31,10 @@ def test_GlobalSurrogate_RS():
     lb = np.zeros(n)
     ub = np.ones(n)
     # Create the biobjective function
-    def f(z, sz): return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
+    def f(z, sz): return jnp.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
     def L(z, sz): return f(z, sz)
-    def S(z): return np.ones(2)
-    def SD(z): return np.zeros(2)
+    def S(z): return jnp.ones(2)
+    def SD(z): return jnp.zeros(2)
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
     acqu1.setTarget({}, lambda x: np.zeros(2))
@@ -68,7 +69,7 @@ def test_GlobalSurrogate_RS():
         opt.addAcquisition(5)
     # Add the correct objective and constraints
     opt.setObjective(f)
-    opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
+    opt.setConstraints(lambda z, sz: jnp.asarray([0.1 - z[2], z[2] - 0.6]))
     opt.setSimulation(S, SD)
     opt.setPenalty(L)
     opt.addAcquisition(acqu1, acqu2, acqu3)
