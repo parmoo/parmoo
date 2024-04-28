@@ -6,7 +6,6 @@ dtlz1_obj objective functions to define the problem.
 
 """
 
-import jax
 import numpy as np
 from parmoo import MOOP
 from parmoo.optimizers import GlobalSurrogate_BFGS
@@ -51,7 +50,6 @@ for i in range(NUM_OBJ):
 
 # Define 2 constraints to nudge the solver in the right direction
 
-@jax.jit
 def min_constraint_func(x, sx):
     """ x[NUM_OBJ-1:NUM_DES] >= 0.55 """
 
@@ -60,7 +58,6 @@ def min_constraint_func(x, sx):
         fx += (0.55 - x[f"x{i+1}"])
     return fx
 
-@jax.jit
 def min_constraint_grad(x, sx):
     """ x[NUM_OBJ-1:NUM_DES] >= 0.55 """
 
@@ -73,7 +70,6 @@ def min_constraint_grad(x, sx):
         dx[f"x{i+1}"] = -1.
     return dx, ds
 
-@jax.jit
 def max_constraint_func(x, sx):
     """ x[NUM_OBJ-1:NUM_DES] <= 0.65 """
 
@@ -82,7 +78,6 @@ def max_constraint_func(x, sx):
         fx += (x[f"x{i+1}"] - 0.65)
     return fx
 
-@jax.jit
 def max_constraint_grad(x, sx):
     """ x[NUM_OBJ-1:NUM_DES] <= 0.65 """
 
@@ -105,15 +100,15 @@ moop.addConstraint({'name': "Upper Bounds",
                     'con_grad': max_constraint_grad
                     })
 
-# Add 2 acquisition funcitons
-for i in range(2):
+# Add 5 acquisition funcitons
+for i in range(5):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
 # Solve the problem with 5 iterations
 moop.solve(5)
 
-# Check that 150 simulations were evaluated
-assert(moop.getObjectiveData()['x1'].shape[0] == 110)
+# Check that 125 simulations were evaluated
+assert(moop.getObjectiveData()['x1'].shape[0] == 125)
 # Check that some solutions were found
-assert(moop.getSimulationData()['g1']['x1'].shape[0] == 110)
+assert(moop.getSimulationData()['g1']['x1'].shape[0] == 125)
 assert(moop.getPF()['x1'].shape[0] > 0)

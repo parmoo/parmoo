@@ -2211,7 +2211,6 @@ class MOOP:
 
         for surrogate in self.surrogates:
             surrogate.setTrustRegion(center, radius)
-        # Compile and set the optimizer attributes to compiled functions
         self._compile()
         self.optimizer.setObjective(self.evaluate_objectives)
         self.optimizer.setPenalty(self.evaluate_penalty)
@@ -2496,3 +2495,4 @@ class MOOP:
         def pen_fwd(x, sx): return self._pen_fwd(x, sx)
         eval_pen.defvjp(pen_fwd, self.pen_bwd)
         self.evaluate_penalty = eval_pen
+        return

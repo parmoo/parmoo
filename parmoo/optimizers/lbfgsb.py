@@ -165,7 +165,11 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                 scalar_f = _scal_f
                 x0 = x[j, :].copy()
                 f0 = scalar_f(x0)
-            _scal_g = jax.jacrev(_scal_f)
+            try:
+                _scal_g = jax.jit(jax.jacrev(_scal_f))
+                _ = _scal_g(x0)
+            except BaseException:
+                _scal_g = jax.jacrev(_scal_f)
             def scalar_g(x, *ag): return np.asarray(_scal_g(x, *ag)).flatten()
             g0 = scalar_g(x0)
             # Get the solution via multistart solve
@@ -414,7 +418,11 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                 scalar_f = _scal_f
                 x0 = x[j, :].copy()
                 f0 = scalar_f(x0)
-            _scal_g = jax.jacrev(_scal_f)
+            try:
+                _scal_g = jax.jit(jax.jacrev(_scal_f))
+                _ = _scal_g(x0)
+            except BaseException:
+                _scal_g = jax.jacrev(_scal_f)
             def scalar_g(x, *ag): return np.asarray(_scal_g(x, *ag)).flatten()
             g0 = scalar_g(x0)
             # Create a new trust region

@@ -430,7 +430,7 @@ def from_array(x, dtype):
 
     """
 
-    x1 = np.asarray(x).reshape((max(x.size, 1), ))
+    x1 = jnp.asarray(x).reshape((max(x.size, 1), ))
     xx = {}
     istart = 0
     for namei in dtype.names:
