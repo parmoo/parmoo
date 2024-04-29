@@ -86,9 +86,7 @@ class g1_sim(sim_func):
         """ Constructor for g1 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used to calculate the value of g1. Note that regardless of
@@ -148,9 +146,7 @@ class g2_sim(sim_func):
         """ Constructor for g2 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used to calculate the value of g2. Note that regardless of
@@ -205,9 +201,7 @@ class g3_sim(sim_func):
         """ Constructor for g3 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used to calculate the value of g3. Note that regardless of
@@ -263,9 +257,7 @@ class g4_sim(sim_func):
         """ Constructor for g4 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used to calculate the value of g4. Note that regardless of
@@ -324,9 +316,7 @@ class dtlz1_sim(sim_func):
         """ Constructor for DTLZ1 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.
@@ -391,9 +381,7 @@ class dtlz2_sim(sim_func):
         """ Constructor for DTLZ2 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.
@@ -459,9 +447,7 @@ class dtlz3_sim(sim_func):
         """ Constructor for DTLZ3 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.
@@ -529,9 +515,7 @@ class dtlz4_sim(sim_func):
         """ Constructor for DTLZ4 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.
@@ -602,9 +586,7 @@ class dtlz5_sim(sim_func):
         """ Constructor for DTLZ5 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.
@@ -676,9 +658,7 @@ class dtlz6_sim(sim_func):
         """ Constructor for DTLZ6 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.
@@ -750,9 +730,7 @@ class dtlz7_sim(sim_func):
         """ Constructor for DTLZ7 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.
@@ -818,9 +796,7 @@ class dtlz8_sim(sim_func):
         """ Constructor for DTLZ8 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.
@@ -882,9 +858,7 @@ class dtlz9_sim(sim_func):
         """ Constructor for DTLZ9 class.
 
         Args:
-            des (np.dtype or int): Either the numpy.dtype of the
-                design variables or the number of design variables,
-                assumed to all be continuous and unnamed.
+            des (np.dtype): The numpy.dtype of the design variables.
 
             num_obj (int, optional): The number of objectives, which is
                 used as the number of simulation outputs.

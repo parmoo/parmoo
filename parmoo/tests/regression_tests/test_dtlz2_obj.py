@@ -71,7 +71,7 @@ for i in range(5):
 moop.solve(5)
 
 # Check that 125 simulations were evaluated and solutions are feasible
-assert(moop.getObjectiveData().shape[0] == 125)
+assert(moop.getObjectiveData()['x1'].shape[0] == 125)
 assert(moop.getSimulationData()['g2'].shape[0] == 125)
 assert(all([sum([fi[f"DTLZ2 objective {i+1}"]**2 for i in range(NUM_OBJ)]) <= 4
             for fi in moop.getPF()]))

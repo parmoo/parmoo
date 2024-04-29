@@ -409,6 +409,12 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                     fx = self.penalty_func(x, sx)
                     return acquisition.scalarize(fx, x, sx, sdx)
 
+            # Create a new trust region
+            rad = self.__checkTR(x[j, :])
+            self.setTR(x[j, :], rad)
+            bounds = np.zeros((self.n, 2))
+            bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
+            bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
             # Recompile the scalar functions
             try:
                 scalar_f = jax.jit(_scal_f)
@@ -425,12 +431,6 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                 _scal_g = jax.jacrev(_scal_f)
             def scalar_g(x, *ag): return np.asarray(_scal_g(x, *ag)).flatten()
             g0 = scalar_g(x0)
-            # Create a new trust region
-            rad = self.__checkTR(x[j, :])
-            self.setTR(x[j, :], rad)
-            bounds = np.zeros((self.n, 2))
-            bounds[:, 0] = np.maximum(self.bounds[:, 0], x[j, :] - rad)
-            bounds[:, 1] = np.minimum(self.bounds[:, 1], x[j, :] + rad)
             # Get the solution via multistart solve
             soln = x[j, :].copy()
             f0 = scalar_f(soln)

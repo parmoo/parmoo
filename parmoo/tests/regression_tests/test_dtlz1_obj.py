@@ -32,6 +32,7 @@ for i in range(NUM_DES):
 moop.addSimulation({'name': "g1",
                     'm': 1,
                     'sim_func': sim_func(moop.getDesignType(),
+                                         num_obj=NUM_OBJ,
                                          offset=0.6),
                     'search': LatinHypercube,
                     'surrogate': GaussRBF,
