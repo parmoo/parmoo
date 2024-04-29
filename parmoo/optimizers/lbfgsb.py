@@ -459,7 +459,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             # Append the found minima to the results list
             result.append(soln)
             # We need to remember this "target" for later
-            self.targets.append([x[j, :], rad, fj, j])
+            self.targets.append([x[j, :], rad, float(fj), j])
         return np.asarray(result)
 
     def save(self, filename):

@@ -96,7 +96,7 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
                         if sj[0] == sim_name:
                             sim_num = j
                             break
-                    sx = np.zeros(moop.m[sim_num])
+                    sx = np.zeros(moop.m_list[sim_num])
                     sx[:] = s_out[moop.sim_schema[sim_num][0]]
                     sname = sim_name.decode('utf-8')
                     # Copy sim results into ParMOO databases
@@ -116,7 +116,7 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
                         if sj[0] == sim_name:
                             sim_num = j
                             break
-                    sx = np.zeros(moop.m[sim_num])
+                    sx = np.zeros(moop.m_list[sim_num])
                     sx[:] = s_out[moop.sim_schema[sim_num][0]]
                     sname = sim_name.decode('utf-8')
                     # Copy sim results into ParMOO databases
@@ -752,7 +752,7 @@ class libE_MOOP(MOOP):
                              " (e.g., local comms or MPI)")
 
         # Get the max m for all SimGroups
-        max_m = max(self.moop.m)
+        max_m = max(self.moop.m_list)
 
         # Set the input dictionaries
         x_type = self.moop.des_schema.copy()

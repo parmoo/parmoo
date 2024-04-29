@@ -36,35 +36,6 @@ if __name__ == "__main__":
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     # Add simulation
     moop.addSimulation({'m': o,
-                        'sim_func': dtlz2_sim_unnamed,
-                        'hyperparams': {'search_budget': 100},
-                        'search': LatinHypercube,
-                        'surrogate': GaussRBF,
-                        'sim_db': {},
-                        'des_tol': 0.00000001})
-    # Add o objectives
-    moop.addObjective({'obj_func': obj1_unnamed})
-    moop.addObjective({'obj_func': obj2_unnamed})
-    moop.addObjective({'obj_func': obj3_unnamed})
-    # Add 4 acquisition functions
-    for i in range(4):
-        moop.addAcquisition({'acquisition': RandomConstraint})
-    
-    # Solve
-    moop.solve(sim_max=200)
-    assert(moop.getObjectiveData()['x_vals'].shape[0] == 200)
-    
-    #print(moop.getPF())
-    
-    # Create a libE_MOOP with named variables
-    moop = libE_MOOP(GlobalSurrogate_PS, hyperparams={})
-    # Add n design vars
-    for i in range(n):
-        moop.addDesign({'name': "x" + str(i + 1), 'lb': 0.0, 'ub': 1.0})
-    
-    # Add simulation
-    moop.addSimulation({'name': "DTLZ2",
-                        'm': o,
                         'sim_func': dtlz2_sim_named,
                         'hyperparams': {'search_budget': 100},
                         'search': LatinHypercube,
@@ -72,9 +43,9 @@ if __name__ == "__main__":
                         'sim_db': {},
                         'des_tol': 0.00000001})
     # Add o objectives
-    moop.addObjective({'name': "obj1", 'obj_func': obj1_named})
-    moop.addObjective({'name': "obj2", 'obj_func': obj2_named})
-    moop.addObjective({'name': "obj3", 'obj_func': obj3_named})
+    moop.addObjective({'obj_func': obj1_named})
+    moop.addObjective({'obj_func': obj2_named})
+    moop.addObjective({'obj_func': obj3_named})
     # Add 4 acquisition functions
     for i in range(4):
         moop.addAcquisition({'acquisition': RandomConstraint})
