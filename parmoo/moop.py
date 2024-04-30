@@ -15,6 +15,7 @@ from jax import numpy as jnp
 import json
 import logging
 import numpy as np
+import os
 from os.path import exists as file_exists
 import pandas as pd
 from parmoo import structs
@@ -23,6 +24,14 @@ from parmoo.util import check_names, check_sims, updatePF
 import pickle
 import shutil
 import warnings
+
+
+# Configure jax to use only CPUs with no multithreading
+jax.config.update('jax_platform_name', 'cpu')
+os.environ["XLA_FLAGS"] = "--xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREAD"] = "1"
 
 
 class MOOP:
