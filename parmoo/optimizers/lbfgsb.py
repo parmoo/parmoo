@@ -197,6 +197,9 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                     soln = res['x']
             # Append the found minima to the results list
             result.append(soln)
+        self.objectives = None
+        self.constraints = None
+        self.penalty_func = None
         return np.asarray(result)
 
 
@@ -460,6 +463,9 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             result.append(soln)
             # We need to remember this "target" for later
             self.targets.append([x[j, :], rad, float(fj), j])
+        self.objectives = None
+        self.constraints = None
+        self.penalty_func = None
         return np.asarray(result)
 
     def save(self, filename):

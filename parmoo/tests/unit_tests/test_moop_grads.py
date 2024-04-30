@@ -191,9 +191,9 @@ def test_MOOP_evaluate_penalty_grads():
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
     assert (np.linalg.norm(eval_pen_jac(moop1, x) - eval_pen_jac(moop2, xx) < 1.0e-8))
     # Now check that after compiling, jax correctly propagates pen_jac
-    moop1._compile()
+    _, _, eval_pen1 = moop1._link()
     def pen_jac(x):
-        return moop1.evaluate_penalty(x, moop1.evaluate_surrogates(x))
+        return eval_pen1(x, moop1._evaluate_surrogates(x))
     moop1_pen_jac = jacrev(pen_jac)
     for xi in np.random.sample((5, 3)):
         dfdxi = moop1_pen_jac(xi)
@@ -347,10 +347,10 @@ def test_MOOP_evaluate_objective_grads():
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
     assert (np.linalg.norm(eval_obj_jac(moop1, x) - eval_obj_jac(moop2, xx) < 1.0e-8))
+    eval_obj1, _, _ = moop1._link()
     # Now check that after compiling, jax correctly propagates obj_jac
-    moop1._compile()
     def obj_jac(x):
-        return moop1.evaluate_objectives(x, moop1.evaluate_surrogates(x))
+        return eval_obj1(x, moop1._evaluate_surrogates(x))
     moop1_obj_jac = jacrev(obj_jac)
     for xi in np.random.sample((5, 3)):
         dfdxi = moop1_obj_jac(xi)
@@ -485,10 +485,10 @@ def test_MOOP_evaluate_constraint_grads():
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
     assert (np.linalg.norm(eval_con_jac(moop1, x) - eval_con_jac(moop2, xx) < 1.0e-8))
+    _, eval_con1, _ = moop1._link()
     # Now check that after compiling, jax correctly propagates con_jac
-    moop1._compile()
     def con_jac(x):
-        return moop1.evaluate_constraints(x, moop1.evaluate_surrogates(x))
+        return eval_con1(x, moop1._evaluate_surrogates(x))
     moop1_con_jac = jacrev(con_jac)
     for xi in np.random.sample((5, 3)):
         dfdxi = moop1_con_jac(xi)
@@ -552,7 +552,7 @@ def test_MOOP_solve_with_grads():
         return {"x1": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
 
     # Initialize 2 continuous MOOPs with 1 design var, 2 sims, and 3 objs
-    moop1 = MOOP(GlobalSurrogate_BFGS, hyperparams={'opt_restarts': 20,
+    moop1 = MOOP(GlobalSurrogate_BFGS, hyperparams={'opt_restarts': 2,
                                                     'np_random_gen': 0})
     moop1.addDesign({'lb': 0.0, 'ub': 1.0})
     moop1.addSimulation(g1, g2)

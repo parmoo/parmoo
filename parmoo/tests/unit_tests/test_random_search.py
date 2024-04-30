@@ -67,6 +67,11 @@ def test_GlobalSurrogate_RS():
         opt.setConstraints(lambda z1, z2, z3: np.zeros(1))
     with pytest.raises(TypeError):
         opt.addAcquisition(5)
+    # Try to solve with invalid inputs to test error handling
+    with pytest.raises(ValueError):
+        opt.solve(np.zeros((3, n-1)))
+    with pytest.raises(ValueError):
+        opt.solve(np.zeros((4, n)))
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z, sz: jnp.asarray([0.1 - z[2], z[2] - 0.6]))
@@ -74,11 +79,6 @@ def test_GlobalSurrogate_RS():
     opt.setPenalty(L)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setTrFunc(lambda x, r: 100)
-    # Try to solve with invalid inputs to test error handling
-    with pytest.raises(ValueError):
-        opt.solve(np.zeros((3, n-1)))
-    with pytest.raises(ValueError):
-        opt.solve(np.zeros((4, n)))
     # Solve the surrogate problem with GlobalSurrogate_RS, starting from the centroid
     x = np.zeros((3, n))
     x[:] = 0.5

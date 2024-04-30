@@ -72,13 +72,6 @@ def test_GlobalSurrogate_BFGS():
         opt.setPenalty(lambda z1, z2, z3: np.zeros(1))
     with pytest.raises(TypeError):
         opt.addAcquisition(5)
-    # Add the correct objective and constraints
-    opt.setObjective(f)
-    opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
-    opt.setSimulation(S, SD)
-    opt.setPenalty(L)
-    opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(ValueError):
         opt.solve(np.zeros((3, n-1)))
@@ -86,7 +79,14 @@ def test_GlobalSurrogate_BFGS():
         opt.solve(np.zeros((4, n)))
     with pytest.raises(ValueError):
         opt.solve(-np.ones((3, n)))
-    # Solve the surrogate problem with GlobalSurrogate_BFGS, starting from the centroid
+    # Add the correct objective and constraints
+    opt.setObjective(f)
+    opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
+    opt.setSimulation(S, SD)
+    opt.setPenalty(L)
+    opt.addAcquisition(acqu1, acqu2, acqu3)
+    opt.setTrFunc(lambda x, r: 100.0)
+    # Solve the surrogate problem with GlobalSurrogate_BFGS starting from centroid
     x0 = np.zeros((3, n))
     x0[:] = 0.5
     (x1, x2, x3) = opt.solve(x0)
@@ -181,13 +181,6 @@ def test_LocalSurrogate_BFGS():
         opt.setTrFunc(5)
     with pytest.raises(ValueError):
         opt.setTrFunc(lambda z1: 0.0)
-    # Add the correct objective and constraints
-    opt.setObjective(f)
-    opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
-    opt.setSimulation(S, SD)
-    opt.setPenalty(L)
-    opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(ValueError):
         opt.solve(np.zeros((3, n-1)))
@@ -195,6 +188,10 @@ def test_LocalSurrogate_BFGS():
         opt.solve(np.zeros((4, n)))
     with pytest.raises(ValueError):
         opt.solve(-np.ones((3, n)))
+    # Set the acquisition function and TR reset functions
+    opt.setSimulation(S, SD)
+    opt.addAcquisition(acqu1, acqu2, acqu3)
+    opt.setTrFunc(lambda x, r: 100.0)
     # Define the solution
     x1_soln = np.eye(n)[0]
     x1_soln[n-1] = 0.1
@@ -204,6 +201,10 @@ def test_LocalSurrogate_BFGS():
     x0 = np.zeros((3, n))
     x0[:] = 0.5
     for i in range(6):
+        # Add the correct objective and constraints
+        opt.setObjective(f)
+        opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
+        opt.setPenalty(L)
         (x1, x2, x3) = opt.solve(x0)
         x0[0] = x1
         x0[1] = x2

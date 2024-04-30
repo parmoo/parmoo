@@ -119,7 +119,6 @@ class MOOP:
      * ``MOOP._evaluate_penalty(x, sx)``
      * ``MOOP._pen_fwd(x, sx)``
      * ``MOOP._pen_bwd(res, w)``
-     * ``MOOP._compile()``
 
     """
 
@@ -151,11 +150,6 @@ class MOOP:
                  'np_random_gen',
                  # Compiled function definitions -- These are only defined
                  # after calling the MOOP.compile() method
-                 'embed', 'extract', 'pack_sim', 'unpack_sim', 'embed_grads',
-                 'evaluate_objectives', 'evaluate_constraints',
-                 'evaluate_penalty',
-                 'evaluate_surrogates', 'surrogate_uncertainty',
-                 'vobj_funcs', 'vcon_funcs', 'vpen_funcs',
                  'obj_bwd', 'con_bwd', 'pen_bwd'
                 ]
 
@@ -638,111 +632,80 @@ class MOOP:
         lbs = np.asarray(self.latent_lb)
         ubs = np.asarray(self.latent_ub)
         des_tols = np.asarray(self.latent_des_tols)
-        # Jitting ParMOO embedders and extractors
+        # Try jitting ParMOO embedders and extractors
         logging.info("   jitting and testing ParMOO's embedders...")
         xx1 = (lbs + ubs) / 2
         sx1 = np.zeros(self.m)
         try:
-            self.extract = jax.jit(self._extract)
-            x = self.extract(xx1)
+            x = jax.jit(self._extract)(xx1)
             for key in self.des_schema:
                 assert (key[0] in x)
         except BaseException:
-            self.extract = self._extract
-            x = self.extract(xx1)
-            for key in self.des_schema:
-                assert (key[0] in x)
             logging.info("     WARNING: 1 or more extractors failed to jit...")
         try:
-            self.embed = jax.jit(self._embed)
-            xx2 = self.embed(x)
+            xx2 = jax.jit(self._embed)(x)
             assert (xx2.shape == xx1.shape)
         except BaseException:
-            self.embed = self._embed
-            xx2 = self.embed(x)
-            assert (xx2.shape == xx1.shape)
             logging.info("     WARNING: 1 or more embedders failed to jit...")
         try:
-            self.embed_grads = jax.jit(self._embed_grads)
-            xx2 = self.embed_grads(x)
+            xx2 = jax.jit(self._embed_grads)(x)
             assert (xx2.shape == xx1.shape)
         except BaseException:
-            self.embed_grads = self._embed_grads
-            xx2 = self.embed_grads(x)
-            assert (xx2.shape == xx1.shape)
-            logging.info("     WARNING: 1 or more embedders failed to jit...")
+            logging.info("     WARNING: 1 or more grad embedders failed to "
+                         "jit...")
         try:
-            self.unpack_sim = jax.jit(self._unpack_sim)
-            sx = self.unpack_sim(sx1)
+            sx = jax.jit(self._unpack_sim)(sx1)
             for key in self.sim_schema:
                 assert (key[0] in sx)
         except BaseException:
-            self.unpack_sim = self._unpack_sim
-            sx = self.unpack_sim(sx1)
-            for key in self.sim_schema:
-                assert (key[0] in sx)
             logging.info("     WARNING: MOOP._unpack_sim failed to jit...")
         try:
-            self.pack_sim = jax.jit(self._pack_sim)
-            sx2 = self.pack_sim(sx)
+            sx2 = jax.jit(self._pack_sim)(sx)
             assert (sx2.shape == sx1.shape)
         except BaseException:
-            self.pack_sim = self._pack_sim
-            sx2 = self.pack_sim(sx)
-            assert (sx2.shape == sx1.shape)
             logging.info("     WARNING: MOOP._pack_sim failed to jit...")
         logging.info("   Done.")
         # Jitting ParMOO objectives and constraints
         logging.info("   jitting ParMOO's objective and constraints...")
-        def gerr(x, sx): raise ValueError("1 or more grad func is undefined")
         try:
-            self.vobj_funcs = jax.jit(self._vobj_funcs)
-            fx = self.vobj_funcs(x, sx)
+            fx = jax.jit(self._vobj_funcs)(x, sx)
         except BaseException:
-            self.vobj_funcs = self._vobj_funcs
             logging.info("     WARNING: 1 or more obj_funcs failed to jit...")
         try:
-            self.vcon_funcs = jax.jit(self._vcon_funcs)
-            cx = self.vcon_funcs(x, sx)
+            cx = jax.jit(self._vcon_funcs)(x, sx)
         except BaseException:
-            self.vcon_funcs = self._vcon_funcs
             logging.info("     WARNING: 1 or more con_funcs failed to jit...")
         try:
-            self.vpen_funcs = jax.jit(self._vpen_funcs)
-            fx = self.vpen_funcs(x, sx, 0.0, 1.0)
+            fx = jax.jit(self._vpen_funcs)(x, sx, 0., 1.)
         except BaseException:
-            self.vpen_funcs = self._vpen_funcs
             logging.info("     WARNING: MOOP._vpen_funcs failed to jit...")
         if len(self.obj_grads) == self.o:
             try:
-                self.obj_bwd = jax.jit(self._obj_bwd)
-                dx, ds = self.obj_bwd((xx1, sx1), jnp.zeros(self.o))
+                dx, ds = jax.jit(self._obj_bwd)((xx1, sx1), jnp.zeros(self.o))
             except BaseException:
-                self.obj_bwd = self._obj_bwd
                 logging.info("     WARNING: 1 or more obj_grads failed to "
                              "jit...")
+            self.obj_bwd = self._obj_bwd
         else:
-            self.obj_bwd = gerr
+            self.obj_bwd = _gerr
         if len(self.con_grads) == self.p:
             try:
-                self.con_bwd = jax.jit(self._con_bwd)
-                dx, ds = self.con_bwd((xx1, sx1), jnp.zeros(self.p))
+                dx, ds = jax.jit(self._con_bwd)((xx1, sx1), jnp.zeros(self.p))
             except BaseException:
-                self.con_bwd = self._con_bwd
                 logging.info("     WARNING: 1 or more con_grads failed to "
                              "jit...")
+            self.con_bwd = self._con_bwd
         else:
-            self.con_bwd = gerr
+            self.con_bwd = _gerr
         if len(self.obj_grads) == self.o and len(self.con_grads) == self.p:
             try:
-                self.pen_bwd = jax.jit(self._pen_bwd)
-                dx, ds = self.pen_bwd((xx1, sx1, jnp.zeros(self.p)),
-                                      jnp.zeros(self.o))
+                dx, ds = jax.jit(self._pen_bwd)((xx1, sx1, jnp.zeros(self.p)),
+                                                jnp.zeros(self.o))
             except BaseException:
-                self.pen_bwd = self._pen_bwd
                 logging.info("     WARNING: MOOP._pen_grads failed to jit...")
+            self.pen_bwd = self._pen_bwd
         else:
-            self.pen_bwd = gerr
+            self.pen_bwd = _gerr
         logging.info("   Done.")
         # Initialize the simulation components
         for i in range(self.s):
@@ -927,7 +890,7 @@ class MOOP:
         if i < 0 or i > self.s - 1:
             raise ValueError("s_name did not contain a legal name/index")
         # Check the database for previous evaluations of x
-        xx = self.embed(x)
+        xx = self._embed(x)
         des_tols = np.asarray(self.latent_des_tols)
         for j in range(self.sim_db[i]['n']):
             if np.all(np.abs(self.sim_db[i]['x_vals'][j, :] - xx) < des_tols):
@@ -960,7 +923,7 @@ class MOOP:
                 break
         if i < 0 or i > self.s - 1:
             raise ValueError("s_name did not contain a legal name/index")
-        xx = self.embed(x)
+        xx = self._embed(x)
         if self.sim_db[i]['n'] > 0:
             # If sim_db[i]['n'] > 0, then append to the database
             self.sim_db[i]['x_vals'] = np.append(self.sim_db[i]['x_vals'],
@@ -1023,7 +986,7 @@ class MOOP:
 
         """
 
-        xx = self.embed(x)
+        xx = self._embed(x)
         des_tols = np.asarray(self.latent_des_tols)
         # Initialize the database if needed
         if self.n_dat == 0:
@@ -1120,7 +1083,7 @@ class MOOP:
                 des = search.startSearch(np.asarray(self.latent_lb),
                                          np.asarray(self.latent_ub))
                 for xi in des:
-                    xbatch.append((self.extract(xi),
+                    xbatch.append((self._extract(xi),
                                    self.sim_schema[j][0]))
         # General case for k>0 iterations
         else:
@@ -1134,9 +1097,9 @@ class MOOP:
             for i, acqi in enumerate(self.acquisitions):
                 if self.s > 0:
                     for sn in self.sim_schema:
-                        xbatch.append((self.extract(x_candidates[i, :]), sn[0]))
+                        xbatch.append((self._extract(x_candidates[i, :]), sn[0]))
                 else:
-                    xbatch.append(self.extract(x_candidates[i, :]))
+                    xbatch.append(self._extract(x_candidates[i, :]))
         return xbatch
 
     def filterBatch(self, *args):
@@ -1181,7 +1144,7 @@ class MOOP:
                         si = [i for i in range(self.s)]
                     # This 2nd extract/embed, while redundant, is necessary
                     # for categorical variables to be processed correctly
-                    xxi = self.embed(xi)
+                    xxi = self._embed(xi)
                     # Check whether it has been evaluated by any simulation
                     for i in si:
                         namei = self.sim_schema[i][0]
@@ -1195,20 +1158,20 @@ class MOOP:
                             # Try to improve surrogate (locally then globally)
                             x_improv = self.surrogates[i].improve(xxi, False)
                             # Again, this is needed to handle categorical vars
-                            ibatch = [self.embed(self.extract(xk))
+                            ibatch = [self._embed(self._extract(xk))
                                       for xk in x_improv]
                             while (any([any([np.all(np.abs(xj - xk) < des_tols)
                                              and namei == j for (xj, j)
                                              in ebatch])
                                         for xk in ibatch]) or
-                                   any([self.checkSimDb(self.extract(xk), namei)
+                                   any([self.checkSimDb(self._extract(xk), namei)
                                         is not None for xk in ibatch])):
                                 x_improv = self.surrogates[i].improve(xxi, True)
-                                ibatch = [self.embed(self.extract(xk))
+                                ibatch = [self._embed(self._extract(xk))
                                           for xk in x_improv]
                             # Add improvement points to the fbatch
                             for xj in ibatch:
-                                fbatch.append((self.extract(xj), namei))
+                                fbatch.append((self._extract(xj), namei))
                                 ebatch.append((xj, namei))
             else:
                 # If there were no simulations, just add all points to fbatch
@@ -1216,7 +1179,7 @@ class MOOP:
                 for xi in xbatch:
                     # This 2nd extract/embed, while redundant, is necessary
                     # for categorical variables to be processed correctly
-                    xxi = self.embed(xi)
+                    xxi = self._embed(xi)
                     if all([np.any(np.abs(xxi - xj) > des_tols)
                             for (xj, j) in ebatch]):
                         fbatch.append((xi, -1))
@@ -1262,11 +1225,11 @@ class MOOP:
                             break
                     # If xi was in every sim_db, add it to the database
                     if is_shared:
-                        self.addObjData(self.extract(xi), self.unpack_sim(sim))
+                        self.addObjData(self._extract(xi), self._unpack_sim(sim))
         else:
             # If any constraints are violated, increase lam toward the limit
             for (xi, i) in batch:
-                xxi = self.embed(xi)
+                xxi = self._embed(xi)
                 sxi = self._evaluate_surrogates(xxi)
                 eps = np.sqrt(self.epsilon)
                 if np.any(self._evaluate_constraints(xxi, sxi) > eps):
@@ -1276,7 +1239,7 @@ class MOOP:
             self._update_surrogates()
             for xi in batch:
                 (x, i) = xi
-                xx = self.embed(x)
+                xx = self._embed(x)
                 is_shared = True
                 sim = np.zeros(self.m)
                 m_count = 0
@@ -1300,8 +1263,8 @@ class MOOP:
                 # to the optimizer
                 if is_shared:
                     fx = np.zeros(self.o)
-                    sx = self.unpack_sim(sim)
-                    sdx = self.unpack_sim(np.zeros(self.m))
+                    sx = self._unpack_sim(sim)
+                    sdx = self._unpack_sim(np.zeros(self.m))
                     for i, obj_func in enumerate(self.obj_funcs):
                         fx[i] = obj_func(x, sx)
                     self.addObjData(x, sx)
@@ -1468,7 +1431,7 @@ class MOOP:
         # Extract all results
         if self.n_dat > 0:
             for i, xi in enumerate(pf['x_vals']):
-                xxi = self.extract(xi)
+                xxi = self._extract(xi)
                 for (name, t) in self.des_schema:
                     result[str(name)][i] = xxi[name]
             for i, (name, t) in enumerate(self.obj_schema):
@@ -1516,7 +1479,7 @@ class MOOP:
             result[sname[0]] = np.zeros(self.sim_db[i]['n'], dtype=dt)
             if self.sim_db[i]['n'] > 0:
                 for j, xj in enumerate(self.sim_db[i]['x_vals']):
-                    xxj = self.extract(xj)
+                    xxj = self._extract(xj)
                     for (name, t) in self.des_schema:
                         result[sname[0]][name][j] = xxj[name]
                 if len(sname) > 2:
@@ -1579,7 +1542,7 @@ class MOOP:
         # Extract all results
         if self.n_dat > 0:
             for i, xi in enumerate(self.data['x_vals']):
-                xxi = self.extract(xi)
+                xxi = self._extract(xi)
                 for (name, t) in self.des_schema:
                     result[name][i] = xxi[name]
             for i, (name, t) in enumerate(self.obj_schema):
@@ -2211,10 +2174,10 @@ class MOOP:
 
         for surrogate in self.surrogates:
             surrogate.setTrustRegion(center, radius)
-        self._compile()
-        self.optimizer.setObjective(self.evaluate_objectives)
-        self.optimizer.setPenalty(self.evaluate_penalty)
-        self.optimizer.setConstraints(self.evaluate_constraints)
+        eval_obj, eval_con, eval_pen = self._link()
+        self.optimizer.setObjective(eval_obj)
+        self.optimizer.setConstraints(eval_con)
+        self.optimizer.setPenalty(eval_pen)
         return
 
     def _evaluate_surrogates(self, x):
@@ -2268,9 +2231,9 @@ class MOOP:
 
         """
 
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
-        return self.vobj_funcs(xx, ssx)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        return self._vobj_funcs(xx, ssx)
 
     def _obj_fwd(self, x, sx):
         """ Evaluate a forward pass over the objective functions.
@@ -2289,9 +2252,9 @@ class MOOP:
     
         """
     
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
-        return self.vobj_funcs(xx, ssx), (x, sx)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        return self._vobj_funcs(xx, ssx), (x, sx)
 
     def _obj_bwd(self, res, w):
         """ Evaluate a backward pass over the objective functions.
@@ -2310,13 +2273,13 @@ class MOOP:
         """
     
         x, sx = res
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
         dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, obj_grad in enumerate(self.obj_grads):
             x_grad, s_grad = obj_grad(xx, ssx)
-            dfdx += self.embed_grads(x_grad) * w[i]
-            dfds += self.pack_sim(s_grad) * w[i]
+            dfdx += self._embed_grads(x_grad) * w[i]
+            dfds += self._pack_sim(s_grad) * w[i]
         return dfdx, dfds
 
     def _evaluate_constraints(self, x, sx):
@@ -2335,9 +2298,9 @@ class MOOP:
 
         """
 
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
-        return self.vcon_funcs(xx, ssx)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        return self._vcon_funcs(xx, ssx)
 
     def _con_fwd(self, x, sx):
         """ Evaluate a forward pass over the constraint functions.
@@ -2356,9 +2319,9 @@ class MOOP:
 
         """
 
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
-        return self.vcon_funcs(xx, ssx), (x, sx)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        return self._vcon_funcs(xx, ssx), (x, sx)
 
     def _con_bwd(self, res, w):
         """ Evaluate a backward pass over the constraint functions.
@@ -2377,13 +2340,13 @@ class MOOP:
         """
 
         x, sx = res
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
         dcdx, dcds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
         for i, con_grad in enumerate(self.con_grads):
             x_grad, s_grad = con_grad(xx, ssx)
-            dcdx += self.embed_grads(x_grad) * w[i]
-            dcds += self.pack_sim(s_grad) * w[i]
+            dcdx += self._embed_grads(x_grad) * w[i]
+            dcds += self._pack_sim(s_grad) * w[i]
         return dcdx, dcds
 
     def _evaluate_penalty(self, x, sx):
@@ -2402,10 +2365,10 @@ class MOOP:
 
         """
 
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
-        cx = jnp.sum(jnp.maximum(self.vcon_funcs(xx, ssx), 0.0))
-        return self.vpen_funcs(xx, ssx, cx, self.lam)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        cx = jnp.sum(jnp.maximum(self._vcon_funcs(xx, ssx), 0.0))
+        return self._vpen_funcs(xx, ssx, cx, self.lam)
 
     def _pen_fwd(self, x, sx):
         """ Evaluate a forward pass over the penalized objective functions.
@@ -2425,11 +2388,11 @@ class MOOP:
     
         """
     
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
-        cx = jnp.maximum(self.vcon_funcs(xx, ssx), 0.0)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
+        cx = jnp.maximum(self._vcon_funcs(xx, ssx), 0.0)
         act = (jnp.isclose(cx, jnp.zeros(cx.shape)) - 1) * -self.lam
-        return self.vpen_funcs(xx, ssx, jnp.sum(cx), self.lam), (x, sx, act)
+        return self._vpen_funcs(xx, ssx, jnp.sum(cx), self.lam), (x, sx, act)
 
     def _pen_bwd(self, res, w):
         """ Evaluate a backward pass over the penalized objective functions.
@@ -2450,49 +2413,34 @@ class MOOP:
         """
 
         x, sx, act = res
-        xx = self.extract(x)
-        ssx = self.unpack_sim(sx)
+        xx = self._extract(x)
+        ssx = self._unpack_sim(sx)
         dcdx, dcds = self._con_bwd((x, sx), act)
         dfdx = dcdx * jnp.sum(w)
         dfds = dcds * jnp.sum(w)
         for i, obj_grad in enumerate(self.obj_grads):
             x_grad, s_grad = obj_grad(xx, ssx)
-            dfdx += self.embed_grads(x_grad) * w[i]
-            dfds += self.pack_sim(s_grad) * w[i]
+            dfdx += self._embed_grads(x_grad) * w[i]
+            dfds += self._pack_sim(s_grad) * w[i]
         return dfdx, dfds
 
-    def _compile(self):
-        """ Compile the helper functions and link the fwd/bwd pass functions """
 
-        try:
-            self.evaluate_surrogates = jax.jit(self._evaluate_surrogates)
-            sx = self.evaluate_surrogates(jnp.zeros(self.n_latent))
-        except BaseException:
-            self.evaluate_surrogates = self._evaluate_surrogates
-            logging.info("      WARNING: MOOP._evaluate_surrogates "
-                         "failed to jit...")
-
-        try:
-            self.surrogate_uncertainty = jax.jit(self._surrogate_uncertainty)
-            sx = self.surrogate_uncertainty(jnp.zeros(self.n_latent))
-        except BaseException:
-            self.surrogate_uncertainty = self._surrogate_uncertainty
-            logging.info("      WARNING: MOOP._surrogate_uncertainty "
-                         "failed to jit...")
+    def _link(self):
+        """ Link the fowrard/backward pass functions """
 
         @jax.custom_vjp
         def eval_obj(x, sx): return self._evaluate_objectives(x, sx)
         def obj_fwd(x, sx): return self._obj_fwd(x, sx)
         eval_obj.defvjp(obj_fwd, self.obj_bwd)
-        self.evaluate_objectives = eval_obj
         @jax.custom_vjp
         def eval_con(x, sx): return self._evaluate_constraints(x, sx)
         def con_fwd(x, sx): return self._con_fwd(x, sx)
         eval_con.defvjp(con_fwd, self.con_bwd)
-        self.evaluate_constraints = eval_con
         @jax.custom_vjp
         def eval_pen(x, sx): return self._evaluate_penalty(x, sx)
         def pen_fwd(x, sx): return self._pen_fwd(x, sx)
         eval_pen.defvjp(pen_fwd, self.pen_bwd)
-        self.evaluate_penalty = eval_pen
-        return
+        return eval_obj, eval_con, eval_pen
+
+
+def _gerr(x, sx): raise ValueError("1 or more grad func is undefined")

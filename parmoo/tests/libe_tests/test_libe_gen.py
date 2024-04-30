@@ -35,7 +35,8 @@ if __name__ == "__main__":
     for i in range(n):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
     # Add simulation
-    moop.addSimulation({'m': o,
+    moop.addSimulation({'name': "DTLZ2",
+                        'm': o,
                         'sim_func': dtlz2_sim_named,
                         'hyperparams': {'search_budget': 100},
                         'search': LatinHypercube,
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     # Add 4 acquisition functions
     for i in range(4):
         moop.addAcquisition({'acquisition': RandomConstraint})
-    
+    moop.compile()
     # Solve
     moop.solve(sim_max=200)
     assert(moop.getObjectiveData()['x1'].shape[0] == 200)

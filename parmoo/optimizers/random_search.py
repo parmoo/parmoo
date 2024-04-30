@@ -167,4 +167,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
                                                          nondom['x_vals'])]
             imin = np.argmin(np.asarray([f_vals]))
             results.append(nondom['x_vals'][imin, :])
+        self.objectives = None
+        self.constraints = None
+        self.penalty_func = None
         return np.asarray(results)

@@ -66,27 +66,28 @@ def test_LocalSurrogate_PS():
         opt.setConstraints(lambda z1, z2, z3: np.zeros(1))
     with pytest.raises(TypeError):
         opt.addAcquisition(5)
-    # Add the correct objective and constraints
-    opt.setObjective(f)
-    opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
-    opt.setSimulation(S, SD)
-    opt.setPenalty(L)
-    opt.addAcquisition(acqu1, acqu2, acqu3)
-    opt.setTrFunc(lambda x, r: 100.0)
     # Try to solve with invalid inputs to test error handling
     with pytest.raises(ValueError):
         opt.solve(np.zeros((3, n-1)))
     with pytest.raises(ValueError):
         opt.solve(np.zeros((4, n)))
+    # Set the acquisition and reset functions
+    opt.setSimulation(S, SD)
+    opt.addAcquisition(acqu1, acqu2, acqu3)
+    opt.setTrFunc(lambda x, r: 100.0)
     # Define the solution
     x1_soln = np.eye(n)[0]
     x1_soln[n-1] = 0.1
     x2_soln = np.eye(n)[1]
     x2_soln[n-1] = 0.1
-    # Solve the surrogate problem with LocalSurrogate_PS, starting from the centroid
+    # Solve the surrogate problem with LocalSurrogate_PS starting from centroid
     x = np.zeros((3, n))
     x[:] = 0.5
     for i in range(10):
+        # Add the correct objectives and constraints
+        opt.setObjective(f)
+        opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
+        opt.setPenalty(L)
         (x1, x2, x3) = opt.solve(x)
         x[0] = x1
         x[1] = x2
@@ -179,6 +180,11 @@ def test_GlobalSurrogate_PS():
         opt.setConstraints(lambda z1, z2, z3: np.zeros(1))
     with pytest.raises(TypeError):
         opt.addAcquisition(5)
+    # Try to solve with invalid inputs to test error handling
+    with pytest.raises(ValueError):
+        opt.solve(np.zeros((3, n-1)))
+    with pytest.raises(ValueError):
+        opt.solve(np.zeros((4, n)))
     # Add the correct objective and constraints
     opt.setObjective(f)
     opt.setConstraints(lambda z, sz: np.asarray([0.1 - z[2], z[2] - 0.6]))
@@ -186,11 +192,6 @@ def test_GlobalSurrogate_PS():
     opt.setPenalty(L)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setTrFunc(lambda x, r: 100.0)
-    # Try to solve with invalid inputs to test error handling
-    with pytest.raises(ValueError):
-        opt.solve(np.zeros((3, n-1)))
-    with pytest.raises(ValueError):
-        opt.solve(np.zeros((4, n)))
     # Solve the surrogate problem with GlobalSurrogate_PS, starting from the centroid
     x = np.zeros((3, n))
     x[:, :] = 0.5
