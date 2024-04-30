@@ -6,7 +6,7 @@ Additional Resources
 
 To seek support or report issues, e-mail:
 
- * ``parmoo@mcs.anl.gov``
+ * ``parmoo@lbl.gov``
 
 For permissions, see the following:
 

@@ -11,7 +11,7 @@ we encourage you to discuss the concept by opening a github issue at
 
   https://github.com/parmoo/parmoo/issues
   
-or by emailing  ``parmoo@mcs.anl.gov``
+or by emailing  ``parmoo@lbl.gov``
 and interacting with us to ensure that your effort is well-directed.
 
 Contribution Process
