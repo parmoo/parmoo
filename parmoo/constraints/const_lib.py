@@ -76,7 +76,7 @@ class SingleSimBound(CompositeFunction):
             except BaseException:
                 raise ValueError(f"{sim_ind[0]} not a name in given sim_type")
             self.sim_name = sim_ind
-            self.goal = jnp.array(1.0)
+            self.goal = jnp.ones(1)
         elif isinstance(sim_ind, tuple):
             try:
                 assert sim_ind[0] in np.dtype(self.sim_type).names
@@ -92,8 +92,7 @@ class SingleSimBound(CompositeFunction):
         else:
             raise TypeError("sim_ind must be a str or (str, int) tuple")
         # Check for optional input
-        self.bound = jnp.array(bound).flatten()
-        assert self.bound.size == 1
+        self.bound = bound
         if bound_type.strip().lower() not in ('lower', 'upper'):
             raise ValueError("bound type must be 'upper' or 'lower'")
         if bound_type.strip().lower() == 'lower':
@@ -119,7 +118,9 @@ class SingleSimBound(CompositeFunction):
 
         """
 
-        return jnp.dot(sx[self.sim_name], self.goal) - self.bound
+        fx = 0.0
+        fx += jnp.dot(sx[self.sim_name], self.goal)
+        return fx - self.bound
 
 
 class SumOfSimSquaresBound(CompositeFunction):
@@ -188,7 +189,7 @@ class SumOfSimSquaresBound(CompositeFunction):
                     self.sim_inds[self.sim_inds.index(sim_ind)] += 1.0
                 else:
                     self.sim_names.append(sim_ind)
-                    self.sim_inds.append(jnp.array(1.0))
+                    self.sim_inds.append(jnp.ones(1))
             elif isinstance(sim_ind, tuple):
                 try:
                     assert sim_ind[0] in np.dtype(self.sim_type).names
@@ -209,8 +210,7 @@ class SumOfSimSquaresBound(CompositeFunction):
             else:
                 raise TypeError("Each sim_ind must be a str or str,int tuple")
         # Check for optional input
-        self.bound = jnp.array(bound).flatten()
-        assert self.bound.size == 1
+        self.bound = bound
         if bound_type.lower() not in ('lower', 'upper'):
             raise ValueError("bound type must be 'upper' or 'lower'")
         if bound_type.lower() == 'lower':
@@ -328,7 +328,7 @@ class SumOfSimsBound(CompositeFunction):
                     self.sim_inds[self.sim_inds.index(sim_ind)] += 1.0
                 else:
                     self.sim_names.append(sim_ind)
-                    self.sim_inds.append(jnp.array(1.0))
+                    self.sim_inds.append(jnp.ones(1))
             elif isinstance(sim_ind, tuple):
                 try:
                     assert sim_ind[0] in np.dtype(self.sim_type).names
@@ -349,8 +349,7 @@ class SumOfSimsBound(CompositeFunction):
             else:
                 raise TypeError("Each sim_ind must be a str or str,int tuple")
         # Check for optional input
-        self.bound = jnp.array(bound).flatten()
-        assert self.bound.size == 1
+        self.bound = bound
         if bound_type.lower() not in ('lower', 'upper'):
             raise ValueError("bound type must be 'upper' or 'lower'")
         if bound_type.lower() == 'lower':

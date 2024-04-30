@@ -995,12 +995,12 @@ class MOOP:
             self.data['x_vals'][0, :] = xx
             self.data['f_vals'] = np.zeros((1, self.o))
             for i, obj_func in enumerate(self.obj_funcs):
-                self.data['f_vals'][0, i] = float(obj_func(x, sx))
+                self.data['f_vals'][0, i] = obj_func(x, sx)
             # Check if there are constraint violations to maintain
             if self.p > 0:
                 self.data['c_vals'] = np.zeros((1, self.p))
                 for i, constraint_func in enumerate(self.con_funcs):
-                    self.data['c_vals'][0, i] = float(constraint_func(x, sx))
+                    self.data['c_vals'][0, i] = constraint_func(x, sx)
             else:
                 self.data['c_vals'] = np.zeros((1, 1))
             self.n_dat = 1
@@ -1013,14 +1013,14 @@ class MOOP:
             self.data['x_vals'] = np.append(self.data['x_vals'], [xx], axis=0)
             fx = np.zeros(self.o)
             for i, obj_func in enumerate(self.obj_funcs):
-                fx[i] = float(obj_func(x, sx))
+                fx[i] = obj_func(x, sx)
             self.data['f_vals'] = np.append(self.data['f_vals'],
                                             [fx], axis=0)
             # Check if there are constraint violations to maintain
             if self.p > 0:
                 cx = np.zeros(self.p)
                 for i, constraint_func in enumerate(self.con_funcs):
-                    cx[i] = float(constraint_func(x, sx))
+                    cx[i] = constraint_func(x, sx)
                 self.data['c_vals'] = np.append(self.data['c_vals'],
                                                 [cx], axis=0)
             else:
@@ -1268,7 +1268,7 @@ class MOOP:
                     sx = self._unpack_sim(sim)
                     sdx = self._unpack_sim(np.zeros(self.m))
                     for i, obj_func in enumerate(self.obj_funcs):
-                        fx[i] = float(obj_func(x, sx))
+                        fx[i] = obj_func(x, sx)
                     self.addObjData(x, sx)
                     self.optimizer.returnResults(xx, fx, sim, np.zeros(self.m))
         # If checkpointing is on, save the moop before continuing

@@ -66,7 +66,7 @@ class SingleSimObjective(CompositeFunction):
             except BaseException:
                 raise ValueError(f"{sim_ind[0]} not a name in given sim_type")
             self.sim_name = sim_ind
-            self.goal = jnp.array(1.0)
+            self.goal = jnp.ones(1)
         elif isinstance(sim_ind, tuple):
             try:
                 assert sim_ind[0] in np.dtype(self.sim_type).names
@@ -106,7 +106,9 @@ class SingleSimObjective(CompositeFunction):
 
         """
 
-        return jnp.dot(sx[self.sim_name], self.goal)
+        fx = 0.0
+        fx += jnp.dot(sx[self.sim_name], self.goal)
+        return fx
 
 
 class SumOfSimSquaresObjective(CompositeFunction):
@@ -171,7 +173,7 @@ class SumOfSimSquaresObjective(CompositeFunction):
                     self.sim_inds[self.sim_inds.index(sim_ind)] += 1.0
                 else:
                     self.sim_names.append(sim_ind)
-                    self.sim_inds.append(jnp.array(1.0))
+                    self.sim_inds.append(jnp.ones(1))
             elif isinstance(sim_ind, tuple):
                 try:
                     assert sim_ind[0] in np.dtype(self.sim_type).names
@@ -291,7 +293,7 @@ class SumOfSimsObjective(CompositeFunction):
                     self.sim_inds[self.sim_inds.index(sim_ind)] += 1.0
                 else:
                     self.sim_names.append(sim_ind)
-                    self.sim_inds.append(jnp.array(1.0))
+                    self.sim_inds.append(jnp.ones(1))
             elif isinstance(sim_ind, tuple):
                 try:
                     assert sim_ind[0] in np.dtype(self.sim_type).names

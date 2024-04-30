@@ -46,15 +46,9 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
     from libensemble.message_numbers import STOP_TAG, PERSIS_STOP, EVAL_GEN_TAG
     from libensemble.message_numbers import FINISHED_PERSISTENT_GEN_TAG
     from libensemble.tools.persistent_support import PersistentSupport
-    import os
 
-    # Configure jax to use only CPUs with no multithreading
+    # Configure jax to use only CPUs
     jax.config.update('jax_platform_name', 'cpu')
-    os.environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false"
-                               " intra_op_parallelism_threads=1")
-    os.environ["OPENBLAS_NUM_THREADS"] = "1"
-    os.environ["MKL_NUM_THREADS"] = "1"
-    os.environ["OMP_NUM_THREAD"] = "1"
     # Get moop from pers_info
     if 'moop' in persis_info:
         moop = persis_info['moop']
@@ -236,15 +230,9 @@ class libE_MOOP(MOOP):
         """
 
         import jax
-        import os
 
-        # Configure jax to use only CPUs with no multithreading
+        # Configure jax to use only CPUs
         jax.config.update('jax_platform_name', 'cpu')
-        os.environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false"
-                                   " intra_op_parallelism_threads=1")
-        os.environ["OPENBLAS_NUM_THREADS"] = "1"
-        os.environ["MKL_NUM_THREADS"] = "1"
-        os.environ["OMP_NUM_THREAD"] = "1"
         # Set the hyperparameters
         if hyperparams is None:
             hp = {}
@@ -702,11 +690,12 @@ class libE_MOOP(MOOP):
 
         """
 
-        import sys
         from libensemble.libE import libE
         from libensemble.alloc_funcs.start_only_persistent \
             import only_persistent_gens as alloc_f
         from libensemble.tools import parse_args
+        from multiprocessing import set_start_method
+        import sys
 
         # Check that at least one budget variable was given
         if iter_max is None and sim_max is None:
@@ -752,7 +741,8 @@ class libE_MOOP(MOOP):
                           "or using the iter_max stopping criteria, unless " +
                           "you are really only interested in design space " +
                           "exploration without exploitation/optimization.")
-
+        # Force python MP to use spawn parallelism as fork is not safe with jax
+        set_start_method("spawn", force=True)
         # Create libEnsemble dictionaries
         nworkers, is_manager, libE_specs, _ = parse_args()
         libE_specs['final_fields'] = []
