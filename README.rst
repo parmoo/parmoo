@@ -276,7 +276,7 @@ Resources
 
 To seek support or report issues, e-mail:
 
- * ``parmoo@mcs.anl.gov``
+ * ``parmoo@lbl.gov``
 
 Our full documentation is hosted on:
 

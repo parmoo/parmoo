@@ -56,7 +56,7 @@ setup(
     long_description="\n".join(DOCLINES[2:]),
     url="https://github.com/parmoo/parmoo",
     author="Tyler H. Chang, Stefan M. Wild, et al.",
-    author_email="parmoo@mcs.anl.gov",
+    author_email="parmoo@lbl.gov",
     license="BSD 3-clause",
 
     packages=["parmoo",
