@@ -74,7 +74,7 @@ setup(
               "parmoo.tests.libe_tests",
               "parmoo.tests.regression_tests"],
 
-    install_requires=["jax", "numpy", "scipy", "pandas"],
+    install_requires=["jax[cpu]", "numpy", "scipy", "pandas"],
 
     # If run tests through setup.py - downloads these but does not install
     tests_require=["pytest", "pytest-cov", "flake8"],
