@@ -119,15 +119,6 @@ class SingleSimBound(CompositeFunction):
 
         """
 
-        if False:
-            dx, ds = {}, {}
-            for name in self.des_type.names:
-                dx[name] = jnp.zeros(1)
-            for name in self.sim_type.names:
-                size = max(sum(self.sim_type[name].shape), 1)
-                ds[name] = jnp.zeros(size)
-            ds[self.sim_name] = self.goal
-            return dx, ds
         return jnp.dot(sx[self.sim_name], self.goal) - self.bound
 
 
@@ -247,16 +238,6 @@ class SumOfSimSquaresBound(CompositeFunction):
 
         """
 
-        if False:
-            dx, ds = {}, {}
-            for name in self.des_type.names:
-                dx[name] = jnp.zeros(1)
-            for name in self.sim_type.names:
-                size = max(sum(self.sim_type[name].shape), 1)
-                ds[name] = jnp.zeros(size)
-            for sn, si in zip(self.sim_names, self.sim_inds):
-                ds[sn] = sx[sn] * si * 2.0 * self.goal
-            return dx, ds
         fx = 0.0
         for sn, si in zip(self.sim_names, self.sim_inds):
             fx += jnp.dot(sx[sn] ** 2, si)
@@ -406,16 +387,6 @@ class SumOfSimsBound(CompositeFunction):
 
         """
 
-        if False:
-            dx, ds = {}, {}
-            for name in self.des_type.names:
-                dx[name] = jnp.zeros(1)
-            for name in self.sim_type.names:
-                size = max(sum(self.sim_type[name].shape), 1)
-                ds[name] = jnp.zeros(size)
-            for sn, si in zip(self.sim_names, self.sim_inds):
-                ds[sn] = self.absolute(sx[sn]) * si * self.goal
-            return dx, ds
         fx = 0.0
         for sn, si in zip(self.sim_names, self.sim_inds):
             fx += jnp.sum(self.absolute(sx[sn]) * sx[sn] * si)

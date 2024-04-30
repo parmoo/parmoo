@@ -42,10 +42,19 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
 
     """
 
+    import jax
     from libensemble.message_numbers import STOP_TAG, PERSIS_STOP, EVAL_GEN_TAG
     from libensemble.message_numbers import FINISHED_PERSISTENT_GEN_TAG
     from libensemble.tools.persistent_support import PersistentSupport
+    import os
 
+    # Configure jax to use only CPUs with no multithreading
+    jax.config.update('jax_platform_name', 'cpu')
+    os.environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false"
+                               " intra_op_parallelism_threads=1")
+    os.environ["OPENBLAS_NUM_THREADS"] = "1"
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREAD"] = "1"
     # Get moop from pers_info
     if 'moop' in persis_info:
         moop = persis_info['moop']
