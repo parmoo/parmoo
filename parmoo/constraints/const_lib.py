@@ -118,6 +118,8 @@ class SingleSimBound(CompositeFunction):
 
         """
 
+        # These lines look silly, but do not change them.
+        # They are needed to gracefully casts all possible shapes to scalar.
         fx = 0.0
         fx += jnp.dot(sx[self.sim_name], self.goal)
         return fx - self.bound
