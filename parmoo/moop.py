@@ -26,14 +26,6 @@ import shutil
 import warnings
 
 
-# Configure jax to use only CPUs with no multithreading
-jax.config.update('jax_platform_name', 'cpu')
-os.environ["XLA_FLAGS"] = "--xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREAD"] = "1"
-
-
 class MOOP:
     """ Class for defining a multiobjective optimization problem (MOOP).
 
@@ -177,6 +169,13 @@ class MOOP:
 
         """
 
+        # Configure jax to use only CPUs with no multithreading
+        jax.config.update('jax_platform_name', 'cpu')
+        os.environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false"
+                                   " intra_op_parallelism_threads=1")
+        os.environ["OPENBLAS_NUM_THREADS"] = "1"
+        os.environ["MKL_NUM_THREADS"] = "1"
+        os.environ["OMP_NUM_THREAD"] = "1"
         # Initialize the problem dimensions
         self.m = 0
         self.m_list, self.n_embed = [], []
