@@ -267,6 +267,9 @@ class LocalSurrogate_PS(SurrogateOptimizer):
             result.append(xj)
             # We need to remember this "target" for later
             self.targets.append([x[j, :], rad, fj, j])
+        self.objectives = None
+        self.constraints = None
+        self.penalty_func = None
         return np.asarray(result)
 
     def save(self, filename):
@@ -547,6 +550,9 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                                                  momentum=self.momentum,
                                                  istarts=1)
             result.append(xj)
+        self.objectives = None
+        self.constraints = None
+        self.penalty_func = None
         return np.asarray(result)
 
 

@@ -12,7 +12,6 @@ This includes the following classes:
 
 """
 
-from jax import jit
 from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import Embedder
@@ -82,10 +81,6 @@ class ContinuousEmbedder(Embedder):
         self.scale = jnp.ones(1) * (ub - lb)
         self.shift = jnp.ones(1) * lb
         self.scaled_des_tol = np.ones(1) * des_tol / self.scale
-        # Jit the embedder and extractor
-        self.embed = jit(self._embed)
-        self.embed_grad = jit(self._embed_grad)
-        self.extract = jit(self._extract)
         return
 
     def getLatentDesTols(self):
@@ -150,7 +145,7 @@ class ContinuousEmbedder(Embedder):
 
         return np.ones(1)
 
-    def _embed(self, x):
+    def embed(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
 
         Args:
@@ -164,7 +159,7 @@ class ContinuousEmbedder(Embedder):
 
         return jnp.minimum(jnp.maximum((x - self.shift) / self.scale, 0), 1)
 
-    def _embed_grad(self, dx):
+    def embed_grad(self, dx):
         """ Embed a partial design gradient as a vector for ParMOO.
 
         Args:
@@ -178,7 +173,7 @@ class ContinuousEmbedder(Embedder):
 
         return dx / self.scale
 
-    def _extract(self, x):
+    def extract(self, x):
         """ Extract a design variable from an n-dimensional vector.
 
         Args:
@@ -247,10 +242,6 @@ class IntegerEmbedder(Embedder):
         self.scale = jnp.ones(1) * (ub - lb)
         self.shift = jnp.ones(1) * lb
         self.scaled_des_tol = np.ones(1) * 0.5 / self.scale
-        # Jit the embedder and extractor
-        self.embed = jit(self._embed)
-        self.embed_grad = jit(self._embed_grad)
-        self.extract = jit(self._extract)
         return
 
     def getLatentDesTols(self):
@@ -315,7 +306,7 @@ class IntegerEmbedder(Embedder):
 
         return np.ones(1)
 
-    def _embed(self, x):
+    def embed(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
 
         Args:
@@ -329,7 +320,7 @@ class IntegerEmbedder(Embedder):
 
         return jnp.minimum(jnp.maximum((x - self.shift) / self.scale, 0), 1)
 
-    def _embed_grad(self, dx):
+    def embed_grad(self, dx):
         """ Embed a partial design gradient as a vector for ParMOO.
 
         Args:
@@ -343,7 +334,7 @@ class IntegerEmbedder(Embedder):
 
         return dx / self.scale
 
-    def _extract(self, x):
+    def extract(self, x):
         """ Extract a design variable from an n-dimensional vector.
 
         Args:
@@ -378,7 +369,6 @@ class CategoricalEmbedder(Embedder):
         """
 
         # Error handling and extracting input types
-        jittable = True
         if isinstance(settings, dict) and 'levels' in settings:
             levels = settings['levels']
             if isinstance(levels, int):
@@ -403,7 +393,6 @@ class CategoricalEmbedder(Embedder):
                 except TypeError:
                     self.alabels = np.array(levels)
                     self.in_type = 'U25'
-                    jittable = False
             else:
                 raise TypeError("settings['levels'] must be an int or list")
         elif isinstance(settings, dict):
@@ -420,15 +409,6 @@ class CategoricalEmbedder(Embedder):
         self.des_tol = np.sqrt(0.5) / self.scale
         self.zeros = jnp.zeros(n_lvls)
         self.ones = jnp.ones(n_lvls)
-        # Jit the embedder and extractor
-        if jittable:
-            self.embed = jit(self._embed)
-            self.embed_grad = jit(self._embed_grad)
-            self.extract = jit(self._extract)
-        else:
-            self.embed = self._embed
-            self.embed_grad = self._embed_grad
-            self.extract = self._extract
         return
 
     def getLatentDesTols(self):
@@ -493,7 +473,7 @@ class CategoricalEmbedder(Embedder):
 
         return np.ones(self.des_tol.size)
 
-    def _embed(self, x):
+    def embed(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
 
         Args:
@@ -509,7 +489,7 @@ class CategoricalEmbedder(Embedder):
         xx1 = (jnp.dot(xx - self.cent, self.rot) - self.shift) / self.scale
         return jnp.minimum(jnp.maximum(xx1, 0), 1)
 
-    def _embed_grad(self, dx):
+    def embed_grad(self, dx):
         """ Embed a partial design gradient as a vector for ParMOO.
 
         Args:
@@ -523,7 +503,7 @@ class CategoricalEmbedder(Embedder):
 
         return jnp.zeros(self.des_tol.size)
 
-    def _extract(self, x):
+    def extract(self, x):
         """ Extract a design variable from an n-dimensional vector.
 
         Args:
@@ -599,10 +579,6 @@ class IdentityEmbedder(Embedder):
                                  "up to the design tolerance")
         else:
             raise TypeError("settings must be a dictionary")
-        # Jit the embedder and extractor
-        self.embed = jit(self._embed)
-        self.embed_grad = jit(self._embed_grad)
-        self.extract = jit(self._extract)
         return
 
     def getLatentDesTols(self):
@@ -667,7 +643,7 @@ class IdentityEmbedder(Embedder):
 
         return self.ub * np.ones(1)
 
-    def _embed(self, x):
+    def embed(self, x):
         """ Embed a design input as n-dimensional vector for ParMOO.
 
         Args:
@@ -680,7 +656,7 @@ class IdentityEmbedder(Embedder):
 
         return jnp.ones(1) * x
 
-    def _embed_grad(self, dx):
+    def embed_grad(self, dx):
         """ Embed a partial design gradient as a vector for ParMOO.
 
         Args:
@@ -694,7 +670,7 @@ class IdentityEmbedder(Embedder):
 
         return jnp.ones(1) * dx
 
-    def _extract(self, x):
+    def extract(self, x):
         """ Extract a design variable from an n-dimensional vector.
 
         Args:

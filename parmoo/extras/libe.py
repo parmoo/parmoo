@@ -775,6 +775,7 @@ class libE_MOOP(MOOP):
         persis_info = {}
         for i in range(nworkers + 1):
             persis_info[i] = {}
+        self.moop.compile()
         persis_info[1]['moop'] = self.moop
 
         exit_criteria = {'sim_max': sim_max, 'wallclock_max': wt_max}

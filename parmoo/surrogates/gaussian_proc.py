@@ -392,7 +392,7 @@ class GaussRBF(SurrogateFunction):
         return
 
 
-# Private pure helper functions to be compiled via jax.jit()
+# Private pure helper functions
 
 @jit
 def _gaussian(r2, x_std_dev):
