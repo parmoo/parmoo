@@ -122,8 +122,8 @@ class g1_sim(sim_func):
         # Calculate output
         result = (1 + self.n - self.o +
                   np.sum((xx[self.o-1:self.n] - self.offset) ** 2 -
-                          np.cos(20.0 * np.pi *
-                                 (xx[self.o-1:self.n] - self.offset)))) * 100.0
+                         np.cos(20.0 * np.pi *
+                                (xx[self.o-1:self.n] - self.offset)))) * 100.0
         return np.array([result])
 
 
@@ -711,7 +711,7 @@ class dtlz6_sim(sim_func):
 class dtlz7_sim(sim_func):
     """ Class defining the DTLZ7 problem with offset minimizer.
 
-    DTLZ7 has a discontinuous Pareto front, with solutions on the 
+    DTLZ7 has a discontinuous Pareto front, with solutions on the
     2^(o-1) discontinuous nondominated regions of the surface:
 
     F_m = o - F_1 (1 + sin(3pi F_1)) - ... - F_{o-1} (1 + sin3pi F_{o-1}).
@@ -769,7 +769,7 @@ class dtlz7_sim(sim_func):
         gx = 1.0 + self.ker(x)[0]
         hx = (-np.sum(xx[:self.o-1] *
                       (1.0 + np.sin(3.0 * np.pi * xx[:self.o-1])) / gx)
-                      + float(self.o))
+              + float(self.o))
         # Calculate the last entry in the output array
         fx[self.o-1] = gx * hx
         return fx

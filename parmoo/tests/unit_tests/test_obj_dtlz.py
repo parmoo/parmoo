@@ -23,24 +23,6 @@ def test_dtlz1_obj():
     assert (np.abs(obj1(x, sx) - 0.0) < 1.0e-8)
     assert (np.abs(obj2(x, sx) - 0.0) < 1.0e-8)
     assert (np.abs(obj3(x, sx) - 0.5) < 1.0e-8)
-    ## Test dx evaluation
-    #df1x = np.zeros(1, dtype=xtype)[0]
-    #df2x = np.zeros(1, dtype=xtype)[0]
-    #df2x['x1'] = 0.5
-    #df3x = np.zeros(1, dtype=xtype)[0]
-    #df3x['x1'] = -0.5
-    #assert (np.all([np.abs(obj1(x, sx, der=1)[name[0]] - df1x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    #assert (np.all([np.abs(obj2(x, sx, der=1)[name[0]] - df2x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    #assert (np.all([np.abs(obj3(x, sx, der=1)[name[0]] - df3x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    ## Test ds evaluation
-    #dfds = np.zeros(1, dtype=stype)[0]
-    #assert (np.abs(obj1(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
-    #assert (np.abs(obj2(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
-    #dfds['sim1'] = 0.5
-    #assert (np.abs(obj3(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
 
 
 def test_dtlz2_obj():
@@ -68,25 +50,6 @@ def test_dtlz2_obj():
     assert (np.abs(obj1(x, sx) - 1.0) < 1.0e-8)
     assert (np.abs(obj2(x, sx) - 0.0) < 1.0e-8)
     assert (np.abs(obj3(x, sx) - 0.0) < 1.0e-8)
-    ## Test dx evaluation
-    #df1x = np.zeros(1, dtype=xtype)[0]
-    #df2x = np.zeros(1, dtype=xtype)[0]
-    #df2x['x2'] = np.pi / 2.0
-    #df3x = np.zeros(1, dtype=xtype)[0]
-    #df3x['x1'] = np.pi / 2.0
-    #assert (np.all([np.abs(obj1(x, sx, der=1)[name[0]] - df1x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    #assert (np.all([np.abs(obj2(x, sx, der=1)[name[0]] - df2x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    #assert (np.all([np.abs(obj3(x, sx, der=1)[name[0]] - df3x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    ## Test ds evaluation
-    #dfds = np.zeros(1, dtype=stype)[0]
-    #dfds['sim1'] = 1.0
-    #assert (np.abs(obj1(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
-    #dfds['sim1'] = 0.0
-    #assert (np.abs(obj2(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
-    #assert (np.abs(obj3(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
 
 
 def test_dtlz3_obj():
@@ -114,25 +77,6 @@ def test_dtlz3_obj():
     assert (np.abs(obj1(x, sx) - 1.0) < 1.0e-8)
     assert (np.abs(obj2(x, sx) - 0.0) < 1.0e-8)
     assert (np.abs(obj3(x, sx) - 0.0) < 1.0e-8)
-    ## Test dx evaluation
-    #df1x = np.zeros(1, dtype=xtype)[0]
-    #df2x = np.zeros(1, dtype=xtype)[0]
-    #df2x['x2'] = np.pi / 2.0
-    #df3x = np.zeros(1, dtype=xtype)[0]
-    #df3x['x1'] = np.pi / 2.0
-    #assert (np.all([np.abs(obj1(x, sx, der=1)[name[0]] - df1x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    #assert (np.all([np.abs(obj2(x, sx, der=1)[name[0]] - df2x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    #assert (np.all([np.abs(obj3(x, sx, der=1)[name[0]] - df3x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    ## Test ds evaluation
-    #dfds = np.zeros(1, dtype=stype)[0]
-    #dfds['sim1'] = 1.0
-    #assert (np.abs(obj1(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
-    #dfds['sim1'] = 0.0
-    #assert (np.abs(obj2(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
-    #assert (np.abs(obj3(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
 
 
 def test_dtlz4_obj():
@@ -160,23 +104,6 @@ def test_dtlz4_obj():
     assert (np.abs(obj1(x, sx) - 1.0) < 1.0e-8)
     assert (np.abs(obj2(x, sx) - 0.0) < 1.0e-8)
     assert (np.abs(obj3(x, sx) - 0.0) < 1.0e-8)
-    ## Test dx evaluation
-    #df1x = np.zeros(1, dtype=xtype)[0]
-    #df2x = np.zeros(1, dtype=xtype)[0]
-    #df3x = np.zeros(1, dtype=xtype)[0]
-    #assert (np.all([np.abs(obj1(x, sx, der=1)[name[0]] - df1x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    #assert (np.all([np.abs(obj2(x, sx, der=1)[name[0]] - df2x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    #assert (np.all([np.abs(obj3(x, sx, der=1)[name[0]] - df3x[name[0]])
-    #                < 1.0e-8 for name in xtype]))
-    ## Test ds evaluation
-    #dfds = np.zeros(1, dtype=stype)[0]
-    #dfds['sim1'] = 1.0
-    #assert (np.abs(obj1(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
-    #dfds['sim1'] = 0.0
-    #assert (np.abs(obj2(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
-    #assert (np.abs(obj3(x, sx, der=2)['sim1'] - dfds['sim1']) < 1.0e-8)
 
 
 if __name__ == "__main__":

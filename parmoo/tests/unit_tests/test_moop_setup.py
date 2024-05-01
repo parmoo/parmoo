@@ -173,7 +173,6 @@ def test_MOOP_addObjective():
 
     """
 
-    import numpy as np
     from parmoo import MOOP
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
@@ -234,7 +233,6 @@ def test_MOOP_addConstraint():
 
     """
 
-    import numpy as np
     from parmoo import MOOP
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
@@ -299,11 +297,9 @@ def test_MOOP_addAcquisition():
 
     """
 
-    import numpy as np
     from parmoo import MOOP
     from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     import pytest
 

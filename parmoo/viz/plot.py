@@ -1,9 +1,9 @@
 
 """ A plotting library for interactive visualization of MOOP objects.
 
-To generate a plot, generate create a MOOP object and use it to solve a problem.
-Then call one of the following function, passing the MOOP object as the
-first argument:
+To generate a plot, generate create a MOOP object and use it to solve a
+problem. Then call one of the following function, passing the MOOP object
+as the first argument:
 
  * ``viz.scatter(moop)``
  * ``viz.parallel_coordinates(moop)``
@@ -76,7 +76,7 @@ def scatter(moop,
             dev_mode=False,
             pop_up=True,
             port='http://127.0.0.1:8050/',
-           ):
+            ):
     """ Create a scatter plot matrix to visualize the results of a MOOP.
 
     Args:
@@ -214,8 +214,8 @@ def parallel_coordinates(moop,
                          data_export_format='csv',
                          dev_mode=False,
                          pop_up=True,
-                         port='http://127.0.0.1:8050/',
-                        ):
+                         port='http://127.0.0.1:8050/'
+                         ):
     """ Create a parallel coordinates plot to visualize the results of a MOOP.
 
     Args:

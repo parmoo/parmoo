@@ -18,7 +18,10 @@ import numpy as np
 from os.path import exists as file_exists
 import pandas as pd
 from parmoo import structs
-from parmoo.embeddings.default_embedders import *
+from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
+                                                IntegerEmbedder,     \
+                                                CategoricalEmbedder, \
+                                                IdentityEmbedder
 from parmoo.util import check_names, check_sims, updatePF
 import pickle
 import shutil
@@ -670,20 +673,20 @@ class MOOP:
         # Jitting ParMOO objectives and constraints
         logging.info("   jitting ParMOO's objective and constraints...")
         try:
-            fx = jax.jit(self._vobj_funcs)(x, sx)
+            _ = jax.jit(self._vobj_funcs)(x, sx)
         except BaseException:
             logging.info("     WARNING: 1 or more obj_funcs failed to jit...")
         try:
-            cx = jax.jit(self._vcon_funcs)(x, sx)
+            _ = jax.jit(self._vcon_funcs)(x, sx)
         except BaseException:
             logging.info("     WARNING: 1 or more con_funcs failed to jit...")
         try:
-            fx = jax.jit(self._vpen_funcs)(x, sx, 0., 1.)
+            _ = jax.jit(self._vpen_funcs)(x, sx, 0., 1.)
         except BaseException:
             logging.info("     WARNING: MOOP._vpen_funcs failed to jit...")
         if len(self.obj_grads) == self.o:
             try:
-                dx, ds = jax.jit(self._obj_bwd)((xx1, sx1), jnp.zeros(self.o))
+                _, _ = jax.jit(self._obj_bwd)((xx1, sx1), jnp.zeros(self.o))
             except BaseException:
                 logging.info("     WARNING: 1 or more obj_grads failed to "
                              "jit...")
@@ -692,7 +695,7 @@ class MOOP:
             self.obj_bwd = _gerr
         if len(self.con_grads) == self.p:
             try:
-                dx, ds = jax.jit(self._con_bwd)((xx1, sx1), jnp.zeros(self.p))
+                _, _ = jax.jit(self._con_bwd)((xx1, sx1), jnp.zeros(self.p))
             except BaseException:
                 logging.info("     WARNING: 1 or more con_grads failed to "
                              "jit...")
@@ -701,8 +704,8 @@ class MOOP:
             self.con_bwd = _gerr
         if len(self.obj_grads) == self.o and len(self.con_grads) == self.p:
             try:
-                dx, ds = jax.jit(self._pen_bwd)((xx1, sx1, jnp.zeros(self.p)),
-                                                jnp.zeros(self.o))
+                _, _ = jax.jit(self._pen_bwd)((xx1, sx1, jnp.zeros(self.p)),
+                                              jnp.zeros(self.o))
             except BaseException:
                 logging.info("     WARNING: MOOP._pen_grads failed to jit...")
             self.pen_bwd = self._pen_bwd
@@ -1099,7 +1102,8 @@ class MOOP:
             for i, acqi in enumerate(self.acquisitions):
                 if self.s > 0:
                     for sn in self.sim_schema:
-                        xbatch.append((self._extract(x_candidates[i, :]), sn[0]))
+                        xbatch.append((self._extract(x_candidates[i, :]),
+                                       sn[0]))
                 else:
                     xbatch.append(self._extract(x_candidates[i, :]))
         return xbatch
@@ -1166,9 +1170,11 @@ class MOOP:
                                              and namei == j for (xj, j)
                                              in ebatch])
                                         for xk in ibatch]) or
-                                   any([self.checkSimDb(self._extract(xk), namei)
+                                   any([self.checkSimDb(self._extract(xk),
+                                                        namei)
                                         is not None for xk in ibatch])):
-                                x_improv = self.surrogates[i].improve(xxi, True)
+                                x_improv = self.surrogates[i].improve(xxi,
+                                                                      True)
                                 ibatch = [self._embed(self._extract(xk))
                                           for xk in x_improv]
                             # Add improvement points to the fbatch
@@ -1227,7 +1233,8 @@ class MOOP:
                             break
                     # If xi was in every sim_db, add it to the database
                     if is_shared:
-                        self.addObjData(self._extract(xi), self._unpack_sim(sim))
+                        self.addObjData(self._extract(xi),
+                                        self._unpack_sim(sim))
         else:
             # If any constraints are violated, increase lam toward the limit
             for (xi, i) in batch:
@@ -1266,11 +1273,11 @@ class MOOP:
                 if is_shared:
                     fx = np.zeros(self.o)
                     sx = self._unpack_sim(sim)
-                    sdx = self._unpack_sim(np.zeros(self.m))
                     for i, obj_func in enumerate(self.obj_funcs):
                         fx[i] = obj_func(x, sx)
                     self.addObjData(x, sx)
-                    self.optimizer.returnResults(xx, fx, sim, np.zeros(self.m))
+                    self.optimizer.returnResults(xx, fx, sim,
+                                                 np.zeros(self.m))
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpoint_file)
@@ -1603,8 +1610,9 @@ class MOOP:
                         'checkpoint': self.checkpoint,
                         'checkpoint_data': self.checkpoint_data,
                         'checkpoint_file': self.checkpoint_file,
-                        'np_random_state': self.np_random_gen.bit_generator.state,
-                       }
+                        'np_random_state':
+                        self.np_random_gen.bit_generator.state,
+                        }
         # Pickle and add a list of the model and solver hyperparameters
         parmoo_state['hyperparams'] = []
         for hpi in [self.emb_hp, self.acq_hp, self.opt_hp, self.sim_hp]:
@@ -1613,7 +1621,7 @@ class MOOP:
         # Add the names/modules for all components of the MOOP definition
         parmoo_state['embedders'] = [(embedder.__class__.__name__,
                                       embedder.__class__.__module__)
-                                    for embedder in self.embedders]
+                                     for embedder in self.embedders]
         parmoo_state['sim_funcs'] = []
         parmoo_state['sim_funcs_info'] = []
         for si in self.sim_funcs:
@@ -1633,7 +1641,7 @@ class MOOP:
                 parmoo_state['obj_funcs_info'].append("function")
             else:
                 parmoo_state['obj_funcs'].append((fi.__class__.__name__,
-                                                   fi.__class__.__module__))
+                                                  fi.__class__.__module__))
                 parmoo_state['obj_funcs_info'].append(
                         codecs.encode(pickle.dumps(fi), "base64").decode())
         parmoo_state['con_funcs'] = []
@@ -1641,11 +1649,11 @@ class MOOP:
         for ci in self.con_funcs:
             if type(si).__name__ == "function":
                 parmoo_state['con_funcs'].append((ci.__name__,
-                                                    ci.__module__))
+                                                  ci.__module__))
                 parmoo_state['con_funcs_info'].append("function")
             else:
                 parmoo_state['con_funcs'].append((ci.__class__.__name__,
-                                                    ci.__class__.__module__))
+                                                  ci.__class__.__module__))
                 parmoo_state['con_funcs_info'].append(
                         codecs.encode(pickle.dumps(ci), "base64").decode())
         # Store names/modules of solver component classes
@@ -1765,7 +1773,8 @@ class MOOP:
         self.checkpoint_data = parmoo_state['checkpoint_data']
         self.checkpoint_file = parmoo_state['checkpoint_file']
         self.np_random_gen = np.random.default_rng()
-        self.np_random_gen.bit_generator.state = parmoo_state['np_random_state']
+        self.np_random_gen.bit_generator.state = \
+            parmoo_state['np_random_state']
         # Recover the pickled hyperparameter dictionaries
         hps = []
         for i, hpi in enumerate(parmoo_state['hyperparams']):
@@ -1957,10 +1966,10 @@ class MOOP:
         for dname in self.des_schema:
             key = dname[0]
             if np.issubdtype(x[key], np.integer) or \
-               jnp.issubdtype(x[key], jnp.integer):
+                    jnp.issubdtype(x[key], jnp.integer):
                 toadd[key] = int(x[key])
             elif np.issubdtype(x[key], np.floating) or \
-                 jnp.issubdtype(x[key], jnp.floating):
+                    jnp.issubdtype(x[key], jnp.floating):
                 toadd[key] = float(x[key])
             else:
                 toadd[key] = str(x[key])
@@ -2239,41 +2248,41 @@ class MOOP:
 
     def _obj_fwd(self, x, sx):
         """ Evaluate a forward pass over the objective functions.
-    
+
         Args:
             x (ndarray): A 1D array containing the (embedded) design point to
                 evaluate.
-    
+
             sx (ndarray): A 1D array containing the (packed) simulation vector
                 at x.
-    
+
         Returns:
             (ndarray, (ndarray, ndarray)): The first entry is a 1D array
             containing the result of the evaluation, and the second entry
             contains the extracted pair (xx, ssx).
-    
+
         """
-    
+
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
         return self._vobj_funcs(xx, ssx), (x, sx)
 
     def _obj_bwd(self, res, w):
         """ Evaluate a backward pass over the objective functions.
-    
+
         Args:
             res (tuple of ndarrays): Contains extracted value of x and the
                 unpacked value of sx computed during the forward pass.
-    
+
             w (ndarray): Contains the adjoint vector for the computation
                 succeeding the objective evaluation in the compute graph.
-    
+
         Returns:
             (ndarray, ndarray): A pair of 1D arrays containing the products
             w * jac(f wrt x) and w * jac(f wrt s), respectively.
-    
+
         """
-    
+
         x, sx = res
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
@@ -2374,22 +2383,22 @@ class MOOP:
 
     def _pen_fwd(self, x, sx):
         """ Evaluate a forward pass over the penalized objective functions.
-    
+
         Args:
             x (ndarray): A 1D array containing the (embedded) design point
                 to evaluate.
-    
+
             sx (ndarray): A 1D array containing the (packed) simulation
                 vector at x.
-    
+
         Returns:
             (ndarray, tuple): The first entry is a 1D array containing the
             result of the evaluation, and the second entry contains the tuple
             (xx, ssx, activities) where xx and ssx are the extracted values of
             x and sx, and "activities" gives the active constraint penalties.
-    
+
         """
-    
+
         xx = self._extract(x)
         ssx = self._unpack_sim(sx)
         cx = jnp.maximum(self._vcon_funcs(xx, ssx), 0.0)
@@ -2398,20 +2407,20 @@ class MOOP:
 
     def _pen_bwd(self, res, w):
         """ Evaluate a backward pass over the penalized objective functions.
-    
+
         Args:
             res (tuple of ndarrays): Contains extracted value of x and the
                 unpacked value of sx computed during the forward pass followed
                 by a vector encoding the indicies/penalties for the active
                 constraints.
-    
+
             w (ndarray): Contains the adjoint vector for the computation
                 succeeding the penalty evaluation in the compute graph.
-    
+
         Returns:
             (ndarray, ndarray): A pair of 1D arrays containing the products
             w * jac(c wrt x) and w * jac(c wrt s), respectively.
-    
+
         """
 
         x, sx, act = res
@@ -2425,7 +2434,6 @@ class MOOP:
             dfdx += self._embed_grads(x_grad) * w[i]
             dfds += self._pack_sim(s_grad) * w[i]
         return dfdx, dfds
-
 
     def _link(self):
         """ Link the fowrard/backward pass functions """

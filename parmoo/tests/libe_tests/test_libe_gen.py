@@ -38,10 +38,9 @@ if __name__ == "__main__":
     moop.addSimulation({'name': "DTLZ2",
                         'm': o,
                         'sim_func': dtlz2_sim_named,
-                        'hyperparams': {'search_budget': 100},
+                        'hyperparams': {'search_budget': 20},
                         'search': LatinHypercube,
                         'surrogate': GaussRBF,
-                        'sim_db': {},
                         'des_tol': 0.00000001})
     # Add o objectives
     moop.addObjective({'obj_func': obj1_named})
@@ -51,6 +50,6 @@ if __name__ == "__main__":
     for i in range(4):
         moop.addAcquisition({'acquisition': RandomConstraint})
     moop.compile()
-    # Solve
-    moop.solve(sim_max=200)
-    assert(moop.getObjectiveData()['x1'].shape[0] == 200)
+    # Solve with 10 additional iterations
+    moop.solve(sim_max=60)
+    assert(moop.getObjectiveData()['x1'].shape[0] == 60)

@@ -2,9 +2,9 @@
 ParMOO's interface.
 
 The common constraints are:
- * ``SingleSimBound`` -- min or max bound on a single simulation output
- * ``SumOfSimSquaresBound`` -- min or max bound on the SOS for several sim outputs
- * ``SumOfSimsBound`` -- min or max bound on the (abs) sum of several sim outputs
+ * ``SingleSimBound`` -- bound on a single simulation output's value
+ * ``SumOfSimSquaresBound`` -- bound on the SOS for several sim outputs
+ * ``SumOfSimsBound`` -- bound on the (abs) sum of several sim outputs
 
 And their corresponding gradient functions are:
  * ``SingleSimBoundGradient``
@@ -72,7 +72,7 @@ class SingleSimBound(CompositeFunction):
         # Check additional inputs
         if isinstance(sim_ind, str):
             try:
-                assert(sim_ind in np.dtype(self.sim_type).names)
+                assert (sim_ind in np.dtype(self.sim_type).names)
             except BaseException:
                 raise ValueError(f"{sim_ind[0]} not a name in given sim_type")
             self.sim_name = sim_ind
@@ -164,7 +164,8 @@ class SumOfSimSquaresBound(CompositeFunction):
             sim_type (np.dtype): The numpy.dtype of the simulation outputs.
 
             sim_inds (list): The list of names (or name, index pairs for sims
-                with more than one output) of the simulation outputs to sum over.
+                with more than one output) of the simulation outputs to sum
+                over.
 
             bound_type (str): Either 'lower' to lower-bound or 'upper' to
                 upper-bound. Defaults to 'upper'.
@@ -184,7 +185,7 @@ class SumOfSimSquaresBound(CompositeFunction):
         for sim_ind in sim_inds:
             if isinstance(sim_ind, str):
                 try:
-                    assert(sim_ind in np.dtype(self.sim_type).names)
+                    assert (sim_ind in np.dtype(self.sim_type).names)
                 except BaseException:
                     raise ValueError(f"{sim_ind[0]} not in given sim_type")
                 if sim_ind in self.sim_names:
@@ -300,7 +301,8 @@ class SumOfSimsBound(CompositeFunction):
             sim_type (np.dtype): The numpy.dtype of the simulation outputs.
 
             sim_inds (list): The list of names (or name, index pairs for sims
-                with more than one output) of the simulation outputs to sum over.
+                with more than one output) of the simulation outputs to sum
+                over.
 
             bound_type (str): Either 'lower' to lower-bound or 'upper' to
                 upper-bound. Defaults to 'upper'.
@@ -323,7 +325,7 @@ class SumOfSimsBound(CompositeFunction):
         for sim_ind in sim_inds:
             if isinstance(sim_ind, str):
                 try:
-                    assert(sim_ind in np.dtype(self.sim_type).names)
+                    assert (sim_ind in np.dtype(self.sim_type).names)
                 except BaseException:
                     raise ValueError(f"{sim_ind[0]} not in given sim_type")
                 if sim_ind in self.sim_names:
@@ -359,8 +361,11 @@ class SumOfSimsBound(CompositeFunction):
             self.bound *= -1.0
         else:
             self.goal = 1.0
+
         def id_func(x): return np.ones(x.size)
+
         def abs_func(x): return jnp.sign(x)
+
         if not isinstance(absolute, bool):
             raise TypeError("absolute must be a bool type, not " +
                             str(type(absolute)))

@@ -17,7 +17,7 @@ The classes include:
 import jax
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
+from parmoo.structs import SurrogateOptimizer
 from parmoo.util import xerror
 from scipy.stats.qmc import LatinHypercube
 
@@ -78,7 +78,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                     self.restarts = hyperparams['opt_restarts']
             else:
                 raise TypeError("hyperparams['opt_restarts'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.restarts = self.n + 1
         # Check that the contents of hyperparams are legal
@@ -91,7 +91,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                     self.budget = hyperparams['opt_budget']
             else:
                 raise TypeError("hyperparams['opt_budget'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.budget = 1000
         # Check that the contents of hyperparams are legal
@@ -104,7 +104,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                                      "must be in [0, 1)")
             else:
                 raise TypeError("hyperparams['opt_momentum'] "
-                                 "must be a float")
+                                "must be a float")
         else:
             self.momentum = 9e-1
         self.eps = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
@@ -252,7 +252,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                            np.min((ub_tmp - lb_tmp) * np.sqrt(self.eps)))
             try:
                 obj_func = jax.jit(self._obj_func)
-                fx = obj_func(x[j])
+                _ = obj_func(x[j])
             except BaseException:
                 obj_func = self._obj_func
             # Get a candidate
@@ -299,7 +299,8 @@ class LocalSurrogate_PS(SurrogateOptimizer):
             ps_state['rev_centers'].append([ci.tolist(), ri.tolist()])
         ps_state['targets'] = []
         for ti in self.targets:
-            ps_state['targets'].append([ti[0].tolist(), ti[1].tolist(), ti[2], ti[3]])
+            ps_state['targets'].append([ti[0].tolist(), ti[1].tolist(),
+                                        ti[2], ti[3]])
         # Save file
         with open(filename, 'w') as fp:
             json.dump(ps_state, fp)
@@ -335,7 +336,8 @@ class LocalSurrogate_PS(SurrogateOptimizer):
             self.prev_centers.append([np.array(ci), np.array(ri)])
         self.targets = []
         for ti in ps_state['targets']:
-            self.targets.append([np.array(ti[0]), np.array(ti[1]), ti[2], ti[3]])
+            self.targets.append([np.array(ti[0]), np.array(ti[1]),
+                                 ti[2], ti[3]])
         return
 
 
@@ -395,7 +397,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                     self.opt_budget = hyperparams['opt_budget']
             else:
                 raise TypeError("hyperparams['opt_budget'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.opt_budget = 1500
         # Check that the contents of hyperparams are legal
@@ -411,7 +413,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                     self.gps_budget = hyperparams['gps_budget']
             else:
                 raise TypeError("hyperparams['opt_budget'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.gps_budget = int(2 * self.opt_budget / 3)
         # Check that the contents of hyperparams are legal
@@ -424,7 +426,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                                      "must be in [0, 1)")
             else:
                 raise TypeError("hyperparams['opt_momentum'] "
-                                 "must be a float")
+                                "must be a float")
         else:
             self.momentum = 9e-1
         # Check the hyperparameter dictionary for random generator
@@ -537,7 +539,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                            np.min((self.ub - self.lb) * np.sqrt(self.eps)))
             try:
                 obj_func = jax.jit(self._obj_func)
-                fx = obj_func(x[j])
+                _ = obj_func(x[j])
             except BaseException:
                 obj_func = self._obj_func
             # Get a candidate
@@ -626,7 +628,7 @@ def _accelerated_pattern_search(n, lb, ub, x0, obj_func, ibudget,
     if np_rng is None:
         np_rng = np.random.default_rng()
     # Check working tolerance (unit roundoff)
-    mu  = jnp.finfo(jnp.ones(1)).eps
+    mu = jnp.finfo(jnp.ones(1)).eps
     root_mu = np.sqrt(mu)
     # Loop over all starts
     for kk in range(istarts):

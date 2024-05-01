@@ -62,7 +62,7 @@ class SingleSimObjective(CompositeFunction):
         # Check additional inputs
         if isinstance(sim_ind, str):
             try:
-                assert(sim_ind in np.dtype(self.sim_type).names)
+                assert (sim_ind in np.dtype(self.sim_type).names)
             except BaseException:
                 raise ValueError(f"{sim_ind[0]} not a name in given sim_type")
             self.sim_name = sim_ind
@@ -151,7 +151,8 @@ class SumOfSimSquaresObjective(CompositeFunction):
             sim_type (np.dtype): The numpy.dtype of the simulation outputs.
 
             sim_inds (list): The list of names (or name, index pairs for sims
-                with more than one output) of the simulation outputs to sum over.
+                with more than one output) of the simulation outputs to sum
+                over.
 
             goal (str): Either 'min' to minimize SOS or 'max' to maximize SOS.
                 Defaults to 'min'.
@@ -168,7 +169,7 @@ class SumOfSimSquaresObjective(CompositeFunction):
         for sim_ind in sim_inds:
             if isinstance(sim_ind, str):
                 try:
-                    assert(sim_ind in np.dtype(self.sim_type).names)
+                    assert (sim_ind in np.dtype(self.sim_type).names)
                 except BaseException:
                     raise ValueError(f"{sim_ind[0]} not in given sim_type")
                 if sim_ind in self.sim_names:
@@ -241,11 +242,15 @@ class SumOfSimsObjective(CompositeFunction):
 
     If minimizing absolute sum:
 
-    ``def ObjectiveFunction(x, sx): return sum([abs(sx[i]) for i in sim_inds])``
+    ```
+    def ObjectiveFunction(x, sx): return sum([abs(sx[i]) for i in sim_inds])
+    ```
 
     If maximizing absolute sum:
 
-    ``def ObjectiveFunction(x, sx): return -sum([abs(sx[i]) for i in sim_inds])``
+    ```
+    def ObjectiveFunction(x, sx): return -sum([abs(sx[i]) for i in sim_inds])
+    ```
 
     Also supports derivative usage.
 
@@ -259,7 +264,8 @@ class SumOfSimsObjective(CompositeFunction):
 
     """
 
-    def __init__(self, des_type, sim_type, sim_inds, goal='min', absolute=False):
+    def __init__(self, des_type, sim_type, sim_inds, goal='min',
+                 absolute=False):
         """ Constructor for SumOfSimsObjective class.
 
         Args:
@@ -288,7 +294,7 @@ class SumOfSimsObjective(CompositeFunction):
         for sim_ind in sim_inds:
             if isinstance(sim_ind, str):
                 try:
-                    assert(sim_ind in np.dtype(self.sim_type).names)
+                    assert (sim_ind in np.dtype(self.sim_type).names)
                 except BaseException:
                     raise ValueError(f"{sim_ind[0]} not in given sim_type")
                 if sim_ind in self.sim_names:
@@ -322,8 +328,11 @@ class SumOfSimsObjective(CompositeFunction):
             self.goal = -1.0
         else:
             self.goal = 1.0
+
         def id_func(x): return np.ones(x.size)
+
         def abs_func(x): return jnp.sign(x)
+
         if not isinstance(absolute, bool):
             raise TypeError("absolute must be a bool type, not " +
                             str(type(absolute)))

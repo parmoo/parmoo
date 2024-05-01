@@ -15,7 +15,7 @@ The classes include:
 import jax
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
+from parmoo.structs import SurrogateOptimizer
 from parmoo.util import xerror
 
 
@@ -70,7 +70,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
                     self.budget = hyperparams['opt_budget']
             else:
                 raise TypeError("hyperparams['opt_budget'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.budget = 10000
         # Check the hyperparameter dictionary for random generator
@@ -150,16 +150,20 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
         for iq, acq in enumerate(self.acquisitions):
             # Compile the scalarization function
             if acq.useSD():
-                _sca_func = lambda fi, xi: acq.scalarize(fi, xi,
-                                                         self.simulations(xi),
-                                                         self.sim_sd(xi))
+
+                def _sca_func(fi, xi):
+                    return acq.scalarize(fi, xi, self.simulations(xi),
+                                         self.sim_sd(xi))
+
             else:
-                _sca_func = lambda fi, xi: acq.scalarize(fi, xi,
-                                                         self.simulations(xi),
-                                                         jnp.zeros(sxi.size))
+
+                def _sca_func(fi, xi):
+                    return acq.scalarize(fi, xi, self.simulations(xi),
+                                         jnp.zeros(sxi.size))
+
             try:
                 sca_func = jax.jit(_sca_func)
-                q0 = sca_func(f0, x0)
+                _ = sca_func(f0, x0)
             except BaseException:
                 sca_func = _sca_func
             # Use acquisition functions to extract array of results

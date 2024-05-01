@@ -2,8 +2,8 @@
 def test_GlobalSurrogate_RS():
     """ Test the GlobalSurrogate_RS class in optimizers.py.
 
-    Perform a test of the GlobalSurrogate_RS class by minimizing the three variable,
-    biobjective function
+    Perform a test of the GlobalSurrogate_RS class by minimizing the three
+    variable, biobjective function
 
     $$
     F(x) = (-x_1 + x_2 + x_3, x_1 - x_2 + x_3)
@@ -79,7 +79,7 @@ def test_GlobalSurrogate_RS():
     opt.setPenalty(L)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setTrFunc(lambda x, r: 100)
-    # Solve the surrogate problem with GlobalSurrogate_RS, starting from the centroid
+    # Solve the surrogate problem with GlobalSurrogate_RS
     x = np.zeros((3, n))
     x[:] = 0.5
     (x1, x2, x3) = opt.solve(x)

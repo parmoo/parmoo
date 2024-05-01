@@ -253,7 +253,7 @@ class FixedWeights(AcquisitionFunction):
             # If weights are provided, check that they are legal
             if not isinstance(hyperparams['weights'], np.ndarray):
                 raise TypeError("when present, 'weights' must be a " +
-                                 "numpy array")
+                                "numpy array")
             else:
                 if hyperparams['weights'].size != self.o:
                     raise ValueError("when present, 'weights' must " +

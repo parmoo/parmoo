@@ -2,6 +2,7 @@
 DTYPE = [("x1", "f8"), ("x2", "f8"), ("x3", "f8"), ("x4", "f8"), ("x5", "f8")]
 ONES = {"x1": 0.6, "x2": 0.6, "x3": 0.6, "x4": 0.6, "x5": 0.6}
 
+
 def test_sims_dtlz_g1():
     """ Test the g1 kernel function.
 
@@ -66,7 +67,6 @@ def test_sims_dtlz_dtlz1():
     """
 
     from parmoo.simulations.dtlz import dtlz1_sim
-    import numpy as np
 
     dtlz1 = dtlz1_sim(DTYPE, num_obj=3, offset=0.6)
     assert (sum(dtlz1(ONES)) - 0.5 < 1.0e-4)

@@ -238,11 +238,8 @@ def test_to_from_array():
 
     from parmoo.util import from_array, to_array
     import numpy as np
-    import pytest
 
     # Create test inputs
-    dt_bad = "hello world"
-    x_bad = "hello world"
     x_unnamed = np.eye(5)[2]
     dt_named = np.dtype([("x1", "f8"), ("x2", "f8"), ("x3", "f8", 3)])
     x_named = {"x1": 0.0, "x2": 0.0, "x3": np.asarray([1.0, 0.0, 0.0])}

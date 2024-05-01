@@ -13,7 +13,6 @@ from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import SurrogateFunction
 from parmoo.util import xerror
-from scipy.stats import tstd
 
 
 class Linear(SurrogateFunction):
@@ -193,9 +192,9 @@ class Linear(SurrogateFunction):
             r_tmp = np.linalg.norm(center - xn)
             # Get all points within the radius
             self.loc_inds = [int(i) for i in idists
-                             if np.linalg.norm(np.maximum(np.abs(center
-                                       - self.x_vals[i]) - self.eps, 0)) <=
-                                       r_tmp]
+                             if np.linalg.norm(np.maximum(np.abs(center -
+                                               self.x_vals[i]) - self.eps, 0))
+                             <= r_tmp]
             # Get (min norm) LS fit
             A = np.hstack((self.x_vals[self.loc_inds],
                            np.ones((len(self.loc_inds), 1))))

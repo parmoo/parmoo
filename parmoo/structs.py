@@ -534,7 +534,7 @@ class SurrogateFunction(ABC):
         """
 
     def stdDev(self, x):
-        """ Evaluate the standard deviation (uncertainty) of the surrogate at x.
+        """ Evaluate the standard deviation of the surrogate at x.
 
         Note: this method need not be implemented when the acquisition
         function does not use the model uncertainty.

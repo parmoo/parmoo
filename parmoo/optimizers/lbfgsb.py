@@ -14,12 +14,12 @@ The classes include:
 """
 
 from jax import config
-config.update("jax_enable_x64", True)  # scipy.optimize.lbfgsb requires 64-bit
 import jax
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
+from parmoo.structs import SurrogateOptimizer
 from parmoo.util import xerror
+config.update("jax_enable_x64", True)  # scipy.optimize.lbfgsb requires 64-bit
 
 
 class GlobalSurrogate_BFGS(SurrogateOptimizer):
@@ -78,7 +78,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                     self.restarts = hyperparams['opt_restarts']
             else:
                 raise TypeError("hyperparams['opt_restarts'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.restarts = self.n + 1
         if 'opt_budget' in hyperparams:
@@ -90,7 +90,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                     self.budget = hyperparams['opt_budget']
             else:
                 raise TypeError("hyperparams['opt_budget'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.budget = 100
         # Check the hyperparameter dictionary for random generator
@@ -160,17 +160,19 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
             try:
                 scalar_f = jax.jit(_scal_f)
                 x0 = x[j, :].copy()
-                f0 = scalar_f(x0)
+                _ = scalar_f(x0)
             except BaseException:
                 scalar_f = _scal_f
                 x0 = x[j, :].copy()
-                f0 = scalar_f(x0)
+                _ = scalar_f(x0)
             try:
                 _scal_g = jax.jit(jax.jacrev(_scal_f))
                 _ = _scal_g(x0)
             except BaseException:
                 _scal_g = jax.jacrev(_scal_f)
+
             def scalar_g(x, *ag): return np.asarray(_scal_g(x, *ag)).flatten()
+
             g0 = scalar_g(x0)
             # Get the solution via multistart solve
             soln = x[j, :].copy()
@@ -259,7 +261,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                     self.budget = hyperparams['opt_budget']
             else:
                 raise TypeError("hyperparams['opt_budget'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.budget = 500
         # Check that the contents of hyperparams is legal
@@ -272,7 +274,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                     self.restarts = hyperparams['opt_restarts']
             else:
                 raise TypeError("hyperparams['opt_restarts'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.restarts = 2
         self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
@@ -422,21 +424,23 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             try:
                 scalar_f = jax.jit(_scal_f)
                 x0 = x[j, :].copy()
-                f0 = scalar_f(x0)
+                _ = scalar_f(x0)
             except BaseException:
                 scalar_f = _scal_f
                 x0 = x[j, :].copy()
-                f0 = scalar_f(x0)
+                _ = scalar_f(x0)
             try:
                 _scal_g = jax.jit(jax.jacrev(_scal_f))
                 _ = _scal_g(x0)
             except BaseException:
                 _scal_g = jax.jacrev(_scal_f)
+
             def scalar_g(x, *ag): return np.asarray(_scal_g(x, *ag)).flatten()
+
             g0 = scalar_g(x0)
             # Get the solution via multistart solve
             soln = x[j, :].copy()
-            f0 = scalar_f(soln)
+            _ = scalar_f(soln)
             for i in range(self.restarts):
                 if i == 1:
                     # Use predicted gradient step to warm-start second start
@@ -492,7 +496,8 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             bfgs_state['prev_centers'].append([ci.tolist(), ri.tolist()])
         bfgs_state['targets'] = []
         for ti in self.targets:
-            bfgs_state['targets'].append([ti[0].tolist(), ti[1].tolist(), ti[2], ti[3]])
+            bfgs_state['targets'].append([ti[0].tolist(), ti[1].tolist(),
+                                          ti[2], ti[3]])
         # Save file
         with open(filename, 'w') as fp:
             json.dump(bfgs_state, fp)
@@ -525,5 +530,6 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             self.prev_centers.append([np.array(ci), np.array(ri)])
         self.targets = []
         for ti in bfgs_state['targets']:
-            self.targets.append([np.array(ti[0]), np.array(ti[1]), ti[2], ti[3]])
+            self.targets.append([np.array(ti[0]),
+                                 np.array(ti[1]), ti[2], ti[3]])
         return

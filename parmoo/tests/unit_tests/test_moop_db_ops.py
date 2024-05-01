@@ -168,9 +168,19 @@ def test_MOOP_getPF():
     moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    def f1(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]]) + (x["x1"] - 1)**2)
-    def f2(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]]) + (x["x2"] - 1)**2)
-    def f3(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]]) + (x["x3"] - 1)**2)
+
+    def f1(x, s):
+        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]])
+                + (x["x1"] - 1)**2))
+
+    def f2(x, s):
+        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]])
+                + (x["x2"] - 1)**2))
+
+    def f3(x, s):
+        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]])
+                + (x["x3"] - 1)**2))
+
     def c1(x, s): return -sum([x[i] for i in ["x1", "x2", "x3", "x4"]])
     moop.addObjective({'obj_func': f1})
     moop.addObjective({'obj_func': f2})
@@ -215,7 +225,6 @@ def test_MOOP_getSimulationData():
 
     """
 
-    import numpy as np
     from parmoo import MOOP
     from parmoo.acquisitions import UniformWeights
     from parmoo.optimizers import LocalSurrogate_PS
@@ -286,9 +295,19 @@ def test_MOOP_getObjectiveData():
     moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
         moop.addDesign({'name': ('x' + str(i+1)), 'lb': 0.0, 'ub': 1.0})
-    def f1(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]]) + (x["x1"] - 1)**2)
-    def f2(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]]) + (x["x2"] - 1)**2)
-    def f3(x, s): return np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]]) + (x["x3"] - 1)**2)
+
+    def f1(x, s):
+        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]])
+                + (x["x1"] - 1)**2))
+
+    def f2(x, s):
+        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]])
+                + (x["x2"] - 1)**2))
+
+    def f3(x, s):
+        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]])
+                + (x["x3"] - 1)**2))
+
     def c1(x, s): return -sum([x[f"x{i}"] for i in [1, 2, 3, 4]])
     moop.addObjective({'obj_func': f1})
     moop.addObjective({'obj_func': f2})
@@ -572,8 +591,6 @@ def check_moops(moop1, moop2):
         moop2 (MOOP): Second moop to compare
 
     """
-
-    import numpy as np
 
     # Check scalars
     assert (moop2.m == moop1.m and

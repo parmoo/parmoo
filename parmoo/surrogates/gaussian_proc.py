@@ -307,7 +307,7 @@ class GaussRBF(SurrogateFunction):
                         self.weights, self.prior, x)
 
     def stdDev(self, x):
-        """ Evaluate the standard deviation (uncertainty) of the Gaussian RBF at x.
+        """ Evaluate the standard deviation of the Gaussian RBF at x.
 
         Args:
             x (numpy.ndarray): A 1d array containing the design point at
@@ -394,11 +394,13 @@ class GaussRBF(SurrogateFunction):
 
 # Private pure helper functions
 
+
 @jit
 def _gaussian(r2, x_std_dev):
     """ Evaluate gaussian bump with x_std_dev at distance r^2 from center """
 
     return jnp.exp(-r2 / (x_std_dev ** 2))
+
 
 @jit
 def _cdist(x_vals, x):
@@ -406,11 +408,13 @@ def _cdist(x_vals, x):
 
     return jnp.sum((x_vals - x) ** 2, axis=1)
 
+
 @jit
 def _pdist(x_vals):
     """ Compute all pairwise squared distances to the input arg """
 
     return vmap(lambda x: _cdist(x_vals, x))(x_vals)
+
 
 @jit
 def _evaluate_0(x_vals, x_std_dev, weights, prior, x):
@@ -419,6 +423,7 @@ def _evaluate_0(x_vals, x_std_dev, weights, prior, x):
     post_tmp = jnp.dot(weights, _gaussian(_cdist(x_vals, x), x_std_dev))
     return post_tmp + prior[-1, :]
 
+
 @jit
 def _evaluate_1(x_vals, x_std_dev, weights, prior, x):
     """ Evaluate a Gaussian RBF (linear prior) at a design point x. """
@@ -426,6 +431,7 @@ def _evaluate_1(x_vals, x_std_dev, weights, prior, x):
     post_tmp = jnp.dot(weights, _gaussian(_cdist(x_vals, x), x_std_dev))
     pre_tmp = jnp.dot(x, prior[:-1, :]) + prior[-1, :]
     return post_tmp + pre_tmp
+
 
 @jit
 def _evaluate_sd(x_vals, v, w, x_std_dev, eps, x):

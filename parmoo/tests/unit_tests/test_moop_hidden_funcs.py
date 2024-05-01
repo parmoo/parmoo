@@ -121,7 +121,6 @@ def test_MOOP_fit_update_surrogates():
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
-    import pytest
 
     # Initialize a continuous MOOP with 2 sims, 3 objs
     moop1 = MOOP(LocalSurrogate_PS)
@@ -251,8 +250,8 @@ def test_MOOP_evaluate_surrogates():
         (np.ones(3), np.array([np.sqrt(3), 0.0, np.sqrt(0.75)]), 0)
     ]
     for xi, si, sdi in test_cases:
-        assert (np.linalg.norm(moop1._evaluate_surrogates(xi) - si) < 1.0e-7)
-        assert (np.linalg.norm(moop1._surrogate_uncertainty(xi) - sdi) < 1.0e-3)
+        assert (np.linalg.norm(moop1._evaluate_surrogates(xi) - si) < 1.e-7)
+        assert (np.linalg.norm(moop1._surrogate_uncertainty(xi) - sdi) < 1.e-3)
     # Evaluate one point not in the training set and check that std_dev > 0
     xi = np.ones(3) * 0.75
     assert (np.linalg.norm(moop1._surrogate_uncertainty(xi)) > 1.0e-4)
@@ -359,8 +358,8 @@ def test_MOOP_evaluate_objectives():
 def test_MOOP_evaluate_constraints():
     """ Check that the MOOP class handles evaluating constraints properly.
 
-    Initialize a MOOP object and check that the _evaluate_constraints() function
-    works correctly.
+    Initialize a MOOP object and check that the _evaluate_constraints()
+    function works correctly.
 
     """
 
@@ -372,7 +371,6 @@ def test_MOOP_evaluate_constraints():
     from parmoo.optimizers import LocalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
-    import pytest
 
     # Initialize a continuous MOOP with 2 sims, 3 cons
     moop = MOOP(LocalSurrogate_PS)
@@ -401,7 +399,8 @@ def test_MOOP_evaluate_constraints():
     # Now add 3 constraints
     moop.addConstraint({'constraint': lambda x, s: x["x1"]})
     moop.addConstraint({'constraint': lambda x, s: s["sim1"][0]})
-    moop.addConstraint({'constraint': lambda x, s: s["sim2"][0] + s["sim2"][1]})
+    moop.addConstraint({'constraint':
+                        lambda x, s: s["sim2"][0] + s["sim2"][1]})
     moop.compile()
     # Evaluate some data points and fit the surrogates
     for sn in ["sim1", "sim2"]:
