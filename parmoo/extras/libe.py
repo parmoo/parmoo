@@ -717,6 +717,9 @@ class libE_MOOP(MOOP):
                 raise ValueError("If 0 simulations are given, then iter_max" +
                                  "must be provided")
             iter_max = sim_max
+        # Compile if needed
+        if not self.moop.compiled:
+            self.compile()
         # Count the total search budget
         total_search_budget = 0
         for search in self.moop.searches:
@@ -780,7 +783,6 @@ class libE_MOOP(MOOP):
         persis_info = {}
         for i in range(nworkers + 1):
             persis_info[i] = {}
-        self.moop.compile()
         persis_info[1]['moop'] = self.moop
 
         exit_criteria = {'sim_max': sim_max, 'wallclock_max': wt_max}

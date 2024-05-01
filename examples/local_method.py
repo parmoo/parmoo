@@ -6,15 +6,12 @@ from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint, FixedWeights
 from parmoo.optimizers import LocalSurrogate_BFGS
-from parmoo.objectives import single_sim_out
+from parmoo.objectives import SingleSimObjective, SingleSimGradient
 import logging
-
-# Fix the random seed for reproducibility
-np.random.seed(0)
 
 # Switch to using the LocalSurrogate_BFGS solver to solve surrogate problems
 # in a trust region with multi-start LBFGSB
-my_moop = MOOP(LocalSurrogate_BFGS)
+my_moop = MOOP(LocalSurrogate_BFGS, hyperparams={'np_random_gen': 0})
 
 # Massive 50-variable black-box optimization problem
 # Completely hopeless for methods that rely on global models
@@ -44,16 +41,26 @@ my_moop.addSimulation({'name': "MySim",
                        'surrogate': GaussRBF,
                        'hyperparams': {'search_budget': 200}})
 
-# 2 objectives (using the single_sim_out library objective to minimize a
+# 2 objectives (using the SingleSimObjective library objective to minimize a
 # single output of the simulation function)
 my_moop.addObjective({'name': "f1",
-                      'obj_func': single_sim_out(my_moop.getDesignType(),
-                                                 my_moop.getSimulationType(),
-                                                 ("MySim", 0))})
+                      'obj_func':
+                      SingleSimObjective(my_moop.getDesignType(),
+                                         my_moop.getSimulationType(),
+                                         ("MySim", 0)),
+                      'obj_grad':
+                      SingleSimGradient(my_moop.getDesignType(),
+                                        my_moop.getSimulationType(),
+                                        ("MySim", 0))})
 my_moop.addObjective({'name': "f2",
-                      'obj_func': single_sim_out(my_moop.getDesignType(),
-                                                 my_moop.getSimulationType(),
-                                                 ("MySim", 1))})
+                      'obj_func':
+                      SingleSimObjective(my_moop.getDesignType(),
+                                         my_moop.getSimulationType(),
+                                         ("MySim", 1)),
+                      'obj_grad':
+                      SingleSimGradient(my_moop.getDesignType(),
+                                        my_moop.getSimulationType(),
+                                        ("MySim", 1))})
 
 # When solving big problems, it's often better to fix some acquisitions so
 # we can focus on a few high-quality solutions
@@ -72,9 +79,9 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
-# 200 iterations * 4 acquisition funcs + 200 point search = 1000 eval budget
+# 50 iterations * 4 acquisition funcs + 50 point search = 250 eval budget
 # This could take a few mins to run...
-my_moop.solve(200)
+my_moop.solve(50)
 
 # Display the values of x26, ..., x50 for all solution points
 results = my_moop.getPF(format="pandas")
