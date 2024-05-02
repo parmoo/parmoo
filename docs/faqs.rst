@@ -164,23 +164,21 @@ Frequently asked questions:
       These options work best for many of our test problems,
       and they are demonstrated in our tutorials.
       For the surrogate model and optimization solver, start out with
-      :class:`LocalGPS <optimizers.gps_search.LocalGPS>` optimizer
-      and :class:`GaussRBF <surrogates.gaussian_proc.GaussRBF>` surrogate
-      model, as in the quickstart_.
+      :class:`LocalSurrogate_PS <optimizers.pattern_search.GlobalSurrogate_PS>`
+      optimizer and :class:`GaussRBF <surrogates.gaussian_proc.GaussRBF>`
+      surrogate model, as in the quickstart_.
       Then:
 
        - If you are willing to code the derivative for your objective
          and constraint functions (not the simulations), then you can
          follow the advanced_example_ and switch to using the
-         :class:`LBFGSB <optimizers.lbfgsb.LBFGSB>` optimizer.
+         :class:`GlobalSurrogate_BFGS <optimizers.lbfgsb.GlobalSurrogate_BFGS>`
+         optimizer.
        - If you have a lot of design variables, then you might do better
-         with a local solver, by switching your surrogate to the
-         :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
-         surrogate.
-         If you are using the
-         :class:`LBFGSB <optimizers.lbfgsb.LBFGSB>` optimizer, then you
-         will also need to switch to the
-         :class:`TR_LBFGSB <optimizers.lbfgsb.TR_LBFGSB>` optimizer.
+         with a local solver, by switching to one of the
+         :class:`LocalSurrogate_PS <optimizers.pattern_search.LocalSurrogate_PS>`
+         :class:`LocalSurrogate_BFGS <optimizers.lbfgsb.LocalSurrogate_BFGS>`
+         optimizers.
        - If you're a professional optimizer or researcher and you want
          to try your own methods, then you can do so by writing your own
          implementation for one of our
@@ -192,6 +190,7 @@ Frequently asked questions:
 
 We would like to acknowledge the following users, whose helpful discussions
 with us inspired this FAQ:
+
  - Sarah Salem (Bundeswehr University Munich)
  - Nicholas Antoniou (independent researcher)
 

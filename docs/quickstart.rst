@@ -49,9 +49,9 @@ ParMOO has been tested on Unix/Linux and MacOS systems.
 ParMOO's base has the following dependencies:
 
  * Python_ 3.8+
+ * jax_ -- for algorithmic differentiation and just-in-time (jit) compilation
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
- * pyDOE_ -- for generating experimental designs
  * pandas_ -- for exporting the resulting databases
 
 Additional dependencies are needed to use the additional features in
@@ -134,18 +134,19 @@ To get started, create a :mod:`MOOP <moop.MOOP>` object, using the
 .. code-block:: python
 
    from parmoo import MOOP
-   from parmoo.optimizers import LocalGPS
+   from parmoo.optimizers import GlobalSurrogate_PS
 
-   my_moop = MOOP(LocalGPS)
+   my_moop = MOOP(GlobalSurrogate_PS)
 
 To summarize the framework, in each iteration ParMOO models each simulation
 using a computationally cheap surrogate, then solves one or more scalarizations
 of the objectives, which are specified by acquisition functions.
 Read more about this framework at our :doc:`Learn About MOOPs <about>` page.
 In the above example,
-:mod:`optimizers.LocalGPS <optimizers.gps_search.LocalGPS>`
+:mod:`optimizers.GlobalSurrogate_PS <optimizers.pattern_search.GlobalSurrogate_PS>`
 is the class of optimizers
-that the ``my_moop`` will use to solve the scalarized surrogate problems.
+that the ``my_moop`` object will use to solve the scalarized surrogate
+problems.
 
 Next, add design variables to the problem as follows using the
 :meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>` method.
@@ -165,7 +166,7 @@ recommended except for expert users).
    # Add a second categorical design variable with 3 levels
    my_moop.addDesign({'name': "x2", # optional, name
                       'des_type': "categorical", # required, type of variable
-                      'levels': ["good", "bad"] # required, category names
+                      'levels': [-1, 1] # required, list of category labels
                      })
 
 Next, add simulations to the problem as follows using the
@@ -180,10 +181,9 @@ In this example, we define a toy simulation ``sim_func(x)``.
 
    # Define a toy simulation for the problem, whose outputs are quadratic
    def sim_func(x):
-      if x["x2"] == "good":
-         return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
-      else:
-         return np.array([99.9, 99.9])
+      sx = np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
+      if x["x2"] != 1: sx += 99.
+      return sx
    # Add the simulation to the problem
    my_moop.addSimulation({'name': "MySim", # Optional name for this simulation
                           'm': 2, # This simulation has 2 outputs
@@ -212,7 +212,7 @@ simulation output) and one constraint.
    my_moop.addObjective({'name': "f2", 'obj_func': f2})
    # Add a single constraint, that x[0] >= 0.1
    def c1(x, s): return 0.1 - x["x1"]
-   my_moop.addConstraint({'name': "c1", 'constraint': c1})
+   my_moop.addConstraint({'name': "c1", 'con_func': c1})
 
 Finally, we must add one or more acquisition functions using
 :meth:`MOOP.addAcquisition(*args) <moop.MOOP.addAcquisition>`.
@@ -309,6 +309,7 @@ Please read our LICENSE_ and CONTRIBUTING_ files.
 .. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
+.. _jax: https://jax.readthedocs.io/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
@@ -316,7 +317,6 @@ Please read our LICENSE_ and CONTRIBUTING_ files.
 .. _pandas: https://pandas.pydata.org
 .. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _plotly: https://plotly.com/python
-.. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
 .. _pytest-cov: https://pytest-cov.readthedocs.io/en/latest
 .. _Python: https://www.python.org/downloads

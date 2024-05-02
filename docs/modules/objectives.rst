@@ -1,15 +1,9 @@
 Objective Templates (ABCs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: objectives.obj_func
-..    :members: objectives/obj_func
-
-.. autoclass:: obj_func
-   :member-order: bysource
-   :members:
-
-   .. automethod:: __init__
-   .. automethod:: __call__
+For templates to define your own objective function, see
+the
+:class:`CompositeFunction ABC in structs <structs.CompositeFunction>`.
 
 Objective Function Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,21 +11,42 @@ Objective Function Library
 .. automodule:: objectives.obj_lib
 ..    :members: objectives/obj_lib
 
-.. autoclass:: single_sim_out
+.. autoclass:: SingleSimObjective
    :member-order: bysource
    :members:
 
    .. automethod:: __init__
    .. automethod:: __call__
 
-.. autoclass:: sos_sim_out
+.. autoclass:: SumOfSimSquaresObjective
    :member-order: bysource
    :members:
 
    .. automethod:: __init__
    .. automethod:: __call__
 
-.. autoclass:: sum_sim_out
+.. autoclass:: SumOfSimsObjective
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
+   .. automethod:: __call__
+
+.. autoclass:: SingleSimGradient
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
+   .. automethod:: __call__
+
+.. autoclass:: SumOfSimSquaresGradient
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
+   .. automethod:: __call__
+
+.. autoclass:: SumOfSimsGradient
    :member-order: bysource
    :members:
 

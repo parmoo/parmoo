@@ -13,10 +13,14 @@ developers.
 
 .. autofunction:: xerror
 
+.. autofunction:: check_names
+
 .. autofunction:: check_sims
 
 .. autofunction:: lex_leq
 
 .. autofunction:: updatePF
 
-.. autofunction:: unpack
+.. autofunction:: to_array
+
+.. autofunction:: from_array

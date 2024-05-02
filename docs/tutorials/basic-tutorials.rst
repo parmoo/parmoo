@@ -29,11 +29,11 @@ And produces the following figure of the Pareto points:
 
 |
 
-Named Output Types
-~~~~~~~~~~~~~~~~~~
+The name Key and Input/Output Types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following `named_var_ex.py <https://github.com/parmoo/parmoo/blob/main/examples/named_var_ex.py>`_ code demonstrates ParMOO's output datatype when the
-:mod:`MOOP <moop.MOOP>` object is defined using *named* variables.
+The following `named_var_ex.py <https://github.com/parmoo/parmoo/blob/main/examples/named_var_ex.py>`_ code demonstrates ParMOO's output datatypes
+and proper definition of the :mod:`MOOP <moop.MOOP>` object.
 
 .. literalinclude:: ../../examples/named_var_ex.py
     :language: python
@@ -41,19 +41,6 @@ The following `named_var_ex.py <https://github.com/parmoo/parmoo/blob/main/examp
 The above code produces the following output.
 
 .. literalinclude:: ../../examples/named_var_ex.out
-
-Unnamed Output Types
-~~~~~~~~~~~~~~~~~~~~
-
-The following `unnamed_var_ex.py <https://github.com/parmoo/parmoo/blob/main/examples/unnamed_var_ex.py>`_ code demonstrates ParMOO's output datatype when the
-:mod:`MOOP <moop.MOOP>` object is defined using *unnamed* variables.
-
-.. literalinclude:: ../../examples/unnamed_var_ex.py
-    :language: python
-
-The above code produces the following output.
-
-.. literalinclude:: ../../examples/unnamed_var_ex.out
 
 Adding Precomputed Simulation Values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

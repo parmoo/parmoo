@@ -1,7 +1,7 @@
 Surrogate Functions
 -------------------
 
-A surrogte model is associated with each simulation when its
+A surrogate model is associated with each simulation when its
 simulation dictionary is added to the ``MOOP`` object.
 This technique is used for generatng an approximation to the simulation's
 response surface, based on data gathered during the solve.
@@ -24,7 +24,13 @@ Gaussian Process (RBF) Models
 
    .. automethod:: __init__
 
-.. autoclass:: LocalGaussRBF
+Polynomial Models
+~~~~~~~~~~~~~~~~~
+
+.. automodule:: surrogates.polynomial
+..    :members: surrogates/polynomial
+
+.. autoclass:: Linear
    :member-order: bysource
    :members:
 

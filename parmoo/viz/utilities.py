@@ -8,7 +8,6 @@ import logging
 
 
 def export_file(fig, plot_name, file_type):
-
     """ Export image of figure to working directory.
 
         Args:
@@ -52,7 +51,6 @@ def export_file(fig, plot_name, file_type):
 
 
 def set_plot_name(db):
-
     """ Provide a default graph title.
 
         Args:
@@ -73,7 +71,6 @@ def set_plot_name(db):
 
 
 def set_database(moop, db, points):
-
     """ Choose which points from MOOP object to plot.
 
         Args:
@@ -124,7 +121,6 @@ def set_database(moop, db, points):
 
 
 def set_hover_info(database, i):
-
     """ Customize information in hover label for trace i.
 
         Args:
@@ -151,23 +147,21 @@ def set_hover_info(database, i):
     return hover_info
 
 
-def check_inputs(
-    db,
-    output,
-    points,
-    height,
-    width,
-    font,
-    fontsize,
-    background_color,
-    screenshot,
-    image_export_format,
-    data_export_format,
-    dev_mode,
-    pop_up,
-    port,
-):
-
+def check_inputs(db,
+                 output,
+                 points,
+                 height,
+                 width,
+                 font,
+                 fontsize,
+                 background_color,
+                 screenshot,
+                 image_export_format,
+                 data_export_format,
+                 dev_mode,
+                 pop_up,
+                 port,
+                 ):
     """ Check keyword inputs to user-facing functions for validity
 
         Args:

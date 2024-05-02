@@ -6,6 +6,7 @@ ParMOO API
    :caption: Modules:
 
    modules/class_api
+   modules/embeddings
    modules/acquisitions
    modules/optimizers
    modules/searches

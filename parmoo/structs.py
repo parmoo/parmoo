@@ -220,11 +220,15 @@ class Embedder(ABC):
     """ ABC describing the embedding of design variables.
 
     This class contains the following methods:
-     * ``setTarget(data, penalty_func)``
-     * ``scalarize(f_vals)``
-     * ``useSD()``
-     * ``save(filename)``
-     * ``load(filename)``
+     * ``getLatentDesTols()``
+     * ``getFeatureDesTols()``
+     * ``getEmbeddingSize()``
+     * ``getInputType()``
+     * ``getLowerBounds()``
+     * ``getUpperBounds()``
+     * ``embed(x)``
+     * ``embed_grad(dx)``
+     * ``extract(x)``
 
     """
 
@@ -331,6 +335,33 @@ class Embedder(ABC):
 
         raise NotImplementedError("This Embedder has not implemented an "
                                   "embed method yet.")
+
+    def embed_grad(self, dx):
+        """ Embed a partial design gradient as a vector for ParMOO.
+
+        Note: This method should be implemented by all sub-classes. However,
+        we have not explicitly required this by providing a dummy
+        implementation below.
+
+        This allows users to write a hidden method to perform the embedding,
+        then over-write our default implementation at runtime.
+
+        This is important for ParMOO's performance since embed and extract
+        could be called frequently on ParMOO's critical path. However, if
+        you are not able to write a jittable-method, ParMOO will still run
+        but may experience longer iteration times.
+
+        Args:
+            dx (float): The partial design gradient to embed.
+
+        Returns:
+            numpy.ndarray: A numpy array of length 1 containing a
+            rescaling of x
+
+        """
+
+        raise NotImplementedError("This Embedder has not implemented an "
+                                  "embed_grad method yet.")
 
     def extract(self, x):
         """ Extract a design input from an n-dimensional vector for ParMOO.
