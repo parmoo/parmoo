@@ -39,6 +39,7 @@ Table of Contents
    about
    how-to-write
    extras
+   jax-tips
    faqs
    refs
 

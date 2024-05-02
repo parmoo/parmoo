@@ -25,7 +25,7 @@ class AcquisitionFunction(ABC):
 
     This class contains the following methods:
      * ``setTarget(data, penalty_func)``
-     * ``scalarize(f_vals)``
+     * ``scalarize(f_vals, x_vals, s_vals_mean, s_vals_sd)``
      * ``useSD()``
      * ``save(filename)``
      * ``load(filename)``
@@ -86,6 +86,12 @@ class AcquisitionFunction(ABC):
     @abstractmethod
     def scalarize(self, f_vals, x_vals, s_vals_mean, s_vals_sd):
         """ Scalarize a vector-valued function using the AcquisitionFunction.
+
+        Note: For best performance, make sure that jax can jit this method.
+
+        Additionally, for compatibility with gradient-based solvers,
+        this method must be implemented in jax and be differentiable
+        via the jax.jacrev() tool.
 
         Args:
             f_vals (ndarray): A 1D array specifying a vector of function
@@ -310,17 +316,7 @@ class Embedder(ABC):
     def embed(self, x):
         """ Embed a design input as an n-dimensional vector for ParMOO.
 
-        Note: This method should be implemented by all sub-classes. However,
-        we have not explicitly required this by providing a dummy
-        implementation below.
-
-        This allows users to write a hidden method to perform the embedding,
-        then over-write our default implementation at runtime.
-
-        This is important for ParMOO's performance since embed and extract
-        could be called frequently on ParMOO's critical path. However, if
-        you are not able to write a jittable-method, ParMOO will still run
-        but may experience longer iteration times.
+        Note: For best performance, make sure that jax can jit this method.
 
         Args:
             x (stype): The value of the design variable to embed, where
@@ -339,17 +335,10 @@ class Embedder(ABC):
     def embed_grad(self, dx):
         """ Embed a partial design gradient as a vector for ParMOO.
 
-        Note: This method should be implemented by all sub-classes. However,
-        we have not explicitly required this by providing a dummy
-        implementation below.
+        Note: If not implemented, ParMOO will still work with gradient free
+        methods, but will not support autograd features.
 
-        This allows users to write a hidden method to perform the embedding,
-        then over-write our default implementation at runtime.
-
-        This is important for ParMOO's performance since embed and extract
-        could be called frequently on ParMOO's critical path. However, if
-        you are not able to write a jittable-method, ParMOO will still run
-        but may experience longer iteration times.
+        For best performance, make sure that jax can jit this method.
 
         Args:
             dx (float): The partial design gradient to embed.
@@ -366,17 +355,7 @@ class Embedder(ABC):
     def extract(self, x):
         """ Extract a design input from an n-dimensional vector for ParMOO.
 
-        Note: This method should be implemented by all sub-classes. However,
-        we have not explicitly required this by providing a dummy
-        implementation below.
-
-        This allows users to write a hidden method to perform the embedding,
-        then over-write our default implementation at runtime.
-
-        This is important for ParMOO's performance since embed and extract
-        could be called frequently on ParMOO's critical path. However, if
-        you are not able to write a jittable-method, ParMOO will still run
-        but may experience longer iteration times.
+        Note: For best performance, make sure that jax can jit this method.
 
         Args:
             x (ndarray): A 1D array whose size matches the output of
@@ -556,6 +535,12 @@ class SurrogateFunction(ABC):
     def evaluate(self, x):
         """ Evaluate the surrogate at a design point.
 
+        Note: For best performance, make sure that jax can jit this method.
+
+        Additionally, for compatibility with gradient-based solvers,
+        this method must be implemented in jax and be differentiable
+        via the jax.jacrev() tool.
+
         Args:
             x (ndarray): A 1D array containing the design point to evaluate.
 
@@ -569,6 +554,10 @@ class SurrogateFunction(ABC):
 
         Note: this method need not be implemented when the acquisition
         function does not use the model uncertainty.
+
+        Additionally, for compatibility with gradient-based solvers,
+        this method must be implemented in jax and be differentiable
+        via the jax.jacrev() tool.
 
         Args:
             x (ndarray): A 1D array containing the design point to evaluate.
@@ -842,6 +831,9 @@ class SurrogateOptimizer(ABC):
     def returnResults(self, x, fx, sx, sdx):
         """ This is a callback function to collect evaluation results.
 
+        Implement this function to receive the results of each
+        true simulation evaluation from the MOOP class at runtime.
+
         Args:
             x (ndarray): A 1D array with the design point evaluated.
 
@@ -876,6 +868,31 @@ class SurrogateOptimizer(ABC):
     @abstractmethod
     def solve(self, x_k):
         """ Solve the surrogate problem.
+
+        You may assume that the following internal attributes are defined
+        and contain callable definitions of the objective, constraint,
+        penalty, and simulation (surrogate) functions, respectively:
+         * ``self.objectives``,
+         * ``self.constraints``,
+         * ``self.penalty_func``, and
+         * ``self.simulations``.
+
+        Additionally, you may assume that:
+         * ``self.acquisitions`` contains a list of one or more
+           ``AcqusitionFunction`` object instances, each of whose
+           ``acq.scalarize(f_vals, x_vals, s_vals_mean, s_vals_sd)``
+           is set and ready to call; and
+         * ``self.setTR(x, r)`` can be called to set a trust-region
+           centered at ``x`` with radius ``r`` (and re-fit the surrogates
+           accordingly).
+
+        Note: If implementing your own solver, try to jit (or re-jit) any of
+        the objective, constraint, penalty, simulation surrogate, and/or
+        acquisition functions after each call to ``self.setTR``.
+        Additionally, if provided by the user,
+        the objectives, constraints, penalty, and acq.scalarize,
+        functions should all be differentiable by importing and
+        calling ``jax.jacrev()``.
 
         Args:
             x_k (ndarray): A 2D array containing a list of current iterates.

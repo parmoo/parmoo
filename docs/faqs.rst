@@ -152,6 +152,10 @@ Frequently asked questions:
       surrogates, and therefore is more scalable for handling large budgets.
       See our :ref:`tutorial on local methods <high_d_ex>`
       for an example.
+      Starting in version 0.4.0, you should be able to get up to 10x
+      speedup on many iteration costs if ParMOO is able to ``jit``
+      certain critical segments of your code with ``jax/lax``.
+      To understand how that works, see our :ref:`jax tips <jax_tips>`.
 
  - Q: Surrogate models, acquisition functions, search techniques, and
    optimization solvers -- how do I know which ones to pick?

@@ -6,24 +6,28 @@ The MOOP class
 
 The :mod:`MOOP <moop.MOOP>` class is the fundamental data structure in
 ParMOO.
-Below is a UML diagram showing the key public methods and
-dependencies.
 
-.. only:: html
-
-    .. figure:: img/moop-uml.svg
-        :alt: ParMOO UML Diagram
-        :align: center
-
+..
+    _The following has been commented out as the corresponding UML is obsolete:
     |
-
-.. only:: latex
-
-    .. figure:: img/moop-uml.png
-        :alt: ParMOO UML Diagram
-        :align: center
-
+    |Below is a UML diagram showing the key public methods and
+    |dependencies.
     |
+    |.. only:: html
+    |
+    |    .. figure:: img/moop-uml.svg
+    |        :alt: ParMOO UML Diagram
+    |        :align: center
+    |
+    |    |
+    |
+    |.. only:: latex
+    |
+    |    .. figure:: img/moop-uml.png
+    |        :alt: ParMOO UML Diagram
+    |        :align: center
+    |
+    |    |
 
 To create an instance of the :mod:`MOOP <moop.MOOP>` class,
 use the :meth:`constructor <moop.MOOP.__init__>`.
@@ -54,7 +58,14 @@ will be required when defining each objective and constraint.
    set to evaluate their derivatives with respect to design inputs
    and simulation outputs.
 
-To avoid issues, it is best to define your MOOP in the following order.
+**Starting in version 0.4.0:** to fix the random seed, ParMOO no longer uses
+the global numpy random seed.
+Instead, pass an integer or ``numpy.random.Generator`` object using the key
+``hp["np_random_gen"]`` when creating the MOOP.
+It will automatically be passed on to all subclasses and components.
+
+To avoid issues, it is best to define your MOOP in the following order,
+but starting in version 0.4.0, this is no longer a requirement.
 
  1. Add design variables using
     :meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>`.
