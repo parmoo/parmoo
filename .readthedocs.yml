@@ -3,11 +3,13 @@ version: 2
 # conda:
 #     environment: install/environment.yml
 
+build:
+    os: ubuntu-latest
+    tools:
+        ptyhon: "3.8"
+
 sphinx:
     configuration: docs/conf.py
-
-build:
-    image: latest
 
 formats:
   - pdf
