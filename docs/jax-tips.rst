@@ -18,6 +18,30 @@ the relevant bits of code can
 In most cases, when everything in ParMOO's critical path can be compiled via
 ``jax.jit()``, you can expect over a 10x speedup in iteration times.
 
+Jax setup
+---------
+
+ParMOO is setup to install the ``jax[cpu]`` release (CPU only).
+We do not recommend using other devices as this would require too much
+data movement to be efficient for our use case.
+
+In several places, throughout the code, we have set ``jax``'s configurations
+to only run on CPU devices.
+This may cause issues if you are using jax for other things in your code.
+
+Additionally, as noted in the :ref:`quickstart guide <quickstart>`,
+jax runs in single (32-bit) precision by default.
+
+To run in double precision, the following code is needed at startup:
+
+.. code-block:: python
+
+    import jax
+    jax.config.update("jax_enable_x64", True)
+
+Things that often fail to jit
+-----------------------------
+
 When the :meth:`MOOP.compile() <moop.MOOP.compile>` method is called,
 ParMOO attempts to jit many common items.
 If infol-level logging is turned on (see the logging tutorial) then
@@ -25,9 +49,6 @@ ParMOO will print warnings for items that failed to ``jit``.
 
 In many cases, it is worth taking time to figure out why these items won't
 jit and it is often possible to adjust them so that they do.
-
-Things that often fail to jit
------------------------------
 
 Common items that fail to jit include:
 

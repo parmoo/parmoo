@@ -126,9 +126,25 @@ These tests are run regularly using GitHub Actions_.
 Basic Usage
 -----------
 
-ParMOO uses numpy_ in an object-oriented design, based around the
+ParMOO uses numpy_ and jax_ in an object-oriented design, based around the
 :mod:`MOOP <moop.MOOP>` class.
-To get started, create a :mod:`MOOP <moop.MOOP>` object, using the
+
+Before getting started, note that jax_ runs in single (32-bit) precision
+by default. To run in double precision, the following code is needed at
+startup:
+
+.. code-block:: python
+
+    import jax
+    jax.config.update("jax_enable_x64", True)
+
+This will be done automatically when importing certain modules in ParMOO,
+which are only compatible with double precision.
+However, in many use cases, 32-bit precision may be enough and provides
+substantial speedup in iteration tasks.
+
+Once the precision is set, to get started,
+create a :mod:`MOOP <moop.MOOP>` object, using the
 :meth:`constructor <moop.MOOP.__init__>`.
 
 .. code-block:: python
