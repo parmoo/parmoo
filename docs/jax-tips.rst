@@ -18,7 +18,7 @@ the relevant bits of code can
 In most cases, when everything in ParMOO's critical path can be compiled via
 ``jax.jit()``, you can expect over a 10x speedup in iteration times.
 
-When the :method:`MOOP.compile() <moop.MOOP.compile>` method is called,
+When the :meth:`MOOP.compile() <moop.MOOP.compile>` method is called,
 ParMOO attempts to jit many common items.
 If infol-level logging is turned on (see the logging tutorial) then
 ParMOO will print warnings for items that failed to ``jit``.
