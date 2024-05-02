@@ -15,7 +15,6 @@ formats:
   - pdf
 
 python:
-    version: "3.8"
     install:
       - requirements: REQUIREMENTS
       - method: pip
