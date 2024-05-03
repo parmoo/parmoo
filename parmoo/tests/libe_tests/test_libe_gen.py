@@ -30,7 +30,7 @@ from parmoo.tests.libe_tests.libe_funcs import *
 # enclosed in an "if __name__ == '__main__':" block, as below
 if __name__ == "__main__":
     # Create a libE_MOOP
-    moop = libE_MOOP(GlobalSurrogate_PS, hyperparams={})
+    moop = libE_MOOP(GlobalSurrogate_PS, hyperparams={'sim_dirs_make': False})
     # Add n design vars
     for i in range(n):
         moop.addDesign({'lb': 0.0, 'ub': 1.0})
