@@ -63,7 +63,7 @@ moop.addConstraint({'name': "Max Sim Bounds",
                                            bound_type="upper",
                                            bound=2.0)})
 
-# Add 5 acquisition funcitons
+# Add 5 acquisition functions
 for i in range(5):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
