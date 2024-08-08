@@ -221,7 +221,7 @@ class GaussRBF(SurrogateFunction):
         rad_tmp = np.array(radius)
         refit = False
         # If the radius is infinite, fit with all data
-        if np.all(rad_tmp == np.infty):
+        if np.all(rad_tmp == np.inf):
             # Only need to refit once after an update
             if np.all(self.tr_center < self.lb):
                 # Set the trust-region center and radius to large values

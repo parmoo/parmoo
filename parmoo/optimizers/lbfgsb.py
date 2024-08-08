@@ -133,7 +133,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                np.any(xj[:] > self.bounds[:, 1]):
                 raise ValueError("some of starting points (x) are infeasible")
         # Create an infinite trust region
-        rad = np.ones(self.n) * np.infty
+        rad = np.ones(self.n) * np.inf
         self.setTR(np.zeros(self.n), rad)
         # Loop over and solve acqusisition functions
         result = []
