@@ -99,7 +99,7 @@ moop.addConstraint({'name': "Upper Bounds",
                     'con_func': max_constraint_func,
                     'con_grad': max_constraint_grad})
 
-# Add 5 acquisition funcitons
+# Add 5 acquisition functions
 for i in range(5):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
