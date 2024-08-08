@@ -396,7 +396,7 @@ class GaussRBF(SurrogateFunction):
 
 @jit
 def _gaussian(r2, x_std_dev):
-    """ Evaluate gaussian bump with x_std_dev at distance r^2 from center """
+    """ Evaluate Gaussian bump with x_std_dev at distance r^2 from center """
 
     return jnp.exp(-r2 / (x_std_dev ** 2))
 
