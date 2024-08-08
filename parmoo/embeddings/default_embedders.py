@@ -87,7 +87,7 @@ class ContinuousEmbedder(Embedder):
         """ Get the design tolerances along each dimension of the embedding.
 
         Returns:
-            numpy.ndarray: array of design space tolerances after embedding
+            numpy.ndarray: array of design space tolerances after embedding.
 
         """
 
@@ -98,7 +98,7 @@ class ContinuousEmbedder(Embedder):
 
         Returns:
             float: the design tolerance in the feature space -- a value of
-            0 indicates a discrete variable
+            0 indicates a discrete variable.
 
         """
 
@@ -129,7 +129,7 @@ class ContinuousEmbedder(Embedder):
         """ Get a vector of lower bounds for the embedded space.
 
         Returns:
-            numpy.ndarray: array of lower bounds in embedded space
+            numpy.ndarray: array of lower bounds in embedded space.
 
         """
 
@@ -139,7 +139,7 @@ class ContinuousEmbedder(Embedder):
         """ Get a vector of upper bounds for the embedded space.
 
         Returns:
-            numpy.ndarray: array of upper bounds in the embedded space
+            numpy.ndarray: array of upper bounds in the embedded space.
 
         """
 
@@ -153,7 +153,7 @@ class ContinuousEmbedder(Embedder):
 
         Returns:
             numpy.ndarray: A numpy array of length 1 containing a
-            rescaling of x
+            rescaling of x.
 
         """
 
@@ -167,7 +167,7 @@ class ContinuousEmbedder(Embedder):
 
         Returns:
             numpy.ndarray: A numpy array of length 1 containing a
-            rescaling of x
+            rescaling of x.
 
         """
 
@@ -181,7 +181,7 @@ class ContinuousEmbedder(Embedder):
                 value to extract.
 
         Returns:
-            float: The de-scaled value of x (from the original input space)
+            float: The de-scaled value of x (from the original input space).
 
         """
 
@@ -248,7 +248,7 @@ class IntegerEmbedder(Embedder):
         """ Get the design tolerances along each dimension of the embedding.
 
         Returns:
-            numpy.ndarray: array of design space tolerances after embedding
+            numpy.ndarray: array of design space tolerances after embedding.
 
         """
 
@@ -259,7 +259,7 @@ class IntegerEmbedder(Embedder):
 
         Returns:
             float: the design tolerance in the feature space -- a value of
-            0 indicates a discrete variable
+            0 indicates a discrete variable.
 
         """
 
@@ -290,7 +290,7 @@ class IntegerEmbedder(Embedder):
         """ Get a vector of lower bounds for the embedded space.
 
         Returns:
-            numpy.ndarray: array of lower bounds in embedded space
+            numpy.ndarray: array of lower bounds in embedded space.
 
         """
 
@@ -300,7 +300,7 @@ class IntegerEmbedder(Embedder):
         """ Get a vector of upper bounds for the embedded space.
 
         Returns:
-            numpy.ndarray: array of upper bounds in the embedded space
+            numpy.ndarray: array of upper bounds in the embedded space.
 
         """
 
@@ -314,7 +314,7 @@ class IntegerEmbedder(Embedder):
 
         Returns:
             numpy.ndarray: A numpy array of length 1 containing a
-            rescaling of x
+            rescaling of x.
 
         """
 
@@ -328,7 +328,7 @@ class IntegerEmbedder(Embedder):
 
         Returns:
             numpy.ndarray: A numpy array of length 1 containing a
-            rescaling of x
+            rescaling of x.
 
         """
 
@@ -342,7 +342,7 @@ class IntegerEmbedder(Embedder):
                 value to extract.
 
         Returns:
-            float: The de-scaled value of x rounded to the nearest integer
+            float: The de-scaled value of x rounded to the nearest integer.
 
         """
 
@@ -415,7 +415,7 @@ class CategoricalEmbedder(Embedder):
         """ Get the design tolerances along each dimension of the embedding.
 
         Returns:
-            numpy.ndarray: array of design space tolerances after embedding
+            numpy.ndarray: array of design space tolerances after embedding.
 
         """
 
@@ -426,7 +426,7 @@ class CategoricalEmbedder(Embedder):
 
         Returns:
             float: the design tolerance in the feature space -- a value of
-            0 indicates a discrete variable
+            0 indicates a discrete variable.
 
         """
 
@@ -457,7 +457,7 @@ class CategoricalEmbedder(Embedder):
         """ Get a vector of lower bounds for the embedded space.
 
         Returns:
-            numpy.ndarray: array of lower bounds in embedded space
+            numpy.ndarray: array of lower bounds in embedded space.
 
         """
 
@@ -467,7 +467,7 @@ class CategoricalEmbedder(Embedder):
         """ Get a vector of upper bounds for the embedded space.
 
         Returns:
-            numpy.ndarray: array of upper bounds in the embedded space
+            numpy.ndarray: array of upper bounds in the embedded space.
 
         """
 
@@ -478,10 +478,10 @@ class CategoricalEmbedder(Embedder):
 
         Args:
             x (int or str): a category from the list of categories or an int
-                less than the number of categories
+                less than the number of categories.
 
         Returns:
-            numpy.ndarray: a 1d array containing the embedded category
+            numpy.ndarray: a 1d array containing the embedded category.
 
         """
 
@@ -497,7 +497,7 @@ class CategoricalEmbedder(Embedder):
 
         Returns:
             numpy.ndarray: A numpy array of length 1 containing a
-            rescaling of x
+            rescaling of x.
 
         """
 
@@ -508,10 +508,10 @@ class CategoricalEmbedder(Embedder):
 
         Args:
             x (numpy.ndarray): a 1d array containing the embedded category in
-                vector form
+                vector form.
 
         Returns:
-            int or str: the extracted category
+            int or str: the extracted category.
 
         """
 
@@ -585,7 +585,7 @@ class IdentityEmbedder(Embedder):
         """ Get the design tolerances along each dimension of the embedding.
 
         Returns:
-            numpy.ndarray: array of design space tolerances after embedding
+            numpy.ndarray: array of design space tolerances after embedding.
 
         """
 
@@ -596,7 +596,7 @@ class IdentityEmbedder(Embedder):
 
         Returns:
             float: the design tolerance in the feature space -- a value of
-            0 indicates a discrete variable
+            0 indicates a discrete variable.
 
         """
 
@@ -627,7 +627,7 @@ class IdentityEmbedder(Embedder):
         """ Get a vector of lower bounds for the embedded space.
 
         Returns:
-            numpy.ndarray: array of lower bounds in embedded space
+            numpy.ndarray: array of lower bounds in embedded space.
 
         """
 
@@ -637,7 +637,7 @@ class IdentityEmbedder(Embedder):
         """ Get a vector of upper bounds for the embedded space.
 
         Returns:
-            numpy.ndarray: array of upper bounds in the embedded space
+            numpy.ndarray: array of upper bounds in the embedded space.
 
         """
 
@@ -650,7 +650,7 @@ class IdentityEmbedder(Embedder):
             x (float or int): The value of the design variable to embed.
 
         Returns:
-            numpy.ndarray: A numpy array of length 1 containing x
+            numpy.ndarray: A numpy array of length 1 containing x.
 
         """
 
@@ -664,7 +664,7 @@ class IdentityEmbedder(Embedder):
 
         Returns:
             numpy.ndarray: A numpy array of length 1 containing a
-            rescaling of x
+            rescaling of x.
 
         """
 
@@ -678,7 +678,7 @@ class IdentityEmbedder(Embedder):
                 value to extract.
 
         Returns:
-            float: The value of x (but as a scalar, not a singleton array)
+            float: The value of x (but as a scalar, not a singleton array).
 
         """
 
