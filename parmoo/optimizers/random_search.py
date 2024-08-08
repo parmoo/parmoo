@@ -109,7 +109,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
             raise ValueError("The rows of x must match the number " +
                              "of acquisition functions")
         # Initialize the surrogates with an infinite trust region
-        rad = np.ones(self.n) * np.infty
+        rad = np.ones(self.n) * np.inf
         self.setTR(x[0, :], rad)
         # Compile the penalty function
         try:
