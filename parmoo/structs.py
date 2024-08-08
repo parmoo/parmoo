@@ -41,7 +41,7 @@ class AcquisitionFunction(ABC):
 
             lb (ndarray): A 1D array of lower bounds for the design space.
 
-            ub (ndarray): A 1D array of upper bounds for the design space
+            ub (ndarray): A 1D array of upper bounds for the design space.
 
             hyperparams (dict): A dictionary of hyperparameters that are
                 passed to the acquisition function.
@@ -59,7 +59,7 @@ class AcquisitionFunction(ABC):
             data (dict): A dictionary specifying the current function
                 evaluation database. It contains two mandatory fields:
                  * 'x_vals' (ndarray): A 2D array of design points.
-                 * 'f_vals' (ndarray): A 2d array of corresponding objectives.
+                 * 'f_vals' (ndarray): A 2D array of corresponding objectives.
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates all (penalized) objective scores.
@@ -205,7 +205,7 @@ class CompositeFunction(ABC):
 
         Returns:
             float: The output of this objective for the input x (when
-            defining objectives and constraint functions)
+            defining objectives and constraint functions).
 
             OR
 
@@ -311,7 +311,7 @@ class Embedder(ABC):
         implementation below.
 
         This allows users to write a hidden method to perform the embedding,
-        then over-write our default implementation at runtime.
+        then overwrite our default implementation at runtime.
 
         This is important for ParMOO's performance since embed and extract
         could be called frequently on ParMOO's critical path. However, if
