@@ -66,7 +66,7 @@ def max_constraint(x, sx):
 moop.addConstraint({'name': "Lower Bounds", 'con_func': min_constraint})
 moop.addConstraint({'name': "Upper Bounds", 'con_func': max_constraint})
 
-# Add 5 acquisition funcitons
+# Add 5 acquisition functions
 for i in range(5):
     moop.addAcquisition({'acquisition': UniformWeights, 'hyperparams': {}})
 
