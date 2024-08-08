@@ -175,7 +175,7 @@ def test_GaussRBF():
     rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     xx = np.random.random_sample(3)
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
-    # Generate a simple 1D RBF and check its stdDev is accurate
+    # Generate a simple 1D RBF and check that its stdDev is accurate
     x_vals4 = np.array([[0.0], [1.0]])
     y_vals4 = np.array([[0.0], [1.0]])
     rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {'tail_order': 0})
@@ -393,7 +393,7 @@ def test_LocalGaussRBF():
     rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
     xx = np.random.random_sample(3)
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
-    # Generate a simple 1D RBF and check its stdDev is accurate
+    # Generate a simple 1D RBF and check that its stdDev is accurate
     x_vals4 = np.array([[0.0], [1.0]])
     y_vals4 = np.array([[0.0], [1.0]])
     rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {'tail_order': 0})
