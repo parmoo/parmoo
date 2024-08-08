@@ -5,7 +5,7 @@ This module contains implementations of the SurrogateOptimizer ABC, which
 are based on randomized search strategies.
 
 Note that these strategies are all gradient-free, and therefore does not
-require objective, constraint, or surrogate gradients methods to be defined.
+require objective, constraint, or surrogate gradient methods to be defined.
 
 The classes include:
  * ``GlobalSurrogate_RS`` -- optimize surrogates globally via RS
