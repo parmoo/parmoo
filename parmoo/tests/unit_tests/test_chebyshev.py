@@ -12,7 +12,7 @@ def test_UniformAugChebyshev():
     from parmoo.acquisitions import UniformAugChebyshev
     import pytest
 
-    # Initilaize a good acquisition for future testing
+    # Initialize a good acquisition for future testing
     acqu = UniformAugChebyshev(3, np.zeros(4), np.ones(4), {})
     assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
     # Set some bad targets to check error handling
@@ -98,7 +98,7 @@ def test_FixedAugChebyshev():
         FixedAugChebyshev(3, np.zeros(4), np.ones(4), {'weights': 5.0})
     with pytest.raises(ValueError):
         FixedAugChebyshev(3, np.zeros(4), np.ones(4), {'weights': np.ones(2)})
-    # Initilaize a good acquisition for future testing
+    # Initialize a good acquisition for future testing
     acqu = FixedAugChebyshev(3, np.zeros(4), np.ones(4),
                              {'weights': np.ones((3))})
     assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
