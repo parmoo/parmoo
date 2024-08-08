@@ -48,7 +48,7 @@ for i in range(NUM_OBJ):
                                             moop.getSimulationType(),
                                             ("DTLZ5", i), goal="min")})
 
-# Add 5 acquisition funcitons
+# Add 5 acquisition functions
 for i in range(5):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
