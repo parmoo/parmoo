@@ -9,10 +9,11 @@ The classes include:
 
 """
 
+from jax import numpy as jnp
 import numpy as np
-from scipy.stats import tstd
 from parmoo.structs import SurrogateFunction
 from parmoo.util import xerror
+from scipy.stats import tstd
 
 
 class Linear(SurrogateFunction):
@@ -67,6 +68,7 @@ class Linear(SurrogateFunction):
         self.tr_center = np.zeros(0)
         self.loc_inds = []
         # Check for 'des_tols' optional key in hyperparams
+        mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
@@ -83,7 +85,7 @@ class Linear(SurrogateFunction):
                                  + " value")
         else:
             self.eps = np.zeros(self.n)
-            self.eps[:] = 1.0e-8
+            self.eps[:] = mu
         return
 
     def fit(self, x, f):
@@ -214,21 +216,7 @@ class Linear(SurrogateFunction):
 
         """
 
-        return np.dot(self.weights[:-1].T, x).flatten() + self.weights[-1]
-
-    def gradient(self, x):
-        """ Evaluate the gradients of the Gaussian RBF at a design point.
-
-        Args:
-            x (numpy.ndarray): Not used here.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the slopes of the linear
-            models.
-
-        """
-
-        return self.weights[:-1, :].T
+        return jnp.dot(self.weights[:-1].T, x).flatten() + self.weights[-1]
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.

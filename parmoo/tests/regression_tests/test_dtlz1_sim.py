@@ -6,14 +6,15 @@ single_sim_out objective functions to define the problem.
 
 """
 
+import numpy as np
 from parmoo import MOOP
 from parmoo.optimizers import GlobalSurrogate_BFGS
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
 from parmoo.simulations.dtlz import dtlz1_sim as sim_func
-from parmoo.objectives import single_sim_out as obj_func
-import numpy as np
+from parmoo.objectives import SingleSimObjective as obj_func
+from parmoo.objectives import SingleSimGradient as obj_grad
 
 # Set the problem dimensions
 NUM_DES = 3
@@ -42,54 +43,70 @@ for i in range(NUM_OBJ):
     moop.addObjective({'name': f"f{i+1}",
                        'obj_func': obj_func(moop.getDesignType(),
                                             moop.getSimulationType(),
-                                            ("DTLZ1", i), goal="min")})
+                                            ("DTLZ1", i), goal="min"),
+                       'obj_grad': obj_grad(moop.getDesignType(),
+                                            moop.getSimulationType(),
+                                            ("DTLZ1", i), goal="min"),
+                      })
 
 # Define 2 constraints to nudge the solver in the right direction
 
-def min_constraint(x, sx, der=0):
+def min_constraint_func(x, sx):
     """ x[NUM_OBJ-1:NUM_DES] >= 0.55 """
 
-    if der == 1:
-        dx = np.zeros(1, dtype=x.dtype)[0]
-        for i in range(NUM_OBJ - 1, NUM_DES):
-            dx[f"x{i+1}"] = -1.0
-        return dx
-    elif der == 2:
-        return np.zeros(1, dtype=sx.dtype)[0]
-    else:
-        fx = 0.0
-        for i in range(NUM_OBJ - 1, NUM_DES):
-            fx += (0.55 - x[f"x{i+1}"])
-        return fx
+    fx = 0.0
+    for i in range(NUM_OBJ - 1, NUM_DES):
+        fx += (0.55 - x[f"x{i+1}"])
+    return fx
 
-def max_constraint(x, sx, der=0):
+def min_constraint_grad(x, sx):
+    """ x[NUM_OBJ-1:NUM_DES] >= 0.55 """
+
+    dx, ds = {}, {}
+    for key in x:
+        dx[key] = 0.
+    for key in sx:
+        ds[key] = 0.
+    for i in range(NUM_OBJ - 1, NUM_DES):
+        dx[f"x{i+1}"] = -1.0
+    return dx, ds
+
+def max_constraint_func(x, sx):
     """ x[NUM_OBJ-1:NUM_DES] <= 0.65 """
 
-    if der == 1:
-        dx = np.zeros(1, dtype=x.dtype)[0]
-        for i in range(NUM_OBJ - 1, NUM_DES):
-            dx[f"x{i+1}"] = 1.0
-        return dx
-    elif der == 2:
-        return np.zeros(1, dtype=sx.dtype)[0]
-    else:
-        fx = 0.0
-        for i in range(NUM_OBJ - 1, NUM_DES):
-            fx += (x[f"x{i+1}"] - 0.65)
-        return fx
+    fx = 0.0
+    for i in range(NUM_OBJ - 1, NUM_DES):
+        fx += (x[f"x{i+1}"] - 0.65)
+    return fx
+
+def max_constraint_grad(x, sx):
+    """ x[NUM_OBJ-1:NUM_DES] <= 0.65 """
+
+    dx, ds = {}, {}
+    for key in x:
+        dx[key] = 0.
+    for key in sx:
+        ds[key] = 0.
+    for i in range(NUM_OBJ - 1, NUM_DES):
+        dx[f"x{i+1}"] = 1.0
+    return dx, ds
 
 # Add 2 constraints to the problem
-moop.addConstraint({'name': "Lower Bounds", 'constraint': min_constraint})
-moop.addConstraint({'name': "Upper Bounds", 'constraint': max_constraint})
+moop.addConstraint({'name': "Lower Bounds",
+                    'con_func': min_constraint_func,
+                    'con_grad': min_constraint_grad})
+moop.addConstraint({'name': "Upper Bounds",
+                    'con_func': max_constraint_func,
+                    'con_grad': max_constraint_grad})
 
-# Add 10 acquisition funcitons
-for i in range(10):
+# Add 5 acquisition functions
+for i in range(5):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
 # Solve the problem with 5 iterations
 moop.solve(5)
 
-# Check that 150 simulations were evaluated and solutions are feasible
-assert(moop.getObjectiveData().shape[0] == 150)
-assert(moop.getSimulationData()['DTLZ1'].shape[0] == 150)
+# Check that 125 simulations were evaluated and solutions are feasible
+assert(moop.getObjectiveData().shape[0] == 125)
+assert(moop.getSimulationData()['DTLZ1'].shape[0] == 125)
 assert(moop.getPF().shape[0] > 0)

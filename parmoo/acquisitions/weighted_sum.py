@@ -10,6 +10,7 @@ The classes include:
 
 """
 
+from jax import numpy as jnp
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
@@ -25,7 +26,7 @@ class UniformWeights(AcquisitionFunction):
     """
 
     # Slots for the UniformWeights class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the UniformWeights class.
@@ -59,6 +60,17 @@ class UniformWeights(AcquisitionFunction):
         self.ub = ub
         # Initialize the weights array
         self.weights = np.zeros(o)
+        # Check the hyperparams dictionary for a generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
+        self.eps = jnp.finfo(jnp.ones(1)).eps
         return
 
     def useSD(self):
@@ -71,7 +83,7 @@ class UniformWeights(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a new vector of scalarizing weights.
 
         Args:
@@ -80,8 +92,6 @@ class UniformWeights(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): Another unused argument for this function.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -138,16 +148,16 @@ class UniformWeights(AcquisitionFunction):
         # If data is empty, randomly select weights and starting point
         if no_data:
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -181,24 +191,7 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        return np.dot(f_vals, self.weights)
-
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient (not used here).
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        return np.dot(np.transpose(g_vals), self.weights)
+        return jnp.dot(f_vals, self.weights)
 
 
 class FixedWeights(AcquisitionFunction):
@@ -209,7 +202,7 @@ class FixedWeights(AcquisitionFunction):
     """
 
     # Slots for the FixedWeights class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the FixedWeights class.
@@ -244,7 +237,18 @@ class FixedWeights(AcquisitionFunction):
         # Set the bound constraints
         self.lb = lb
         self.ub = ub
+        # Check the hyperparams dictionary for a generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         # Check the hyperparams dictionary for weights
+        self.eps = jnp.finfo(jnp.ones(1)).eps
         if 'weights' in hyperparams:
             # If weights are provided, check that they are legal
             if not isinstance(hyperparams['weights'], np.ndarray):
@@ -259,7 +263,7 @@ class FixedWeights(AcquisitionFunction):
                     self.weights = hyperparams['weights'].flatten()
         else:
             # If no weights provided, sample from the unit simplex
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
         return
 
@@ -273,7 +277,7 @@ class FixedWeights(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a feasible starting point.
 
         Args:
@@ -282,8 +286,6 @@ class FixedWeights(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): Another unused argument for this function.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -337,16 +339,16 @@ class FixedWeights(AcquisitionFunction):
         # If data is empty, randomly select weights and starting point
         if no_data:
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -380,67 +382,4 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        return np.dot(f_vals, self.weights)
-
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient (not used here).
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        return np.dot(np.transpose(g_vals), self.weights)
-
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize WS object in dictionary
-        ws_state = {'o': self.o,
-                    'n': self.n}
-        # Serialize numpy.ndarray objects
-        ws_state['lb'] = self.lb.tolist()
-        ws_state['ub'] = self.ub.tolist()
-        ws_state['weights'] = self.weights.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(ws_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            ws_state = json.load(fp)
-        # Deserialize WS object from dictionary
-        self.o = ws_state['o']
-        self.n = ws_state['n']
-        # Deserialize numpy.ndarray objects
-        self.lb = np.array(ws_state['lb'])
-        self.ub = np.array(ws_state['ub'])
-        self.weights = np.array(ws_state['weights'])
-        return
+        return jnp.dot(f_vals, self.weights)

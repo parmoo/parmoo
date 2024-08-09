@@ -1,19 +1,20 @@
 
-""" Use ParMOO to solve the DTLZ3 problem, treating DTLZ3 as a simulation.
+""" Use ParMOO to solve the DTLZ5 problem, treating DTLZ5 as a simulation.
 
 Uses named variables, the dtlz3_sim simulation function, and the
-single_sim_out objective functions to define the problem.
+SingleSimObjective objective functions to define the problem.
 
 """
 
+import numpy as np
 from parmoo import MOOP
 from parmoo.optimizers import LocalSurrogate_BFGS
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
 from parmoo.simulations.dtlz import dtlz5_sim as sim_func
-from parmoo.objectives import single_sim_out as obj_func
-import numpy as np
+from parmoo.objectives import SingleSimObjective as obj_func
+from parmoo.objectives import SingleSimGradient as obj_grad
 
 # Set the problem dimensions
 NUM_DES = 3
@@ -42,16 +43,19 @@ for i in range(NUM_OBJ):
     moop.addObjective({'name': f"f{i+1}",
                        'obj_func': obj_func(moop.getDesignType(),
                                             moop.getSimulationType(),
+                                            ("DTLZ5", i), goal="min"),
+                       'obj_grad': obj_grad(moop.getDesignType(),
+                                            moop.getSimulationType(),
                                             ("DTLZ5", i), goal="min")})
 
-# Add NUM_OBJ acquisition funcitons
-for i in range(10):
+# Add 5 acquisition functions
+for i in range(5):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
 # Solve the problem with 5 iterations
 moop.solve(5)
 
-# Check that 150 simulations were evaluated and solutions are feasible
-assert(moop.getObjectiveData().shape[0] == 150)
-assert(moop.getSimulationData()['DTLZ5'].shape[0] == 150)
+# Check that 125 simulations were evaluated and solutions are feasible
+assert(moop.getObjectiveData().shape[0] == 125)
+assert(moop.getSimulationData()['DTLZ5'].shape[0] == 125)
 assert(moop.getPF().shape[0] > 0)

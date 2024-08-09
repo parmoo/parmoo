@@ -10,6 +10,7 @@ The classes include:
 
 """
 
+from jax import numpy as jnp
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
@@ -25,7 +26,7 @@ class UniformAugChebyshev(AcquisitionFunction):
     """
 
     # Slots for the UniformAugChebyshev class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the UniformAugChebyshev class.
@@ -63,7 +64,8 @@ class UniformAugChebyshev(AcquisitionFunction):
         # Initialize the weights array
         self.weights = np.zeros(o)
         # Check hyperparameters
-        self.alpha = 1.0e-4 / self.o
+        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.alpha = self.eps ** 0.25 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
                 if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
@@ -74,6 +76,16 @@ class UniformAugChebyshev(AcquisitionFunction):
             else:
                 raise TypeError("When present, hyperparams['alpha'] " +
                                 "must be a float type")
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         return
 
     def useSD(self):
@@ -86,7 +98,7 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a new vector of scalarizing weights.
 
         Args:
@@ -95,8 +107,6 @@ class UniformAugChebyshev(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): Another unused argument for this function.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -148,21 +158,21 @@ class UniformAugChebyshev(AcquisitionFunction):
             # Get the Pareto front
             pf = updatePF(data, {})
         # Sample the weights uniformly from the unit simplex
-        self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+        self.weights = -np.log(1.0 - self.np_rng.random(self.o))
         self.weights = self.weights[:] / sum(self.weights[:])
         # If data is empty, randomly select weights and starting point
         if no_data:
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -200,9 +210,9 @@ class UniformAugChebyshev(AcquisitionFunction):
         """
 
         if not isinstance(manifold, int):
-            return np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
+            return jnp.max(f_vals * self.weights) + self.alpha * jnp.sum(f_vals)
         else:
-            return (f_vals * self.weights)[manifold] + self.alpha * np.sum(f_vals)
+            return (f_vals * self.weights)[manifold] + self.alpha * jnp.sum(f_vals)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -226,30 +236,7 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         return np.isclose(f_vals * self.weights,
                           (f_vals * self.weights).max(),
-                          atol=1.0e-8).astype(int)
-
-    def scalarizeGrad(self, f_vals, g_vals, manifold=None):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient (not used here).
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        if not isinstance(manifold, int):
-            return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
-                          g_vals)
-        else:
-            wv = np.zeros(self.o)
-            wv[manifold] = self.weights[manifold]
-            return np.dot(wv + self.alpha, g_vals)
+                          atol=np.sqrt(self.eps)).astype(int)
 
 
 class FixedAugChebyshev(AcquisitionFunction):
@@ -260,7 +247,7 @@ class FixedAugChebyshev(AcquisitionFunction):
     """
 
     # Slots for the FixedAugChebyshev class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'weights', 'alpha', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the FixedAugChebyshev class.
@@ -298,6 +285,16 @@ class FixedAugChebyshev(AcquisitionFunction):
         # Set the bound constraints
         self.lb = lb
         self.ub = ub
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         # Check the hyperparams dictionary for weights
         if 'weights' in hyperparams:
             # If weights are provided, check that they are legal
@@ -313,10 +310,11 @@ class FixedAugChebyshev(AcquisitionFunction):
                     self.weights = hyperparams['weights'].flatten()
         else:
             # If no weights provided, sample from the unit simplex
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
         # Check hyperparameters dictionary for alpha
-        self.alpha = 1.0e-4 / self.o
+        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.alpha = self.eps ** 0.25 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
                 if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
@@ -339,7 +337,7 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a feasible starting point.
 
         Args:
@@ -348,8 +346,6 @@ class FixedAugChebyshev(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): Another unused argument for this function.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -403,16 +399,16 @@ class FixedAugChebyshev(AcquisitionFunction):
         # If data is empty, randomly select weights and starting point
         if no_data:
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -450,9 +446,9 @@ class FixedAugChebyshev(AcquisitionFunction):
         """
 
         if not isinstance(manifold, int):
-            return np.max(f_vals * self.weights) + self.alpha * np.sum(f_vals)
+            return jnp.max(f_vals * self.weights) + self.alpha * jnp.sum(f_vals)
         else:
-            return (f_vals * self.weights)[manifold] + self.alpha * np.sum(f_vals)
+            return (f_vals * self.weights)[manifold] + self.alpha * jnp.sum(f_vals)
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -476,75 +472,4 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         return np.isclose(f_vals * self.weights,
                           (f_vals * self.weights).max(),
-                          atol=1.0e-8).astype(int)
-
-    def scalarizeGrad(self, f_vals, g_vals, manifold=None):
-        """ Scalarize a Jacobian of gradients using the current weights.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient (not used here).
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        if not isinstance(manifold, int):
-            return np.dot(self.weights * self.getManifold(f_vals) + self.alpha,
-                          g_vals)
-        else:
-            wv = np.zeros(self.o)
-            wv[manifold] = self.weights[manifold]
-            return np.dot(wv + self.alpha, g_vals)
-
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize RBF object in dictionary
-        ac_state = {'o': self.o,
-                    'n': self.n,
-                    'alpha': self.alpha}
-        # Serialize numpy.ndarray objects
-        ac_state['lb'] = self.lb.tolist()
-        ac_state['ub'] = self.ub.tolist()
-        ac_state['weights'] = self.weights.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(ac_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            ac_state = json.load(fp)
-        # Deserialize AC object from dictionary
-        self.o = ac_state['o']
-        self.n = ac_state['n']
-        self.alpha = ac_state['alpha']
-        # Deserialize numpy.ndarray objects
-        self.lb = np.array(ac_state['lb'])
-        self.ub = np.array(ac_state['ub'])
-        self.weights = np.array(ac_state['weights'])
-        return
+                          atol=np.sqrt(self.eps)).astype(int)

@@ -14,10 +14,12 @@ The classes include:
 
 """
 
+import jax
+from jax import numpy as jnp
 import numpy as np
-from scipy.stats.qmc import LatinHypercube
 from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
 from parmoo.util import xerror
+from scipy.stats.qmc import LatinHypercube
 
 
 class LocalSurrogate_PS(SurrogateOptimizer):
@@ -32,9 +34,9 @@ class LocalSurrogate_PS(SurrogateOptimizer):
 
     # Slots for the LocalSurrogate_PS class
     __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'budget', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'setTR',
+                 'objectives', 'simulations', 'setTR',
                  'penalty_func', 'sim_sd', 'restarts', 'momentum', 'q_ind',
-                 'prev_centers', 'des_tols', 'targets']
+                 'prev_centers', 'des_tols', 'targets', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the LocalSurrogate_PS class.
@@ -105,30 +107,36 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                                  "must be a float")
         else:
             self.momentum = 9e-1
+        self.eps = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
         if 'des_tols' in hyperparams:
-            if isinstance(hyperparams['des_tols'], list):
-                if len(hyperparams['des_tols']) != self.n:
+            if isinstance(hyperparams['des_tols'], np.ndarray):
+                if hyperparams['des_tols'].size != self.n:
                     raise ValueError("the length of hyperparpams['des_tols']"
                                      " must match the length of lb and ub")
-                if not all(hyperparams['des_tols']):
+                if not np.all(hyperparams['des_tols']):
                     raise ValueError("all entries in hyperparams['des_tols']"
                                      " must be greater than 0")
-                for di in hyperparams['des_tols']:
-                    if not isinstance(di, float):
-                        raise TypeError("hyperparams['des_tols'] must "
-                                        "contain a list of float types")
             else:
-                raise TypeError("hyperparams['des_tols'] must contain a list "
-                                "of float types")
+                raise TypeError("hyperparams['des_tols'] must be an array.")
             self.des_tols = np.asarray(hyperparams['des_tols'])
         else:
-            self.des_tols = np.ones(self.n) * 1.0e-8
+            self.des_tols = (np.ones(self.n) * self.eps)
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         self.acquisitions = []
         self.prev_centers = []
         self.targets = []
         return
 
-    def __obj_func__(self, x_in):
+    def _obj_func(self, x_in):
         """ A wrapper for the objective function and acquisition.
 
         Args:
@@ -139,17 +147,17 @@ class LocalSurrogate_PS(SurrogateOptimizer):
 
         """
 
-        sx_in = np.asarray(self.simulations(x_in))
+        sx_in = self.simulations(x_in)
         if self.acquisitions[self.q_ind].useSD():
-            sdx_in = np.asarray(self.sim_sd(x_in))
+            sdx_in = self.sim_sd(x_in)
         else:
-            sdx_in = np.zeros(sx_in.size)
-        fx_in = np.asarray(self.penalty_func(x_in, sx_in)).flatten()
+            sdx_in = jnp.zeros(sx_in.size)
+        fx_in = self.penalty_func(x_in, sx_in)
         ax = self.acquisitions[self.q_ind].scalarize(fx_in, x_in,
                                                      sx_in, sdx_in)
         return ax
 
-    def __checkTR(self, center):
+    def _checkTR(self, center):
         """ Check the recommended trust region for a new center. """
 
         # Search the history for the given radius
@@ -164,7 +172,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
             rad = np.maximum(rad, self.des_tols)
         return rad
 
-    def __checkTargets(self):
+    def _checkTargets(self):
         """ Use internal list of targets to check and update the TR radii """
 
         for ti in self.targets:
@@ -221,39 +229,47 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         """
 
         # Check that x is legal
-        if isinstance(x, np.ndarray):
-            if self.n != x.shape[1]:
-                raise ValueError("The columns of x must match n")
-            elif len(self.acquisitions) != x.shape[0]:
-                raise ValueError("The rows of x must match the number " +
-                                 "of acquisition functions")
-        else:
-            raise TypeError("x must be a numpy array")
+        if self.n != x.shape[1]:
+            raise ValueError("The columns of x must match n")
+        elif len(self.acquisitions) != x.shape[0]:
+            raise ValueError("The rows of x must match the number " +
+                             "of acquisition functions")
         # Initialize an empty list of results
         result = []
         lb_tmp = np.zeros(self.n)
         ub_tmp = np.ones(self.n)
-        self.__checkTargets()
+        self._checkTargets()
         # For each acqusisition function
         for j, acquisition in enumerate(self.acquisitions):
             # Create a new trust region
-            rad = self.__checkTR(x[j, :])
+            rad = self._checkTR(x[j, :])
             self.setTR(x[j, :], rad)
             lb_tmp[:] = np.maximum(self.lb[:], x[j, :] - rad)
             ub_tmp[:] = np.minimum(self.ub[:], x[j, :] + rad)
-            # Get a candidate
+            # Recompile the objective function
             self.q_ind = j
-            mesh_tol = max(1.0e-8, np.min((ub_tmp - lb_tmp) * 1.0e-4))
-            xj, fj = __accelerated_pattern_search__(self.n, lb_tmp,
-                                                    ub_tmp, x[j],
-                                                    self.__obj_func__,
-                                                    ibudget=self.budget,
-                                                    mesh_tol=mesh_tol,
-                                                    momentum=self.momentum,
-                                                    istarts=self.restarts)
+            mesh_tol = max(self.eps,
+                           np.min((ub_tmp - lb_tmp) * np.sqrt(self.eps)))
+            try:
+                obj_func = jax.jit(self._obj_func)
+                fx = obj_func(x[j])
+            except BaseException:
+                obj_func = self._obj_func
+            # Get a candidate
+            xj, fj = _accelerated_pattern_search(self.n, lb_tmp,
+                                                 ub_tmp, x[j],
+                                                 obj_func,
+                                                 ibudget=self.budget,
+                                                 mesh_tol=mesh_tol,
+                                                 momentum=self.momentum,
+                                                 istarts=self.restarts,
+                                                 np_rng=self.np_rng)
             result.append(xj)
             # We need to remember this "target" for later
             self.targets.append([x[j, :], rad, fj, j])
+        self.objectives = None
+        self.constraints = None
+        self.penalty_func = None
         return np.asarray(result)
 
     def save(self, filename):
@@ -333,9 +349,9 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
 
     # Slots for the GlobalSurrogate_PS class
     __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints',
-                 'objectives', 'simulations', 'gradients', 'setTR',
+                 'objectives', 'simulations', 'setTR',
                  'penalty_func', 'opt_budget', 'gps_budget', 'sim_sd',
-                 'momentum']
+                 'momentum', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the GlobalPS class.
@@ -383,6 +399,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
         else:
             self.opt_budget = 1500
         # Check that the contents of hyperparams are legal
+        self.eps = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
         if 'gps_budget' in hyperparams:
             if isinstance(hyperparams['gps_budget'], int):
                 if hyperparams['gps_budget'] < 1 or \
@@ -410,10 +427,20 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                                  "must be a float")
         else:
             self.momentum = 9e-1
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         self.acquisitions = []
         return
 
-    def __obj_func__(self, x_in):
+    def _obj_func(self, x_in):
         """ A wrapper for the objective function and acquisition.
 
         Args:
@@ -450,16 +477,13 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
         from parmoo.util import updatePF
 
         # Check that x is legal
-        if isinstance(x, np.ndarray):
-            if self.n != x.shape[1]:
-                raise ValueError("The columns of x must match n")
-            elif len(self.acquisitions) != x.shape[0]:
-                raise ValueError("The rows of x must match the number " +
-                                 "of acquisition functions")
-        else:
-            raise TypeError("x must be a numpy array")
+        if self.n != x.shape[1]:
+            raise ValueError("The columns of x must match n")
+        elif len(self.acquisitions) != x.shape[0]:
+            raise ValueError("The rows of x must match the number " +
+                             "of acquisition functions")
         # Create an infinite trust region
-        rad = np.ones(self.n) * np.infty
+        rad = np.ones(self.n) * np.inf
         self.setTR(self.lb, rad)
         # Perform a random search globally
         batch_size = 1000
@@ -482,10 +506,11 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                 if i < len(self.acquisitions):
                     xi = x[i, :]
                 else:
-                    xi = (np.random.sample(self.n) *
+                    xi = (self.np_rng.random(self.n) *
                           (self.ub[:] - self.lb[:]) + self.lb[:])
+                sxi = self.simulations(xi)
                 data['x_vals'][i, :] = xi[:]
-                data['f_vals'][i, :] = self.penalty_func(xi)
+                data['f_vals'][i, :] = self.penalty_func(xi, sxi)
             # Update the PF
             nondom = updatePF(data, nondom)
             k += k_new
@@ -506,74 +531,34 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
                                             nondom['x_vals'])]
             imin = np.argmin(np.asarray([f_vals]))
             x0 = nondom['x_vals'][imin, :].copy()
-            # Get a candidate
+            # Recompile the objective function
             self.q_ind = j
-            mesh_tol = max(1.0e-8, np.min((self.ub - self.lb) * 1.0e-4))
-            xj, fj = __accelerated_pattern_search__(self.n, self.lb,
-                                                    self.ub, x0,
-                                                    self.__obj_func__,
-                                                    ibudget=self.gps_budget,
-                                                    mesh_start=0.1,
-                                                    mesh_tol=mesh_tol,
-                                                    momentum=self.momentum,
-                                                    istarts=1)
+            mesh_tol = max(self.eps,
+                           np.min((self.ub - self.lb) * np.sqrt(self.eps)))
+            try:
+                obj_func = jax.jit(self._obj_func)
+                fx = obj_func(x[j])
+            except BaseException:
+                obj_func = self._obj_func
+            # Get a candidate
+            xj, fj = _accelerated_pattern_search(self.n, self.lb,
+                                                 self.ub, x0,
+                                                 obj_func,
+                                                 ibudget=self.gps_budget,
+                                                 mesh_start=0.1,
+                                                 mesh_tol=mesh_tol,
+                                                 momentum=self.momentum,
+                                                 istarts=1)
             result.append(xj)
+        self.objectives = None
+        self.constraints = None
+        self.penalty_func = None
         return np.asarray(result)
 
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
 
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize PS object in dictionary
-        ps_state = {'n': self.n,
-                    'o': self.o,
-                    'opt_budget': self.opt_budget,
-                    'gps_budget': self.gps_budget,
-                    'momentum': self.momentum}
-        # Serialize numpy.ndarray objects
-        ps_state['lb'] = self.lb.tolist()
-        ps_state['ub'] = self.ub.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(ps_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            ps_state = json.load(fp)
-        # Deserialize PS object from dictionary
-        self.n = ps_state['n']
-        self.o = ps_state['o']
-        self.opt_budget = ps_state['opt_budget']
-        self.gps_budget = ps_state['gps_budget']
-        self.momentum = ps_state['momentum']
-        # Deserialize numpy.ndarray objects
-        self.lb = np.array(ps_state['lb'])
-        self.ub = np.array(ps_state['ub'])
-        return
-
-
-def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
-                                   mesh_start=None, mesh_tol=1.0e-8,
-                                   momentum=0.9, istarts=1):
+def _accelerated_pattern_search(n, lb, ub, x0, obj_func, ibudget,
+                                mesh_start=None, mesh_tol=1.0e-8,
+                                momentum=0.9, istarts=1, np_rng=None):
     """ Solve the optimization problem min obj_func(x) over x in [lb, ub].
 
     Uses pattern search with an additional search direction inspired by
@@ -612,6 +597,11 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
         istarts (int, optional): Number of times to (re)start if
             using the multistart option. Defaults to 1 (no restarts).
 
+        np_rng (numpy.random.Generator, optional): An instance of a numpy
+            generator object that will be used for generating consistent
+            restarts. Defaults to None, which results in a new generator
+            being created.
+
     Returns:
         numpy.ndarray(n): The best x observed so far (minimizer of obj_func).
 
@@ -632,7 +622,12 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
     else:
         mesh_start_array[:] = mesh_start
     if istarts > 1:
-        lhs = LatinHypercube(n).random(istarts - 1)
+        lhs = LatinHypercube(n, seed=np_rng).random(istarts - 1)
+    if np_rng is None:
+        np_rng = np.random.default_rng()
+    # Check working tolerance (unit roundoff)
+    mu  = jnp.finfo(jnp.ones(1)).eps
+    root_mu = np.sqrt(mu)
     # Loop over all starts
     for kk in range(istarts):
         # Reset the mesh dimensions
@@ -646,7 +641,7 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
         else:
             x_min[kk, :] = lhs[kk - 1] * (ub - lb) + lb
         f0 = obj_func(x_min[kk])
-        f_tol = max(min(abs(f0)**2, 1.0e-8), 1.0e-16)
+        f_tol = max(min(abs(f0)**2, root_mu), mu)
         f_min[kk] = f0
         # Take n+1 iterations to get "momentum" started
         k_start = 0
@@ -656,12 +651,12 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
             for i, mi in enumerate(mesh[1:, :]):
                 # Evaluate x + mi
                 x_tmp[:] = x_center[:] + mi[:] * mesh_size[:]
-                if np.any((x_tmp > ub) + (x_tmp < lb)):
+                if _check_bounds(x_tmp, lb, ub):
                     f_tmp = np.inf
                 else:
                     f_tmp = obj_func(x_tmp)
                 # Check for improvement
-                if f_min[kk] - f_tmp > f_tol:
+                if _check_improv(f_min[kk], f_tmp, f_tol):
                     f_min[kk] = f_tmp
                     x_min[kk, :] = x_tmp[:]
                     m_min = i + 1
@@ -691,12 +686,12 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
             for i, mi in enumerate(mesh[:, :]):
                 # Evaluate x + mi
                 x_tmp[:] = x_center[:] + np.rint(mi[:]) * mesh_size[:]
-                if np.any((x_tmp > ub) + (x_tmp < lb)):
+                if _check_bounds(x_tmp, lb, ub):
                     f_tmp = np.inf
                 else:
                     f_tmp = obj_func(x_tmp)
                 # Check for improvement
-                if f_min[kk] - f_tmp > f_tol:
+                if _check_improv(f_min[kk], f_tmp, f_tol):
                     f_min[kk] = f_tmp
                     x_min[kk, :] = x_tmp[:]
                     m_min = i
@@ -719,3 +714,13 @@ def __accelerated_pattern_search__(n, lb, ub, x0, obj_func, ibudget,
                     mesh_size[:] *= 0.5
     imin = np.argmin(f_min)
     return x_min[imin].copy(), f_min[imin]
+
+
+@jax.jit
+def _check_improv(f_min, f_tmp, f_tol):
+    return f_min - f_tmp > f_tol
+
+
+@jax.jit
+def _check_bounds(x_tmp, lb, ub):
+    return np.any((x_tmp > ub) + (x_tmp < lb))

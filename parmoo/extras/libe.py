@@ -42,10 +42,13 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
 
     """
 
+    import jax
     from libensemble.message_numbers import STOP_TAG, PERSIS_STOP, EVAL_GEN_TAG
     from libensemble.message_numbers import FINISHED_PERSISTENT_GEN_TAG
     from libensemble.tools.persistent_support import PersistentSupport
 
+    # Configure jax to use only CPUs
+    jax.config.update('jax_platform_name', 'cpu')
     # Get moop from pers_info
     if 'moop' in persis_info:
         moop = persis_info['moop']
@@ -75,12 +78,9 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
         b = len(xbatch)
         H_o = np.zeros(b, dtype=gen_specs['out'])
         # Populate the H_o structured array 'x' values as appropriate
-        if moop.use_names:
-            for name in moop.des_names:
-                for i in range(b):
-                    H_o[name[0]][i] = xbatch[i][name[0]]
-        else:
-            H_o['x'] = np.asarray(xbatch)
+        for name in moop.des_schema:
+            for i in range(b):
+                H_o[name[0]][i] = xbatch[i][name[0]]
         for i, namei in enumerate(ibatch):
             H_o['sim_name'][i] = namei
         # Evaluate H_o and add to the simulation database
@@ -90,54 +90,40 @@ def parmoo_persis_gen(H, persis_info, gen_specs, libE_info):
             if calc_in is not None:
                 for s_out in calc_in:
                     sim_name = s_out['sim_name']
-                    # Check whether design variables are all named
-                    if moop.use_names:
-                        xx = np.zeros(1, dtype=moop.des_names)[0]
-                        for name in moop.des_names:
-                            xx[name[0]] = s_out[name[0]]
-                        sim_num = -1
-                        for j, sj in enumerate(moop.sim_names):
-                            if sj[0] == sim_name:
-                                sim_num = j
-                                break
-                        sx = np.zeros(moop.m[sim_num])
-                        sx[:] = s_out[moop.sim_names[sim_num][0]]
-                        sname = sim_name.decode('utf-8')
-                    else:
-                        xx = np.zeros(moop.n)
-                        xx[:] = s_out['x'][:]
-                        sx = np.zeros(moop.m[sim_name])
-                        sx[:] = s_out['f'][:]
-                        sname = int(sim_name)
+                    # Create the ParMOO inputs
+                    xx = {}
+                    for name in moop.des_schema:
+                        xx[name[0]] = s_out[name[0]]
+                    sim_num = -1
+                    for j, sj in enumerate(moop.sim_schema):
+                        if sj[0] == sim_name:
+                            sim_num = j
+                            break
+                    sx = np.zeros(moop.m_list[sim_num])
+                    sx[:] = s_out[moop.sim_schema[sim_num][0]]
+                    sname = sim_name.decode('utf-8')
                     # Copy sim results into ParMOO databases
-                    moop.update_sim_db(xx, sx, sname)
+                    moop.updateSimDb(xx, sx, sname)
                     batch.append((xx, sname))
                     sim_count += 1
             else:
                 new_count = 0
                 for s_out in Work[sim_count:]:
                     sim_name = s_out['sim_name']
-                    # Check whether design variables are all named
-                    if moop.use_names:
-                        xx = np.zeros(1, dtype=moop.des_names)[0]
-                        for name in moop.des_names:
-                            xx[name[0]] = s_out[name[0]]
-                        sim_num = -1
-                        for j, sj in enumerate(moop.sim_names):
-                            if sj[0] == sim_name:
-                                sim_num = j
-                                break
-                        sx = np.zeros(moop.m[sim_num])
-                        sx[:] = s_out[moop.sim_names[sim_num][0]]
-                        sname = sim_name.decode('utf-8')
-                    else:
-                        xx = np.zeros(moop.n)
-                        xx[:] = s_out['x'][:]
-                        sx = np.zeros(moop.m[sim_name])
-                        sx[:] = s_out['f'][:]
-                        sname = int(sim_name)
+                    # Create the ParMOO inputs
+                    xx = {}
+                    for name in moop.des_schema:
+                        xx[name[0]] = s_out[name[0]]
+                    sim_num = -1
+                    for j, sj in enumerate(moop.sim_schema):
+                        if sj[0] == sim_name:
+                            sim_num = j
+                            break
+                    sx = np.zeros(moop.m_list[sim_num])
+                    sx[:] = s_out[moop.sim_schema[sim_num][0]]
+                    sname = sim_name.decode('utf-8')
                     # Copy sim results into ParMOO databases
-                    moop.update_sim_db(xx, sx, sname)
+                    moop.updateSimDb(xx, sx, sname)
                     batch.append((xx, sname))
                     new_count += 1
                 sim_count += new_count
@@ -156,10 +142,14 @@ class libE_MOOP(MOOP):
     dictionary of hyperparameters using the default constructor:
      * ``moop = libE_MOOP.__init__(ScalarOpt, [hyperparams={}])``
 
+    New: To fix the random seed, use the hyperparameter key "np_random_gen"
+    and set either an int or ``numpy.random.Generator`` instance
+    as the corresponding value.
+
     Class methods are summarized below.
 
     To define the MOOP, add each design variable, simulation, objective, and
-    constraint (in that order) by using the following functions:
+    constraint by using the following functions:
      * ``libE_MOOP.addDesign(*args)``
      * ``libE_MOOP.addSimulation(*args)``
      * ``libE_MOOP.addObjective(*args)``
@@ -171,6 +161,10 @@ class libE_MOOP(MOOP):
     added using:
      * ``libE_MOOP.addAcquisition(*args)``
 
+    When you are done defining a MOOP, it can be "compiled" to finalize
+    the definition:
+     * ``libE_MOOP.compile()``
+
     After creating a MOOP, the following methods may be useful for getting
     the numpy.dtype of the input/output arrays:
      * ``libE_MOOP.getDesignType()``
@@ -178,30 +172,28 @@ class libE_MOOP(MOOP):
      * ``libE_MOOP.getObjectiveType()``
      * ``libE_MOOP.getConstraintType()``
 
-    The following methods are used to save/load ParMOO objects from memory:
-     * ``libE_MOOP.save([filename="parmoo"])``
-     * ``libE_MOOP.load([filename="parmoo"])``
-
-    To turn on checkpointing (recommended), use:
+    To turn on checkpointing use:
      * ``libE_MOOP.setCheckpoint(checkpoint, [checkpoint_data, filename])``
 
     ParMOO's logging feature is not active for the `libE_MOOP` class
     since libEnsemble already provides this feature.
 
-    After defining the MOOP and setting up checkpointing and logging,
-    use the following method to solve the MOOP (using libEnsemble
-    to distribute simulation evaluations):
-     * ``libE_MOOP.solve(iter_max=None, sim_max=None, wt_max=864000,
-                         profile=False)``
+    If there is any pre-existing simulation data, it can be added by
+    calling the following method, where (x, sx) are the design, output
+    pair for the simulation "s_name":
+     * ``libE_MOOP.updateSimDb(x, sx, s_name)``
 
-    The following methods are used for managing ParMOO's internal
-    simulation/objective databases. Note that these databases are
-    maintained separately from libEnsemble's simulation database:
-     * ``libE_MOOP.check_sim_db(x, s_name)``
-     * ``libE_MOOP.update_sim_db(x, sx, s_name)``
+    After defining the MOOP and setting up checkpointing and logging info,
+    use the following method to solve the MOOP (serially):
+     * ``libE_MOOP.solve(iter_max=None, sim_max=None)``
+
+    The following methods are used for solving the MOOP and managing the
+    internal simulation/objective databases:
+     * ``libE_MOOP.checkSimDb(x, s_name)``
      * ``libE_MOOP.evaluateSimulation(x, s_name)``
-     * ``libE_MOOP.addData(x, sx)``
-     * ``libE_MOOP.iterate(k, ib)``
+     * ``libE_MOOP.addObjData(x, sx)``
+     * ``libE_MOOP.iterate(k, ib=None)``
+     * ``libE_MOOP.filterBatch(*args)``
      * ``libE_MOOP.updateAll(k, batch)``
 
     Finally, the following methods are used to retrieve data after the
@@ -210,7 +202,13 @@ class libE_MOOP(MOOP):
      * ``libE_MOOP.getSimulationData(format='ndarray')``
      * ``libE_MOOP.getObjectiveData(format='ndarray')``
 
-    Other private methods from the MOOP class do not work for a libE_MOOP.
+    The following methods are used to save/load the current checkpoint (state):
+     * ``libE_MOOP.save([filename="parmoo"])``
+     * ``libE_MOOP.load([filename="parmoo"])``
+
+
+    Other private methods from the MOOP class are not accessible by a
+    libE_MOOP.
 
     """
 
@@ -231,6 +229,11 @@ class libE_MOOP(MOOP):
 
         """
 
+        import jax
+
+        # Configure jax to use only CPUs
+        jax.config.update('jax_platform_name', 'cpu')
+        # Set the hyperparameters
         if hyperparams is None:
             hp = {}
         else:
@@ -242,37 +245,52 @@ class libE_MOOP(MOOP):
     def addDesign(self, *args):
         """ Add a new design variables to the libE_MOOP.
 
-        Append new design variables to the problem. Note that every design
-        variable must be added before any simulations or acquisition functions
-        can be added since the number of design variables is used to infer
-        the size of simulation databases and acquisition function policies.
-
         Args:
             args (dict): Each argument is a dictionary representing one design
                 variable. The dictionary contains information about that
                 design variable, including:
-                 * 'name' (str, optional): The name of this design
-                   if any are left blank, then ALL names are considered
-                   unspecified.
+                 * 'name' (str, optional): The unique name of this design
+                   variable, which ultimately serves as its primary key in
+                   all of ParMOO's databases. This is also how users should
+                   index this variable in all user-defined functions passed
+                   to ParMOO.
+                   If left blank, it defaults to "xi" where i= 1, 2, 3,...
+                   corresponds to the order in which the design variables
+                   were added.
                  * 'des_type' (str): The type for this design variable.
                    Currently supported options are:
-                    * 'continuous'
-                    * 'categorical'
-                 * 'lb' (float): When des_type is 'continuous', this specifies
-                   the lower bound for the design variable. This value must
-                   be specified, and must be strictly less than 'ub'
-                   (below) up to the tolerance (below).
-                 * 'ub' (float): When des_type is 'continuous', this specifies
-                   the upper bound for the design variable. This value
-                   must be specified, and must be strictly greater than
-                   'lb' (above) up to the tolerance (below).
-                 * 'tol' (float): When des_type is 'continuous', this specifies
-                   the tolerance, i.e., the minimum spacing along this
-                   dimension, before two design values are considered
-                   to have equal values in this dimension. If not specified,
-                   the default value is 1.0e-8.
-                 * 'levels' (int): When des_type is 'categorical', this
-                   specifies the number of levels for the variable.
+                    * 'continuous' (or 'cont' or 'real')
+                    * 'categorical' (or 'cat')
+                    * 'integer' (or 'int')
+                    * 'custom' -- an Embedder class must be provided (below)
+                    * 'raw' -- no re-scaling is performed: *NOT RECOMMENDED*
+                 * 'lb' (float): When des_type is 'continuous', 'integer', or
+                   'raw' this specifies the lower bound for the range of
+                   values this design variable could take.
+                   This value must be specified, and must be strictly less
+                   than 'ub' (below) up to the tolerance (below).
+                 * 'ub' (float): When des_type is 'continuous', 'integer', or
+                   'raw' this specifies the upper bound for the range of
+                   values this design variable could take.
+                   This value must be specified, and must be strictly greater
+                   than 'lb' (above) up to the tolerance (below) or by a whole
+                   numer for integer variables.
+                 * 'des_tol' (float): When des_type is 'continuous', this
+                   specifies the tolerance, i.e., the minimum spacing along
+                   this dimension, before two design values are considered to
+                   have equal values in this dimension. If not specified, the
+                   default value is epsilon * max(ub - lb, 1.0e-4).
+                 * 'levels' (int or list): When des_type is 'categorical', this
+                   specifies the number of levels for the variable (when int)
+                   or the names of each valid category (when a list).
+                   *WARNING*: If a list is given and the entries in the list do
+                   not have numeric types, then ParMOO will not be able to jit
+                   the extractor which will lead to seriously degraded
+                   performance.
+                 * 'embedder' (parmoo.structs.Embedder): When des_type is
+                   'custom', this is a custom Embedder class, which maps the
+                   input to a point in the unit hypercube and reports the
+                   embedded dimension.
 
         """
 
@@ -319,19 +337,23 @@ class libE_MOOP(MOOP):
         functions can be added.
 
         Args:
-            args (dict): Python dictionary containing objective function
+            *args (dict): Python dictionary containing objective function
                 information, including:
                  * 'name' (str, optional): The name of this objective
                    (defaults to "obj" + str(i), where i = 1, 2, 3, ... for the
                    first, second, third, ... simulation added to the MOOP).
                  * 'obj_func' (function): An algebraic objective function that
-                   maps from R^n X R^m --> R. Interface should match:
-                   `cost = obj_func(x, sim_func(x), der=0)`,
-                   where `der` is an optional argument specifying whether to
-                   take the derivative of the objective function
-                    * 0 -- no derivative taken, return f(x, sim_func(x))
-                    * 1 -- return derivative wrt x, or
-                    * 2 -- return derivative wrt sim(x).
+                   maps from X, S --> R, where X is the design space and S is
+                   the space of simulation outputs. Interface should match:
+                   ``cost = obj_func(x, sx)`` where the value ``sx`` is
+                   given by
+                   ``sx = sim_func(x)`` at runtime.
+                 * 'obj_grad' (function): Evaluates the gradients of
+                   ``obj_func`` wrt s and sx. Interface should match:
+                   ``dx, ds = obj_grad(x, sx)`` where the value ``sx`` is
+                   given by ``sx = sim_func(x)`` at runtime.
+                   The outputs ``dx`` and ``ds`` represent the gradients with
+                   respect to ``x`` and ``sx``, respectively.
 
         """
 
@@ -340,28 +362,21 @@ class libE_MOOP(MOOP):
 
     def addConstraint(self, *args):
         """ Add a new constraint to the libE_MOOP.
-
-        Append a new constraint to the problem. The constraint can be
-        a linear or nonlinear inequality constraint, and may depend on
-        the design variables and/or the simulation outputs.
-
         Args:
-            *args (dict): Python dictionary containing constraint function
+            args (dict): Python dictionary containing constraint function
                 information, including:
                  * 'name' (str, optional): The name of this constraint
                    (defaults to "const" + str(i), where i = 1, 2, 3, ... for
-                   the first, second, third, ... constraint added to the
-                   MOOP).
-                 * 'constraint' (function): An algebraic constraint function
-                   that maps from R^n X R^m --> R and evaluates to zero or a
-                   negative number when feasible and positive otherwise.
-                   Interface should match:
-                   `violation = constraint(x, sim_func(x), der=0)`,
-                   where `der` is an optional argument specifying whether to
-                   take the derivative of the constraint function
-                    * 0 -- no derivative taken, return c(x, sim_func(x))
-                    * 1 -- return derivative wrt x, or
-                    * 2 -- return derivative wrt sim(x).
+                   the first, second, third, ... constraint added to the MOOP).
+                 * 'con_func' or 'constraint' (function): An algebraic
+                   constraint function that maps from X, S --> R where X and
+                   S are the design space and space of aggregated simulation
+                   outputs, respectively. The constraint function should
+                   evaluate to zero or a negative number when feasible and
+                   positive otherwise. The interface should match:
+                   ``violation = con_func(x, sx)`` where the value ``sx`` is
+                   given by
+                   ``sx = sim_func(x)`` at runtime.
                    Note that any
                    ``constraint(x, sim_func(x), der=0) <= 0``
                    indicates that x is feaseible, while
@@ -371,6 +386,12 @@ class libE_MOOP(MOOP):
                    It is the user's responsibility to ensure that after adding
                    all constraints, the feasible region is nonempty and has
                    nonzero measure in the design space.
+                 * 'con_grad' (function): Evaluates the gradients of
+                   ``con_func`` wrt s and sx. Interface should match:
+                   ``dx, ds = con_grad(x, sx)`` where the value ``sx`` is
+                   given by ``sx = sim_func(x)`` at runtime.
+                   The outputs ``dx`` and ``ds`` represent the gradients with
+                   respect to ``x`` and ``sx``, respectively.
 
         """
 
@@ -379,11 +400,6 @@ class libE_MOOP(MOOP):
 
     def addAcquisition(self, *args):
         """ Add an acquisition function to the libE_MOOP.
-
-        Append a new acquisition function to the problem. In each iteration,
-        each acquisition is used to generate one or more points to evaluate
-        Typically, each acquisition generates one evaluation per simulation
-        function.
 
         Args:
             args (dict): Python dictionary of acquisition function info,
@@ -397,6 +413,22 @@ class libE_MOOP(MOOP):
         """
 
         self.moop.addAcquisition(*args)
+        return
+
+    def compile(self):
+        """ Compile the MOOP object and initialize its components.
+
+        This locks the MOOP definition and jits all jit-able methods.
+
+        This must be done *before* adding any simulation or objective data to
+        the internal database.
+
+        This cannot be done *after* simulation or objective data has been added
+        to the internal database.
+
+        """
+
+        self.moop.compile()
         return
 
     def setCheckpoint(self, checkpoint,
@@ -433,11 +465,8 @@ class libE_MOOP(MOOP):
     def getDesignType(self):
         """ Get the numpy dtype of all design points for this MOOP.
 
-        Use this type when allocating a numpy array to store the design
-        points for this MOOP object.
-
         Returns:
-            np.dtype: The numpy dtype of this MOOP's design points.
+            dtype: The numpy dtype of this MOOP's design points.
             If no design variables have yet been added, returns None.
 
         """
@@ -447,11 +476,8 @@ class libE_MOOP(MOOP):
     def getSimulationType(self):
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
 
-        Use this type if allocating a numpy array to store the simulation
-        outputs of this MOOP object.
-
         Returns:
-            np.dtype: The numpy dtype of this MOOP's simulation outputs.
+            dtype: The numpy dtype of this MOOP's simulation outputs.
             If no simulations have been given, returns None.
 
         """
@@ -461,11 +487,8 @@ class libE_MOOP(MOOP):
     def getObjectiveType(self):
         """ Get the numpy dtype of an objective point for this MOOP.
 
-        Use this type if allocating a numpy array to store the objective
-        values of this MOOP object.
-
         Returns:
-            np.dtype: The numpy dtype of this MOOP's objective points.
+            dtype: The numpy dtype of this MOOP's objective points.
             If no objectives have yet been added, returns None.
 
         """
@@ -475,26 +498,23 @@ class libE_MOOP(MOOP):
     def getConstraintType(self):
         """ Get the numpy dtype of the constraint violations for this MOOP.
 
-        Use this type if allocating a numpy array to store the constraint
-        scores output of this MOOP object.
-
         Returns:
-            np.dtype: The numpy dtype of this MOOP's constraint violation
+            dtype: The numpy dtype of this MOOP's constraint violation
             output. If no constraints have been given, returns None.
 
         """
 
         return self.moop.getConstraintType()
 
-    def check_sim_db(self, x, s_name):
+    def checkSimDb(self, x, s_name):
         """ Check self.sim_db[s_name] to see if the design x was evaluated.
 
-        x (np.ndarray or numpy structured array): A 1d numpy.ndarray or numpy
-            structured array specifying the design point to check for.
+        Args:
+            x (dict): A Python dictionary specifying the keys/names and
+                corresponding values of a design point to search for.
 
-        s_name (str or int): The name or index of the simulation where
-            (x, sx) will be added. Note, indices are assigned in the order
-            the simulations were listed during initialization.
+            s_name (str): The name of the simulation whose database will be
+                searched.
 
         Returns:
             None or numpy.ndarray: returns None if x is not in
@@ -503,84 +523,59 @@ class libE_MOOP(MOOP):
 
         """
 
-        return self.moop.check_sim_db(x, s_name)
+        return self.moop.checkSimDb(x, s_name)
 
-    def update_sim_db(self, x, sx, s_name):
+    def updateSimDb(self, x, sx, s_name):
         """ Update sim_db[s_name] by adding a design/simulation output pair.
 
-        x (np.ndarray or numpy structured array): A 1d numpy.ndarray or numpy
-            structured array specifying the design point to add.
+        Args:
+            x (dict): A Python dictionary specifying the keys/names and
+                corresponding values of a design point to add.
 
+            sx (ndarray): A 1D array containing the corresponding
+                simulation output(s).
 
-        sx (np.ndarray): A 1d numpy.ndarray containing the corresponding
-            simulation output.
-
-        s_name (str or int): The name or index of the simulation to whose
-            database the pair (x, sx) will be added. Note, when using unnamed
-            variables and simulations, the simulation indices were assigned
-            in the same order that the simulations were added to the MOOP
-            (using `MOOP.addSimulation(*args)`) during initialization.
+            s_name (str): The name of the simulation to whose database the
+                pair (x, sx) will be added into.
 
         """
 
-        self.moop.update_sim_db(x, sx, s_name)
+        self.moop.updateSimDb(x, sx, s_name)
         return
 
     def evaluateSimulation(self, x, s_name):
         """ Evaluate sim_func[s_name] and store the result in the database.
 
         Args:
-            x (numpy.ndarray or numpy structured array): Either a numpy
-                structured array (when using named variables) or a 1D
-                numpy.ndarray containing the values of the design variable
-                to evaluate. Note, when operating with unnamed variables,
-                design variables are indices were assigned in the order that
-                the design variables were added to the MOOP using
-                `MOOP.addDesign(*args)`.
+            x (dict): A Python dictionary with keys/names corresponding
+                to the design variable names given and values containing
+                the corresponding values of the design point to evaluate.
 
-            s_name (str, int): The name or index of the simulation to
-                evaluate. Note, when operating with unnamed variables,
-                simulation indices were assigned in the order that
-                the simulations were added to the MOOP using
-                `MOOP.addSimulation(*args)`.
+            s_name (str): The name of the simulation to evaluate.
 
         Returns:
-            numpy.ndarray: A 1d numpy.ndarray containing the output from the
+            ndarray: A 1D array containing the output from the evaluation
             sx = simulation[s_name](x).
 
         """
 
         return self.moop.evaluateSimulation(x, s_name)
 
-    def addData(self, x, sx):
+    def addObjData(self, x, sx):
         """ Update the internal objective database by truly evaluating x.
 
         Args:
-            x (numpy.ndarray or numpy structured array): Either a numpy
-                structured array (when using named variables) or a 1D
-                numpy.ndarray containing the value of the design variable
-                to add to ParMOO's database. When operating with unnamed
-                variables, the indices were assigned in the order that
-                the design variables were added to the MOOP using
-                `MOOP.addDesign(*args)`.
+            x (dict): A Python dictionary containing the value of the design
+                variable to add to ParMOO's database.
 
-            sx (numpy.ndarray or numpy structured array): Either a numpy
-                structured array (when using named variables) or a 1D
-                numpy.ndarray containing the values of the corresponding
-                simulation outputs for ALL simulations involved in this
-                MOOP. In named mode, sx['s_name'][:] contains the output(s)
-                for sim_func['s_name']. In unnamed mode, simulation indices
-                were assigned in the order that they were added using
-                `MOOP.addSimulation(*args)`. Then, if each simulation i has
-                m_i outputs (i = 0, 1, ...):
-                 * sx[:m_0] contains the output(s) of sim_func[0],
-                 * sx[m_0:m_0 + m_1] contains output(s) of sim_func[1],
-                 * sx[m_0 + m_1:m_0 + m_1 + m_2] contains the output(s) for
-                   sim_func[2], etc.
+            sx (dict): A Python dictionary containing the values of the
+                corresponding simulation outputs for ALL simulations involved
+                in this MOOP -- sx['s_name'][:] contains the output(s)
+                for sim_func['s_name'].
 
         """
 
-        self.moop.addData(x, sx)
+        self.moop.addObjData(x, sx)
         return
 
     def iterate(self, k, ib=None):
@@ -600,29 +595,19 @@ class libE_MOOP(MOOP):
                 resulting candidates to the batch.
 
         Returns:
-            (list): A list of design points (numpy structured or 1D arrays) or
-            tuples (design points, simulation name) specifying the unfiltered
-            list of candidates that ParMOO recommends for true simulation
-            evaluations. Specifically:
-             * Each item or the first entry in tuple is either a numpy
-               structured array (when operating with named variables) or a
-               1D numpy.ndarray (in unnamed mode). When operating with
-               unnamed variables, the indices were assigned in the order
-               that the design variables were added to the MOOP using
-               `MOOP.addDesign(*args)`.
-             * If the item is a tuple, then the second entry in the tuple
-               is either the (str) name of the simulation to
-               evaluate (when operating with named variables) or the (int)
-               index of the simulation to evaluate (when operating in
-               unnamed mode). Note, in unnamed mode, simulation indices
-               were assigned in the order that they were added using
-               `MOOP.addSimulation(*args)`.
+            (list): A list of tuples (design points, simulation name)
+            specifying the unfiltered list of candidates that ParMOO
+            recommends for true simulation evaluations. Specifically:
+             * The first entry in each tuple is a Python dictionary
+               specifying the design point to evaluate.
+             * The second entry in the tuple is the (str) name of the
+               simulation to evaluate at the design point specified above.
 
         """
 
         return self.moop.iterate(k, ib=ib)
 
-    def filterBatch(self, *xbatch):
+    def filterBatch(self, *args):
         """ Filter a batch produced by ParMOO's MOOP.iterate method.
 
         Accepts one or more batches of candidate design points, produced
@@ -632,102 +617,52 @@ class libE_MOOP(MOOP):
         surrogate's Surrogate.improve() method.
 
         Args:
-            *xbatch (list of numpy.ndarrays or tuples): The list of
-            unfiltered candidates returned by the MOOP.iterate() method.
-            A list of design points (numpy structured or 1D arrays) or
-            tuples (design points, simulation name) specifying the unfiltered
-            list of candidates that ParMOO recommends for true simulation
-            evaluations. Specifically:
-             * Each item or the first entry in tuple is either a numpy
-               structured array (when operating with named variables) or a
-               1D numpy.ndarray (in unnamed mode). When operating with
-               unnamed variables, the indices were assigned in the order
-               that the design variables were added to the MOOP using
-               `MOOP.addDesign(*args)`.
-             * If the item is a tuple, then the second entry in the tuple
-               is either the (str) name of the simulation to
-               evaluate (when operating with named variables) or the (int)
-               index of the simulation to evaluate (when operating in
-               unnamed mode). Note, in unnamed mode, simulation indices
-               were assigned in the order that they were added using
-               `MOOP.addSimulation(*args)`.
+            *args (list of tuples): The list of unfiltered candidates
+            returned by the ``MOOP.iterate()`` method.
 
         Returns:
-            (list): A filtered list of ordered pairs (tuples), specifying
-            the (design points, simulation name) that ParMOO suggests for
-            evaluation. Specifically:
-             * The first entry in each tuple is either a numpy structured
-               array (when operating with named variables) or a 1D
-               numpy.ndarray (in unnamed mode). When operating with unnamed
-               variables, the indices were assigned in the order that
-               the design variables were added to the MOOP using
-               `MOOP.addDesign(*args)`.
-             * The second entry is either the (str) name of the simulation to
-               evaluate (when operating with named variables) or the (int)
-               index of the simulation to evaluate (when operating in
-               unnamed mode). Note, in unnamed mode, simulation indices
-               were assigned in the order that they were added using
-               `MOOP.addSimulation(*args)`.
+            (list): A filtered list of tuples, matching the format of the
+            ``MOOP.iterate()`` output, but with redundant points removed
+            and suitably replaced.
 
         """
 
-        return self.moop.filterBatch(*xbatch)
+        return self.moop.filterBatch(*args)
 
     def updateAll(self, k, batch):
         """ Update all surrogates given a batch of freshly evaluated data.
 
         Args:
-            k (int): The iteration counter (corresponding to the value in
-                libE_MOOP.moop.iteration).
+            k (int): The iteration counter (corresponding to MOOP.iteration).
 
             batch (list): A list of ordered pairs (tuples), each specifying
-                a design point that was evaluated in this iteration.
-                For each tuple in the list:
-                 * The first entry in each tuple is either a numpy structured
-                   array (when operating with named variables) or a 1D
-                   numpy.ndarray (in unnamed mode). When operating with
-                   unnamed variables, the indices were assigned in the order
-                   that the design variables were added to the MOOP using
-                   `MOOP.addDesign(*args)`.
-                 * The second entry is either the (str) name of the simulation
-                   to evaluate (when operating with named variables) or the
-                   (int) index of the simulation to evaluate (when operating
-                   in unnamed mode). Note, in unnamed mode, simulation indices
-                   were assigned in the order that they were added using
-                   `MOOP.addSimulation(*args)`.
+                a design point that was evaluated in this iteration, whose
+                format matches the output of ``MOOP.iterate()``.
 
         """
 
         return self.moop.updateAll(k, batch)
 
-    def moop_sim(self, H, persis_info, sim_specs, _):
+    def _moop_sim(self, H, persis_info, sim_specs, _):
         """ Evaluates the sim function for a collection of points given in
         ``H['x']``.
 
         """
 
         batch = len(H)
-        sim_names = H['sim_name']
+        sim_schema = H['sim_name']
         H_o = np.zeros(batch, dtype=sim_specs['out'])
         for i in range(batch):
-            namei = sim_names[i]
-            if self.moop.use_names:
-                j = -1
-                for jj, jname in enumerate(self.moop.sim_names):
-                    if jname[0] == sim_names[i]:
-                        j = jj
-                        break
-            else:
-                j = namei
-            if self.moop.use_names:
-                xx = np.zeros(1, dtype=self.moop.des_names)[0]
-                for name in self.moop.des_names:
-                    xx[name[0]] = H[name[0]][i]
-                H_o[self.moop.sim_names[j][0]][i] = \
-                    self.moop.sim_funcs[j](xx)
-            else:
-                H_o['f'][i, :self.moop.m[j]] = \
-                    self.moop.sim_funcs[j](H['x'][i])
+            namei = sim_schema[i]
+            j = -1
+            for jj, jname in enumerate(self.moop.sim_schema):
+                if jname[0] == sim_schema[i]:
+                    j = jj
+                    break
+            xx = {}
+            for name in self.moop.des_schema:
+                xx[name[0]] = H[name[0]][i]
+            H_o[self.moop.sim_schema[j][0]][i] = self.moop.sim_funcs[j](xx)
         return H_o, persis_info
 
     def solve(self, iter_max=None, sim_max=None, wt_max=864000, profile=False):
@@ -755,11 +690,12 @@ class libE_MOOP(MOOP):
 
         """
 
-        import sys
         from libensemble.libE import libE
         from libensemble.alloc_funcs.start_only_persistent \
             import only_persistent_gens as alloc_f
         from libensemble.tools import parse_args
+        from multiprocessing import set_start_method
+        import sys
 
         # Check that at least one budget variable was given
         if iter_max is None and sim_max is None:
@@ -805,18 +741,16 @@ class libE_MOOP(MOOP):
                           "or using the iter_max stopping criteria, unless " +
                           "you are really only interested in design space " +
                           "exploration without exploitation/optimization.")
-
+        # Force python MP to use spawn parallelism as fork is not safe with jax
+        set_start_method("spawn", force=True)
         # Create libEnsemble dictionaries
         nworkers, is_manager, libE_specs, _ = parse_args()
-        if self.moop.use_names:
-            libE_specs['final_fields'] = []
-            for name in self.moop.des_names:
-                libE_specs['final_fields'].append(name[0])
-            for name in self.moop.sim_names:
-                libE_specs['final_fields'].append(name[0])
-            libE_specs['final_fields'].append('sim_name')
-        else:
-            libE_specs['final_fields'] = ['x', 'f', 'sim_name']
+        libE_specs['final_fields'] = []
+        for name in self.moop.des_schema:
+            libE_specs['final_fields'].append(name[0])
+        for name in self.moop.sim_schema:
+            libE_specs['final_fields'].append(name[0])
+        libE_specs['final_fields'].append('sim_name')
         # Set optional libE specs
         libE_specs['profile'] = profile
 
@@ -828,40 +762,30 @@ class libE_MOOP(MOOP):
                              " (e.g., local comms or MPI)")
 
         # Get the max m for all SimGroups
-        max_m = max(self.moop.m)
+        max_m = max(self.moop.m_list)
 
         # Set the input dictionaries
-        if self.moop.use_names:
-            x_type = self.moop.des_names.copy()
-            x_type.append(('sim_name', 'a40'))
-            f_type = self.moop.sim_names.copy()
-            all_types = x_type.copy()
-            for name in f_type:
-                all_types.append(name)
-            sim_specs = {'sim_f': self.moop_sim,
-                         'in': [name[0] for name in x_type],
-                         'out': f_type}
+        x_type = self.moop.des_schema.copy()
+        x_type.append(('sim_name', 'a40'))
+        f_type = self.moop.sim_schema.copy()
+        all_types = x_type.copy()
+        for name in f_type:
+            all_types.append(name)
+        sim_specs = {'sim_f': self._moop_sim,
+                     'in': [name[0] for name in x_type],
+                     'out': f_type}
 
-            gen_specs = {'gen_f': parmoo_persis_gen,
-                         'persis_in': [name[0] for name in all_types],
-                         'out': x_type,
-                         'user': {}}
-        else:
-            sim_specs = {'sim_f': self.moop_sim,
-                         'in': ['x', 'sim_name'],
-                         'out': [('f', float, max_m)]}
-
-            gen_specs = {'gen_f': parmoo_persis_gen,
-                         'persis_in': ['x', 'sim_name', 'f'],
-                         'out': [('x', float, self.moop.n),
-                                 ('sim_name', int)],
-                         'user': {}}
+        gen_specs = {'gen_f': parmoo_persis_gen,
+                     'persis_in': [name[0] for name in all_types],
+                     'out': x_type,
+                     'user': {}}
 
         alloc_specs = {'alloc_f': alloc_f, 'out': [('gen_informed', bool)]}
 
         persis_info = {}
         for i in range(nworkers + 1):
             persis_info[i] = {}
+        self.moop.compile()
         persis_info[1]['moop'] = self.moop
 
         exit_criteria = {'sim_max': sim_max, 'wallclock_max': wt_max}
@@ -885,21 +809,11 @@ class libE_MOOP(MOOP):
                 named inputs.
 
         Returns:
-            A discrete approximation of the Pareto front and efficient set.
-
-            If operating with named variables, then this is a 1d numpy
-            structured array whose fields match the names for design
-            variables, objectives, and constraints (if any).
-
-            Otherwise, this is a dict containing the following keys:
-             * x_vals (numpy.ndarray): A 2d numpy.ndarray containing a list
-               of nondominated points discretely approximating the
-               Pareto front.
-             * f_vals (numpy.ndarray): A 2d numpy.ndarray containing the list
-               of corresponding efficient design points.
-             * c_vals (numpy.ndarray): A 2d numpy.ndarray containing the list
-               of corresponding constraint satisfaction scores,
-               all less than or equal to 0.
+            numpy structured array or pandas DataFrame: Either a structured
+            array or dataframe (depending on the option selected above)
+            whose column/key names match the names of the design variables,
+            objectives, and constraints. It contains a discrete approximation
+            of the Pareto front and efficient set.
 
         """
 
@@ -915,22 +829,12 @@ class libE_MOOP(MOOP):
                 named inputs.
 
         Returns:
-            (dict or list) Either a dictionary or list of dictionaries
-            containing every point where a simulation was evaluated.
-
-            If operating with named variables, then the result is a dict.
-            Each key is the name for a different simulation, and each value
-            is a 1d numpy structured array whose keys match the
-            names for each design variables plus an
-            additional 'out' key for simulation outputs.
-
-            Otherwise, this is a list of s (number of simulations) dicts,
-            each dict containing the following keys:
-             * x_vals (numpy.ndarray): A 2d array containing a list
-               of design points that have been evaluated for this
-               simulation.
-             * s_vals (numpy.ndarray): A 1d or 2d array containing
-               the list of corresponding simulation outputs.
+            dict: A Python dictionary whose keys match the names of the
+            simulations. Each value is either a numpy structured array or
+            pandas dataframe (depending on the option selected above)
+            whose column/key names match the names of the design variables
+            plus either and 'out' field for single-output simulations,
+            or 'out_1', 'out_2', ... for multi-output simulations.
 
         """
 
@@ -946,21 +850,11 @@ class libE_MOOP(MOOP):
                 named inputs.
 
         Returns:
-            A database of all designs that have been fully evaluated,
-            and their corresponding objective scores.
-
-            If operating with named variables, then this is a 1d numpy
-            structured array whose fields match the names for design
-            variables, objectives, and constraints (if any).
-
-            Otherwise, this is a dict containing the following keys:
-             * x_vals (numpy.ndarray): A 2d array containing a list
-               of all fully evaluated design points.
-             * f_vals (numpy.ndarray): A 2d array containing the list
-               of corresponding objective values.
-             * c_vals (numpy.ndarray): A 2d array containing the list
-               of corresponding constraint satisfaction scores,
-               all less than or equal to 0.
+            numpy structured array or pandas DataFrame: Either a structured
+            array or dataframe (depending on the option selected above)
+            whose column/key names match the names of the design variables,
+            objectives, and constraints. It contains the results for every
+            fully evaluated design point.
 
         """
 

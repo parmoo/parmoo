@@ -233,38 +233,23 @@ def test_updatePF():
     assert (soln['f_vals'].shape == (4, 3))
 
 
-def test_unpack():
-    """ Test the unpack function.
+def test_to_from_array():
+    """ Test the from_array function. """
 
-    Create a named and unnamed output, and try to unpack each.
-
-    """
-
-    from parmoo.util import unpack
+    from parmoo.util import from_array, to_array
     import numpy as np
     import pytest
 
     # Create test inputs
     dt_bad = "hello world"
     x_bad = "hello world"
-    dt_unnamed = ("f8", (5,))
     x_unnamed = np.eye(5)[2]
-    dt_named = [("x1", "f8"), ("x2", "f8"), ("x3", "f8", 3)]
-    x_named = np.zeros(1, dtype=dt_named)[0]
-    x_named["x3"][0] = 1.0
-    # Try some bad unpacks
-    with pytest.raises(TypeError):
-        unpack(x_bad, dt_unnamed)
-    with pytest.raises(TypeError):
-        unpack(x_unnamed, dt_bad)
-    with pytest.raises(TypeError):
-        unpack(x_unnamed, dt_named)
-    with pytest.raises(TypeError):
-        unpack(x_unnamed, [("x4", "f8")])
-    # Test unnamed unpack
-    assert (np.all(x_unnamed == unpack(x_unnamed, dt_unnamed)))
-    # Test named unpack
-    assert (np.all(x_unnamed == unpack(x_named, dt_named)))
+    dt_named = np.dtype([("x1", "f8"), ("x2", "f8"), ("x3", "f8", 3)])
+    x_named = {"x1": 0.0, "x2": 0.0, "x3": np.asarray([1.0, 0.0, 0.0])}
+    # Test packing into array and unpacking from an array
+    assert (np.all(x_unnamed == to_array(x_named, dt_named)))
+    assert (all([all(x_named[j] == from_array(x_unnamed, dt_named)[j])
+                 for j in x_named]))
 
 
 if __name__ == "__main__":
@@ -272,4 +257,4 @@ if __name__ == "__main__":
     test_check_sims()
     test_lex_leq()
     test_updatePF()
-    test_unpack()
+    test_to_from_array()

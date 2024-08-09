@@ -818,7 +818,7 @@ def run_quickstart():
         'sim_func': sim_func,
         'search': LatinHypercube,
         'surrogate': GaussRBF,
-        'hyperparams': {'search_budget': 20}
+        'hyperparams': {'search_budget': 10}
     })
 
     my_moop.addObjective({
@@ -835,13 +835,13 @@ def run_quickstart():
         'constraint': lambda x, s: 0.1 - x["x1"]
     })
 
-    for i in range(3):
+    for i in range(2):
         my_moop.addAcquisition({
             'acquisition': UniformWeights,
             'hyperparams': {}
         })
 
-    my_moop.solve(5)
+    my_moop.solve(1)
 
     return my_moop
 
@@ -854,13 +854,12 @@ def run_dtlz2():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.optimizers import GlobalSurrogate_BFGS
-    from parmoo.objectives.dtlz import dtlz2_obj
+    from parmoo.objectives.dtlz import dtlz2_obj, dtlz2_grad
     from parmoo.simulations.dtlz import g2_sim
 
     n = 6  # number of design variables
     o = 5  # number of objectives
-    q = 4  # batch size (number of acquisitions)
-
+    q = 2  # batch size (number of acquisitions)
     # Create MOOP
     moop = MOOP(GlobalSurrogate_BFGS)
     # Add n design variables
@@ -872,7 +871,6 @@ def run_dtlz2():
             'ub': 1.0,
             'des_tol': 1.0e-8
         })
-
     # Create the g2 simulation
     moop.addSimulation({
         'name': "g2",
@@ -884,7 +882,7 @@ def run_dtlz2():
         ),
         'search': LatinHypercube,
         'surrogate': GaussRBF,
-        'hyperparams': {'search_budget': 10*n}
+        'hyperparams': {'search_budget': 10}
     })
     # Add o objectives
     for i in range(o):
@@ -893,15 +891,17 @@ def run_dtlz2():
             'obj_func': dtlz2_obj(
                 moop.getDesignType(),
                 moop.getSimulationType(),
+                i, num_obj=o),
+            'obj_grad': dtlz2_grad(
+                moop.getDesignType(),
+                moop.getSimulationType(),
                 i, num_obj=o)
         })
-
     # Add q acquisition functions
     for i in range(q):
         moop.addAcquisition({'acquisition': RandomConstraint})
     # Solve the MOOP with 20 iterations
-    moop.solve(5)
-
+    moop.solve(1)
     return moop
 
 

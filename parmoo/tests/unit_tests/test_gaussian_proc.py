@@ -9,10 +9,15 @@ def test_GaussRBF():
 
     """
 
-    from parmoo.surrogates import GaussRBF
+    from jax import config
+    config.update("jax_enable_x64", True)
+    from jax import jacrev
+    from jax import numpy as jnp
+    from jax.tree_util import Partial
     import numpy as np
-    import pytest
     import os
+    from parmoo.surrogates import GaussRBF
+    import pytest
 
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -61,9 +66,9 @@ def test_GaussRBF():
     rbf1.fit(x_vals1, y_vals1)
     rbf1.update(x_vals2, y_vals2)
     rbf1.update(np.zeros((0, 3)), np.zeros((0, 2)))    # Update with no data
-    rbf1.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
+    rbf1.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     rbf2.fit(x_vals_full, y_vals_full)
-    rbf2.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
+    rbf2.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     # Try a bad improvement step to test error handling
     with pytest.raises(TypeError):
         rbf1.improve(5, False)
@@ -77,33 +82,34 @@ def test_GaussRBF():
     assert (all(rbf1.stdDev(x) == rbf2.stdDev(x)))
     # Check that the RBFs interpolate, up to 8 decimal digits of precision
     for i in range(x_vals_full.shape[0]):
-        assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
-                < 0.00000001)
-        assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
-                < 0.00000001)
+        assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i]) - y_vals_full[i])
+                < 1.0e-8)
+        assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i]) - y_vals_full[i])
+                < 1.0e-8)
         assert (np.max(rbf1.stdDev(x_vals_full[i])) < 1.0e-4)
         assert (np.max(rbf2.stdDev(x_vals_full[i])) < 1.0e-4)
     # Check that the RBFs compute the same grad, up to 8 digits of precision
     for i in range(x_vals_full.shape[0]):
-        assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
-                               rbf2.gradient(x_vals_full[i])) < 0.00000001)
+        assert (np.linalg.norm(jacrev(rbf1.evaluate)(x_vals_full[i]) -
+                               jacrev(rbf2.evaluate)(x_vals_full[i]))
+                < 1.0e-8)
     for i in range(x_vals_full.shape[0]):
-        assert (np.linalg.norm(rbf1.stdDevGrad(x_vals_full[i]) -
-                               rbf2.stdDevGrad(x_vals_full[i])) < 1.0e-4)
+        assert (np.linalg.norm(jacrev(rbf1.stdDev)(x_vals_full[i]) -
+                               jacrev(rbf2.stdDev)(x_vals_full[i])) < 1.0e-4)
     # Check that the RBF gradient evaluates correctly on a known dataset
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
     y_vals3 = np.asarray([[np.dot(xi, xi)] for xi in x_vals3])
     rbf3 = GaussRBF(1, np.zeros(3), np.ones(3), {})
     rbf3.fit(x_vals3, y_vals3)
-    rbf3.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
+    rbf3.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     y_grad_vals3 = -0.03661401 * np.ones((1, 3))
-    assert (np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
+    assert (np.linalg.norm(jacrev(rbf3.evaluate)(x_vals3[-1]) - y_grad_vals3[-1])
             < 1.0e-4)
     # Check standard deviation calculations
     xi = np.random.random_sample(3)
     assert (np.all(rbf3.stdDev(xi) >= 0))
-    assert (np.any(rbf3.stdDevGrad(xi) != 0))
+    assert (np.any(jacrev(rbf3.stdDev)(xi) != 0))
     # Check that the RBF generates feasible local improvement points
     for i in range(4):
         x_improv = rbf3.improve(np.zeros(3), False)
@@ -125,21 +131,21 @@ def test_GaussRBF():
     assert (np.all(x_improv[0] <= np.ones(3)) and
             np.all(x_improv[0] >= np.zeros(3)))
     assert (np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
-            > 0.00000001))
+            > 1.0e-8))
     # Now fit redundant data points using a nugget
     x_vals1 = np.append(x_vals1, np.asarray([x_vals1[0, :]]), axis=0)
     y_vals1 = np.append(y_vals1, np.asarray([y_vals1[0, :]]), axis=0)
     rbf4 = GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': 0.0001})
     rbf4.fit(x_vals1, y_vals1)
     rbf4.update(x_vals2, y_vals2)
-    rbf4.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
+    rbf4.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     # Now create a really tiny design space with a large tolerance
     rbf5 = GaussRBF(1, np.zeros(1), np.ones(1),
                     {'des_tols': 0.3 * np.ones(1)})
     xdat5 = np.asarray([[0.4], [0.6]])
     ydat5 = np.asarray([[0.4], [0.6]])
     rbf5.fit(xdat5, ydat5)
-    rbf5.setTrustRegion(np.zeros(1), np.ones(1) * np.infty)
+    rbf5.setTrustRegion(np.zeros(1), np.ones(1) * np.inf)
     # Test that improve() is able to find points outside the design tolerance
     for i in range(5):
         x_improv = rbf5.improve(xdat5[0], False)
@@ -151,7 +157,7 @@ def test_GaussRBF():
     rbf6 = GaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf6.fit(x_vals1, y_vals1)
     rbf6.update(x_vals2, y_vals2)
-    rbf6.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
+    rbf6.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     # Now fit datapoints in a plane
     x_vals3 = np.zeros((4, 3))
     x_vals3[1, 0] = 0.1
@@ -161,32 +167,33 @@ def test_GaussRBF():
     rbf7 = GaussRBF(2, np.zeros(3), np.ones(3), {})
     rbf7.fit(x_vals3, y_vals3)
     rbf7.update(x_vals3, y_vals3)
-    rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.infty)
+    rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     # Test save and load
     rbf6.save("parmoo.surrogate")
     rbf7.load("parmoo.surrogate")
+    os.remove("parmoo.surrogate")
+    rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     xx = np.random.random_sample(3)
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
-    os.remove("parmoo.surrogate")
-    # Generate a simple 1D RBF and check its stdDev and stdDevGrad are accurate
+    # Generate a simple 1D RBF and check that its stdDev is accurate
     x_vals4 = np.array([[0.0], [1.0]])
     y_vals4 = np.array([[0.0], [1.0]])
     rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {'tail_order': 0})
     rbf8.fit(x_vals4, y_vals4)
-    rbf8.setTrustRegion(np.zeros(1), np.ones(1) * np.infty)
+    rbf8.setTrustRegion(np.zeros(1), np.ones(1) * np.inf)
     assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 0.5) < 1.0e-8)
     assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 1.0e-2)
-    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) > 1)
-    assert (np.linalg.norm(rbf8.stdDevGrad(np.array([0.5]))) < 1.0e-4)
+    assert (np.linalg.norm(jacrev(rbf8.evaluate)(np.array([0.5]))) > 1)
+    assert (np.linalg.norm(jacrev(rbf8.stdDev)(np.array([0.5]))) < 1.0e-4)
     xx = np.linspace(0, 1).reshape((50, 1))
     maxind = 0
     for i, xi in enumerate(xx):
         if np.all(rbf8.stdDev(xi) > rbf8.stdDev(xx[maxind])):
             maxind = i
         if i < 25:
-            assert (np.all(rbf8.stdDevGrad(xi) >= 0))
+            assert (np.all(jacrev(rbf8.stdDev)(xi) >= 0))
         else:
-            assert (np.all(rbf8.stdDevGrad(xi) <= 0))
+            assert (np.all(jacrev(rbf8.stdDev)(xi) <= 0))
     assert (maxind in [24, 25])
     return
 
@@ -201,10 +208,13 @@ def test_LocalGaussRBF():
 
     """
 
-    from parmoo.surrogates import GaussRBF
+    from jax import config
+    config.update("jax_enable_x64", True)
+    from jax import jacrev
     import numpy as np
-    import pytest
     import os
+    from parmoo.surrogates import GaussRBF
+    import pytest
 
     # Try some bad initializations to test error handling
     with pytest.raises(ValueError):
@@ -286,19 +296,20 @@ def test_LocalGaussRBF():
         rbf1.setTrustRegion(x_vals_full[i], np.ones(3) * 0.1)
         rbf2.setTrustRegion(x_vals_full[i], np.ones(3) * 0.1)
         assert (np.linalg.norm(rbf1.evaluate(x_vals_full[i])-y_vals_full[i])
-                < 0.00000001)
+                < 1.0e-8)
         assert (np.linalg.norm(rbf2.evaluate(x_vals_full[i])-y_vals_full[i])
-                < 0.00000001)
+                < 1.0e-8)
         assert (np.linalg.norm(rbf1.stdDev(x_vals_full[i]) < 1.0e-4))
         assert (np.linalg.norm(rbf2.stdDev(x_vals_full[i]) < 1.0e-4))
     # Check that the RBFs compute the same grad, up to 8 digits of precision
     rbf1.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.1)
     rbf2.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.1)
     for i in range(x_vals_full.shape[0]):
-        assert (np.linalg.norm(rbf1.gradient(x_vals_full[i]) -
-                               rbf2.gradient(x_vals_full[i])) < 0.00000001)
-        assert (np.linalg.norm(rbf1.stdDevGrad(x_vals_full[i]) -
-                               rbf2.stdDevGrad(x_vals_full[i])) < 1.0e-4)
+        assert (np.linalg.norm(jacrev(rbf1.evaluate)(x_vals_full[i]) -
+                               jacrev(rbf2.evaluate)(x_vals_full[i]))
+                               < 1.0e-8)
+        assert (np.linalg.norm(jacrev(rbf1.stdDev)(x_vals_full[i]) -
+                               jacrev(rbf2.stdDev)(x_vals_full[i])) < 1.0e-4)
     # Check that the RBF gradient evaluates correctly on a known dataset
     x_vals3 = np.eye(3)
     x_vals3 = np.append(x_vals3, [[0.5, 0.5, 0.5]], axis=0)
@@ -307,13 +318,13 @@ def test_LocalGaussRBF():
     rbf3.fit(x_vals3, y_vals3)
     rbf3.setTrustRegion(x_vals3[-1], np.ones(3) * 0.25)
     y_grad_vals3 = -0.08798618 * np.ones((1, 3))
-    assert (np.linalg.norm(rbf3.gradient(x_vals3[-1]) - y_grad_vals3[-1])
-            < 1.0e-4)
-    assert (np.linalg.norm(rbf3.stdDevGrad(x_vals3[-1]) >= 0))
+    assert (np.linalg.norm(jacrev(rbf3.evaluate)(x_vals3[-1])
+                           - y_grad_vals3[-1]) < 1.0e-4)
+    assert (np.linalg.norm(jacrev(rbf3.stdDev)(x_vals3[-1]) >= 0))
     # Check standard deviation calculations
     xi = np.random.random_sample(3)
     assert (np.all(rbf3.stdDev(xi) >= 0))
-    assert (np.any(rbf3.stdDevGrad(xi) != 0))
+    assert (np.any(jacrev(rbf3.stdDev)(xi) != 0))
     # Check that the RBF generates feasible local improvement points
     for i in range(4):
         x_improv = rbf3.improve(np.zeros(3), False)
@@ -336,7 +347,7 @@ def test_LocalGaussRBF():
     assert (np.all(x_improv[0] <= np.ones(3)) and
             np.all(x_improv[0] >= np.zeros(3)))
     assert (np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
-            > 0.00000001))
+            > 1.0e-8))
     # Now fit redundant data points using a nugget
     x_vals1 = np.append(x_vals1, np.asarray([x_vals1[0, :]]), axis=0)
     y_vals1 = np.append(y_vals1, np.asarray([y_vals1[0, :]]), axis=0)
@@ -346,7 +357,7 @@ def test_LocalGaussRBF():
     rbf4.evaluate(x_vals1[0])
     rbf4.update(x_vals2, y_vals2)
     rbf4.setTrustRegion(x_vals1[0], np.ones(3) * 0.1)
-    rbf4.gradient(x_vals1[0])
+    jacrev(rbf4.evaluate)(x_vals1[0])
     # Now create a really tiny design space with a large tolerance
     rbf5 = GaussRBF(1, np.zeros(1), np.ones(1),
                          {'des_tols': 0.3 * np.ones(1)})
@@ -378,10 +389,11 @@ def test_LocalGaussRBF():
     # Test save and load
     rbf6.save("parmoo.surrogate")
     rbf7.load("parmoo.surrogate")
+    os.remove("parmoo.surrogate")
+    rbf7.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     xx = np.random.random_sample(3)
     assert (np.all(rbf6.evaluate(xx) == rbf7.evaluate(xx)))
-    os.remove("parmoo.surrogate")
-    # Generate a simple 1D RBF and check its stdDev and stdDevGrad are accurate
+    # Generate a simple 1D RBF and check that its stdDev is accurate
     x_vals4 = np.array([[0.0], [1.0]])
     y_vals4 = np.array([[0.0], [1.0]])
     rbf8 = GaussRBF(1, np.zeros(1), np.ones(1), {'tail_order': 0})
@@ -389,17 +401,17 @@ def test_LocalGaussRBF():
     rbf8.setTrustRegion(np.array([0.5]), np.ones(1) * 0.25)
     assert (np.linalg.norm(rbf8.evaluate(np.array([0.5])) - 0.5) < 1.0e-8)
     assert (np.linalg.norm(rbf8.stdDev(np.array([0.5]))) > 5.0e-3)
-    assert (np.linalg.norm(rbf8.gradient(np.array([0.5]))) > 1.0)
-    assert (np.linalg.norm(rbf8.stdDevGrad(np.array([0.5]))) < 1.0e-4)
+    assert (np.linalg.norm(jacrev(rbf8.evaluate)(np.array([0.5]))) > 1.0)
+    assert (np.linalg.norm(jacrev(rbf8.stdDev)(np.array([0.5]))) < 1.0e-4)
     xx = np.linspace(0, 1).reshape((50, 1))
     maxind = 0
     for i, xi in enumerate(xx):
         if np.all(rbf8.stdDev(xi) > rbf8.stdDev(xx[maxind])):
             maxind = i
         if i < 25:
-            assert (np.all(rbf8.stdDevGrad(xi) >= 0))
+            assert (np.all(jacrev(rbf8.stdDev)(xi) >= 0))
         else:
-            assert (np.all(rbf8.stdDevGrad(xi) <= 0))
+            assert (np.all(jacrev(rbf8.stdDev)(xi) <= 0))
     assert (maxind in [24, 25])
     return
 

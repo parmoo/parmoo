@@ -11,8 +11,8 @@ The classes include:
 
 import numpy as np
 from parmoo.structs import GlobalSearch
-from pyDOE import lhs
 from parmoo.util import xerror
+from scipy.stats import qmc
 
 
 class LatinHypercube(GlobalSearch):
@@ -24,7 +24,7 @@ class LatinHypercube(GlobalSearch):
     """
 
     # Slots for the LatinHypercube class
-    __slots__ = ['n', 'lb', 'ub', 'budget']
+    __slots__ = ['lb', 'ub', 'budget', 'sampler', 'np_rng']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the LatinHypercube GlobalSearch class.
@@ -67,6 +67,17 @@ class LatinHypercube(GlobalSearch):
                                  "be an int")
         else:
             self.budget = 100
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
+        self.sampler = qmc.LatinHypercube(d=self.n, seed=self.np_rng)
         return
 
     def startSearch(self, lb, ub):
@@ -95,8 +106,8 @@ class LatinHypercube(GlobalSearch):
             return np.asarray([])
         # Otherwise, return a n-dimensional Latin hypercube design
         else:
-            return np.asarray([self.lb + (self.ub - self.lb) * xi
-                               for xi in lhs(self.n, samples=self.budget)])
+            return qmc.scale(self.sampler.random(n=self.budget),
+                             self.lb, self.ub)
 
     def resumeSearch(self):
         """ Resume a previous Latin hypercube sampling.
@@ -112,49 +123,5 @@ class LatinHypercube(GlobalSearch):
             return np.asarray([])
         # Otherwise, return a n-dimensional Latin hypercube design
         else:
-            return np.asarray([self.lb + (self.ub - self.lb) * xi
-                               for xi in lhs(self.n, samples=self.budget)])
-
-    def save(self, filename):
-        """ Save important data from this class so that it can be reloaded.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data should be saved.
-
-        """
-
-        import json
-
-        # Serialize LH object in dictionary
-        lh_state = {'n': self.n,
-                    'budget': self.budget}
-        # Serialize numpy.ndarray objects
-        lh_state['lb'] = self.lb.tolist()
-        lh_state['ub'] = self.ub.tolist()
-        # Save file
-        with open(filename, 'w') as fp:
-            json.dump(lh_state, fp)
-        return
-
-    def load(self, filename):
-        """ Reload important data into this class after a previous save.
-
-        Args:
-            filename (string): The relative or absolute path to the file
-                where all reload data has been saved.
-
-        """
-
-        import json
-
-        # Load file
-        with open(filename, 'r') as fp:
-            lh_state = json.load(fp)
-        # Deserialize LH object from dictionary
-        self.n = lh_state['n']
-        self.budget = lh_state['budget']
-        # Deserialize numpy.ndarray objects
-        self.lb = np.array(lh_state['lb'])
-        self.ub = np.array(lh_state['ub'])
-        return
+            return qmc.scale(self.sampler.random(n=self.budget),
+                             self.lb, self.ub)

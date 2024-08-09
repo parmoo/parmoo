@@ -17,30 +17,33 @@ import numpy as np
 
 def sim(x):
     " User sim for sample problem. "
-    return [sum([x[name] for name in x.dtype.names])]
+    return [sum([x[name] for name in x])]
 
-def obj(x, sx, der=0):
+def obj_func(x, sx):
     " User objective for sample problem. "
-    if der == 1:
-        return np.zeros(1, x.dtype)[0]
-    elif der == 2:
-        dsx = np.zeros(1, sx.dtype)[0]
-        dsx["Sample sim"] = 3.0
-        return dsx
-    else:
-        return 3.0 * sx["Sample sim"]
+    return 3.0 * sx["Sample sim"]
 
-def const(x, sx, der=0):
-    " User constraint for sample problem. "
-    if der == 1:
-        dx = np.ones(1, x.dtype)[0]
-        for name in x.dtype.names:
-            dx[name] *= -2.0
-        return dx
-    elif der == 2:
-        return np.zeros(1, sx.dtype)[0]
-    else:
-        return sum([(x[name] - 1.0) ** 2 for name in x.dtype.names])
+def obj_grad(x, sx):
+    " User gradient for sample problem. "
+    dx, ds = {}, {}
+    for key in x:
+        dx[key] = 0.
+    for key in sx:
+        ds[key] = 0.
+    ds["Sample sim"] = 3.0
+    return dx, ds
+
+def const_func(x, sx):
+    return sum([(x[name] - 1.0) ** 2 for name in x])
+
+def const_grad(x, sx):
+    " User constraint gradient for sample problem. "
+    dx, ds = {}, {}
+    for key in x:
+        dx[key] = -2.
+    for key in sx:
+        ds[key] = 0.
+    return dx, ds
 
 # Create a MOOP
 moop = MOOP(GlobalSurrogate_BFGS)
@@ -59,10 +62,14 @@ moop.addSimulation({'name': "Sample sim",
                     'hyperparams': {}})
 
 # Add user objective functions
-moop.addObjective({'name': "My objective", 'obj_func': obj})
+moop.addObjective({'name': "My objective",
+                   'obj_func': obj_func,
+                   'obj_grad': obj_grad})
 
 # Add user constraint functions, with only 1 feasible point
-moop.addConstraint({'name': "My constraint", 'constraint': const})
+moop.addConstraint({'name': "My constraint",
+                    'con_func': const_func,
+                    'con_grad': const_grad})
 
 # Add 1 acquisition function
 moop.addAcquisition({'acquisition': UniformWeights, 'hyperparams': {}})

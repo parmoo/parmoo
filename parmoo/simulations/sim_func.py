@@ -22,7 +22,7 @@ class sim_func(ABC):
 
     """
 
-    __slots__ = ['n', 'des_type', 'use_names']
+    __slots__ = ['n', 'des_type']
 
     def __init__(self, des):
         """ Constructor for simulation functions.
@@ -34,21 +34,12 @@ class sim_func(ABC):
 
         """
 
-        # Decide whether to use named variables
-        self.use_names = False
         # Try to read design variable type
         try:
             self.des_type = np.dtype(des)
         except TypeError:
-            if isinstance(des, int):
-                self.des_type = np.dtype(("f8", (des, )))
-            else:
-                raise TypeError("des must contain a valid numpy.dtype or int")
-        if self.des_type.names is not None:
-            self.n = len(self.des_type.names)
-            self.use_names = True
-        else:
-            self.n = sum(self.des_type.shape)
+            raise TypeError("des must contain a valid numpy.dtype")
+        self.n = len(self.des_type.names)
         if self.n == 0:
             raise ValueError("An illegal des_type was given")
         return

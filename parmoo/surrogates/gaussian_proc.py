@@ -9,11 +9,13 @@ The classes include:
 
 """
 
+from jax import jit, vmap
+from jax import numpy as jnp
+from jax import lax
 import numpy as np
 from parmoo.structs import SurrogateFunction
-from scipy.spatial.distance import cdist
-from scipy.stats import tstd
 from parmoo.util import xerror
+from scipy.stats import tstd
 
 
 class GaussRBF(SurrogateFunction):
@@ -25,9 +27,9 @@ class GaussRBF(SurrogateFunction):
     """
 
     # Slots for the UniformRandom class
-    __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'std_dev',
-                 'nugget', 'loc_inds', 'tr_center',
-                 'weights', 'prior', 'v', 'w', 'order', 'y_std_dev']
+    __slots__ = ['m', 'n', 'lb', 'ub', 'x_vals', 'f_vals', 'eps', 'nugget',
+                 'loc_inds', 'tr_center', 'weights', 'prior', 'v', 'w',
+                 'order', 'x_std_dev', 'y_std_dev', 'mu']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the GaussRBF class.
@@ -63,7 +65,7 @@ class GaussRBF(SurrogateFunction):
         self.lb = lb
         self.ub = ub
         self.n = self.lb.size
-        self.std_dev = 0.0
+        self.x_std_dev = 0.0
         # Create empty database
         self.x_vals = np.zeros((0, self.n))
         self.f_vals = np.zeros((0, self.m))
@@ -88,6 +90,7 @@ class GaussRBF(SurrogateFunction):
         else:
             self.nugget = 0.0
         # Check for 'des_tols' optional key in hyperparams
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
@@ -104,7 +107,7 @@ class GaussRBF(SurrogateFunction):
                                  + " value")
         else:
             self.eps = np.zeros(self.n)
-            self.eps[:] = 1.0e-8
+            self.eps[:] = self.mu
         # Check for 'tail_order' optional key in hyperparams
         if 'tail_order' in hyperparams:
             if isinstance(hyperparams['tail_order'], int):
@@ -119,10 +122,6 @@ class GaussRBF(SurrogateFunction):
         else:
             self.order = 0
         return
-
-    def __gaussian(self, r):
-        """ Gaussian bump function """
-        return np.exp(-(1.0 / self.std_dev * r) ** 2.0)
 
     def fit(self, x, f):
         """ Fit a new Gaussian RBF to the given data.
@@ -219,20 +218,19 @@ class GaussRBF(SurrogateFunction):
         else:
             raise TypeError("radius must be a numpy array or float")
         # Some helper variables used below
-        rad_tmp = np.zeros(self.n)
-        rad_tmp[:] = radius
+        rad_tmp = np.array(radius)
         refit = False
         # If the radius is infinite, fit with all data
-        if np.all(rad_tmp == np.infty):
+        if np.all(rad_tmp == np.inf):
             # Only need to refit once after an update
             if np.all(self.tr_center < self.lb):
                 # Set the trust-region center and radius to large values
                 self.tr_center = (self.ub + self.lb) / 2.0
                 tr_radius = (self.ub - self.lb) / 2.0
                 # Compute the standard deviation for the Gaussian bubbles
-                self.std_dev = np.power(np.prod(tr_radius * 2.0) /
-                                        float(self.x_vals.shape[0]),
-                                        1.0 / float(self.n))
+                self.x_std_dev = np.power(np.prod(tr_radius * 2.0) /
+                                          np.float64(self.x_vals.shape[0]),
+                                          1.0 / np.float64(self.n))
                 # Use all points in the current database
                 self.loc_inds = [i for i in range(self.x_vals.shape[0])]
                 refit = True
@@ -242,38 +240,32 @@ class GaussRBF(SurrogateFunction):
             self.tr_center = center
             tr_radius = rad_tmp
             # Update the standard deviation for the Gaussian bubbles
-            self.std_dev = np.linalg.norm(tr_radius * 2)
+            self.x_std_dev = np.linalg.norm(tr_radius * 2)
             # Get points in the new trust region
             self.loc_inds = []
             rdists = np.asarray([np.linalg.norm((xj - center))
                                  for xj in self.x_vals])
             for i, ri in enumerate(rdists):
-                if ri < 3.0 * self.std_dev:
+                if ri < 3.0 * self.x_std_dev:
                     self.loc_inds.append(i)
             refit = True
         # Only do the following if we are re-fitting the models
         if refit:
-            # Build the Gaussian covariance matrix
-            if len(self.loc_inds) < self.x_vals.shape[0]:
-                cov = self.__gaussian(cdist(self.x_vals[self.loc_inds, :],
-                                            self.x_vals[self.loc_inds, :],
-                                            'euclidean'))
-            else:
-                cov = self.__gaussian(cdist(self.x_vals, self.x_vals,
-                                      'euclidean'))
+            cov = _gaussian(_pdist(self.x_vals[self.loc_inds]),
+                            self.x_std_dev)
             # Add the nugget, if present
             if self.nugget > 0:
                 for i in range(len(self.loc_inds)):
-                    cov[i, i] = cov[i, i] + self.nugget
+                    cov = cov.at[i, i].set(cov[i, i] + self.nugget)
             # Get eigenvalue decomp to solve the SPD system with multiple RHS
             self.w = np.zeros(cov.shape[0])
             self.v = np.zeros(cov.shape)
             self.w, self.v = np.linalg.eigh(cov)
             # Check the smallest singular value for a bad solution
             sigma_n = np.min(self.w)
-            if sigma_n < 1.0e-8:
+            if sigma_n < self.mu:
                 for i in range(len(self.loc_inds)):
-                    cov[i, i] = cov[i, i] + 1.0e-8 - sigma_n
+                    cov = cov.at[i, i].set(cov[i, i] + self.mu - sigma_n)
                 self.w, self.v = np.linalg.eigh(cov)
             # Fit prior weights and remove tail effects from RHS
             rhs = self.f_vals[self.loc_inds, :].copy()
@@ -286,11 +278,14 @@ class GaussRBF(SurrogateFunction):
                     self.prior[:-1, :] = np.linalg.lstsq(A, b, rcond=None)[0]
                     rhs[:, :] = rhs[:, :] - np.dot(self.x_vals[self.loc_inds],
                                                    self.prior[:-1])
-            self.y_std_dev = tstd(rhs, axis=0)
+            if rhs.shape[0] > 1:
+                self.y_std_dev = tstd(rhs, axis=0)
+            else:
+                self.y_std_dev = np.ones(rhs.shape[1])
             # Finish the solve
             self.weights = np.zeros((self.m, rhs.shape[0]))
             for i in range(self.m):
-                tmp = np.dot(self.v.transpose(), rhs[:, i]) / self.w[:]
+                tmp = np.dot(self.v.T, rhs[:, i]) / self.w[:]
                 self.weights[i, :] = np.dot(self.v, tmp)
         return
 
@@ -307,35 +302,9 @@ class GaussRBF(SurrogateFunction):
 
         """
 
-        dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
-                                [x])).flatten()
-        mean = self.prior[-1, :].copy()
-        if self.order >= 1:
-            mean += np.dot(x, self.prior[:-1, :])
-        return np.dot(self.weights, dists) + mean[:]
-
-    def gradient(self, x):
-        """ Evaluate the gradients of the Gaussian RBF at a design point.
-
-        Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the gradient of the RBF should be evaluated.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            RBF interpolants at x.
-
-        """
-
-        outs = np.zeros((len(self.loc_inds), self.n))
-        dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
-                                      [x])).flatten()
-        for i, xi in enumerate(self.x_vals[self.loc_inds]):
-            outs[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
-        if self.order == 1:
-            return np.dot(self.weights, outs) + self.prior[:-1, :].T
-        else:
-            return np.dot(self.weights, outs)
+        return lax.cond(float(self.order) < 1, _evaluate_0, _evaluate_1,
+                        self.x_vals[self.loc_inds], self.x_std_dev,
+                        self.weights, self.prior, x)
 
     def stdDev(self, x):
         """ Evaluate the standard deviation (uncertainty) of the Gaussian RBF at x.
@@ -349,73 +318,8 @@ class GaussRBF(SurrogateFunction):
 
         """
 
-        # Check that the x is legal
-        if not isinstance(x, np.ndarray):
-            raise TypeError("x must be a numpy array")
-        else:
-            if x.size != self.n:
-                raise ValueError("x must have length n")
-            elif (np.any(x < self.lb - self.eps) or
-                  np.any(x > self.ub + self.eps)):
-                raise ValueError("x cannot be infeasible")
-        # Get vector of Gaussian-transformed distances
-        dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
-                                [x])).flatten()
-        # Solve using previously factored Kernel matrix
-        stdd_weights = np.zeros(self.v.shape[0])
-        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
-        stdd_weights[:] = np.dot(self.v, tmp)
-        # Evaluate standard deviation of all m surrogates at x
-        return (np.sqrt(max(self.__gaussian(0.0) -
-                            np.dot(stdd_weights, dists), 0)
-                * np.ones(self.m))) * self.y_std_dev[:]
-
-    def stdDevGrad(self, x):
-        """ Evaluate the gradient of the standard deviation of the GaussRBF at x.
- 
-        Args:
-            x (numpy.ndarray): A 1d array containing the design point at
-                which the gradient of standard deviation should be evaluated.
-
-        Returns:
-            numpy.ndarray: A 2d array containing the Jacobian matrix of the
-            standard deviation at x.
-
-        """
-
-        # Check that the x is legal
-        if not isinstance(x, np.ndarray):
-            raise TypeError("x must be a numpy array")
-        else:
-            if x.size != self.n:
-                raise ValueError("x must have length n")
-            elif (np.any(x < self.lb - self.eps) or
-                  np.any(x > self.ub + self.eps)):
-                raise ValueError("x cannot be infeasible")
-        # Get vector of Gaussian-transformed distances
-        dists = self.__gaussian(cdist(self.x_vals[self.loc_inds],
-                                      [x])).flatten()
-        # Solve using previously factored Kernel matrix
-        stdd_weights = np.zeros(self.v.shape[0])
-        tmp = np.dot(self.v.transpose(), dists) / self.w[:]
-        stdd_weights[:] = np.dot(self.v, tmp)
-        # Evaluate standard deviation of all m surrogates at x
-        stdd = np.sqrt(max(self.__gaussian(0.0) - np.dot(stdd_weights, dists),
-                           0))
-        # Evaluate all m gradients at x
-        kgrad = np.zeros((self.v.shape[0], self.n))
-        for i, xi in enumerate(self.x_vals[self.loc_inds]):
-            kgrad[i, :] = 2.0 * (xi - x) * dists[i] / (self.std_dev ** 2.0)
-        # Just return 0 when derivative is undefined (at training points)
-        if stdd < 1.0e-4:
-            result = np.zeros(self.n)
-        else:
-            result = -np.dot(kgrad.T, stdd_weights).flatten() / stdd
-        # Build Jacobian (all m rows identical)
-        jac = np.zeros((self.m, self.n))
-        for i in range(self.m):
-            jac[i, :] = result[:] * self.y_std_dev[i]
-        return jac
+        return _evaluate_sd(self.x_vals[self.loc_inds], self.v, self.w,
+                            self.x_std_dev, self.mu, x) * self.y_std_dev
 
     def save(self, filename):
         """ Save important data from this class so that it can be reloaded.
@@ -431,7 +335,7 @@ class GaussRBF(SurrogateFunction):
         # Serialize RBF object in dictionary
         gp_state = {'m': self.m,
                     'n': self.n,
-                    'std_dev': self.std_dev,
+                    'x_std_dev': self.x_std_dev,
                     'nugget': self.nugget,
                     'loc_inds': self.loc_inds,
                     'order': self.order}
@@ -469,7 +373,7 @@ class GaussRBF(SurrogateFunction):
         # Deserialize RBF object from dictionary
         self.m = gp_state['m']
         self.n = gp_state['n']
-        self.std_dev = gp_state['std_dev']
+        self.x_std_dev = gp_state['x_std_dev']
         self.nugget = gp_state['nugget']
         self.loc_inds = gp_state['loc_inds']
         self.order = gp_state['order']
@@ -486,3 +390,46 @@ class GaussRBF(SurrogateFunction):
         self.w = np.array(gp_state['w'])
         self.y_std_dev = np.array(gp_state['y_std_dev'])
         return
+
+
+# Private pure helper functions
+
+@jit
+def _gaussian(r2, x_std_dev):
+    """ Evaluate Gaussian bump with x_std_dev at distance r^2 from center """
+
+    return jnp.exp(-r2 / (x_std_dev ** 2))
+
+@jit
+def _cdist(x_vals, x):
+    """ Compute all squared distances from points in x_vals to x """
+
+    return jnp.sum((x_vals - x) ** 2, axis=1)
+
+@jit
+def _pdist(x_vals):
+    """ Compute all pairwise squared distances to the input arg """
+
+    return vmap(lambda x: _cdist(x_vals, x))(x_vals)
+
+@jit
+def _evaluate_0(x_vals, x_std_dev, weights, prior, x):
+    """ Evaluate a Gaussian RBF (constant prior) at a design point x. """
+
+    post_tmp = jnp.dot(weights, _gaussian(_cdist(x_vals, x), x_std_dev))
+    return post_tmp + prior[-1, :]
+
+@jit
+def _evaluate_1(x_vals, x_std_dev, weights, prior, x):
+    """ Evaluate a Gaussian RBF (linear prior) at a design point x. """
+
+    post_tmp = jnp.dot(weights, _gaussian(_cdist(x_vals, x), x_std_dev))
+    pre_tmp = jnp.dot(x, prior[:-1, :]) + prior[-1, :]
+    return post_tmp + pre_tmp
+
+@jit
+def _evaluate_sd(x_vals, v, w, x_std_dev, eps, x):
+    """ Evaluate the posterior standard deviation of a Gaussian RBF at x. """
+
+    vTc = jnp.dot(v.T, _gaussian(_cdist(x_vals, x), x_std_dev))
+    return jnp.sqrt(jnp.maximum(1 - jnp.dot(vTc / w, vTc.T), eps))
