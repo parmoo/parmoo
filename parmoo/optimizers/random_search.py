@@ -5,7 +5,7 @@ This module contains implementations of the SurrogateOptimizer ABC, which
 are based on randomized search strategies.
 
 Note that these strategies are all gradient-free, and therefore does not
-require objective, constraint, or surrogate gradients methods to be defined.
+require objective, constraint, or surrogate gradient methods to be defined.
 
 The classes include:
  * ``GlobalSurrogate_RS`` -- optimize surrogates globally via RS
@@ -109,7 +109,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
             raise ValueError("The rows of x must match the number " +
                              "of acquisition functions")
         # Initialize the surrogates with an infinite trust region
-        rad = np.ones(self.n) * np.infty
+        rad = np.ones(self.n) * np.inf
         self.setTR(x[0, :], rad)
         # Compile the penalty function
         try:

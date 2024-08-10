@@ -67,7 +67,7 @@ moop.addSimulation({'name': "my sim",
 # Add user objective functions
 moop.addObjective({'obj_func': obj1}, {'obj_func': obj2})
 
-# Add 1 single acquisition funcitons
+# Add 1 single acquisition function
 for i in range(1):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 

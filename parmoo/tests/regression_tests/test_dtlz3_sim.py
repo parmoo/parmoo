@@ -69,7 +69,7 @@ def max_constraint(x, sx):
 moop.addConstraint({'name': "Lower Bounds", 'constraint': min_constraint})
 moop.addConstraint({'name': "Upper Bounds", 'constraint': max_constraint})
 
-# Add NUM_OBJ acquisition funcitons
+# Add NUM_OBJ acquisition functions
 for i in range(NUM_OBJ):
     moop.addAcquisition({'acquisition': FixedWeights,
                          'hyperparams': {'weights': np.eye(NUM_OBJ)[i]}})

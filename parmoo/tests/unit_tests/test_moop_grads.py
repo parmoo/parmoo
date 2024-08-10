@@ -95,12 +95,12 @@ def test_MOOP_evaluate_penalty_grads():
     moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
     moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()
-    # Check the shape and values of the penalty jacobian
+    # Check the shape and values of the penalty Jacobian
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1 = 2.0 * np.ones((1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Add a constraint and make sure that the penalty appears in the jacobian
+    # Add a constraint and make sure that the penalty appears in the Jacobian
     moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
     moop1.compile()
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
@@ -130,8 +130,8 @@ def test_MOOP_evaluate_penalty_grads():
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
-    # Check the jacobian outputs with the same test cases as above
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
+    # Check the Jacobian outputs with the same test cases as above
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1 = 2.0 * np.ones((1, 3))
@@ -148,7 +148,7 @@ def test_MOOP_evaluate_penalty_grads():
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1[0, 0] = 3.0
@@ -167,7 +167,7 @@ def test_MOOP_evaluate_penalty_grads():
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     fx0 = np.zeros((2, 3))
     fx0[1, 0] = 1.0
     fx0[0, :] = 2.0
@@ -188,9 +188,9 @@ def test_MOOP_evaluate_penalty_grads():
     for sn in ["sim1", "sim2"]:
         moop2.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop2._fit_surrogates()
-    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     # After embedding inputs, the outputs should be the same for evaluations
-    # at the interpolation nodes...
+    # at the interpolation nodes.
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
     assert (np.linalg.norm(eval_pen_jac(moop1, x) -
@@ -255,12 +255,12 @@ def test_MOOP_evaluate_objective_grads():
     moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
     moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()
-    # Check the shape and values of the objective jacobian
+    # Check the shape and values of the objective Jacobian
     assert (eval_obj_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_obj_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1 = 2.0 * np.ones((1, 3))
     assert (np.all(np.abs(eval_obj_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Add a constraint and make sure that the jacobian is unchanged
+    # Add a constraint and make sure that the Jacobian is unchanged
     moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
     moop1.compile()
     assert (eval_obj_jac(moop1, np.zeros(3)).shape == (1, 3))
@@ -289,8 +289,8 @@ def test_MOOP_evaluate_objective_grads():
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
-    # Check the jacobian outputs with the same test cases as above
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
+    # Check the Jacobian outputs with the same test cases as above
     assert (eval_obj_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_obj_jac(moop1, np.zeros(3))) < 1.0e-8))
     fx1 = 2.0 * np.ones((1, 3))
@@ -307,7 +307,7 @@ def test_MOOP_evaluate_objective_grads():
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     assert (eval_obj_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_obj_jac(moop1, np.zeros(3))) < 1.0e-8))
     assert (np.all(np.abs(eval_obj_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
@@ -325,7 +325,7 @@ def test_MOOP_evaluate_objective_grads():
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     fx0 = np.zeros((2, 3))
     fx0[0, :] = 2.0
     assert (np.all(np.abs(eval_obj_jac(moop1, np.ones(3)) - fx0) < 1.0e-8))
@@ -344,9 +344,9 @@ def test_MOOP_evaluate_objective_grads():
     for sn in ["sim1", "sim2"]:
         moop2.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop2._fit_surrogates()
-    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     # After embedding inputs, the outputs should be the same for evaluations
-    # at the interpolation nodes...
+    # at the interpolation nodes.
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
     assert (np.linalg.norm(eval_obj_jac(moop1, x) -
@@ -411,9 +411,9 @@ def test_MOOP_evaluate_constraint_grads():
     moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
     moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()
-    # Check the shape and values of the constraint jacobian
+    # Check the shape and values of the constraint Jacobian
     assert (eval_con_jac(moop1, np.zeros(3)).size == 0)
-    # Add a constraint and make sure it appears in the jacobian
+    # Add a constraint and make sure it appears in the Jacobian
     moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
     moop1.compile()
     assert (eval_con_jac(moop1, np.zeros(3)).shape == (1, 3))
@@ -444,7 +444,7 @@ def test_MOOP_evaluate_constraint_grads():
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     assert (eval_con_jac(moop1, np.zeros(3)).shape == (1, 3))
     assert (np.all(np.abs(eval_con_jac(moop1, np.zeros(3)) - cx1) < 1.0e-8))
     assert (np.all(np.abs(eval_con_jac(moop1, np.ones(3)) - cx1) < 1.0e-8))
@@ -462,7 +462,7 @@ def test_MOOP_evaluate_constraint_grads():
     for sn in ["sim1", "sim2"]:
         moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     cx2 = np.zeros((2, 3))
     cx2[0, 0] = 1.0
     assert (np.all(np.abs(eval_con_jac(moop1, np.ones(3)) - cx2) < 1.0e-8))
@@ -481,9 +481,9 @@ def test_MOOP_evaluate_constraint_grads():
     for sn in ["sim1", "sim2"]:
         moop2.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
     moop2._fit_surrogates()
-    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.infty)
+    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
     # After embedding inputs, the outputs should be the same for evaluations
-    # at the interpolation nodes...
+    # at the interpolation nodes.
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
     assert (np.linalg.norm(eval_con_jac(moop1, x) -

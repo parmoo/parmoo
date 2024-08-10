@@ -16,7 +16,7 @@ def test_SingleSimObjective():
     sx = np.zeros(1, dtype=stype)[0]
     sx['sim1'] = 2.0
     sx['sim2'][1] = 3.0
-    # Create the objective and grad functions
+    # Create the objective and gradient functions
     obj_func1 = SingleSimObjective(xtype, stype, 'sim1', goal='max')
     grad_func1 = SingleSimGradient(xtype, stype, 'sim1', goal='max')
     obj_func2 = SingleSimObjective(xtype, stype, ('sim2', 1), goal='min')

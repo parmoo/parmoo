@@ -485,7 +485,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
             raise ValueError("The rows of x must match the number " +
                              "of acquisition functions")
         # Create an infinite trust region
-        rad = np.ones(self.n) * np.infty
+        rad = np.ones(self.n) * np.inf
         self.setTR(self.lb, rad)
         # Perform a random search globally
         batch_size = 1000

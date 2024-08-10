@@ -169,7 +169,7 @@ class UniformAugChebyshev(AcquisitionFunction):
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
                 p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
@@ -407,7 +407,7 @@ class FixedAugChebyshev(AcquisitionFunction):
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
                 p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
