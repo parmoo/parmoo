@@ -335,7 +335,7 @@ class Embedder(ABC):
     def embed_grad(self, dx):
         """ Embed a partial design gradient as a vector for ParMOO.
 
-        Note: If not implemented, ParMOO will still work with gradient free
+        Note: If not implemented, ParMOO will still work with gradient-free
         methods, but will not support autograd features.
 
         For best performance, make sure that jax can jit this method.
