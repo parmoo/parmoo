@@ -45,7 +45,8 @@ jobs:
       run: |
         parmoo/tests/run-tests.sh -url
         
-    - name: Coverage with coveralls
-      run: coveralls
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Coveralls
+      uses: coverallsapp/github-action@main
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path--to-lcov: coverage.xml
