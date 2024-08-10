@@ -58,14 +58,14 @@ will be required when defining each objective and constraint.
    set to evaluate their derivatives with respect to design inputs
    and simulation outputs.
 
-**Starting in version 0.4.0:** to fix the random seed, ParMOO no longer uses
+**As of version 0.4.0:** to fix the random seed, ParMOO no longer uses
 the global numpy random seed.
 Instead, pass an integer or ``numpy.random.Generator`` object using the key
 ``hp["np_random_gen"]`` when creating the MOOP.
 It will automatically be passed on to all subclasses and components.
 
 To avoid issues, it is best to define your MOOP in the following order,
-but starting in version 0.4.0, this is no longer a requirement.
+but as of version 0.4.0, this is no longer a requirement.
 
  1. Add design variables using
     :meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>`.
@@ -138,8 +138,8 @@ and use ``numpy.ndarray`` structures as inputs/outputs to ParMOO.
 
 In an effort to simplify workflow, improve maintainability, and optimize
 iteration times when working with ``jax``, this feature has been removed
-and all ParMOO scripts **must** use named inputs/outputs starting in
-version 0.4.0 and newer.
+and all ParMOO scripts **must** use named inputs/outputs as of
+version 0.4.0.
 
 Adding Design Variables
 -----------------------
@@ -213,7 +213,7 @@ To add a categorical design variable, use the following format.
    ``["first cat", "second cat", ... ]`` or ``[-1, 0, 1]``).
 
 **Note** because ``jax`` cannot ``jit`` functions with
-string-valued inputs and outputs, starting in version 0.4.0 it is
+string-valued inputs and outputs, as of version 0.4.0 it is
 strongly recommended to only use integer-valued level names when specifying
 the ``levels`` key using the list syntax.
 While it is still possible to specify string-valued category IDs, doing
@@ -295,7 +295,7 @@ use the :meth:`addSimulation(*args) <moop.MOOP.addSimulation>` method.
                         'hyperparams': {'search_budget': 20}})
 
 In the above example,
- * ``name`` is used as described in the section discussion the
+ * ``name`` is used as described in the section on
    :ref:`name key <naming>`;
  * ``m`` specifies the number of outputs for this simulation;
  * ``sim_func`` is given a reference to the simulation function;
@@ -346,7 +346,7 @@ design variable named ``MyDes``.
     def min_des(x, sim):
         return x["MyDes"] ** 2
 
-**Note:** The following has been changed starting in version 0.4.0
+**Note:** The following has been changed as of version 0.4.0
 in order to offer better support for ``jax.jit()`` compilation.
 
 If you are using a gradient-based
@@ -520,7 +520,7 @@ If you turn on logging first (see below), ParMOO will attempt to jit all
 user-defined functions at this stage and log a warning to alert users if
 any methods failed to compile at this stage.
 Failure to compile does not prevent ParMOO from running, but may increase
-iteration times by a factor of over 10x.
+iteration times by 10x.
 
 Note that the ``MOOP.compile()`` command is run automatically when calling
 ``MOOP.solve()`` (below), so you only needed to compile manually when
