@@ -76,7 +76,7 @@ Frequently asked questions:
  - Q: Given the advice from the previous question, how do I know a good
    ``total_budget`` for my problem?
 
-    - A: It depends on a lot of factors. In general, if your problem is
+    - A: It depends on many factors. In general, if your problem is
       small (``n < 8`` design variables **and** ``o < 3`` objectives) you can
       probably get away with a total budget in the **hundreds**.
       If your problem is large (``n > 8`` design variables **or**
@@ -86,7 +86,7 @@ Frequently asked questions:
       the problem expense increases **exponentially** if you want to maintain
       the same accuracy. This is part of the *curse of dimensionality*.
 
- - Q: I have a lot of design variables but I can't afford that large of a
+ - Q: I have many design variables but I can't afford that large of a
    budget, what can I do?
 
     - A: The key issue is that **global optimization is expensive**.
@@ -152,7 +152,7 @@ Frequently asked questions:
       surrogates, and therefore is more scalable for handling large budgets.
       See our :ref:`tutorial on local methods <high_d_ex>`
       for an example.
-      Starting in version 0.4.0, you should be able to get up to 10x
+      As of version 0.4.0, you should be able to get up to 10x
       speedup on many iteration costs if ParMOO is able to ``jit``
       certain critical segments of your code with ``jax/lax``.
       To understand how that works, see our :ref:`jax tips <jax_tips>`.
@@ -178,7 +178,7 @@ Frequently asked questions:
          follow the advanced_example_ and switch to using the
          :class:`GlobalSurrogate_BFGS <optimizers.lbfgsb.GlobalSurrogate_BFGS>`
          optimizer.
-       - If you have a lot of design variables, then you might do better
+       - If you have many design variables, then you might do better
          with a local solver, by switching to one of the
          :class:`LocalSurrogate_PS <optimizers.pattern_search.LocalSurrogate_PS>`
          :class:`LocalSurrogate_BFGS <optimizers.lbfgsb.LocalSurrogate_BFGS>`
