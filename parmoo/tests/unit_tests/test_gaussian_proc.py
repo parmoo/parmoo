@@ -12,8 +12,6 @@ def test_GaussRBF():
     from jax import config
     config.update("jax_enable_x64", True)
     from jax import jacrev
-    from jax import numpy as jnp
-    from jax.tree_util import Partial
     import numpy as np
     import os
     from parmoo.surrogates import GaussRBF
@@ -104,8 +102,8 @@ def test_GaussRBF():
     rbf3.fit(x_vals3, y_vals3)
     rbf3.setTrustRegion(np.zeros(3), np.ones(3) * np.inf)
     y_grad_vals3 = -0.03661401 * np.ones((1, 3))
-    assert (np.linalg.norm(jacrev(rbf3.evaluate)(x_vals3[-1]) - y_grad_vals3[-1])
-            < 1.0e-4)
+    assert (np.linalg.norm(jacrev(rbf3.evaluate)(x_vals3[-1])
+                           - y_grad_vals3[-1]) < 1.0e-4)
     # Check standard deviation calculations
     xi = np.random.random_sample(3)
     assert (np.all(rbf3.stdDev(xi) >= 0))
@@ -223,17 +221,15 @@ def test_LocalGaussRBF():
         GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': -1.0})
     with pytest.raises(ValueError):
         GaussRBF(2, np.zeros(3), np.ones(3),
-                      {'nugget': 0.1, 'des_tols': np.zeros(3)})
+                 {'nugget': 0.1, 'des_tols': np.zeros(3)})
     with pytest.raises(ValueError):
         GaussRBF(2, np.zeros(3), np.ones(3),
-                      {'nugget': 0.1, 'des_tols': np.zeros(2)})
+                 {'nugget': 0.1, 'des_tols': np.zeros(2)})
     with pytest.raises(ValueError):
-        GaussRBF(2, np.zeros(3), np.ones(3),
-                      {'nugget': 0.1, 'des_tols': 0.1})
+        GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': 0.1, 'des_tols': 0.1})
     # Create 2 identical RBFs
     rbf1 = GaussRBF(2, np.zeros(3), np.ones(3), {'tail_order': 1})
-    rbf2 = GaussRBF(2, np.zeros(3), np.ones(3),
-                         {'tail_order': 1})
+    rbf2 = GaussRBF(2, np.zeros(3), np.ones(3), {'tail_order': 1})
     # Generate some random data with 3 design variables and 2 outputs
     x_vals1 = np.random.random_sample((10, 3))
     y_vals1 = np.random.random_sample((10, 2))
@@ -306,8 +302,7 @@ def test_LocalGaussRBF():
     rbf2.setTrustRegion(0.5 * np.ones(3), np.ones(3) * 0.1)
     for i in range(x_vals_full.shape[0]):
         assert (np.linalg.norm(jacrev(rbf1.evaluate)(x_vals_full[i]) -
-                               jacrev(rbf2.evaluate)(x_vals_full[i]))
-                               < 1.0e-8)
+                               jacrev(rbf2.evaluate)(x_vals_full[i])) < 1.0e-8)
         assert (np.linalg.norm(jacrev(rbf1.stdDev)(x_vals_full[i]) -
                                jacrev(rbf2.stdDev)(x_vals_full[i])) < 1.0e-4)
     # Check that the RBF gradient evaluates correctly on a known dataset
@@ -359,8 +354,7 @@ def test_LocalGaussRBF():
     rbf4.setTrustRegion(x_vals1[0], np.ones(3) * 0.1)
     jacrev(rbf4.evaluate)(x_vals1[0])
     # Now create a really tiny design space with a large tolerance
-    rbf5 = GaussRBF(1, np.zeros(1), np.ones(1),
-                         {'des_tols': 0.3 * np.ones(1)})
+    rbf5 = GaussRBF(1, np.zeros(1), np.ones(1), {'des_tols': 0.3 * np.ones(1)})
     xdat5 = np.asarray([[0.4], [0.6]])
     ydat5 = np.asarray([[0.4], [0.6]])
     rbf5.fit(xdat5, ydat5)

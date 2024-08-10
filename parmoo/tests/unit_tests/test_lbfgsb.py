@@ -2,8 +2,8 @@
 def test_GlobalSurrogate_BFGS():
     """ Test the LBFGS class in optimizers.py.
 
-    Perform a test of the GlobalSurrogate_BFGS class by minimizing the three variable,
-    biobjective function
+    Perform a test of the GlobalSurrogate_BFGS class by minimizing the three
+    variable, biobjective function
 
     $$
     F(x) = (-x_1 + x_2 + x_3, x_1 - x_2 + x_3)
@@ -34,9 +34,14 @@ def test_GlobalSurrogate_BFGS():
     ub = np.ones(n)
     # Create the biobjective function and its penalty function
     def f(z, sz): return jnp.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
+
     def S(z): return jnp.ones(1)
+
+    def L(z, sz):
+        return f(z, sz) + 2 * (jnp.maximum(0.1 - z[2], 0) +
+                               jnp.maximum(z[2] - 0.6, 0))
+
     def SD(z): return jnp.zeros(1)
-    def L(z, sz): return f(z, sz) + 2*(jnp.maximum(0.1-z[2], 0) + jnp.maximum(z[2]-0.6, 0))
     # Create 3 acquisition functions targeting various pure/tradeoff solutions
     acqu1 = UniformWeights(o, lb, ub, {})
     acqu1.setTarget({}, L)
@@ -86,7 +91,7 @@ def test_GlobalSurrogate_BFGS():
     opt.setPenalty(L)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setTrFunc(lambda x, r: 100.0)
-    # Solve the surrogate problem with GlobalSurrogate_BFGS starting from centroid
+    # Solve the surrogate problem with GlobalSurrogate_BFGS
     x0 = np.zeros((3, n))
     x0[:] = 0.5
     (x1, x2, x3) = opt.solve(x0)
@@ -107,8 +112,8 @@ def test_GlobalSurrogate_BFGS():
 def test_LocalSurrogate_BFGS():
     """ Test the LocalSurrogate_BFGS class in optimizers.py.
 
-    Perform a test of the LocalSurrogate_BFGS class by minimizing the three variable,
-    biobjective function
+    Perform a test of the LocalSurrogate_BFGS class by minimizing the three
+    variable, biobjective function
 
     $$
     F(x) = (-x_1 + x_2 + x_3, x_1 - x_2 + x_3)
@@ -139,9 +144,14 @@ def test_LocalSurrogate_BFGS():
     ub = np.ones(n)
     # Create the biobjective function and its penalty function
     def f(z, sz): return jnp.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
+
     def S(z): return jnp.ones(1)
+
+    def L(z, sz):
+        return f(z, sz) + 2 * (jnp.maximum(0.1 - z[2], 0) +
+                               jnp.maximum(z[2] - 0.6, 0))
+
     def SD(z): return jnp.zeros(1)
-    def L(z, sz): return f(z, sz) + 2*(jnp.maximum(0.1-z[2], 0) + jnp.maximum(z[2]-0.6, 0))
     # Create 3 acquisition functions targeting various pure/tradeoff solutions
     acqu1 = UniformWeights(o, lb, ub, {})
     acqu1.setTarget({}, L)
@@ -210,7 +220,8 @@ def test_LocalSurrogate_BFGS():
         x0[1] = x2
         x0[2] = x3
         for j in range(3):
-            opt.returnResults(x0[j], np.ones(2) * -10, np.zeros(1), np.zeros(1))
+            opt.returnResults(x0[j], np.ones(2) * -10,
+                              np.zeros(1), np.zeros(1))
     # eps is the tolerance for rejecting a solution as incorrect
     eps = 0.01
     # Check that the computed solutions are within eps of the truth

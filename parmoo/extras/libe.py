@@ -653,7 +653,6 @@ class libE_MOOP(MOOP):
         sim_schema = H['sim_name']
         H_o = np.zeros(batch, dtype=sim_specs['out'])
         for i in range(batch):
-            namei = sim_schema[i]
             j = -1
             for jj, jname in enumerate(self.moop.sim_schema):
                 if jname[0] == sim_schema[i]:
@@ -695,7 +694,6 @@ class libE_MOOP(MOOP):
             import only_persistent_gens as alloc_f
         from libensemble.tools import parse_args
         from multiprocessing import set_start_method
-        import sys
 
         # Check that at least one budget variable was given
         if iter_max is None and sim_max is None:
@@ -719,6 +717,9 @@ class libE_MOOP(MOOP):
                 raise ValueError("If 0 simulations are given, then iter_max" +
                                  "must be provided")
             iter_max = sim_max
+        # Compile if needed
+        if not self.moop.compiled:
+            self.compile()
         # Count the total search budget
         total_search_budget = 0
         for search in self.moop.searches:
@@ -761,9 +762,6 @@ class libE_MOOP(MOOP):
                              "failure to specify the communication mode " +
                              " (e.g., local comms or MPI)")
 
-        # Get the max m for all SimGroups
-        max_m = max(self.moop.m_list)
-
         # Set the input dictionaries
         x_type = self.moop.des_schema.copy()
         x_type.append(('sim_name', 'a40'))
@@ -785,7 +783,6 @@ class libE_MOOP(MOOP):
         persis_info = {}
         for i in range(nworkers + 1):
             persis_info[i] = {}
-        self.moop.compile()
         persis_info[1]['moop'] = self.moop
 
         exit_criteria = {'sim_max': sim_max, 'wallclock_max': wt_max}

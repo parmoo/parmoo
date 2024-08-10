@@ -1,9 +1,9 @@
 
 """ A plotting library for interactive visualization of MOOP objects.
 
-To generate a plot, generate create a MOOP object and use it to solve a problem.
-Then call one of the following function, passing the MOOP object as the
-first argument:
+To generate a plot, generate create a MOOP object and use it to solve a
+problem. Then call one of the following functions, passing the MOOP object
+as the first argument:
 
  * ``viz.scatter(moop)``
  * ``viz.parallel_coordinates(moop)``
@@ -14,12 +14,12 @@ Please take note of the following:
  * Via the interactivity features, all of the arguments except for the
    ``moop`` field can be adjusted interactively through the pop-up GUI.
    The plot type can also be adjusted from the dropdown menu while running
-   the GUI..
+   the GUI.
  * The viz tool hosts a Dash app through the local port
    ``http://127.0.0.1:8050/``.
    This means that only one visualization can be hosted at a time.
    Also, killing the Dash app will end the interactivity in the browser,
-   although a static plot may remain in your broswer window.
+   although a static plot may remain in your browser window.
  * Finally, note that there is a known issue when using the Chrome browser.
    The Firefox or Safari browsers are recommended.
 
@@ -76,7 +76,7 @@ def scatter(moop,
             dev_mode=False,
             pop_up=True,
             port='http://127.0.0.1:8050/',
-           ):
+            ):
     """ Create a scatter plot matrix to visualize the results of a MOOP.
 
     Args:
@@ -214,8 +214,8 @@ def parallel_coordinates(moop,
                          data_export_format='csv',
                          dev_mode=False,
                          pop_up=True,
-                         port='http://127.0.0.1:8050/',
-                        ):
+                         port='http://127.0.0.1:8050/'
+                         ):
     """ Create a parallel coordinates plot to visualize the results of a MOOP.
 
     Args:

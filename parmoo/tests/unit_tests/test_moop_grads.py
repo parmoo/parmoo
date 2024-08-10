@@ -1,7 +1,9 @@
+
 from jax import config
-config.update("jax_enable_x64", True)
 from jax import jacrev
 from jax import numpy as jnp
+config.update("jax_enable_x64", True)
+
 
 def eval_pen_jac(moop, x):
     """ Helper for testing penalty fwd/bwd evaluations """
@@ -15,6 +17,7 @@ def eval_pen_jac(moop, x):
         dfdx = dfdx.at[i].set(dfdxi + jnp.dot(dfdsi, dsdx))
     return dfdx
 
+
 def eval_obj_jac(moop, x):
     """ Helper for testing objective fwd/bwd evaluations """
 
@@ -27,6 +30,7 @@ def eval_obj_jac(moop, x):
         dfdx = dfdx.at[i].set(dfdxi + jnp.dot(dfdsi, dsdx))
     return dfdx
 
+
 def eval_con_jac(moop, x):
     """ Helper for testing constraint fwd/bwd evaluations """
 
@@ -38,6 +42,7 @@ def eval_con_jac(moop, x):
         dcdxi, dcdsi = moop._con_bwd(res, ei)
         dcdx = dcdx.at[i].set(dcdxi + jnp.dot(dcdsi, dsdx))
     return dcdx
+
 
 def test_MOOP_evaluate_penalty_grads():
     """ Check that the MOOP class handles evaluating gradients properly.
@@ -53,7 +58,6 @@ def test_MOOP_evaluate_penalty_grads():
     from parmoo.optimizers import GlobalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
-    import pytest
 
     # Create several differentiable functions and constraints.
     def f1(x, s):
@@ -189,11 +193,11 @@ def test_MOOP_evaluate_penalty_grads():
     # at the interpolation nodes.
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    assert (np.linalg.norm(eval_pen_jac(moop1, x) - eval_pen_jac(moop2, xx) < 1.0e-8))
+    assert (np.linalg.norm(eval_pen_jac(moop1, x) -
+                           eval_pen_jac(moop2, xx) * 2) < 1.e-8)
     # Now check that after compiling, jax correctly propagates pen_jac
     _, _, eval_pen1 = moop1._link()
-    def pen_jac(x):
-        return eval_pen1(x, moop1._evaluate_surrogates(x))
+    def pen_jac(x): return eval_pen1(x, moop1._evaluate_surrogates(x))
     moop1_pen_jac = jacrev(pen_jac)
     for xi in np.random.sample((5, 3)):
         dfdxi = moop1_pen_jac(xi)
@@ -214,7 +218,6 @@ def test_MOOP_evaluate_objective_grads():
     from parmoo.optimizers import GlobalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
-    import pytest
 
     # Create several differentiable functions and constraints.
     def f1(x, s):
@@ -346,11 +349,11 @@ def test_MOOP_evaluate_objective_grads():
     # at the interpolation nodes.
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    assert (np.linalg.norm(eval_obj_jac(moop1, x) - eval_obj_jac(moop2, xx) < 1.0e-8))
+    assert (np.linalg.norm(eval_obj_jac(moop1, x) -
+                           eval_obj_jac(moop2, xx) * 2) < 1.e-8)
     eval_obj1, _, _ = moop1._link()
     # Now check that after compiling, jax correctly propagates obj_jac
-    def obj_jac(x):
-        return eval_obj1(x, moop1._evaluate_surrogates(x))
+    def obj_jac(x): return eval_obj1(x, moop1._evaluate_surrogates(x))
     moop1_obj_jac = jacrev(obj_jac)
     for xi in np.random.sample((5, 3)):
         dfdxi = moop1_obj_jac(xi)
@@ -371,7 +374,6 @@ def test_MOOP_evaluate_constraint_grads():
     from parmoo.optimizers import GlobalSurrogate_PS
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
-    import pytest
 
     # Create several differentiable functions and constraints.
     def f1(x, s):
@@ -484,11 +486,11 @@ def test_MOOP_evaluate_constraint_grads():
     # at the interpolation nodes.
     x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
     xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    assert (np.linalg.norm(eval_con_jac(moop1, x) - eval_con_jac(moop2, xx) < 1.0e-8))
+    assert (np.linalg.norm(eval_con_jac(moop1, x) -
+                           eval_con_jac(moop2, xx) * 2) < 1.e-8)
     _, eval_con1, _ = moop1._link()
     # Now check that after compiling, jax correctly propagates con_jac
-    def con_jac(x):
-        return eval_con1(x, moop1._evaluate_surrogates(x))
+    def con_jac(x): return eval_con1(x, moop1._evaluate_surrogates(x))
     moop1_con_jac = jacrev(con_jac)
     for xi in np.random.sample((5, 3)):
         dfdxi = moop1_con_jac(xi)

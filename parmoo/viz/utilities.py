@@ -6,6 +6,7 @@ the viz tool.
 import pandas as pd
 import logging
 
+
 def export_file(fig, plot_name, file_type):
 
     """ Export image of figure to working directory.
@@ -257,53 +258,50 @@ def check_inputs(
     """
 
     try:
-        if (str(db) == 'pf' or
-            str(db) == 'obj'):
+        if (str(db) == 'pf' or str(db) == 'obj'):
             pass
         else:
             raise ValueError(str(db) + " is an invalid value for 'db'")
-    except:
+    except BaseException:
         raise ValueError(str(db) + " is an invalid value for 'db'")
 
     try:
         if (str(output) == 'dash' or
-            str(output) == 'html' or
-            str(output) == 'svg' or
-            str(output) == 'pdf' or
-            str(output) == 'eps' or
-            str(output) == 'jpeg' or
-            str(output) == 'png' or
-            str(output) == 'webp'):
+                str(output) == 'html' or
+                str(output) == 'svg' or
+                str(output) == 'pdf' or
+                str(output) == 'eps' or
+                str(output) == 'jpeg' or
+                str(output) == 'png' or
+                str(output) == 'webp'):
             pass
         else:
             raise ValueError(str(output) + " is an invalid value for 'output'")
-    except:
+    except BaseException:
         raise ValueError(str(output) + " is an invalid value for 'output'")
 
     try:
         if (str(points) == 'constraint_satisfying' or
-            str(points) == 'constraint_violating' or
-            str(points) == 'all' or
-            str(points) == 'none'):
+                str(points) == 'constraint_violating' or
+                str(points) == 'all' or
+                str(points) == 'none'):
             pass
         else:
             raise ValueError(str(points) + " is an invalid value for 'points'")
-    except:
+    except BaseException:
         raise ValueError(str(points) + " is an invalid value for 'points'")
 
-    if (height == 'auto' or
-        int(height) >= 1):
+    if (height == 'auto' or int(height) >= 1):
         pass
     else:
         raise ValueError(str(height) + " is an invalid value for 'height'")
 
     try:
-        if (width == 'auto' or
-            int(width) >= 1):
+        if (width == 'auto' or int(width) >= 1):
             pass
         else:
             raise ValueError(str(width) + " is an invalid value for 'width'")
-    except:
+    except BaseException:
         raise ValueError(str(width) + " is an invalid value for 'width'")
 
     try:
@@ -311,19 +309,18 @@ def check_inputs(
             pass
         else:
             raise ValueError(str(font) + " is an invalid value for 'font'")
-    except:
+    except BaseException:
         raise ValueError(str(font) + " is an invalid value for 'font'")
 
     try:
         if (fontsize == 'auto' or
-           (int(fontsize) >= 1 and
-            int(fontsize) <= 100)):
+           (int(fontsize) >= 1 and int(fontsize) <= 100)):
             pass
         else:
             message = str(fontsize)
             message += " is an invalid value for 'fontsize'"
             raise ValueError(message)
-    except:
+    except BaseException:
         message = str(fontsize)
         message += " is an invalid value for 'fontsize'"
         raise ValueError(message)
@@ -335,53 +332,53 @@ def check_inputs(
             message = str(background_color)
             message += " is an invalid value for 'background_color'"
             raise ValueError(message)
-    except:
+    except BaseException:
         message = str(background_color)
         message += " is an invalid value for 'background_color'"
         raise ValueError(message)
 
     try:
         if (screenshot == 'png' or
-            screenshot == 'svg' or
-            screenshot == 'jpeg' or
-            screenshot == 'webp'):
+                screenshot == 'svg' or
+                screenshot == 'jpeg' or
+                screenshot == 'webp'):
             pass
         else:
             message = str(screenshot)
             message += " is an invalid value for 'screenshot'"
             raise ValueError(message)
-    except:
+    except BaseException:
         message = str(screenshot)
         message += " is an invalid value for 'screenshot'"
         raise ValueError(message)
 
     try:
         if (image_export_format == 'html' or
-            image_export_format == 'svg' or
-            image_export_format == 'pdf' or
-            image_export_format == 'eps' or
-            image_export_format == 'jpeg' or
-            image_export_format == 'png' or
-            image_export_format == 'webp'):
+                image_export_format == 'svg' or
+                image_export_format == 'pdf' or
+                image_export_format == 'eps' or
+                image_export_format == 'jpeg' or
+                image_export_format == 'png' or
+                image_export_format == 'webp'):
             pass
         else:
             message = str(image_export_format)
             message += " is an invalid value for 'image_export_format'"
             raise ValueError(message)
-    except:
+    except BaseException:
         message = str(image_export_format)
         message += " is an invalid value for 'image_export_format'"
         raise ValueError(message)
 
     try:
         if (data_export_format == 'json' or
-            data_export_format == 'csv'):
+                data_export_format == 'csv'):
             pass
         else:
             message = str(data_export_format)
             message += " is an invalid value for 'data_export_format'"
             raise ValueError(message)
-    except:
+    except BaseException:
         message = str(data_export_format)
         message += " is an invalid value for 'data_export_format'"
         raise ValueError(message)
@@ -393,7 +390,7 @@ def check_inputs(
             message = str(dev_mode)
             message += " is an invalid value for 'dev_mode'"
             raise ValueError(message)
-    except:
+    except BaseException:
         message = str(dev_mode)
         message += " is an invalid value for 'dev_mode'"
         raise ValueError(message)
@@ -403,7 +400,7 @@ def check_inputs(
             pass
         else:
             raise ValueError(str(pop_up) + " is an invalid value for 'pop_up'")
-    except:
+    except BaseException:
         raise ValueError(str(pop_up) + " is an invalid value for 'pop_up'")
 
     try:
@@ -411,5 +408,5 @@ def check_inputs(
             pass
         else:
             raise ValueError(str(port) + " is an invalid value for 'port'")
-    except:
+    except BaseException:
         raise ValueError(str(port) + " is an invalid value for 'port'")

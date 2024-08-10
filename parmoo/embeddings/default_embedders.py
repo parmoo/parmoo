@@ -111,7 +111,7 @@ class ContinuousEmbedder(Embedder):
             int: the dimension of the embedded space.
 
         """
-        
+
         return 1
 
     def getInputType(self):
@@ -122,7 +122,7 @@ class ContinuousEmbedder(Embedder):
             feature space.
 
         """
-        
+
         return 'f8'
 
     def getLowerBounds(self):
@@ -272,7 +272,7 @@ class IntegerEmbedder(Embedder):
             int: the dimension of the embedded space.
 
         """
-        
+
         return 1
 
     def getInputType(self):
@@ -283,7 +283,7 @@ class IntegerEmbedder(Embedder):
             feature space.
 
         """
-        
+
         return 'i4'
 
     def getLowerBounds(self):
@@ -439,7 +439,7 @@ class CategoricalEmbedder(Embedder):
             int: the dimension of the embedded space.
 
         """
-        
+
         return self.des_tol.size
 
     def getInputType(self):
@@ -450,7 +450,7 @@ class CategoricalEmbedder(Embedder):
             feature space.
 
         """
-        
+
         return self.in_type
 
     def getLowerBounds(self):
@@ -609,7 +609,7 @@ class IdentityEmbedder(Embedder):
             int: the dimension of the embedded space.
 
         """
-        
+
         return 1
 
     def getInputType(self):
@@ -620,7 +620,7 @@ class IdentityEmbedder(Embedder):
             feature space.
 
         """
-        
+
         return 'f8'
 
     def getLowerBounds(self):

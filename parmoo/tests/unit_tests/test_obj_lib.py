@@ -43,7 +43,8 @@ def test_SumOfSimSquaresObjective():
 
     """
 
-    from parmoo.objectives import SumOfSimSquaresObjective, SumOfSimSquaresGradient
+    from parmoo.objectives import SumOfSimSquaresObjective
+    from parmoo.objectives import SumOfSimSquaresGradient
     import numpy as np
 
     # Create named dtypes

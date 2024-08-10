@@ -18,9 +18,11 @@ def test_SingleSimBound():
     sx['sim2'][1] = 3.0
     # Create the objective and gradient functions
     obj_func1 = SingleSimBound(xtype, stype, 'sim1', bound_type='lower')
-    grad_func1 = SingleSimBoundGradient(xtype, stype, 'sim1', bound_type='lower')
+    grad_func1 = SingleSimBoundGradient(xtype, stype, 'sim1',
+                                        bound_type='lower')
     obj_func2 = SingleSimBound(xtype, stype, ('sim2', 1), bound_type='upper')
-    grad_func2 = SingleSimBoundGradient(xtype, stype, ('sim2', 1), bound_type='upper')
+    grad_func2 = SingleSimBoundGradient(xtype, stype, ('sim2', 1),
+                                        bound_type='upper')
     # Test function evaluations
     assert (obj_func1(x, sx) == -2.0)
     assert (obj_func2(x, sx) == 3.0)
@@ -43,7 +45,8 @@ def test_SumOfSimSquaresBound():
 
     """
 
-    from parmoo.constraints import SumOfSimSquaresBound, SumOfSimSquaresBoundGradient
+    from parmoo.constraints import SumOfSimSquaresBound
+    from parmoo.constraints import SumOfSimSquaresBoundGradient
     import numpy as np
 
     # Create named dtypes
@@ -57,7 +60,8 @@ def test_SumOfSimSquaresBound():
     # Create the objective and gradient functions
     sim_list = ['sim1', ('sim2', 0), ('sim2', 1), ('sim2', 2)]
     obj_func = SumOfSimSquaresBound(xtype, stype, sim_list, bound_type="lower")
-    grad_func = SumOfSimSquaresBoundGradient(xtype, stype, sim_list, bound_type="lower")
+    grad_func = SumOfSimSquaresBoundGradient(xtype, stype, sim_list,
+                                             bound_type="lower")
     # Test function evaluation
     assert (np.abs(obj_func(x, sx) + 16.0) < 1.0e-8)
     # Test dx and ds evaluation
@@ -89,7 +93,8 @@ def test_SumOfSimsBound():
     # Create the objective functions
     sim_list = ['sim1', ('sim2', 0), ('sim2', 1), ('sim2', 2)]
     obj_func1 = SumOfSimsBound(xtype, stype, sim_list, bound_type="lower")
-    grad_func1 = SumOfSimsBoundGradient(xtype, stype, sim_list, bound_type="lower")
+    grad_func1 = SumOfSimsBoundGradient(xtype, stype, sim_list,
+                                        bound_type="lower")
     obj_func2 = SumOfSimsBound(xtype, stype, sim_list,
                                bound_type='upper', absolute=True)
     grad_func2 = SumOfSimsBoundGradient(xtype, stype, sim_list,

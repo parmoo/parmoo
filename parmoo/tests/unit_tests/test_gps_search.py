@@ -2,8 +2,8 @@
 def test_LocalSurrogate_PS():
     """ Test the LocalSurrogate_PS class in optimizers.py.
 
-    Perform a test of the LocalSurrogate_PS class by minimizing the three variable,
-    biobjective function
+    Perform a test of the LocalSurrogate_PS class by minimizing the three
+    variable, biobjective function
 
     $$
     F(x) = (-x_1 + x_2 + x_3, x_1 - x_2 + x_3)
@@ -31,8 +31,12 @@ def test_LocalSurrogate_PS():
     ub = np.ones(n)
     # Create the biobjective function
     def f(z, sz): return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
-    def L(z, sz): return f(z, sz) + 5 * (max(0.1 - z[2], 0) + max(z[2] - 0.6, 0))
+
+    def L(z, sz):
+        return f(z, sz) + 5 * (max(0.1 - z[2], 0) + max(z[2] - 0.6, 0))
+
     def S(z): return np.ones(2)
+
     def SD(z): return np.zeros(2)
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
@@ -135,8 +139,12 @@ def test_GlobalSurrogate_PS():
     ub = np.ones(n)
     # Create the biobjective function
     def f(z, sz): return np.asarray([-z[0] + z[1] + z[2], z[0] - z[1] + z[2]])
-    def L(z, sz): return f(z, sz) + 5 * (max(0.1 - z[2], 0) + max(z[2] - 0.6, 0))
+
+    def L(z, sz):
+        return f(z, sz) + 5 * (max(0.1 - z[2], 0) + max(z[2] - 0.6, 0))
+
     def S(z): return np.ones(2)
+
     def SD(z): return np.zeros(2)
     # Create 2 acquisition functions targeting 2 "pure" solutions
     acqu1 = UniformWeights(o, lb, ub, {})
@@ -157,14 +165,11 @@ def test_GlobalSurrogate_PS():
     with pytest.raises(ValueError):
         GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 0})
     with pytest.raises(TypeError):
-        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500,
-                              'gps_budget': 2.0})
+        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500, 'gps_budget': 2.0})
     with pytest.raises(ValueError):
-        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500,
-                              'gps_budget': 0})
+        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500, 'gps_budget': 0})
     with pytest.raises(ValueError):
-        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500,
-                              'gps_budget': 1000})
+        GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 500, 'gps_budget': 1000})
     # Initialize the problem correctly, with and without an optional budget
     GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 200})
     GlobalSurrogate_PS(o, lb, ub, {'opt_budget': 200, 'gps_budget': 100})
@@ -192,7 +197,7 @@ def test_GlobalSurrogate_PS():
     opt.setPenalty(L)
     opt.addAcquisition(acqu1, acqu2, acqu3)
     opt.setTrFunc(lambda x, r: 100.0)
-    # Solve the surrogate problem with GlobalSurrogate_PS, starting from the centroid
+    # Solve the surrogate problem with GlobalSurrogate_PS
     x = np.zeros((3, n))
     x[:, :] = 0.5
     (x1, x2, x3) = opt.solve(x)

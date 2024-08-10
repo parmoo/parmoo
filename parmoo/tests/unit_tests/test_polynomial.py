@@ -127,8 +127,7 @@ def test_Linear():
     assert (np.all(np.linalg.norm(x_improv[0] - np.asarray([0.5, 0.5, 0.5]))
             > 0.00000001))
     # Now create a really tiny design space with a large tolerance
-    lsm4 = Linear(1, np.zeros(1), np.ones(1),
-                         {'des_tols': 0.3 * np.ones(1)})
+    lsm4 = Linear(1, np.zeros(1), np.ones(1), {'des_tols': 0.3 * np.ones(1)})
     xdat4 = np.asarray([[0.4], [0.6]])
     ydat4 = np.asarray([[0.4], [0.6]])
     lsm4.fit(xdat4, ydat4)

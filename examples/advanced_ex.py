@@ -6,15 +6,14 @@ from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.optimizers import GlobalSurrogate_BFGS
 
-# Fix the random seed for reproducibility
-np.random.seed(0)
-
 # Create a new MOOP with a derivative-based solver
-my_moop = MOOP(GlobalSurrogate_BFGS, hyperparams={})
+my_moop = MOOP(GlobalSurrogate_BFGS,
+               # Use the hyperparams to fix the random seed for reproducibility
+               hyperparams={'np_random_gen': 0})
 
 # Add 3 continuous variables named x1, x2, x3
 for i in range(3):
-    my_moop.addDesign({'name': "x" + str(i+1),
+    my_moop.addDesign({'name': f"x{i+1}",
                        'des_type': "continuous",
                        'lb': 0.0,
                        'ub': 1.0,
@@ -47,55 +46,65 @@ my_moop.addSimulation({'name': "f_conv",
                        'surrogate': GaussRBF,
                        'hyperparams': {'search_budget': 10}})
 
-def obj_f1(x, sim, der=0):
+# Define some objectives below -- try to avoid things that jax can't compile
+
+def obj_f1_func(x, sim):
     """ Minimize the first output from 'f_conv' """
 
-    if der == 0:
-        return sim['f_conv'][0]
-    elif der == 1:
-        return np.zeros(1, dtype=x.dtype)[0]
-    elif der == 2:
-        result = np.zeros(1, dtype=sim.dtype)[0]
-        result['f_conv'][0] = 1.0
-        return result
+    return sim['f_conv'][0]
 
-def obj_f2(x, sim, der=0):
+def obj_f1_grad(x, sim):
+    """ Corresponding gradient evaluations for obj_f1_func """
+
+    dx = {'x1': 0.0, 'x2': 0.0, 'x3': 0.0, 'x4': 0.0}
+    ds = {'f_conv': np.eye(2)[0]}
+    return dx, ds
+
+def obj_f2_func(x, sim):
     """ Minimize the second output from 'f_conv' """
 
-    if der == 0:
-        return sim['f_conv'][1]
-    elif der == 1:
-        return np.zeros(1, dtype=x.dtype)[0]
-    elif der == 2:
-        result = np.zeros(1, dtype=sim.dtype)[0]
-        result['f_conv'][1] = 1.0
-        return result
+    return sim['f_conv'][1]
+
+def obj_f2_grad(x, sim):
+    """ Corresponding gradient evaluations for obj_f2_func """
+
+    dx = {'x1': 0.0, 'x2': 0.0, 'x3': 0.0, 'x4': 0.0}
+    ds = {'f_conv': np.eye(2)[1]}
+    return dx, ds
 
 # Minimize each of the 2 outputs from the quadratic simulation
 my_moop.addObjective({'name': "f1",
-                      'obj_func': obj_f1})
+                      'obj_func': obj_f1_func,
+                      'obj_grad': obj_f1_grad})
 my_moop.addObjective({'name': "f2",
-                      'obj_func': obj_f2})
+                      'obj_func': obj_f2_func,
+                      'obj_grad': obj_f2_grad})
 
-def const_x4(x, sim, der=0):
+def const_x4_func(x, sim):
     """ Constrain x["x4"] = 0 """
 
-    if der == 0:
-        return 0.0 if (x["x4"] == 0) else 1.0
-    elif der == 1:
-        # No derivatives for categorical design var, just return all zeros
-        return np.zeros(1, dtype=x.dtype)[0]
-    elif der == 2:
-        return np.zeros(1, dtype=sim.dtype)[0]
+    return 1.0 - (x["x4"] == 0)
+
+def const_x4_grad(x, sim):
+    """ Gradient for evaluating whether x["x4"] = 0 """
+
+    # Note: There is no partial derivative for a categorical design variable.
+    # This may make it hard to solve problems that place constraints on many
+    # categorical variables, but for 1 categorical variable it should be okay.
+    # We can just set all gradients equal to 0.
+    dx = {'x1': 0.0, 'x2': 0.0, 'x3': 0.0, 'x4': 0.0}
+    ds = {'f_conv': np.zeros(2)}
+    return dx, ds
 
 # Add the single constraint to the problem
 my_moop.addConstraint({'name': "c_x4",
-                       'constraint': const_x4})
+                       'con_func': const_x4_func,
+                       'con_grad': const_x4_grad})
 
 # Add 2 different acquisition functions to the problem
 my_moop.addAcquisition({'acquisition': RandomConstraint})
 my_moop.addAcquisition({'acquisition': FixedWeights,
-                        # Fixed weight with equal weight on both objectives
+                        # Fixed weights with equal weight on both objectives
                         'hyperparams': {'weights': np.array([0.5, 0.5])}})
 
 # Turn on checkpointing -- creates the files parmoo.moop and parmoo.surrogate.1

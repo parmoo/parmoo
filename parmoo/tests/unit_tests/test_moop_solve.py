@@ -167,8 +167,9 @@ def test_MOOP_iterate():
     s4 = {'m': 4,
           'hyperparams': {},
           'search': LatinHypercube,
-          'sim_func': lambda x: abs(x["x5"] - 1) + np.array([x["x1"], x["x2"],
-                                                             x["x3"], x["x4"]]),
+          'sim_func':
+          lambda x: abs(x["x5"] - 1) + np.array([x[f"x{i+1}"]
+                                                 for i in range(4)]),
           'surrogate': GaussRBF,
           'search_budget': 500}
     # Create a three objective toy problem, with one simulation
@@ -378,11 +379,9 @@ def test_MOOP_solve():
     # Assert that the x_vals and f_vals match
     for i in range(soln.shape[0]):
         assert (np.linalg.norm(np.array([s1['sim_func'](soln[i]),
-                                         s2['sim_func'](soln[i])]
-                                        ).flatten() -
-                                        np.array([soln['f1'][i],
-                                                  soln['f2'][i]]))
-               < 0.00000001)
+                                         s2['sim_func'](soln[i])]).flatten() -
+                               np.array([soln['f1'][i], soln['f2'][i]]))
+                < 1.e-8)
     # Create new single objective toy problem
     s3 = {'m': 1,
           'sim_func': lambda x: [x["x1"] + x["x2"]],

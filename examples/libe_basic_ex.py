@@ -14,10 +14,8 @@ _, is_manager, _, _ = parse_args()
 # All functions are defined below.
 
 def sim_func(x):
-   if x["x2"] == 0:
-      return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
-   else:
-      return np.array([99.9, 99.9])
+   sx = np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
+   return 99. - 99. * (x["x2"] == 0) + sx
 
 def obj_f1(x, s):
     return s["MySim"][0]
@@ -31,11 +29,8 @@ def const_c1(x, s):
 # When using libEnsemble with Python MP, the "solve" command must be enclosed
 # in an "if __name__ == '__main__':" block, as shown below
 if __name__ == "__main__":
-    # Fix the random seed for reproducibility
-    np.random.seed(0)
-
-    # Create a libE_MOOP
-    my_moop = libE_MOOP(GlobalSurrogate_PS)
+    # Create a libE_MOOP -- fix the random seed for reproducibility
+    my_moop = libE_MOOP(GlobalSurrogate_PS, hyperparams={'np_random_gen': 0})
     
     # Add 2 design variables (one continuous and one categorical)
     my_moop.addDesign({'name': "x1",

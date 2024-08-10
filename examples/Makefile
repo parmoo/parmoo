@@ -1,4 +1,4 @@
-OUT_FILES = quickstart.out named_var_ex.out unnamed_var_ex.out \
+OUT_FILES = quickstart.out named_var_ex.out \
 			precomputed_data.out checkpointing.out advanced_ex.out \
 			local_method.jpeg libe_basic_ex.out quickstart.jpeg
 
@@ -14,9 +14,6 @@ quickstart.out: quickstart.py
 
 named_var_ex.out: named_var_ex.py
 	python3 named_var_ex.py > named_var_ex.out
-
-unnamed_var_ex.out: unnamed_var_ex.py
-	python3 unnamed_var_ex.py > unnamed_var_ex.out
 
 precomputed_data.out: precomputed_data.py
 	python3 precomputed_data.py > precomputed_data.out

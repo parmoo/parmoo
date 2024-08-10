@@ -172,7 +172,7 @@ class UniformAugChebyshev(AcquisitionFunction):
             p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / sqrt(self.eps) + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
@@ -210,9 +210,11 @@ class UniformAugChebyshev(AcquisitionFunction):
         """
 
         if not isinstance(manifold, int):
-            return jnp.max(f_vals * self.weights) + self.alpha * jnp.sum(f_vals)
+            return (jnp.max(f_vals * self.weights)
+                    + self.alpha * jnp.sum(f_vals))
         else:
-            return (f_vals * self.weights)[manifold] + self.alpha * jnp.sum(f_vals)
+            return ((f_vals * self.weights)[manifold]
+                    + self.alpha * jnp.sum(f_vals))
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
@@ -300,7 +302,7 @@ class FixedAugChebyshev(AcquisitionFunction):
             # If weights are provided, check that they are legal
             if not isinstance(hyperparams['weights'], np.ndarray):
                 raise TypeError("when present, 'weights' must be a " +
-                                 "numpy array")
+                                "numpy array")
             else:
                 if hyperparams['weights'].size != self.o:
                     raise ValueError("when present, 'weights' must " +
@@ -446,9 +448,11 @@ class FixedAugChebyshev(AcquisitionFunction):
         """
 
         if not isinstance(manifold, int):
-            return jnp.max(f_vals * self.weights) + self.alpha * jnp.sum(f_vals)
+            return (jnp.max(f_vals * self.weights)
+                    + self.alpha * jnp.sum(f_vals))
         else:
-            return (f_vals * self.weights)[manifold] + self.alpha * jnp.sum(f_vals)
+            return ((f_vals * self.weights)[manifold]
+                    + self.alpha * jnp.sum(f_vals))
 
     def getManifold(self, f_vals):
         """ Check which manifold is active for a given function value.
