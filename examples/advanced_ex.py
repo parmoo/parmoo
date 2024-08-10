@@ -90,8 +90,8 @@ def const_x4_grad(x, sim):
 
     # Note: There is no partial derivative for a categorical design variable.
     # This may make it hard to solve problems that place constraints on many
-    # categorical variables, but for 1 variable it should be okay. We can just
-    # set all gradients equal to 0.
+    # categorical variables, but for 1 categorical variable it should be okay.
+    # We can just set all gradients equal to 0.
     dx = {'x1': 0.0, 'x2': 0.0, 'x3': 0.0, 'x4': 0.0}
     ds = {'f_conv': np.zeros(2)}
     return dx, ds
