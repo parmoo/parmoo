@@ -274,7 +274,7 @@ def test_MOOP_evaluate_surrogates():
         moop2.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
         moop2.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop2._fit_surrogates()
-    moop2._set_surrogate_tr(np.zeros(3), np.infty)
+    moop2._set_surrogate_tr(np.zeros(3), np.inf)
     # Now compare evaluations against the original surrogate
     x = moop1._embed({'x1': 0, 'x2': 0, 'x3': 0})
     xx = moop2._embed({'x1': 0, 'x2': 0, 'x3': 0})
@@ -411,7 +411,7 @@ def test_MOOP_evaluate_constraints():
         moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
         moop.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
     moop._fit_surrogates()
-    moop._set_surrogate_tr(np.zeros(3), np.infty)
+    moop._set_surrogate_tr(np.zeros(3), np.inf)
     # Now do some test evaluations and check the results
     test_cases = [
         (np.zeros(3), np.array([0.0, 0.0, np.sqrt(3) + np.sqrt(0.75)])),

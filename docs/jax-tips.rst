@@ -3,7 +3,7 @@ Jax tips and tricks
 
 .. _jax_tips:
 
-Starting in version 0.4.0, ParMOO uses jax_ for algorithmic differentiation
+As of version 0.4.0, ParMOO uses jax_ for algorithmic differentiation
 and just-in-time compilation.
 
 We have carefully implemented core functionality so that ParMOO will try
@@ -21,7 +21,7 @@ In most cases, when everything in ParMOO's critical path can be compiled via
 Jax setup
 ---------
 
-ParMOO is setup to install the ``jax[cpu]`` release (CPU only).
+ParMOO is set up to install the ``jax[cpu]`` release (CPU only).
 We do not recommend using other devices as this would require too much
 data movement to be efficient for our use case.
 
@@ -44,7 +44,7 @@ Things that often fail to jit
 
 When the :meth:`MOOP.compile() <moop.MOOP.compile>` method is called,
 ParMOO attempts to jit many common items.
-If infol-level logging is turned on (see the logging tutorial) then
+If info-level logging is turned on (see the logging tutorial) then
 ParMOO will print warnings for items that failed to ``jit``.
 
 In many cases, it is worth taking time to figure out why these items won't
@@ -74,7 +74,7 @@ Instead, you only need to provide separate implementations of the gradient
 and we will link them for you!
 However, if you are writing a custom surrogate or acquisition function,
 you should be aware that the ``surrogate.evaluate()`` and
-``acquisition.scalarize()`` function must be differentiable and preferrably
+``acquisition.scalarize()`` function must be differentiable and preferably
 jitt-able.
 
 Again, see the jax_ docs or read the jax_sharp_bits_ to get a feel for how

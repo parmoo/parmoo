@@ -20,7 +20,7 @@ ParMOO is intended for scientists, engineers, optimizers, and other
 practitioners, who are looking to build or use custom solvers for
 computationally expensive multiobjective problems.
 
-**New in version 0.4.0: we are now running in jax!**
+**As of version 0.4.0: we are integrating with jax!**
 
 If you're new to ParMOO:
 

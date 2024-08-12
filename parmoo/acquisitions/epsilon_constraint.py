@@ -163,7 +163,7 @@ class RandomConstraint(AcquisitionFunction):
             self.f_ub[:] = np.inf
             # Check for "most feasible" starting x
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
                 p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
@@ -379,7 +379,7 @@ class EI_RandomConstraint(AcquisitionFunction):
             self.f_ub[:] = np.inf
             # Check for "most feasible" starting x
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
                 p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
@@ -459,7 +459,7 @@ class EI_RandomConstraint(AcquisitionFunction):
                 result = min(np.dot(fx, self.weights) - self.best, 0.0)
                 return result * s_dist.pdf(np.array([sx]))
 
-            y = integrate.quad(weighted_f, -np.infty, np.infty)
+            y = integrate.quad(weighted_f, -np.inf, np.inf)
             return y[0]
         # If there is at least one feasible point and the number of sim outs
         # is greater than 1, then evaluate the EI over fi* via MC integration

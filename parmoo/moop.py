@@ -2367,7 +2367,7 @@ class MOOP:
             x (ndarray): A 1D array containing the (embedded) design point to
                 evaluate.
 
-            sx (ndarray): A 1d array containing the (packed) simulation vector
+            sx (ndarray): A 1D array containing the (packed) simulation vector
                 at x.
 
         Returns:
@@ -2411,7 +2411,7 @@ class MOOP:
         Args:
             res (tuple of ndarrays): Contains extracted value of x and the
                 unpacked value of sx computed during the forward pass followed
-                by a vector encoding the indicies/penalties for the active
+                by a vector encoding the indices/penalties for the active
                 constraints.
 
             w (ndarray): Contains the adjoint vector for the computation

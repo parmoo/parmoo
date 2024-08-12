@@ -221,7 +221,7 @@ class GaussRBF(SurrogateFunction):
         rad_tmp = np.array(radius)
         refit = False
         # If the radius is infinite, fit with all data
-        if np.all(rad_tmp == np.infty):
+        if np.all(rad_tmp == np.inf):
             # Only need to refit once after an update
             if np.all(self.tr_center < self.lb):
                 # Set the trust-region center and radius to large values
@@ -397,7 +397,7 @@ class GaussRBF(SurrogateFunction):
 
 @jit
 def _gaussian(r2, x_std_dev):
-    """ Evaluate gaussian bump with x_std_dev at distance r^2 from center """
+    """ Evaluate Gaussian bump with x_std_dev at distance r^2 from center """
 
     return jnp.exp(-r2 / (x_std_dev ** 2))
 
