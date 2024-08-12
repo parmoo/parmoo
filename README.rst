@@ -23,8 +23,8 @@
    :target: https://doi.org/10.21105/joss.04468
    :alt: JOSS DOI
 
-.. image:: https://coveralls.io/repos/github/parmoo/parmoo/badge.svg?branch=wildsm-test-coverage
-:target: https://coveralls.io/github/parmoo/parmoo?branch=wildsm-test-coverage
+.. image:: https://coveralls.io/repos/github/parmoo/parmoo/badge.svg?branch=main
+:target: https://coveralls.io/github/parmoo/parmoo?branch=main
 
 |
 
