@@ -146,6 +146,17 @@ class libE_MOOP(MOOP):
     and set either an int or ``numpy.random.Generator`` instance
     as the corresponding value.
 
+    In addition to other hyperparameters used by the base ``MOOP`` class
+    (such as "np_random_gen"), a ``libE_MOOP`` uses the reserved
+    hyperparameter key ``sim_dirs_make``, which can be set to either
+    ``True`` or ``False``. When unset, it defaults to ``False``.
+    When set to ``True``, libEnsemble will create a separate work directory
+    for each sim and the sim will automatically run from inside
+    this private workspace.
+    The work directories will be created inside the ``ensemble`` subdirectory
+    with the naming convention ``sim{SID}_worker{WID}``, where
+    ``SID`` and ``WID`` refer to the simulation and worker IDs, respectively.
+
     Class methods are summarized below.
 
     To define the MOOP, add each design variable, simulation, objective, and
@@ -754,6 +765,9 @@ class libE_MOOP(MOOP):
         libE_specs['final_fields'].append('sim_name')
         # Set optional libE specs
         libE_specs['profile'] = profile
+        libE_specs['sim_dirs_make'] = False
+        if 'sim_dirs_make' in self.moop.opt_hp:
+            libE_specs['sim_dirs_make'] = self.moop.opt_hp['sim_dirs_make']
 
         if nworkers < 2:
             raise ValueError("Cannot run ParMOO + libE with less than 2 " +
@@ -769,17 +783,17 @@ class libE_MOOP(MOOP):
         all_types = x_type.copy()
         for name in f_type:
             all_types.append(name)
+
         sim_specs = {'sim_f': self._moop_sim,
                      'in': [name[0] for name in x_type],
-                     'out': f_type}
-
+                     'out': f_type
+                     }
         gen_specs = {'gen_f': parmoo_persis_gen,
                      'persis_in': [name[0] for name in all_types],
                      'out': x_type,
-                     'user': {}}
-
+                     'user': {}
+                     }
         alloc_specs = {'alloc_f': alloc_f, 'out': [('gen_informed', bool)]}
-
         persis_info = {}
         for i in range(nworkers + 1):
             persis_info[i] = {}
