@@ -150,7 +150,7 @@ class libE_MOOP(MOOP):
     (such as "np_random_gen"), a ``libE_MOOP`` uses the reserved
     hyperparameter key ``sim_dirs_make``, which can be set to either
     ``True`` or ``False``. When unset, it defaults to ``False``.
-    When set to ``True``, libEnsemble will create a separate workdirectory
+    When set to ``True``, libEnsemble will create a separate work directory
     for each sim and the sim will automatically run from inside
     this private workspace.
     The work directories will be created inside the ``ensemble`` subdirectory
