@@ -6,24 +6,28 @@ The MOOP class
 
 The :mod:`MOOP <moop.MOOP>` class is the fundamental data structure in
 ParMOO.
-Below is a UML diagram showing the key public methods and
-dependencies.
 
-.. only:: html
-
-    .. figure:: img/moop-uml.svg
-        :alt: ParMOO UML Diagram
-        :align: center
-
+..
+    _The following has been commented out as the corresponding UML is obsolete:
     |
-
-.. only:: latex
-
-    .. figure:: img/moop-uml.png
-        :alt: ParMOO UML Diagram
-        :align: center
-
+    |Below is a UML diagram showing the key public methods and
+    |dependencies.
     |
+    |.. only:: html
+    |
+    |    .. figure:: img/moop-uml.svg
+    |        :alt: ParMOO UML Diagram
+    |        :align: center
+    |
+    |    |
+    |
+    |.. only:: latex
+    |
+    |    .. figure:: img/moop-uml.png
+    |        :alt: ParMOO UML Diagram
+    |        :align: center
+    |
+    |    |
 
 To create an instance of the :mod:`MOOP <moop.MOOP>` class,
 use the :meth:`constructor <moop.MOOP.__init__>`.
@@ -44,17 +48,24 @@ The choice of surrogate optimizer determines what information
 will be required when defining each objective and constraint.
 
  * If you use a derivative-free technique, such as
-   :meth:`LocalGPS <optimizers.gps_search.LocalGPS>`,
+   :meth:`GlobalSurrogate_PS <optimizers.pattern_search.GlobalSurrogate_PS>`,
    then you do not need to provide derivative information for your
    objective or constraint functions.
  * If you use a derivative-based technique, such as
-   :meth:`LBFGSB <optimizers.lbfgsb.LBFGSB>`,
+   :meth:`GlobalSurrogate_BFGS <optimizers.lbfgsb.GlobalSurrogate_BFGS>`,
    then you need to provide an additional input
    to your objectives and constraint functions, which can be
    set to evaluate their derivatives with respect to design inputs
    and simulation outputs.
 
-To avoid issues, it is best to define your MOOP in the following order.
+**As of version 0.4.0:** to fix the random seed, ParMOO no longer uses
+the global numpy random seed.
+Instead, pass an integer or ``numpy.random.Generator`` object using the key
+``hp["np_random_gen"]`` when creating the MOOP.
+It will automatically be passed on to all subclasses and components.
+
+To avoid issues, it is best to define your MOOP in the following order,
+but as of version 0.4.0, this is no longer a requirement.
 
  1. Add design variables using
     :meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>`.
@@ -72,32 +83,37 @@ dictionary, as detailed in the corresponding sections below.
 
 .. _naming:
 
-The name Key and ParMOO Output Types
-------------------------------------
+The name Key and ParMOO Input/Output Types
+------------------------------------------
 
 Each of the design, simulation, objective, and constraint dictionaries
 may contain an optional ``name`` key.
-By default, the ``name`` of the simulations, objectives, and constraints
-default to ``{sim|f|c}i``,
-where ``sim`` is for a simulation, ``f`` is for an objective,
+When omitted, the ``name`` of the design variables,
+simulations, objectives, and constraints
+default to ``{x|sim|f|c}i``,
+where ``x`` is a design variable,
+``sim`` is for a simulation, ``f`` is for an objective,
 ``c`` is for a constraint, and ``i=1,2,...``
 is determined by the order in which each was added.
 
 For example, if you add 3 simulations, then they will automatically
 be named ``sim1``, ``sim2``, and ``sim3`` unless a different name,
 was specified for one or more by including the ``name`` key.
-Similarly, objectives are named ``f1``, ``f2``, ..., and
+Similarly, design variables are named ``x1``, ``x2``, ...;
+objectives are named ``f1``, ``f2``, ...; and
 constraints are named ``c1``, ``c2``, ....
 
-The design variables are the only exception to this rule.
+Use of a repeated ``name`` will result in an error.
 
-Working with Named Outputs
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+The inputs to any user-defined functions will be passed as Python dictionaries
+with keys corresponding to the ``name`` keys used above.
 
-When every design variable is given a name,
-then ParMOO formats its output in a numpy structured array, using the
-given/default names to specify each field.
-This operation mode is recommended, especially for first-time users.
+After solving, ParMOO formats its output in a numpy structured array, using the
+given or automatically assigned ``name`` keys to specify the name for
+each field.
+
+As of version 0.4.0, this operation mode is required and all other naming
+conventions are no longer supported.
 
 After adding all design variables, simulations, objectives, and constraints
 to the MOOP, you can check the numpy dtype for each of these by using
@@ -114,53 +130,16 @@ The result is the following.
 
 .. literalinclude:: ../examples/named_var_ex.out
 
-Working with Unnamed Outputs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Working with Unnamed Outputs [obsolete]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If even a single design variable is left with a blank ``name`` key,
-then all input/output pairs are returned in a Python
-dictionary, with the following keys:
+In older versions of ParMOO, it was possible to omit the ``name`` keys
+and use ``numpy.ndarray`` structures as inputs/outputs to ParMOO.
 
- * ``x_vals: (np.ndarray)`` of length :math:`d \times n` --
-   number of data points by number of design variables;
- * ``s_vals: (np.ndarray)`` of length :math:`d \times m` --
-   number of data points by number of outputs for a particular simulation;
- * ``f_vals: (np.ndarray)`` of length :math:`d \times o` --
-   number of data points by number of objectives;
- * ``c_vals: (np.ndarray)`` of length :math:`d \times c` --
-   number of data points by number of constraints, if any.
-
-Note that the value of :math:`d` (number of data points0 may vary by
-database).
-Each column in each of ``x_vals``, ``s_vals``, ``f_vals``, and ``c_vals``
-will correspond to a specific design variable, simulation output,
-objective function, or constraint, determined by the order in
-which they were added to the MOOP.
-
-*For first-time users, this execution mode may be confusing;
-however, for advanced users, the convenience of using numpy.ndarrays
-over structured arrays may be preferable.*
-
-You can still use the type-getter methods from the previous section to
-check the dtype of each output, knowing that
-
- * :meth:`MOOP.getDesignType() <moop.MOOP.getDesignType>`
-   is the dtype of the ``x_vals`` key (when present).
- * :meth:`MOOP.getSimulationType() <moop.MOOP.getSimulationType>`
-   is the dtype of the ``s_vals`` key (when present),
- * :meth:`MOOP.getObjectiveType() <moop.MOOP.getObjectiveType>`
-   is the dtype of the ``f_vals`` key (when present), and
- * :meth:`MOOP.getConstraintType() <moop.MOOP.getConstraintType>`
-   is the dtype of the ``c_vals`` key (when present).
-
-.. literalinclude:: ../examples/unnamed_var_ex.py
-    :language: python
-
-The result is below.
-Note that in this example, there are :math:`d=20` points in both the
-objective and simulation databases.
-
-.. literalinclude:: ../examples/unnamed_var_ex.out
+In an effort to simplify workflow, improve maintainability, and optimize
+iteration times when working with ``jax``, this feature has been removed
+and all ParMOO scripts **must** use named inputs/outputs as of
+version 0.4.0.
 
 Adding Design Variables
 -----------------------
@@ -229,14 +208,17 @@ To add a categorical design variable, use the following format.
  * The ``levels`` key is either an integer specifying the
    number of categories taken on by this design variable
    (ParMOO will index these levels by :math:`0, 1, \ldots, \text{levels}-1`)
-   or a list of strings specifying the name for each category
+   or a list of level IDs specifying the ID for each category
    (ParMOO will use these names for the levels, e.g.,
-   ``["first cat", "second cat", ... ]``).
+   ``["first cat", "second cat", ... ]`` or ``[-1, 0, 1]``).
 
-Note that because a numpy ndarray cannot contain string entries, when
-operating with unnamed variables, the ``levels`` key may only contain
-the integer number of levels, and named categories cannot be used with
-unnamed design variables.
+**Note** because ``jax`` cannot ``jit`` functions with
+string-valued inputs and outputs, as of version 0.4.0 it is
+strongly recommended to only use integer-valued level names when specifying
+the ``levels`` key using the list syntax.
+While it is still possible to specify string-valued category IDs, doing
+so will cause ``jax.jit(...)`` to fail in several places, which may ultimately
+increase iteration times by up to 10x.
 
 To add a custom design variable, use the following format.
 
@@ -245,33 +227,21 @@ To add a custom design variable, use the following format.
     # Add a custom design variable
     moop.addDesign({'name': "MyCustomVar", # optional
                     'des_type': "custom",
-                    'embedding_size': 1,
                     'embedder': my_embedding_func,
-                    'extracter': my_extracting_func,
-                    'dtype': "U25" # optional
                     })
 
 |
 
- * The ``embedding_size`` key tells ParMOO how many dimensions the embedding
-   for this variable will be.
- * The ``embedder`` key should be a function that maps the input type
-   to to a point in the ``embedding_size``-dimensional unit hypercube.
- * The ``extracter`` key should be a function that maps an arbitrary point
-   in the ``embedding_size``-dimensional unit hypercube back to the input
-   type (such that ``extracter(embedder(x)) = x``).
- * Optionally, the ``dtype`` key is a Python ``str`` specifying the numpy
-   dtype of the input (defaults to ``U25``, i.e., a maximum 25-character
-   string).
-
-Note that because a numpy ndarray cannot contain string entries, when
-operating with unnamed variables, the ``dtype`` key is ignored, and the
-input must have a numeric type.
+ * The ``embedder`` key should be an instance of the
+   :class:`Embedder <structs.Embedder>` class,
+   defining a user-provided embedding.
+   **Warning:** if jax cannot jit the ``embed`` and ``extract`` methods
+   for this class, ParMOO's iterations may become extremely slow.
 
 To add a raw design variable, use the following format. Please note that
 raw design variables are not recommended, and one will typically need to
 write custom ``search``, ``surrogate``, ``optimizer``, and ``acquisition``
-functions/classes to accomodate a raw variable.
+functions/classes to accommodate a raw variable.
 This feature is only included to allow flexibility for expert users.
 
 .. code-block:: python
@@ -291,16 +261,14 @@ Adding Simulations
 Before you can add a simulation to your :mod:`MOOP <moop.MOOP>`, you must
 define the simulation function.
 
-*The simulation function can be either a Python function or a callable object.*
+*The simulation function can be either a Python function or a callable object
+whose __call__ method matches the signature below.*
 
-The expected signature of your simulation function depends on whether you
-are working with :ref:`named or unnamed outputs <naming>`.
-
-When working with named variables, the simulation should take a single
-numpy structured array as input, whose keys match the design variable
+The simulation should take a single
+Python dictionary as input, whose keys match the design variable
 names.
-The simulation function returns a numpy.ndarray containing the simulation
-output(s).
+The simulation function returns a ``numpy.ndarray`` (or array-like object)
+containing the simulation output(s).
 
 For example, with three design variables named ``x1``, ``x2``, and
 ``x3``, you might define the quadratic
@@ -310,16 +278,6 @@ For example, with three design variables named ``x1``, ``x2``, and
 
     def quadratic_sim(x):
         return np.array([x["x1"] ** 2 + x["x2"] ** 2 + x["x3"] ** 2])
-
-If you are working with unnamed variables, then the simulation will
-accept a numpy.ndarray of length ``n``, where the indices correspond
-to the order in which the design variables were added to the MOOP.
-The example above would change as follows.
-
-.. code-block:: python
-
-    def quadratic_sim(x):
-        return np.array([x[0] ** 2 + x[1] ** 2 + x[2] ** 2])
 
 To add your simulation to the :mod:`MOOP <moop.MOOP>` object,
 use the :meth:`addSimulation(*args) <moop.MOOP.addSimulation>` method.
@@ -337,7 +295,8 @@ use the :meth:`addSimulation(*args) <moop.MOOP.addSimulation>` method.
                         'hyperparams': {'search_budget': 20}})
 
 In the above example,
- * ``name`` is used as described in :ref:`named or unnamed outputs <naming>`;
+ * ``name`` is used as described in the section on
+   :ref:`name key <naming>`;
  * ``m`` specifies the number of outputs for this simulation;
  * ``sim_func`` is given a reference to the simulation function;
  * ``search`` specifies the :mod:`GlobalSearch <structs.GlobalSearch>`
@@ -353,23 +312,6 @@ In the above example,
 
 If you wish, you may create a MOOP without any simulations.
 
-Using a Precomputed Simulation Database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you would like to specify a precomputed database, use the
-:meth:`MOOP.update_sim_db(x, sx, s_name) <moop.MOOP.update_sim_db>`
-method to add all simulation data into ParMOO's database after creating
-your MOOP but before solving.
-Be careful not to add duplicate points, because these could cause numerical
-issues when fitting surrogate models.
-
-.. literalinclude:: ../examples/precomputed_data.py
-    :language: python
-
-The output of the above code is shown below.
-
-.. literalinclude:: ../examples/precomputed_data.out
-
 Adding Objectives
 -----------------
 
@@ -378,22 +320,23 @@ simulation outputs.
 *ParMOO always minimizes objectives.*
 If you would like to maximize instead, re-define the problem by minimizing
 the negative-value of your objective.
+We provide a :mod:`library of common built-in objectives <objectives.obj_lib>`,
+which can do this automatically.
 
 Just like with simulation functions, ParMOO accepts either a Python
 function or a callable object for each objective.
-Make sure you match the expected signature, which depends on whether you are
-using
-:ref:`named or unnamed outputs <naming>`.
+Make sure you match the expected signature, which depends on your choice of
+:ref:`name keys <naming>`.
 
-For named outputs, your objective function should accept two
-numpy structured arrays and return a single scalar output.
-The following objective minimizes the output of the simulation output
-named ``MySim.``
+In particular, your objective function should accept two
+Python dictionaries and return a single scalar output.
+The following objective minimizes the sum of all outputs of the
+simulation output named ``MySim.``
 
 .. code-block:: python
 
     def min_sim(x, sim):
-        return sim["MySim"]
+        return sum(sim["MySim"])
 
 Similarly, the following objective minimizes the squared value of the
 design variable named ``MyDes``.
@@ -403,21 +346,16 @@ design variable named ``MyDes``.
     def min_des(x, sim):
         return x["MyDes"] ** 2
 
+**Note:** The following has been changed as of version 0.4.0
+in order to offer better support for ``jax.jit()`` compilation.
+
 If you are using a gradient-based
 :mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`,
-then you are required to supply an additional input named ``der``, 
-which defaults to 0.
-The ``der`` input is used as follows:
-
- * ``der=0`` (default) implies that no derivatives are taken, and
-   you will return the objective function value;
- * ``der=1`` implies that you will return an array of derivatives with
-   respect to each design variable; and
- * ``der=2`` implies that you will return an array of derivative with
-   respect to each simulation output.
+then you are required to supply an additional function for evaluating
+the gradient of your objective with respect to both ``x`` and ``sim`` inputs.
 
 Note that for categorical variables ParMOO does not use the partial
-derivatives given here, and it is acceptable to fill these slots
+derivatives given here, and it is acceptable to fill these keys
 with a garbage value or leave them uninitialized.
 
 Modifying the above two objectives to support derivative-based solvers,
@@ -425,67 +363,27 @@ we get the following.
 
 .. code-block:: python
 
-    def min_sim(x, sim, der=0):
-        if der == 0:
-            # No derivative, just return the value of sim["MySim"]
-            return sim["MySim"]
-        elif der == 1:
-            # Derivative wrt each design variable is 0
-            return np.zeros(1, x.dtype)[0]
-        elif der == 2:
-            # Derivative wrt other simulations is 0, but df/d"MySim"=1
-            result = np.zeros(1, sim.dtype)[0]
-            result["MySim"] = 1.0
-            return  result
+    def min_sim_grad(x, sim):
+        dx = {}
+        ds = {}
+        for key in x:
+            dx[key] = 0.0
+        for key in sim:
+            ds[key] = np.zeros(sim[key].size)
+        ds["MySim"] = 1.0
+        return dx, ds
 
-    def min_des(x, sim, der=0):
-        if der == 0:
-            # No derivative, just return the value of x["MyDes"] ** 2
-            return x["MyDes"] ** 2
-        elif der == 1:
-            # Derivative wrt other design vars is 0, but df/d"MyDes"=2"MyDes"
-            result = np.zeros(1, x.dtype)[0]
-            result["MyDes"] = 2.0 * x["MyDes"]
-            return result
-        elif der == 2:
-            # Derivative wrt each simulations is 0
-            return np.zeros(1, sim.dtype)[0]
+    def min_des_grad(x, sim):
+        for key in x:
+            dx[key] = 0.0
+        for key in sim:
+            ds[key] = np.zeros(sim[key].size)
+        dx["MyDes"] = 2.0 * x["MyDes"]
+        return dx, ds
 
 For a full example showing how to solve a MOOP using a derivative-based
 solver, see :ref:`Solving a MOOP with Derivative-Based Solvers <advanced_ex>`
 in :doc:`Basic Tutorials <tutorials/basic-tutorials>`.
-
-When using ParMOO with unnamed outputs, each objective should accept
-two 1D numpy.ndarrays instead.
-The above example would be modified as follows, assuming that ``MySim``
-was the first simulation and ``MyDes`` was the
-first design variable added to the MOOP.
-
-.. code-block:: python
-
-    def min_sim(x, sim, der=0):
-        if der == 0:
-            # No derivative, just return the value of sim[0]
-            return sim[0]
-        elif der == 1:
-            # Derivative wrt each design variable is 0
-            return np.zeros(x.size)
-        elif der == 2:
-            # Derivative wrt other simulations is 0, but df/dsim[0]=1
-            return np.eye(sim.size)[0]
-
-    def min_des(x, sim, der=0):
-        if der == 0:
-            # No derivative, just return the value of x["MyDes"] ** 2
-            return x[0] ** 2
-        elif der == 1:
-            # Derivative wrt other design vars is 0, but df/d"MyDes"=2"MyDes"
-            result = np.zeros(x.size)
-            result[0] = 2.0 * x[0]
-            return result
-        elif der == 2:
-            # Derivative wrt each simulations is 0
-            return np.zeros(sim.size)
 
 To add the objective(s), use the
 :mod:`MOOP.addObjective(*args) <moop.MOOP.addObjective>` method.
@@ -493,10 +391,16 @@ To add the objective(s), use the
 .. code-block:: python
 
     moop.addObjective({'name': "Min MySim",
-                       'obj_func': min_sim})
+                       'obj_func': min_sim,
+                       # below is only needed for gradient-based solvers
+                       'obj_grad': min_sim_grad
+                       })
 
     moop.addObjective({'name': "Min MyDes",
-                       'obj_func': min_des})
+                       'obj_func': min_des,
+                       # below is only needed for gradient-based solvers
+                       'obj_grad': min_des_grad
+                       })
 
 Note that for every MOOP, at least one objective is required before solving.
 
@@ -528,46 +432,23 @@ modify the above constraint functions as follows.
 
 .. code-block:: python
 
-    def sim_constraint(x, sim, der=0):
-        if der == 0:
-            return -1.0 * sim["MySim"]
-        elif der == 1:
-            return np.zeros(1, x.dtype)[0]
-        elif der == 2:
-            result = np.zeros(1, sim.dtype)[0]
-            result["MySim"] = -1.0
-            return result
+    def sim_constraint_grad(x, sim):
+        dx, ds = {}, {}
+        for key in x:
+            dx[key] = 0.0
+        for key in sim:
+            ds[key] = np.zeros(sim[key].size)
+        ds["MySim"] = -1.0
+        return dx, ds
 
-    def des_constraint(x, sim, der=0):
-        if der == 0:
-            return x["MyDes"] - 0.9
-        elif der == 1:
-            result =  np.zeros(1, x.dtype)[0]
-            result["MyDes"] = 1.0
-            return result
-        elif der == 2:
-            return np.zeros(1, sim.dtype)[0]
-
-If you are operating with unnamed variables, use indices similarly
-as with the objectives.
-
-.. code-block:: python
-
-    def sim_constraint(x, sim, der=0):
-        if der == 0:
-            return -1.0 * sim[0]
-        elif der == 1:
-            return np.zeros(x.size)
-        elif der == 2:
-            return -np.eye(sim.size)[0]
-
-    def des_constraint(x, sim, der=0):
-        if der == 0:
-            return x[0] - 0.9
-        elif der == 1:
-            return np.eye(x.size)[0]
-        elif der == 2:
-            return np.zeros(sim.size)
+    def des_constraint_grad(x, sim):
+        dx, ds = {}, {}
+        for key in x:
+            dx[key] = 0.0
+        for key in sim:
+            ds[key] = np.zeros(sim[key].size)
+        dx["MyDes"] = 1.0
+        return dx, ds
 
 To add the constraint(s), use the
 :mod:`MOOP.addConstraint(*args) <moop.MOOP.addConstraint>` method.
@@ -575,10 +456,16 @@ To add the constraint(s), use the
 .. code-block:: python
 
     moop.addConstraint({'name': "Constrain MySim",
-                        'constraint': sim_constraint})
+                        'con_func': sim_constraint,
+                        # below is only needed for gradient-based solvers
+                        'con_grad': sim_constraint_grad
+                        })
 
     moop.addConstraint({'name': "Constrain MyDes",
-                        'constraint': des_constraint})
+                        'con_func': des_constraint,
+                        # below is only needed for gradient-based solvers
+                        'con_grad': des_constraint_grad
+                        })
 
 You are not required to add any constraints of this form to your MOOP
 before solving.
@@ -613,6 +500,38 @@ ParMOO's batches of simulation evaluations (which could be done in parallel).
 then ParMOO will generate batches of q*s simulations**.
 In other words, each simulation is evaluated once per acquisition function in
 each iteration of ParMOO's algorithm.
+
+Using a Precomputed Simulation Database
+---------------------------------------
+
+If you would like to specify a precomputed database, use the
+:meth:`MOOP.updateSimDb(x, sx, s_name) <moop.MOOP.updateSimDb>`
+method to add all simulation data into ParMOO's database after creating
+your MOOP but before solving.
+Be careful not to add duplicate points, because these could cause numerical
+issues when fitting surrogate models.
+
+Before doing so, you must first call the
+:meth:`MOOP.compile() <moop.MOOP.compile>` method to "finalize" the
+definition of your MOOP.
+This can only be done once, so be sure that you are done defining the MOOP
+before doing so.
+If you turn on logging first (see below), ParMOO will attempt to jit all
+user-defined functions at this stage and log a warning to alert users if
+any methods failed to compile at this stage.
+Failure to compile does not prevent ParMOO from running, but may increase
+iteration times by 10x.
+
+Note that the ``MOOP.compile()`` command is run automatically when calling
+``MOOP.solve()`` (below), so you only needed to compile manually when
+adding precomputed simulation evaluations.
+
+.. literalinclude:: ../examples/precomputed_data.py
+    :language: python
+
+The output of the above code is shown below.
+
+.. literalinclude:: ../examples/precomputed_data.out
 
 Logging and Checkpointing
 -------------------------
@@ -749,7 +668,7 @@ You can let ParMOO handle the simulation evaluations with
 :meth:`MOOP.evaluateSimulation(x, s_name) <moop.MOOP.evaluateSimulation>`,
 or you can evaluate the simulations yourself and add them to the simulation
 database using
-:meth:`MOOP.update_sim_db(x, sx, s_name) <moop.MOOP.update_sim_db>`.
+:meth:`MOOP.updateSimDb(x, sx, s_name) <moop.MOOP.updateSimDb>`.
 Afterward, call :meth:`MOOP.updateAll(k, batch) <moop.MOOP.updateAll>` to
 update the surrogate models and objective database.
 
@@ -778,7 +697,7 @@ or
         for (x, s_name) in batch:
             ### User code to evaluate x with sim["s_name"] goes HERE ###
             ### Store results in variable sx ###
-            moop.update_sim_db(x, sx, s_name)
+            moop.updateSimDb(x, sx, s_name)
         # Update ParMOO models
         moop.updateAll(i, batch)
 
@@ -803,9 +722,6 @@ However, you can change it to a pandas dataframe using the optional
 .. code-block:: python
 
     soln = moop.getPF(format="pandas")
-
-Note that ``format="pandas"`` is only supported when working with
-:ref:`named outputs <naming>`.
 
 To get the full simulation and objective databases, you can also use
 :meth:`MOOP.getSimulationData() <moop.MOOP.getSimulationData>`

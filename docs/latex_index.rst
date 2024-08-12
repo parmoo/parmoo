@@ -21,6 +21,7 @@ User's Guide
    about
    how-to-write
    extras
+   jax-tips
    refs
 
 API

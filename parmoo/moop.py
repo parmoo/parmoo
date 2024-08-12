@@ -1,7 +1,7 @@
 
 """ Contains the MOOP class for defining multiobjective optimization problems.
 
-parmoo.moop.MOOP is the base class for defining and solving multiobjective
+``parmoo.moop.MOOP`` is the base class for defining and solving multiobjective
 optimization problems (MOOPs). Each MOOP object may contain several
 simulations, specified using dictionaries.
 

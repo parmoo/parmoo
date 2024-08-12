@@ -1,15 +1,17 @@
 Advanced Installation
 =====================
 
+.. _install:
+
 ParMOO can be installed with ``pip`` or directly from its GitHub_ source.
 
 ParMOO's base has the following dependencies, which may be automatically
 installed depending on your choice of method:
 
- * Python_ 3.6+
+ * Python_ 3.8+
+ * jax_ -- for algorithmic differentiation and just-in-time (jit) compilation
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
- * pyDOE_ -- for generating experimental designs
  * pandas_ -- for exporting the resulting databases
 
 Additional dependencies are needed to use the additional features in
@@ -149,13 +151,13 @@ After installation, you can run the tests using either:
 .. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
+.. _jax: https://jax.readthedocs.io/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _libEnsemble_documentation: https://libensemble.readthedocs.io/en/main/advanced_installation.html
 .. _numpy: https://numpy.org
 .. _pandas: https://pandas.pydata.org
 .. _plotly: https://plotly.com/python
-.. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
 .. _pytest-cov: https://pytest-cov.readthedocs.io/en/latest
 .. _Python: https://www.python.org/downloads

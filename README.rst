@@ -66,9 +66,9 @@ ParMOO has been tested on Unix/Linux and MacOS systems.
 ParMOO's base has the following dependencies:
 
  * Python_ 3.8+
+ * jax_ -- for algorithmic differentiation and just-in-time (jit) compilation
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
- * pyDOE_ -- for generating experimental designs
  * pandas_ -- for exporting the resulting databases
 
 Additional dependencies are needed to use the additional features in
@@ -141,8 +141,24 @@ These tests are run regularly using GitHub Actions_.
 Basic Usage
 -----------
 
-ParMOO uses numpy_ in an object-oriented design, based around the ``MOOP``
-class. To get started, create a ``MOOP`` object.
+ParMOO uses numpy_ and jax_ in an object-oriented design, based around the
+``MOOP`` class.
+
+Before getting started, note that jax_ runs in single (32-bit) precision
+by default. To run in double precision, the following code is needed at
+startup:
+
+.. code-block:: python
+
+    import jax
+    jax.config.update("jax_enable_x64", True)
+
+This will be done automatically when importing certain modules in ParMOO,
+which are only compatible with double precision.
+However, in many use cases, 32-bit precision may be enough and provides
+substantial speedup in iteration tasks.
+
+Once the precision is set, to get started, create a ``MOOP`` object.
 
 .. code-block:: python
 
@@ -323,6 +339,7 @@ Our online documentation:
 .. _FAQs: https://parmoo.readthedocs.io/en/latest/faqs.html
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
+.. _jax: https://jax.readthedocs.io/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
@@ -330,7 +347,6 @@ Our online documentation:
 .. _pandas: https://pandas.pydata.org
 .. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _plotly: https://plotly.com/python
-.. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
 .. _pytest-cov: https://pytest-cov.readthedocs.io/en/latest
 .. _Python: https://www.python.org/downloads

@@ -1,15 +1,9 @@
 Constraint Function Templates (ABCs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: constraints.const_func
-..    :members: constraints/const_func
-
-.. autoclass:: const_func
-   :member-order: bysource
-   :members:
-
-   .. automethod:: __init__
-   .. automethod:: __call__
+For templates to define your own constraint function, see
+the
+:class:`CompositeFunction ABC in structs <structs.CompositeFunction>`.
 
 Constraint Function Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,21 +11,42 @@ Constraint Function Library
 .. automodule:: constraints.const_lib
 ..    :members: constraints/const_lib
 
-.. autoclass:: single_sim_bound
+.. autoclass:: SingleSimBound
    :member-order: bysource
    :members:
 
    .. automethod:: __init__
    .. automethod:: __call__
 
-.. autoclass:: sos_sim_bound
+.. autoclass:: SumOfSimSquaresBound
    :member-order: bysource
    :members:
 
    .. automethod:: __init__
    .. automethod:: __call__
 
-.. autoclass:: sum_sim_bound
+.. autoclass:: SumOfSimsBound
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
+   .. automethod:: __call__
+
+.. autoclass:: SingleSimBoundGradient
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
+   .. automethod:: __call__
+
+.. autoclass:: SumOfSimSquaresBoundGradient
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
+   .. automethod:: __call__
+
+.. autoclass:: SumOfSimsBoundGradient
    :member-order: bysource
    :members:
 
