@@ -23,8 +23,8 @@
    :target: https://doi.org/10.21105/joss.04468
    :alt: JOSS DOI
 
-.. image:: https://coveralls.io/repos/github/parmoo/parmoo/badge.svg?branch=main
-:target: https://coveralls.io/github/parmoo/parmoo?branch=main
+.. image:: https://coveralls.io/repos/github/parmoo/parmoo/badge.svg?branch=develop
+:target: https://coveralls.io/github/parmoo/parmoo?branch=develop
 
 |
 
