@@ -24,7 +24,7 @@
    :alt: JOSS DOI
 
 .. image:: https://coveralls.io/repos/github/parmoo/parmoo/badge.svg?branch=develop
-:target: https://coveralls.io/github/parmoo/parmoo?branch=develop
+   :target: https://coveralls.io/github/parmoo/parmoo?branch=develop
 
 |
 
