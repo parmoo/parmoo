@@ -24,7 +24,7 @@
    :alt: JOSS DOI
 
 .. image:: https://coveralls.io/repos/github/parmoo/parmoo/badge.svg?branch=develop
-:target: https://coveralls.io/github/parmoo/parmoo?branch=develop
+   :target: https://coveralls.io/github/parmoo/parmoo?branch=develop
 
 |
 
@@ -301,12 +301,16 @@ Our full documentation is hosted on:
 
  * ReadTheDocs_
 
+Recent versions of ParMOO are also incorporated in:
+
+ * BANDFramework_
+
 Please read our LICENSE_ and CONTRIBUTING_ files.
 
 Citing ParMOO
 -------------
 
-Please use one of the following to cite ParMOO.
+Please use one or more of the following to cite ParMOO.
 
 Our JOSS paper:
 
@@ -314,7 +318,7 @@ Our JOSS paper:
 
     @article{parmoo,
         author={Chang, Tyler H. and Wild, Stefan M.},
-        title={{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        title={{ParMOO}: A {P}ython Library for Parallel Multiobjective Simulation Optimization},
         journal = {Journal of Open Source Software},
         volume = {8},
         number = {82},
@@ -328,7 +332,7 @@ Our online documentation:
 .. code-block:: bibtex
 
     @techreport{parmoo-docs,
-        title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
+        title       = {{ParMOO}: {P}ython Library for Parallel Multiobjective Simulation Optimization},
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
         number      = {Version 0.3.1+dev},
@@ -336,7 +340,22 @@ Our online documentation:
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
 
+Our design principles paper:
+
+.. code-block:: bibtex
+
+    @techreport{ParMOODesign23,
+        title = {Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
+        author = {Tyler H. Chang and Stefan M. Wild},
+        institution = {arXiv},
+        number = {2304.06881},
+        year = {2023},
+        url = {https://arxiv.org/abs/2304.06881},
+    }
+
+
 .. _Actions: https://github.com/parmoo/parmoo/actions
+.. _BANDFramework: https://github.com/bandframework/bandframework
 .. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
 .. _dash: https://dash.plotly.com
 .. _FAQs: https://parmoo.readthedocs.io/en/latest/faqs.html
