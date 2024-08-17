@@ -6,6 +6,84 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
+Release 0.4.0
+-------------
+
+:Date: TODO
+
+Major interface-breaking refactor of core `MOOP` builder and libraries plus
+minor bug-fixes.
+
+Major changes:
+
+ - Under the hood, ParMOO now uses `jax[cpu]` for all gradient evaluations and
+   function evaluations on the critical path -- this means that objective
+   and constraint functions can be just-in-time (jit) compiled, which can give
+   massive performance improvements.  However, not all Python features are
+   supported by `jax.jit()` so users must be careful to write their objective
+   and constraint functions mindfully.  Simulation functions do not affect jax.
+ - In order for jax to be effective, we have updated ParMOO's interfaces to
+   avoid using optional arguments -- this effects the objective and constraint
+   function interfaces, and a separate gradient function must be added.
+ - In order to make it easier to support mixed variable types in jax and for
+   future maintainability, all design variables have been replaced by a library
+   of design variable `Embedder` classes (ABCs also added to the `structs.py`).
+ - In order to make ParMOO more maintainable and for jax to work smoothly, we
+   have dropped support for unnamed variables (Closes #31)
+ - All `SurrogateFunction` and `AcqusitionFunction` libraries have been updated
+   to be more jax friendly.
+ - The `SurrogateOptimizer` class has been refactored to include a callback to
+   observe simulation evaluation results.  It has also been given almost full
+   control over when model improvement steps are called to make implementing
+   most DFO methods easier.
+ - The pattern search family of optimizers has been greatly improved.
+ - `PyDOE` has been dropped since most relevant DOEs now appear in the newly
+   added `scipy.stats.qmc` module.
+ - Switching to `PyDOE` required us to change how the numpy random seed is set.
+   A random seed object is now passed as a hyperparameter to ParMOO and
+   propagated to all libraries, which is the recommended way anyway.
+ - Updated docs to reflect above changes.
+
+Style changes:
+
+ - Overhauled some of the unit tests
+ - Style fixes throughout
+ - Renamed several methods and classes to have a consistent naming convention
+
+Interface breaking:
+
+ - The `Embedder` class must now be used for defining custom design variables
+   (see Major changes).
+ - jax is now used for defining gradients (see Major changes) -- this alone
+   shouldn't break interface most use-cases, but may lead to decreased
+   performance if not careful.  Additionally, jax defaults to single precision
+   so double-precision must be set manually using a `jax.config` command (see
+   docs).
+ - `SurrogateFunction`, `SurrogateOptimizer`, and `AcquisitionFunction`
+   interfaces have changed (only affects users using custom methods).
+ - Random seed must now be set using a numpy random seed object (see Major
+   changes and exmples in the docs)
+ - We no longer support unnamed variables (see Major changes)
+ - Gradient functions are now provided via an additional key in the dictionary,
+   and cannot be set using an optional argument (see Major changes and examples
+   in the updated docs)
+ - Many library functions, methods, and classes have been renamed for
+   consistency.  In some cases, the old names remain as aliases for backward
+   compatibility.  See Style changes.
+
+New features:
+
+ - ParMOO now supports jax for autograd (see Major changes above).
+ - Numerous new `AcquisitionFunction` types added.
+ - Added an option to create a private workdir for each libEnsemble thread
+   (Closes #82)
+
+Minor changes:
+
+ - Updates to support `numpy 2.0`.
+ - Added a code coverage badge and updated the release process to reflect the
+   extra steps needed to make this work (Closes #21 , Closes #93)
+
 Release 0.3.1
 -------------
 
