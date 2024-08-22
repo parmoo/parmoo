@@ -378,7 +378,7 @@ class Dash_App:
             Input(
                 component_id='database_dropdown',
                 component_property='value',),
-            # constraint showr - regenerate
+            # constraint show - regenerate
             Input(
                 component_id='constraint_checkboxes',
                 component_property='value'),
