@@ -75,7 +75,7 @@ class RandomConstraint(AcquisitionFunction):
         return
 
     def useSD(self):
-        """ Querry whether this method uses uncertainties.
+        """ Query whether this method uses uncertainties.
 
         When False, allows users to shortcut expensive uncertainty
         computations.
@@ -289,7 +289,7 @@ class EI_RandomConstraint(AcquisitionFunction):
         return
 
     def useSD(self):
-        """ Querry whether this method uses uncertainties.
+        """ Query whether this method uses uncertainties.
 
         When False, allows users to shortcut expensive uncertainty
         computations.
