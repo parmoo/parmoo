@@ -53,7 +53,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                 optimization procedure. It may contain the following:
                  * opt_budget (int): The iteration limit per solve
                    (default: 100).
-                 * opt_restarts (int): Number of multisolve restarts per
+                 * opt_restarts (int): Number of multistart restarts per
                    scalarization (default: n+1).
 
         Returns:
@@ -237,7 +237,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                 optimization procedure. It may contain the following:
                  * opt_budget (int): The iteration limit per solve
                    (default: 500).
-                 * opt_restarts (int): Number of multisolve restarts per
+                 * opt_restarts (int): Number of multistart restarts per
                    scalarization (default: 2).
 
         Returns:
