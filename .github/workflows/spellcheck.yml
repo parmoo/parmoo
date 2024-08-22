@@ -18,7 +18,7 @@ jobs:
 
       - name: Spellcheck RST files
         run: |
-          pyspelling -c .spellcheck.yml **/*.rst
+          pyspelling -c .github/workflows/.spellcheckconfig.yml 
 
       - name: Upload spellcheck report
         uses: actions/upload-artifact@v2
