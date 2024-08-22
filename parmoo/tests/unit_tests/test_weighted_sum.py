@@ -12,7 +12,7 @@ def test_UniformWeights():
     from parmoo.acquisitions import UniformWeights
     import pytest
 
-    # Initilaize a good acquisition for future testing
+    # Initialize a good acquisition for future testing
     acqu = UniformWeights(3, np.zeros(4), np.ones(4), {})
     assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
     # Set some bad targets to check error handling
@@ -101,7 +101,7 @@ def test_FixedWeights():
         FixedWeights(3, np.zeros(4), np.ones(4), {'weights': 5.0})
     with pytest.raises(ValueError):
         FixedWeights(3, np.zeros(4), np.ones(4), {'weights': np.ones(2)})
-    # Initilaize a good acquisition for future testing
+    # Initialize a good acquisition for future testing
     acqu = FixedWeights(3, np.zeros(4), np.ones(4), {'weights': np.ones((3))})
     assert (np.all(acqu.lb[:] == 0.0) and np.all(acqu.ub[:] == 1.0))
     acqu = FixedWeights(3, np.zeros(4), np.ones(4), {})
