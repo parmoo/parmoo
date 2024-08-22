@@ -135,7 +135,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
         # Create an infinite trust region
         rad = np.ones(self.n) * np.inf
         self.setTR(np.zeros(self.n), rad)
-        # Loop over and solve acqusisition functions
+        # Loop over and solve acquisition functions
         result = []
         for j, acquisition in enumerate(self.acquisitions):
 
@@ -394,7 +394,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
         self.__checkTargets()
         # Initialize an empty list of results
         result = []
-        # For each acqusisition function
+        # For each acquisition function
         for j, acquisition in enumerate(self.acquisitions):
 
             # Define the scalarized wrapper functions
