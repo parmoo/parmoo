@@ -172,7 +172,7 @@ class RandomConstraint(AcquisitionFunction):
                     p_best = p_temp
             return x_best
         else:
-            # Randomly select pts in the convex hull of the nondominate pts
+            # Randomly select pts in the convex hull of the nondominated pts
             ipts = self.np_rng.integers(0, pf['f_vals'].shape[0], size=self.o)
             self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
@@ -388,7 +388,7 @@ class EI_RandomConstraint(AcquisitionFunction):
                     p_best = p_temp
             return x_best
         else:
-            # Randomly select pts in the convex hull of the nondominate pts
+            # Randomly select pts in the convex hull of the nondominated pts
             ipts = self.np_rng.integers(0, pf['f_vals'].shape[0], size=self.o)
             self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
