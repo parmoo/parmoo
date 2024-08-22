@@ -879,7 +879,7 @@ class SurrogateOptimizer(ABC):
 
         Additionally, you may assume that:
          * ``self.acquisitions`` contains a list of one or more
-           ``AcqusitionFunction`` object instances, each of whose
+           ``AcquisitionFunction`` object instances, each of whose
            ``acq.scalarize(f_vals, x_vals, s_vals_mean, s_vals_sd)``
            is set and ready to call; and
          * ``self.setTR(x, r)`` can be called to set a trust-region
