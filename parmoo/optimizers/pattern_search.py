@@ -239,7 +239,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         lb_tmp = np.zeros(self.n)
         ub_tmp = np.ones(self.n)
         self._checkTargets()
-        # For each acqusisition function
+        # For each acquisition function
         for j, acquisition in enumerate(self.acquisitions):
             # Create a new trust region
             rad = self._checkTR(x[j, :])
