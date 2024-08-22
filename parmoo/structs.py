@@ -573,7 +573,7 @@ class SurrogateFunction(ABC):
         """ Suggests a design to evaluate to improve the surrogate near x.
 
         A default implementation is given based on random sampling.
-        Re-implement the improve method to overwright the default
+        Re-implement the improve method to overwrite the default
         policy.
 
         Args:
