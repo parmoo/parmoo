@@ -253,7 +253,7 @@ class EI_RandomConstraint(AcquisitionFunction):
             hyperparams (dict): A dictionary of hyperparameters for tuning
                 the acquisition function. Including
                  * mc_sample_size (int): The number of samples to use for
-                   monte carlo integration (defaults to 10 * m ** 2).
+                   Monte Carlo integration (defaults to 10 * m ** 2).
 
         Returns:
             RandomConstraint: A new RandomConstraint scalarizer.
