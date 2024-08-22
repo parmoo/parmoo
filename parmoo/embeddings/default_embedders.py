@@ -210,7 +210,7 @@ class IntegerEmbedder(Embedder):
                    tolerance for this variable, i.e., the minimum spacing
                    before two design values are considered equivalent up to
                    measurement error. If not specified, the
-                   default value is eps * max(ub - lb, sqrt(ep)), where
+                   default value is eps * max(ub - lb, sqrt(eps)), where
                    eps is the unit roundoff.
 
         """
