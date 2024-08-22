@@ -35,7 +35,7 @@ class UniformAugChebyshev(AcquisitionFunction):
             o (int): The number of objectives.
 
             lb (numpy.ndarray): A 1d array of lower bounds for the design
-                region. The number of design variables is infed from the
+                region. The number of design variables is inferred from the
                 dimension of lb.
 
             ub (numpy.ndarray): A 1d array of upper bounds for the design
