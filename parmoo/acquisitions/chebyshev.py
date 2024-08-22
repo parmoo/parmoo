@@ -53,7 +53,7 @@ class UniformAugChebyshev(AcquisitionFunction):
         """
 
         # Check inputs
-        xor(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
+        xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         # Set the objective count
         self.o = o
         # Set the design variable count
@@ -71,17 +71,17 @@ class UniformAugChebyshev(AcquisitionFunction):
                 if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
                     self.alpha = hyperparams['alpha']
                 else:
-                    raise Valueor("When present, hyperparams['alpha'] " +
+                    raise ValueError("When present, hyperparams['alpha'] " +
                                      "must be in the range [0, 1]")
             else:
-                raise Typeor("When present, hyperparams['alpha'] " +
+                raise TypeError("When present, hyperparams['alpha'] " +
                                 "must be a float type")
         # Check the hyperparameter dictionary for random generator
         if 'np_random_gen' in hyperparams:
             if isinstance(hyperparams['np_random_gen'], np.random.Generator):
                 self.np_rng = hyperparams['np_random_gen']
             else:
-                raise Typeor("When present, hyperparams['np_random_gen'] "
+                raise TypeError("When present, hyperparams['np_random_gen'] "
                                 "must be an instance of the class "
                                 "numpy.random.Generator")
         else:
@@ -122,21 +122,21 @@ class UniformAugChebyshev(AcquisitionFunction):
         no_data = False
         # Check for illegal input from data
         if not isinstance(data, dict):
-            raise Typeor("data must be a dict")
+            raise TypeError("data must be a dict")
         else:
             if ('x_vals' in data) != ('f_vals' in data):
-                raise Attributeor("if x_vals is a key in data, then " +
+                raise AttributeError("if x_vals is a key in data, then " +
                                      "f_vals must also appear")
             elif 'x_vals' in data:
                 if data['x_vals'] is not None and data['f_vals'] is not None:
                     if data['x_vals'].shape[0] != data['f_vals'].shape[0]:
-                        raise Valueor("x_vals and f_vals must be equal " +
+                        raise ValueError("x_vals and f_vals must be equal " +
                                          "length")
                     if data['x_vals'].shape[1] != self.n:
-                        raise Valueor("The rows of x_vals must have " +
+                        raise ValueError("The rows of x_vals must have " +
                                          "length n")
                     if data['f_vals'].shape[1] != self.o:
-                        raise Valueor("The rows of f_vals must have " +
+                        raise ValueError("The rows of f_vals must have " +
                                          "length o")
                 else:
                     no_data = True
