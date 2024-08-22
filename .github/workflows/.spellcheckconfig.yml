@@ -1,0 +1,10 @@
+matrix:
+- name: python
+  sources:
+  - parmoo/**/*.py
+  aspell:
+    lang: en
+    d: en_US
+  pipeline:
+  - pyspelling.filters.python:
+      strings: false
