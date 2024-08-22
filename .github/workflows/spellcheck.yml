@@ -2,8 +2,9 @@ name: Spellcheck RST files
 
 on:
   push:
-    branches:
-      - develop
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
 
 jobs:
   spellcheck:
