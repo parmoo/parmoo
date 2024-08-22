@@ -1,5 +1,5 @@
 """ This module contains private methods for hosting and receiving callbacks
-from an interactiv dashboard. This module is intended only for developer use.
+from an interactive dashboard. This module is intended only for developer use.
 
 Note that some docstrings may be incomplete.
 
