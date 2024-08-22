@@ -500,7 +500,7 @@ class MOOP:
                    ``sx = sim_func(x)`` at runtime.
                    Note that any
                    ``constraint(x, sim_func(x), der=0) <= 0``
-                   indicates that x is feaseible, while
+                   indicates that x is feasible, while
                    ``constraint(x, sim_func(x), der=0) > 0``
                    indicates that x is infeasible, violating the constraint by
                    an amount proportional to the output.
@@ -937,7 +937,7 @@ class MOOP:
                                                  [sx], axis=0)
             self.sim_db[i]['n'] += 1
         else:
-            # If sim_db[i]['n'] == 0, then set the zeroeth value
+            # If sim_db[i]['n'] == 0, then set the zeroth value
             self.sim_db[i]['x_vals'][0, :] = xx
             self.sim_db[i]['s_vals'][0, :] = sx
             self.sim_db[i]['n'] += 1
@@ -1571,7 +1571,7 @@ class MOOP:
         Args:
             filename (str, optional): The filepath to serialized
                 checkpointing file(s). Do not include file extensions,
-                they will be appended automaically. This method may create
+                they will be appended automatically. This method may create
                 several additional save files with this same name, but
                 different file extensions, in order to recursively save
                 dependency objects (such as surrogate models). Defaults to
@@ -1733,7 +1733,7 @@ class MOOP:
         Args:
             filename (str, optional): The filepath to the serialized
                 checkpointing file(s). Do not include file extensions,
-                they will be appended automaically. This method may also
+                they will be appended automatically. This method may also
                 load from other save files with the same name, but different
                 file extensions, in order to recursively load dependency
                 objects (such as surrogate models) as needed.
@@ -1948,7 +1948,7 @@ class MOOP:
         Args:
             filename (str, optional): The filepath to the checkpointing
                 file(s). Do not include file extensions, they will be
-                appended automaically. Defaults to the value "parmoo"
+                appended automatically. Defaults to the value "parmoo"
                 (filename will be "parmoo.simdb.json").
 
         """
@@ -2436,7 +2436,7 @@ class MOOP:
         return dfdx, dfds
 
     def _link(self):
-        """ Link the fowrard/backward pass functions """
+        """ Link the forward/backward pass functions """
 
         @jax.custom_vjp
         def eval_obj(x, sx): return self._evaluate_objectives(x, sx)
