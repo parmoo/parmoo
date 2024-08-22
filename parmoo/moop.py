@@ -1977,7 +1977,7 @@ class MOOP:
             toadd['out'] = [float(sxi) for sxi in sx]
         else:
             toadd['out'] = float(sx)
-        # Save in file with proper exension
+        # Save in file with proper extension
         fname = filename + ".simdb.json"
         with open(fname, 'a') as fp:
             json.dump(toadd, fp)
