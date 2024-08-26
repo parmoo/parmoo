@@ -3,7 +3,7 @@ matrix:
   sources:
   - parmoo/**/*.py
   - docs/**/*.rst  
-  - "CONTRIBUTING.rst"
+  - "*.rst"
   aspell:
     lang: en
     d: en_US
