@@ -1,0 +1,15 @@
+matrix:
+- name: python
+  sources:
+  - parmoo/**/*.py
+  - docs/**/*.rst  
+  - /*.rst    
+  aspell:
+    lang: en
+    d: en_US
+  pipeline:
+  - pyspelling.filters.python:
+      strings: false
+  dictionary:
+    wordlists:
+    - custom-wordlist.txt

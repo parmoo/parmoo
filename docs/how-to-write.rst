@@ -617,7 +617,7 @@ functions that are needed by ParMOO (with the exact same signatures).**
     # Create a new MOOP object
     moop = MOOP([optimizer])
     # Reload the old problem
-    moop.load(filename="parmoo") # Use your savefile name, omitting ".moop"
+    moop.load(filename="parmoo") # Use your saved file name, omitting ".moop"
 
 Then resume your solve with an increased budget.
 
