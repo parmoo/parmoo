@@ -3,7 +3,7 @@ matrix:
   sources:
   - parmoo/**/*.py
   - docs/**/*.rst  
-  - /*.rst    
+  - "CONTRIBUTING.rst"
   aspell:
     lang: en
     d: en_US
@@ -12,4 +12,4 @@ matrix:
       strings: false
   dictionary:
     wordlists:
-    - custom-wordlist.txt
+    - .github/config/custom-wordlist.txt

@@ -218,7 +218,7 @@ Next, add simulations to the problem as follows using the
    my_moop.addSimulation({'name': "MySim", # Optional name for this simulation
                           'm': 2, # This simulation has 2 outputs
                           'sim_func': sim_func, # Our sample sim from above
-                          'search': LatinHypercube, # Use a LH search
+                          'search': LatinHypercube, # Use a LHS search
                           'surrogate': GaussRBF, # Use a Gaussian RBF surrogate
                           'hyperparams': {}, # Hyperparams passed to internals
                           'sim_db': { # Optional dict of precomputed points

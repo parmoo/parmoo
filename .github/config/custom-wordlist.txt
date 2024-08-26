@@ -96,6 +96,7 @@ GlobalSearch
 GlobalSurrogate
 gradFunc
 grey
+hacky
 html
 http
 hyperparameter
