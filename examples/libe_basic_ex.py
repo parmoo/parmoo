@@ -6,7 +6,7 @@ from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
 from parmoo.optimizers import GlobalSurrogate_PS
 
-# When running with MPI, we need to keep track of which thread is the manager
+# When typorunning with MPI, we need to keep track of which thread is the manager
 # using libensemble.tools.parse_args()
 from libensemble.tools import parse_args
 _, is_manager, _, _ = parse_args()
