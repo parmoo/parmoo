@@ -1,4 +1,4 @@
-Jax tips and tricks
+Jax Tips and Tricks
 ===================
 
 .. _jax_tips:

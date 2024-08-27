@@ -757,13 +757,8 @@ class libE_MOOP(MOOP):
         set_start_method("spawn", force=True)
         # Create libEnsemble dictionaries
         nworkers, is_manager, libE_specs, _ = parse_args()
-        libE_specs['final_fields'] = []
-        for name in self.moop.des_schema:
-            libE_specs['final_fields'].append(name[0])
-        for name in self.moop.sim_schema:
-            libE_specs['final_fields'].append(name[0])
-        libE_specs['final_fields'].append('sim_name')
         # Set optional libE specs
+        libE_specs['final_gen_send'] = True
         libE_specs['profile'] = profile
         libE_specs['sim_dirs_make'] = False
         if 'sim_dirs_make' in self.moop.opt_hp:
