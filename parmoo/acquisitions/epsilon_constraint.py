@@ -9,11 +9,12 @@ The classes include:
 
 """
 
-import numpy as np
-from scipy import stats, integrate
 import inspect
+from jax import numpy as jnp
+import numpy as np
 from parmoo.structs import AcquisitionFunction
 from parmoo.util import xerror
+from scipy import stats, integrate
 
 
 class RandomConstraint(AcquisitionFunction):
@@ -27,7 +28,7 @@ class RandomConstraint(AcquisitionFunction):
     """
 
     # Slots for the RandomConstraint class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the RandomConstraint class.
@@ -60,10 +61,21 @@ class RandomConstraint(AcquisitionFunction):
         self.weights = np.zeros(self.o)
         self.ub = ub
         self.lb = lb
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
+        self.eps = jnp.finfo(jnp.ones(1)).eps
         return
 
     def useSD(self):
-        """ Querry whether this method uses uncertainties.
+        """ Query whether this method uses uncertainties.
 
         When False, allows users to shortcut expensive uncertainty
         computations.
@@ -72,7 +84,7 @@ class RandomConstraint(AcquisitionFunction):
 
         return False
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a target based on current nondominated points.
 
         Args:
@@ -85,10 +97,6 @@ class RandomConstraint(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): A persistent dictionary that could be used by
-                the implementation of the AcquisitionFunction to pass data
-                between iterations; also unused by this scheme.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -145,34 +153,34 @@ class RandomConstraint(AcquisitionFunction):
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             self.f_ub[:] = np.inf
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             self.f_ub[:] = np.inf
             # Check for "most feasible" starting x
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
             return x_best
         else:
-            # Randomly select pts in the convex hull of the nondominate pts
-            ipts = np.random.randint(0, pf['f_vals'].shape[0], size=self.o)
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            # Randomly select pts in the convex hull of the nondominated pts
+            ipts = self.np_rng.integers(0, pf['f_vals'].shape[0], size=self.o)
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             target = np.dot(self.weights, pf['f_vals'][ipts, :])
             fi = pf['f_vals'][ipts[0], :]
             # Set the bounds
             self.f_ub[:] = np.inf
-            self.weights[:] = 0.0001
+            self.weights[:] = self.eps ** 0.25
             for j in range(self.o):
                 # If fi[j] is less than target[j], this is a bound
                 if fi[j] + 0.00000001 < target[j]:
@@ -208,53 +216,9 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Return the weighted sum of objectives, if the bounds are satisfied
-        result = np.dot(f_vals, self.weights)
+        result = jnp.dot(f_vals, self.weights)
         for i in range(self.o):
-            if f_vals[i] > self.f_ub[i]:
-                result = result + 10.0 * (f_vals[i] - self.f_ub[i])
-        return result
-
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Scalarize a Jacobian of gradients using the current bounds.
-
-        Args:
-            f_vals (numpy.ndarray): A 1d array specifying the function
-                values for the scalarized gradient, which are used to
-                penalize exceeding the bounds.
-
-            g_vals (numpy.ndarray): A 2d array specifying the gradient
-                values to be scalarized.
-
-        Returns:
-            np.ndarray: The 1d array for the scalarized gradient.
-
-        """
-
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
-        # Check that the gradient values are legal
-        if isinstance(g_vals, np.ndarray):
-            if self.o != g_vals.shape[0] or self.n != g_vals.shape[1]:
-                raise ValueError("g_vals must have shape o-by-n")
-        else:
-            raise TypeError("g_vals must be a numpy array")
-        # Compute the dot product between the weights and the gradient values
-        result = np.dot(np.transpose(g_vals), self.weights)
-        # Add the gradient of the penalty for any bound violations
-        for i in range(self.o):
-            if f_vals[i] > self.f_ub[i]:
-                result = result + 10.0 * g_vals[i]
+            result += 10.0 * jnp.maximum(f_vals[i] - self.f_ub[i], 0)
         return result
 
 
@@ -270,7 +234,8 @@ class EI_RandomConstraint(AcquisitionFunction):
     """
 
     # Slots for the RandomConstraint class
-    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'best', 'f']
+    __slots__ = ['n', 'o', 'lb', 'ub', 'f_ub', 'weights', 'best', 'f',
+                 'np_rng', 'eps']
 
     def __init__(self, o, lb, ub, hyperparams):
         """ Constructor for the RandomConstraint class.
@@ -288,7 +253,7 @@ class EI_RandomConstraint(AcquisitionFunction):
             hyperparams (dict): A dictionary of hyperparameters for tuning
                 the acquisition function. Including
                  * mc_sample_size (int): The number of samples to use for
-                   monte carlo integration (defaults to 10 * m ** 2).
+                   Monte Carlo integration (defaults to 10 * m ** 2).
 
         Returns:
             RandomConstraint: A new RandomConstraint scalarizer.
@@ -305,14 +270,26 @@ class EI_RandomConstraint(AcquisitionFunction):
         self.weights = np.zeros(self.o)
         self.ub = ub
         self.lb = lb
+        # Check the hyperparameter dictionary for custom MC sample size
         if 'mc_sample_size' in hyperparams.keys():
             self.sample_size = hyperparams['mc_sample_size']
         else:
             self.sample_size = None
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
+        self.eps = jnp.finfo(jnp.ones(1)).eps
         return
 
     def useSD(self):
-        """ Querry whether this method uses uncertainties.
+        """ Query whether this method uses uncertainties.
 
         When False, allows users to shortcut expensive uncertainty
         computations.
@@ -321,7 +298,7 @@ class EI_RandomConstraint(AcquisitionFunction):
 
         return True
 
-    def setTarget(self, data, penalty_func, history):
+    def setTarget(self, data, penalty_func):
         """ Randomly generate a target based on current nondominated points.
 
         Args:
@@ -334,10 +311,6 @@ class EI_RandomConstraint(AcquisitionFunction):
 
             penalty_func (function): A function of one (x) or two (x, sx)
                 inputs that evaluates the (penalized) objectives.
-
-            history (dict): A persistent dictionary that could be used by
-                the implementation of the AcquisitionFunction to pass data
-                between iterations; also unused by this scheme.
 
         Returns:
             numpy.ndarray: A 1d array containing the 'best' feasible starting
@@ -392,32 +365,32 @@ class EI_RandomConstraint(AcquisitionFunction):
             pf = updatePF(data, {})
         # If data is empty, randomly select weights and starting point
         if no_data:
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             self.f_ub[:] = np.inf
             # Randomly select a starting point
-            x_start = (np.random.random_sample(self.n) * (self.ub - self.lb)
+            x_start = (self.np_rng.random(self.n) * (self.ub - self.lb)
                        + self.lb)
             return x_start
         # If data is nonempty but pf is empty, use a penalty to select
         elif pf is None or pf['x_vals'].shape[0] == 0:
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             self.f_ub[:] = np.inf
             # Check for "most feasible" starting x
             x_best = np.zeros(data['x_vals'].shape[1])
-            p_best = np.infty
+            p_best = np.inf
             for xi, fi, ci in zip(data['x_vals'], data['f_vals'],
                                   data['c_vals']):
-                p_temp = np.sum(fi) / 1.0e-8 + np.sum(ci)
+                p_temp = np.sum(fi) / np.sqrt(self.eps) + np.sum(ci)
                 if p_temp < p_best:
                     x_best = xi
                     p_best = p_temp
             return x_best
         else:
-            # Randomly select pts in the convex hull of the nondominate pts
-            ipts = np.random.randint(0, pf['f_vals'].shape[0], size=self.o)
-            self.weights = -np.log(1.0 - np.random.random_sample(self.o))
+            # Randomly select pts in the convex hull of the nondominated pts
+            ipts = self.np_rng.integers(0, pf['f_vals'].shape[0], size=self.o)
+            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
             target = np.dot(self.weights, pf['f_vals'][ipts, :])
             fi = pf['f_vals'][ipts[0], :]
@@ -460,12 +433,6 @@ class EI_RandomConstraint(AcquisitionFunction):
 
         """
 
-        # Check that the function values are legal
-        if isinstance(f_vals, np.ndarray):
-            if self.o != np.size(f_vals):
-                raise ValueError("f_vals must have length o")
-        else:
-            raise TypeError("f_vals must be a numpy array")
         # If the feasible set was empty, just use the given fi
         if self.best is None:
             result = np.dot(f_vals, self.weights)
@@ -478,7 +445,7 @@ class EI_RandomConstraint(AcquisitionFunction):
         # current penalty function
         elif s_vals_mean.size == 1:
             # Construct the distribution for sampling
-            s_cov = stats.Covariance.from_diagonal(s_vals_sd)
+            s_cov = stats.Covariance.from_diagonal(s_vals_sd**2)
             s_dist = stats.multivariate_normal(mean=s_vals_mean, cov=s_cov)
 
             def weighted_f(sx):
@@ -492,7 +459,7 @@ class EI_RandomConstraint(AcquisitionFunction):
                 result = min(np.dot(fx, self.weights) - self.best, 0.0)
                 return result * s_dist.pdf(np.array([sx]))
 
-            y = integrate.quad(weighted_f, -np.infty, np.infty)
+            y = integrate.quad(weighted_f, -np.inf, np.inf)
             return y[0]
         # If there is at least one feasible point and the number of sim outs
         # is greater than 1, then evaluate the EI over fi* via MC integration
@@ -514,12 +481,3 @@ class EI_RandomConstraint(AcquisitionFunction):
                 result = min(np.dot(fi, self.weights) - self.best, 0.0)
             result /= self.sample_size
             return result
-
-    def scalarizeGrad(self, f_vals, g_vals):
-        """ Not implemented for this acquisition function, do not use
-        gradient-based methods.
-
-        """
-
-        raise NotImplementedError("The EI-based acquisition does not " +
-                                  "support the usage of gradients")

@@ -44,7 +44,7 @@ To quote our FAQ_:
    surrogates, and therefore is more scalable for handling large budgets.
 
 **We will attempt to solve a convex 50-design variable, 2-objective problem
-on a budget of just 1000 simulation evaluations.**
+on a budget of just 250 simulation evaluations.**
 Going off a modification to the quickstart_, this will produce the
 following script. We also have a similar example in the solver_farm_.
 

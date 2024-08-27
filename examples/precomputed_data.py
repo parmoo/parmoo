@@ -4,9 +4,9 @@ from parmoo import MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 
-my_moop = MOOP(LocalGPS)
+my_moop = MOOP(GlobalSurrogate_PS)
 
 my_moop.addDesign({'name': "x1",
                    'des_type': "continuous",
@@ -32,12 +32,17 @@ my_moop.addObjective({'name': "f2", 'obj_func': lambda x, s: s["MySim"][1]})
 
 my_moop.addAcquisition({'acquisition': UniformWeights})
 
+# This step is needed to finalize the MOOP definition. If you are using the
+# solve command it is done automatically, but it must be done manually before
+# any pre-existing data can be added.
+my_moop.compile()
+
 # Precompute one simulation value for demo
 des_val = np.zeros(1, dtype=[("x1", float), ("x2", int)])[0]
 sim_val = sim_func(des_val)
 
 # Add the precomputed simulation value from above
-my_moop.update_sim_db(des_val, sim_val, "MySim")
+my_moop.updateSimDb(des_val, sim_val, "MySim")
 
 # Get and display initial database
 sim_db = my_moop.getSimulationData()

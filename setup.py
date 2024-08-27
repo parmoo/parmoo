@@ -56,7 +56,7 @@ setup(
     long_description="\n".join(DOCLINES[2:]),
     url="https://github.com/parmoo/parmoo",
     author="Tyler H. Chang, Stefan M. Wild, et al.",
-    author_email="parmoo@mcs.anl.gov",
+    author_email="parmoo@lbl.gov",
     license="BSD 3-clause",
 
     packages=["parmoo",
@@ -74,13 +74,13 @@ setup(
               "parmoo.tests.libe_tests",
               "parmoo.tests.regression_tests"],
 
-    install_requires=["numpy", "scipy", "pyDOE", "pandas"],
+    install_requires=["jax[cpu]", "numpy", "scipy", "pandas"],
 
     # If run tests through setup.py - downloads these but does not install
     tests_require=["pytest", "pytest-cov", "flake8"],
 
     extras_require={
-        'extras': ["libensemble==0.9.3", "plotly", "dash", "kaleido"],
+        'extras': ["libensemble", "plotly", "dash", "kaleido"],
         'docs': ["sphinx", "sphinxcontrib.bibtex", "sphinx_rtd_theme"]},
 
     classifiers=[
@@ -93,8 +93,6 @@ setup(
         "Operating System :: Unix",
         "Operating System :: MacOS",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

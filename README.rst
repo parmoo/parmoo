@@ -23,6 +23,9 @@
    :target: https://doi.org/10.21105/joss.04468
    :alt: JOSS DOI
 
+.. image:: https://coveralls.io/repos/github/parmoo/parmoo/badge.svg?branch=main
+   :target: https://coveralls.io/github/parmoo/parmoo?branch=main
+
 |
 
 ParMOO: Python library for parallel multiobjective simulation optimization
@@ -66,9 +69,9 @@ ParMOO has been tested on Unix/Linux and MacOS systems.
 ParMOO's base has the following dependencies:
 
  * Python_ 3.8+
+ * jax_ -- for algorithmic differentiation and just-in-time (jit) compilation
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
- * pyDOE_ -- for generating experimental designs
  * pandas_ -- for exporting the resulting databases
 
 Additional dependencies are needed to use the additional features in
@@ -141,8 +144,24 @@ These tests are run regularly using GitHub Actions_.
 Basic Usage
 -----------
 
-ParMOO uses numpy_ in an object-oriented design, based around the ``MOOP``
-class. To get started, create a ``MOOP`` object.
+ParMOO uses numpy_ and jax_ in an object-oriented design, based around the
+``MOOP`` class.
+
+Before getting started, note that jax_ runs in single (32-bit) precision
+by default. To run in double precision, the following code is needed at
+startup:
+
+.. code-block:: python
+
+    import jax
+    jax.config.update("jax_enable_x64", True)
+
+This will be done automatically when importing certain modules in ParMOO,
+which are only compatible with double precision.
+However, in many use cases, 32-bit precision may be enough and provides
+substantial speedup in iteration tasks.
+
+Once the precision is set, to get started, create a ``MOOP`` object.
 
 .. code-block:: python
 
@@ -199,7 +218,7 @@ Next, add simulations to the problem as follows using the
    my_moop.addSimulation({'name': "MySim", # Optional name for this simulation
                           'm': 2, # This simulation has 2 outputs
                           'sim_func': sim_func, # Our sample sim from above
-                          'search': LatinHypercube, # Use a LH search
+                          'search': LatinHypercube, # Use a LHS search
                           'surrogate': GaussRBF, # Use a Gaussian RBF surrogate
                           'hyperparams': {}, # Hyperparams passed to internals
                           'sim_db': { # Optional dict of precomputed points
@@ -276,18 +295,22 @@ Resources
 
 To seek support or report issues, e-mail:
 
- * ``parmoo@mcs.anl.gov``
+ * ``parmoo@lbl.gov``
 
 Our full documentation is hosted on:
 
  * ReadTheDocs_
+
+Recent versions of ParMOO are also incorporated in:
+
+ * BANDFramework_
 
 Please read our LICENSE_ and CONTRIBUTING_ files.
 
 Citing ParMOO
 -------------
 
-Please use one of the following to cite ParMOO.
+Please use one or more of the following to cite ParMOO.
 
 Our JOSS paper:
 
@@ -295,7 +318,7 @@ Our JOSS paper:
 
     @article{parmoo,
         author={Chang, Tyler H. and Wild, Stefan M.},
-        title={{ParMOO}: A {P}ython library for parallel multiobjective simulation optimization},
+        title={{ParMOO}: A {P}ython Library for Parallel Multiobjective Simulation Optimization},
         journal = {Journal of Open Source Software},
         volume = {8},
         number = {82},
@@ -309,20 +332,36 @@ Our online documentation:
 .. code-block:: bibtex
 
     @techreport{parmoo-docs,
-        title       = {{ParMOO}: {P}ython library for parallel multiobjective simulation optimization},
+        title       = {{ParMOO}: {P}ython Library for Parallel Multiobjective Simulation Optimization},
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.3.1},
+        number      = {Version 0.4.0},
         year        = {2023},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
 
+Our design principles paper:
+
+.. code-block:: bibtex
+
+    @techreport{ParMOODesign24,
+        title = {Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
+        author = {Tyler H. Chang and Stefan M. Wild},
+        institution = {arXiv},
+        number = {2304.06881},
+        year = {2024},
+        url = {https://arxiv.org/abs/2304.06881},
+    }
+
+
 .. _Actions: https://github.com/parmoo/parmoo/actions
+.. _BANDFramework: https://github.com/bandframework/bandframework
 .. _CONTRIBUTING: https://github.com/parmoo/parmoo/blob/main/CONTRIBUTING.rst
 .. _dash: https://dash.plotly.com
 .. _FAQs: https://parmoo.readthedocs.io/en/latest/faqs.html
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
+.. _jax: https://jax.readthedocs.io/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
@@ -330,7 +369,6 @@ Our online documentation:
 .. _pandas: https://pandas.pydata.org
 .. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _plotly: https://plotly.com/python
-.. _pyDOE: https://pythonhosted.org/pyDOE
 .. _pytest: https://docs.pytest.org/en/7.0.x
 .. _pytest-cov: https://pytest-cov.readthedocs.io/en/latest
 .. _Python: https://www.python.org/downloads

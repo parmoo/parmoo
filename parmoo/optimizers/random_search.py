@@ -1,23 +1,25 @@
 
-""" Implementations of the SurrogateOptimizer class.
+""" Optimizers based on random search (RS).
 
 This module contains implementations of the SurrogateOptimizer ABC, which
 are based on randomized search strategies.
 
 Note that these strategies are all gradient-free, and therefore does not
-require objective, constraint, or surrogate gradients methods to be defined.
+require objective, constraint, or surrogate gradient methods to be defined.
 
 The classes include:
- * ``RandomSearch`` -- search globally by generating random samples
+ * ``GlobalSurrogate_RS`` -- optimize surrogates globally via RS
 
 """
 
+import jax
+from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import SurrogateOptimizer, AcquisitionFunction
+from parmoo.structs import SurrogateOptimizer
 from parmoo.util import xerror
 
 
-class RandomSearch(SurrogateOptimizer):
+class GlobalSurrogate_RS(SurrogateOptimizer):
     """ Use randomized search to identify potentially efficient designs.
 
     Randomly search the design space and use the surrogate models to predict
@@ -25,13 +27,13 @@ class RandomSearch(SurrogateOptimizer):
 
     """
 
-    # Slots for the RandomSearch class
-    __slots__ = ['n', 'lb', 'ub', 'acquisitions', 'constraints', 'objectives',
-                 'budget', 'simulations', 'gradients', 'resetObjectives',
-                 'penalty_func', 'sim_sd']
+    # Slots for the GlobalSurrogate_RS class
+    __slots__ = ['n', 'o', 'lb', 'ub', 'acquisitions', 'constraints',
+                 'objectives', 'budget', 'simulations', 'setTR',
+                 'penalty_func', 'sim_sd', 'np_rng']
 
     def __init__(self, o, lb, ub, hyperparams):
-        """ Constructor for the RandomSearch class.
+        """ Constructor for the GlobalSurrogate_RS class.
 
         Args:
             o (int): The number of objectives.
@@ -54,6 +56,7 @@ class RandomSearch(SurrogateOptimizer):
 
         # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
+        self.o = o
         self.n = lb.size
         self.lb = lb
         self.ub = ub
@@ -67,9 +70,19 @@ class RandomSearch(SurrogateOptimizer):
                     self.budget = hyperparams['opt_budget']
             else:
                 raise TypeError("hyperparams['opt_budget'] "
-                                 "must be an integer")
+                                "must be an integer")
         else:
             self.budget = 10000
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
         # Initialize the list of acquisition functions
         self.acquisitions = []
         return
@@ -90,20 +103,27 @@ class RandomSearch(SurrogateOptimizer):
         from parmoo.util import updatePF
 
         # Check that x is legal
-        if isinstance(x, np.ndarray):
-            if self.n != x.shape[1]:
-                raise ValueError("The columns of x must match n")
-            elif len(self.acquisitions) != x.shape[0]:
-                raise ValueError("The rows of x must match the number " +
-                                 "of acquisition functions")
-        else:
-            raise TypeError("x must be a numpy array")
+        if self.n != x.shape[1]:
+            raise ValueError("The columns of x must match n")
+        elif len(self.acquisitions) != x.shape[0]:
+            raise ValueError("The rows of x must match the number " +
+                             "of acquisition functions")
+        # Initialize the surrogates with an infinite trust region
+        rad = np.ones(self.n) * np.inf
+        self.setTR(x[0, :], rad)
+        # Compile the penalty function
+        try:
+            pen_func = jax.jit(self.penalty_func)
+            x0 = x[0, :]
+            sx0 = self.simulations(x0)
+            f0 = pen_func(x0, sx0)
+        except BaseException:
+            pen_func = self.penalty_func
         # Set the batch size
         batch_size = 1000
         # Initialize the database
-        o = self.objectives(x[0, :]).size
         data = {'x_vals': np.zeros((batch_size, self.n)),
-                'f_vals': np.zeros((batch_size, o)),
+                'f_vals': np.zeros((batch_size, self.o)),
                 'c_vals': np.zeros((batch_size, 0))}
         # Loop over batch size until k == budget
         k = 0
@@ -113,31 +133,45 @@ class RandomSearch(SurrogateOptimizer):
             k_new = min(self.budget, k + batch_size) - k
             if k_new < batch_size:
                 data['x_vals'] = np.zeros((k_new, self.n))
-                data['f_vals'] = np.zeros((k_new, o))
+                data['f_vals'] = np.zeros((k_new, self.o))
                 data['c_vals'] = np.zeros((k_new, 0))
             # Randomly generate k_new new points
             for i in range(k_new):
-                data['x_vals'][i, :] = np.random.random_sample(self.n) \
-                                       * (self.ub[:] - self.lb[:]) + self.lb[:]
-                data['f_vals'][i, :] = self.penalty_func(data['x_vals'][i, :])
+                xi = (self.np_rng.random(self.n) *
+                      (self.ub[:] - self.lb[:]) + self.lb[:])
+                data['x_vals'][i, :] = xi[:]
+                sxi = self.simulations(xi)
+                data['f_vals'][i, :] = pen_func(xi, sxi)
             # Update the PF
             nondom = updatePF(data, nondom)
             k += k_new
-        # Use acquisition functions to extract array of results
+        # Extract results for each scalarization via random search
         results = []
-        for acq in self.acquisitions:
-            f_vals = []
+        for iq, acq in enumerate(self.acquisitions):
+            # Compile the scalarization function
             if acq.useSD():
-                f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
-                                        self.sim_sd(xi))
-                          for fi, xi in zip(nondom['f_vals'],
-                                            nondom['x_vals'])]
+
+                def _sca_func(fi, xi):
+                    return acq.scalarize(fi, xi, self.simulations(xi),
+                                         self.sim_sd(xi))
+
             else:
-                m = self.simulations(nondom['x_vals'][0]).size
-                f_vals = [acq.scalarize(fi, xi, self.simulations(xi),
-                                        np.zeros(m))
-                          for fi, xi in zip(nondom['f_vals'],
-                                            nondom['x_vals'])]
+
+                def _sca_func(fi, xi):
+                    return acq.scalarize(fi, xi, self.simulations(xi),
+                                         jnp.zeros(sxi.size))
+
+            try:
+                sca_func = jax.jit(_sca_func)
+                _ = sca_func(f0, x0)
+            except BaseException:
+                sca_func = _sca_func
+            # Use acquisition functions to extract array of results
+            f_vals = [sca_func(fi, xi) for fi, xi in zip(nondom['f_vals'],
+                                                         nondom['x_vals'])]
             imin = np.argmin(np.asarray([f_vals]))
             results.append(nondom['x_vals'][imin, :])
+        self.objectives = None
+        self.constraints = None
+        self.penalty_func = None
         return np.asarray(results)

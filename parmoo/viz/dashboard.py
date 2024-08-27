@@ -1,5 +1,5 @@
 """ This module contains private methods for hosting and receiving callbacks
-from an interactiv dashboard. This module is intended only for developer use.
+from an interactive dashboard. This module is intended only for developer use.
 
 Note that some docstrings may be incomplete.
 
@@ -378,7 +378,7 @@ class Dash_App:
             Input(
                 component_id='database_dropdown',
                 component_property='value',),
-            # constraint showr - regenerate
+            # constraint show - regenerate
             Input(
                 component_id='constraint_checkboxes',
                 component_property='value'),
@@ -830,13 +830,13 @@ class Dash_App:
                             ranges = entry_dict[list(entry_dict.keys())[0]]
                             if ranges is not None:
                                 if row_selected:
-                                    for range in ranges:
+                                    for range1 in ranges:
                                         try:
-                                            for rang in range:
+                                            for rang in range1:
                                                 for ran in rang:
                                                     pass
                                             row_selected_yet = False
-                                            for rang in range:
+                                            for rang in range1:
                                                 if not row_selected_yet:
                                                     if (row_obj_value >=
                                                        rang[0] and
@@ -844,11 +844,12 @@ class Dash_App:
                                                        rang[1]):
                                                         row_selected_yet = True
                                                     else:
-                                                        row_selected_yet =False
+                                                        row_selected_yet = \
+                                                            False
                                             row_selected = row_selected_yet
-                                        except:
-                                            if (row_obj_value >= range[0] and
-                                               row_obj_value <= range[1]):
+                                        except BaseException:
+                                            if (row_obj_value >= range1[0] and
+                                               row_obj_value <= range1[1]):
                                                 row_selected = True
                                             else:
                                                 row_selected = False

@@ -17,7 +17,7 @@ or with Python's built-in multiprocessing module.
 
 .. code-block:: bash
 
-    python3 libe_basic_ex.py --comms local --nworkers N
+    python3 libe_basic_ex.py --comms local --nworkers {N+1}
 
 The resulting output is shown below.
 

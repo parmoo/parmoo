@@ -16,7 +16,13 @@ Before release
 - Version number is updated wherever it appears and ``+dev`` suffix is removed
   (in ``parmoo/version.py``, ``README.rst``, and ``docs/refs.rst``).
 
-- Check ``README.rst`` *Citing ParMOO* and ``docs/refs.rst`` for correctness.
+- Check ``README.rst``: 
+  - *Citing ParMOO* correct?
+  - ``docs/refs.rst`` correct?
+  - Coverage badge branch set to ``main`` (for badge and link)?
+
+- Check for spelling mistakes and typos in the docs and Python docstrings:
+  - ``pyspelling -c .github/config/.spellcheck.yml``
 
 - ``setup.py`` and ``parmoo/__init__.py`` are checked to ensure all
   information is up to date.
@@ -57,8 +63,13 @@ An administrator will take the following steps.
 - If the merge was made from a release branch (instead of develop), merge this
   branch into develop.
 
-- Create a new commit on develop that appends ``+dev`` to the version number
-  (wherever it appears).
+- Create a new commit on develop that:
+  - Appends ``+dev`` to the version number (wherever it appears)
+  - Changes the coverage badge branch to ``develop`` (for badge and link).
+
+- Update the version number cited in the parMOO solver farm at
+  https://github.com/parmoo/parmoo-solver-farm 
+  and check that the citation, contact, etc. information there is up to date.
 
 After release
 -------------

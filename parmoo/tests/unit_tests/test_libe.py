@@ -52,7 +52,7 @@ def test_libE_MOOP():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import RandomConstraint
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import numpy as np
 
     try:
@@ -76,20 +76,19 @@ def test_libE_MOOP():
 
         # Unpack names into array
         xx = np.zeros(n)
-        for i, name in enumerate(moop.moop.des_names):
+        for i, name in enumerate(moop.moop.des_schema):
             xx[i] = x[name[0]]
         # Return ID
         return xx[:3]
 
     # Create a libE_MOOP with named variables
-    moop = libE_MOOP(LocalGPS)
+    moop = libE_MOOP(LocalSurrogate_PS)
     assert (isinstance(moop.moop, MOOP))
-    moop = libE_MOOP(LocalGPS, hyperparams={})
+    moop = libE_MOOP(LocalSurrogate_PS, hyperparams={})
     assert (isinstance(moop.moop, MOOP))
     # Add n design vars
     for i in range(n):
         moop.addDesign({'name': "x" + str(i + 1), 'lb': 0.0, 'ub': 1.0})
-    assert (len(moop.getDesignType().names) == n)
     # Add simulation
     moop.addSimulation({'name': "Eye",
                         'm': o,
@@ -99,7 +98,6 @@ def test_libE_MOOP():
                         'surrogate': GaussRBF,
                         'sim_db': {},
                         'des_tol': 0.00000001})
-    assert (len(moop.getSimulationType().names) == 1)
     # Add o objectives
     def obj1(x, s): return s['Eye'][0]
     def obj2(x, s): return s['Eye'][1]
@@ -107,14 +105,17 @@ def test_libE_MOOP():
     moop.addObjective({'name': "obj1", 'obj_func': obj1})
     moop.addObjective({'name': "obj2", 'obj_func': obj2})
     moop.addObjective({'name': "obj3", 'obj_func': obj3})
-    assert (len(moop.getObjectiveType().names) == 3)
     # Add 1 constraint
     def const1(x, s): return x["x5"] - 0.5
     moop.addConstraint({'name': "c1", 'constraint': const1})
-    assert (len(moop.getConstraintType().names) == 1)
     # Add 4 acquisition functions
     for i in range(4):
         moop.addAcquisition({'acquisition': RandomConstraint})
+    moop.compile()
+    assert (len(moop.getDesignType().names) == n)
+    assert (len(moop.getSimulationType().names) == 1)
+    assert (len(moop.getObjectiveType().names) == 3)
+    assert (len(moop.getConstraintType().names) == 1)
     assert (len(moop.moop.acquisitions) == 4)
     # Perform 0 iteration manually
     batch = moop.iterate(0)
@@ -122,11 +123,18 @@ def test_libE_MOOP():
         moop.evaluateSimulation(xi, i)
     moop.updateAll(0, batch)
     # Add a value in the simulation database
-    x_val = np.zeros(1, dtype=moop.getDesignType())[0]
-    sx_val = np.zeros(1, dtype=moop.getSimulationType())[0]
-    moop.update_sim_db(x_val, sx_val["Eye"], "Eye")
-    assert (np.all(moop.check_sim_db(x_val, "Eye") == 0))
-    moop.addData(x_val, sx_val)
+    x_val = {}
+    for (name, _) in moop.moop.des_schema:
+        x_val[name] = 0
+    sx_val = {}
+    for sname in moop.moop.sim_schema:
+        if len(sname) > 2:
+            sx_val[sname[0]] = np.zeros(sname[2])
+        else:
+            sx_val[sname[0]] = 0
+    moop.updateSimDb(x_val, sx_val["Eye"], "Eye")
+    assert (np.all(moop.checkSimDb(x_val, "Eye") == 0))
+    moop.addObjData(x_val, sx_val)
     # Check Pareto front, objective data, sim data
     assert (moop.getPF()['x1'].shape[0] == 1)
     assert (moop.getObjectiveData()['x1'].shape[0] == 101)
@@ -138,6 +146,7 @@ def test_libE_MOOP():
     # Clean up test directory
     os.remove("parmoo.moop")
     os.remove("parmoo.surrogate.1")
+    os.remove("parmoo.optimizer")
 
 
 # @pytest.mark.extra
@@ -151,7 +160,7 @@ def test_libE_MOOP_bad_solve():
     from parmoo.searches import LatinHypercube
     from parmoo.surrogates import GaussRBF
     from parmoo.acquisitions import RandomConstraint
-    from parmoo.optimizers import LocalGPS
+    from parmoo.optimizers import LocalSurrogate_PS
     import pytest
 
     try:
@@ -161,7 +170,7 @@ def test_libE_MOOP_bad_solve():
                     "Skipping.")
 
     # Create a libE_MOOP
-    moop = libE_MOOP(LocalGPS)
+    moop = libE_MOOP(LocalSurrogate_PS)
 
     # Add 1 design var
     moop.addDesign({'lb': 0.0, 'ub': 1.0})
@@ -197,11 +206,19 @@ def test_libE_MOOP_bad_solve():
 
     # Solve with bad type
     with pytest.raises(TypeError):
+        moop.solve(iter_max="100")
+
+    # Solve with bad CL args
+    with pytest.raises(ValueError):
+        moop.solve(iter_max=-1)
+
+    # Solve with bad type
+    with pytest.raises(TypeError):
         moop.solve(sim_max="100")
 
     # Solve with bad CL args
     with pytest.raises(ValueError):
-        moop.solve(sim_max=101)
+        moop.solve(sim_max=-1)
 
 
 if __name__ == "__main__":

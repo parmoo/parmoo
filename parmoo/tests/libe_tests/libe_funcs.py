@@ -25,10 +25,6 @@ def dtlz2_sim_unnamed(x):
         for y in x[:o-1-i]:
             f[i] *= math.cos(math.pi * y / 2.0)
     return f
-    
-def obj1_unnamed(x, s): return s[0]
-def obj2_unnamed(x, s): return s[1]
-def obj3_unnamed(x, s): return s[2]
 
 # Define functions for named runs
 

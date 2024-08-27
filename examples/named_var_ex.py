@@ -3,10 +3,9 @@ import numpy as np
 from parmoo import MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
-from parmoo.acquisitions import UniformWeights
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 
-my_moop = MOOP(LocalGPS)
+my_moop = MOOP(GlobalSurrogate_PS)
 
 # Define a simulation to use below
 def sim_func(x):

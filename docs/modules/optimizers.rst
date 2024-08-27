@@ -18,21 +18,21 @@ by adding code to handle the optional ``der`` input.*
 
     def f(x, sx, der=0):
         # When using gradient-based solvers, define extra if-cases for
-        # handling der=1 (calculate df/dx) and der=2 (caldculate df/dsx).
+        # handling der=1 (calculate df/dx) and der=2 (calculate df/dsx).
 
-GPS Search Techniques (gradient-free)
+Pattern Search Techniques (gradient-free)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: optimizers.gps_search
-..    :members: optimizers/gps_search
+.. automodule:: optimizers.pattern_search
+..    :members: optimizers/pattern_search
 
-.. autoclass:: LocalGPS
+.. autoclass:: GlobalSurrogate_PS
    :member-order: bysource
    :members:
 
    .. automethod:: __init__
 
-.. autoclass:: GlobalGPS
+.. autoclass:: LocalSurrogate_PS
    :member-order: bysource
    :members:
 
@@ -45,7 +45,7 @@ Random Search Techniques (gradient-free)
 .. automodule:: optimizers.random_search
 ..    :members: optimizers/random_search
 
-.. autoclass:: RandomSearch
+.. autoclass:: GlobalSurrogate_RS
    :member-order: bysource
    :members:
 
@@ -57,13 +57,13 @@ L-BFGS-B Variations (gradient-based)
 .. automodule:: optimizers.lbfgsb
 ..    :members: optimizers/lbfgsb
 
-.. autoclass:: LBFGSB
+.. autoclass:: GlobalSurrogate_BFGS
    :member-order: bysource
    :members:
 
    .. automethod:: __init__
 
-.. autoclass:: TR_LBFGSB
+.. autoclass:: LocalSurrogate_BFGS
    :member-order: bysource
    :members:
 

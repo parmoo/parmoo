@@ -1,28 +1,29 @@
 
 import numpy as np
-import pandas as pd
 from parmoo import MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 
-# Fix the random seed for reproducibility
-np.random.seed(0)
-
-my_moop = MOOP(LocalGPS)
+# Fix the random seed for reproducibility using the np_random_gen hyperparams
+my_moop = MOOP(GlobalSurrogate_PS, hyperparams={'np_random_gen': 0})
 
 my_moop.addDesign({'name': "x1",
                    'des_type': "continuous",
                    'lb': 0.0, 'ub': 1.0})
+# Note: the 'levels' key can contain a list of strings, but jax can only jit
+# numeric types, so integer level IDs are strongly recommended
 my_moop.addDesign({'name': "x2", 'des_type': "categorical",
-                   'levels': ["good", "bad"]})
+                   'levels': [-1, 1]})
 
 def sim_func(x):
-   if x["x2"] == "good":
-      return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
-   else:
-      return np.array([99.9, 99.9])
+   sx = np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
+   ## The following 2 lines are equivalent, but jax cannot jit if statements.
+   ## Uncomment below to see the difference in execution speed from jit
+   # if x["x2"] != 1: sx += 99.
+   sx += 99. - 99. * (x["x2"] == 1)
+   return sx
 
 my_moop.addSimulation({'name': "MySim",
                        'm': 2,
@@ -51,5 +52,5 @@ print(results)
 
 # Plot results -- must have extra viz dependencies installed
 from parmoo.viz import scatter
-# The optional arg `output` exports directly to jpg instead of interactive mode
+# The optional arg `output` exports directly to jpeg instead of interactive mode
 scatter(my_moop, output="jpeg")

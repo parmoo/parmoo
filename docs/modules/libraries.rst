@@ -18,8 +18,7 @@ ParMOO's interface.
 .. code-block:: python
 
     from parmoo.simulations import sim_func
-    from parmoo.objectives import obj_func
-    from parmoo.constraints import const_func
+    from parmoo.structs import CompositeFunction
 
 Current options are:
 

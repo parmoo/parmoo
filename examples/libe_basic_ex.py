@@ -4,7 +4,7 @@ from parmoo.extras.libe import libE_MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 
 # When running with MPI, we need to keep track of which thread is the manager
 # using libensemble.tools.parse_args()
@@ -14,10 +14,8 @@ _, is_manager, _, _ = parse_args()
 # All functions are defined below.
 
 def sim_func(x):
-   if x["x2"] == 0:
-      return np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
-   else:
-      return np.array([99.9, 99.9])
+   sx = np.array([(x["x1"] - 0.2) ** 2, (x["x1"] - 0.8) ** 2])
+   return 99. - 99. * (x["x2"] == 0) + sx
 
 def obj_f1(x, s):
     return s["MySim"][0]
@@ -31,11 +29,8 @@ def const_c1(x, s):
 # When using libEnsemble with Python MP, the "solve" command must be enclosed
 # in an "if __name__ == '__main__':" block, as shown below
 if __name__ == "__main__":
-    # Fix the random seed for reproducibility
-    np.random.seed(0)
-
-    # Create a libE_MOOP
-    my_moop = libE_MOOP(LocalGPS)
+    # Create a libE_MOOP -- fix the random seed for reproducibility
+    my_moop = libE_MOOP(GlobalSurrogate_PS, hyperparams={'np_random_gen': 0})
     
     # Add 2 design variables (one continuous and one categorical)
     my_moop.addDesign({'name': "x1",
@@ -44,7 +39,8 @@ if __name__ == "__main__":
     my_moop.addDesign({'name': "x2", 'des_type': "categorical",
                        'levels': 3})
     
-    # Add the simulation (note the budget of 20 sim evals during search phase)
+    # Add the simulation (note the budget of 20 simulation evaluations
+    # during search phase)
     my_moop.addSimulation({'name': "MySim",
                            'm': 2,
                            'sim_func': sim_func,

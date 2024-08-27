@@ -76,7 +76,7 @@ Frequently asked questions:
  - Q: Given the advice from the previous question, how do I know a good
    ``total_budget`` for my problem?
 
-    - A: It depends on a lot of factors. In general, if your problem is
+    - A: It depends on many factors. In general, if your problem is
       small (``n < 8`` design variables **and** ``o < 3`` objectives) you can
       probably get away with a total budget in the **hundreds**.
       If your problem is large (``n > 8`` design variables **or**
@@ -86,7 +86,7 @@ Frequently asked questions:
       the problem expense increases **exponentially** if you want to maintain
       the same accuracy. This is part of the *curse of dimensionality*.
 
- - Q: I have a lot of design variables but I can't afford that large of a
+ - Q: I have many design variables but I can't afford that large of a
    budget, what can I do?
 
     - A: The key issue is that **global optimization is expensive**.
@@ -152,6 +152,10 @@ Frequently asked questions:
       surrogates, and therefore is more scalable for handling large budgets.
       See our :ref:`tutorial on local methods <high_d_ex>`
       for an example.
+      As of version 0.4.0, you should be able to get up to 10x
+      speedup on many iteration costs if ParMOO is able to ``jit``
+      certain critical segments of your code with ``jax/lax``.
+      To understand how that works, see our :ref:`jax tips <jax_tips>`.
 
  - Q: Surrogate models, acquisition functions, search techniques, and
    optimization solvers -- how do I know which ones to pick?
@@ -164,23 +168,21 @@ Frequently asked questions:
       These options work best for many of our test problems,
       and they are demonstrated in our tutorials.
       For the surrogate model and optimization solver, start out with
-      :class:`LocalGPS <optimizers.gps_search.LocalGPS>` optimizer
-      and :class:`GaussRBF <surrogates.gaussian_proc.GaussRBF>` surrogate
-      model, as in the quickstart_.
+      :class:`LocalSurrogate_PS <optimizers.pattern_search.GlobalSurrogate_PS>`
+      optimizer and :class:`GaussRBF <surrogates.gaussian_proc.GaussRBF>`
+      surrogate model, as in the quickstart_.
       Then:
 
        - If you are willing to code the derivative for your objective
          and constraint functions (not the simulations), then you can
          follow the advanced_example_ and switch to using the
-         :class:`LBFGSB <optimizers.lbfgsb.LBFGSB>` optimizer.
-       - If you have a lot of design variables, then you might do better
-         with a local solver, by switching your surrogate to the
-         :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
-         surrogate.
-         If you are using the
-         :class:`LBFGSB <optimizers.lbfgsb.LBFGSB>` optimizer, then you
-         will also need to switch to the
-         :class:`TR_LBFGSB <optimizers.lbfgsb.TR_LBFGSB>` optimizer.
+         :class:`GlobalSurrogate_BFGS <optimizers.lbfgsb.GlobalSurrogate_BFGS>`
+         optimizer.
+       - If you have many design variables, then you might do better
+         with a local solver, by switching to one of the
+         :class:`LocalSurrogate_PS <optimizers.pattern_search.LocalSurrogate_PS>`
+         :class:`LocalSurrogate_BFGS <optimizers.lbfgsb.LocalSurrogate_BFGS>`
+         optimizers.
        - If you're a professional optimizer or researcher and you want
          to try your own methods, then you can do so by writing your own
          implementation for one of our
@@ -192,6 +194,7 @@ Frequently asked questions:
 
 We would like to acknowledge the following users, whose helpful discussions
 with us inspired this FAQ:
+
  - Sarah Salem (Bundeswehr University Munich)
  - Nicholas Antoniou (independent researcher)
 

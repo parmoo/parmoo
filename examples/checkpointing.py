@@ -4,14 +4,11 @@ from parmoo import MOOP
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import UniformWeights
-from parmoo.optimizers import LocalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 import logging
 
-# Fix the random seed for reproducibility
-np.random.seed(0)
-
-# Create a new MOOP
-my_moop = MOOP(LocalGPS)
+# Create a new MOOP -- fix the random seed with the hyperparams
+my_moop = MOOP(GlobalSurrogate_PS, hyperparams={'np_random_gen': 0})
 
 # Add 1 continuous and 1 categorical design variable
 my_moop.addDesign({'name': "x1",
@@ -66,7 +63,7 @@ my_moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
 my_moop.solve(4)
 
 # Create a new MOOP object and reload the MOOP from parmoo.moop file
-new_moop = MOOP(LocalGPS)
+new_moop = MOOP(GlobalSurrogate_PS)
 new_moop.load("parmoo")
 
 # Do another iteration

@@ -11,8 +11,8 @@ The classes include:
 
 import numpy as np
 from parmoo.structs import GlobalSearch
-from pyDOE import lhs
 from parmoo.util import xerror
+from scipy.stats import qmc
 
 
 class LatinHypercube(GlobalSearch):
@@ -24,7 +24,7 @@ class LatinHypercube(GlobalSearch):
     """
 
     # Slots for the LatinHypercube class
-    __slots__ = ['n', 'lb', 'ub', 'budget']
+    __slots__ = ['lb', 'ub', 'budget', 'sampler', 'np_rng']
 
     def __init__(self, m, lb, ub, hyperparams):
         """ Constructor for the LatinHypercube GlobalSearch class.
@@ -67,6 +67,17 @@ class LatinHypercube(GlobalSearch):
                                  "be an int")
         else:
             self.budget = 100
+        # Check the hyperparameter dictionary for random generator
+        if 'np_random_gen' in hyperparams:
+            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
+                self.np_rng = hyperparams['np_random_gen']
+            else:
+                raise TypeError("When present, hyperparams['np_random_gen'] "
+                                "must be an instance of the class "
+                                "numpy.random.Generator")
+        else:
+            self.np_rng = np.random.default_rng()
+        self.sampler = qmc.LatinHypercube(d=self.n, seed=self.np_rng)
         return
 
     def startSearch(self, lb, ub):
@@ -95,8 +106,8 @@ class LatinHypercube(GlobalSearch):
             return np.asarray([])
         # Otherwise, return a n-dimensional Latin hypercube design
         else:
-            return np.asarray([self.lb + (self.ub - self.lb) * xi
-                               for xi in lhs(self.n, samples=self.budget)])
+            return qmc.scale(self.sampler.random(n=self.budget),
+                             self.lb, self.ub)
 
     def resumeSearch(self):
         """ Resume a previous Latin hypercube sampling.
@@ -112,5 +123,5 @@ class LatinHypercube(GlobalSearch):
             return np.asarray([])
         # Otherwise, return a n-dimensional Latin hypercube design
         else:
-            return np.asarray([self.lb + (self.ub - self.lb) * xi
-                               for xi in lhs(self.n, samples=self.budget)])
+            return qmc.scale(self.sampler.random(n=self.budget),
+                             self.lb, self.ub)

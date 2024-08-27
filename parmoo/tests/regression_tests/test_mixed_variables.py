@@ -6,13 +6,14 @@ Uses named variables and public function definitions to define the problem.
 
 """
 
+import numpy as np
+import os
 from parmoo import MOOP
-from parmoo.optimizers import GlobalGPS
+from parmoo.optimizers import GlobalSurrogate_PS
 from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.searches import LatinHypercube
-import os
-import numpy as np
+from parmoo.embeddings import ContinuousEmbedder
 
 # For this test, use all user-defined functions
 
@@ -39,7 +40,7 @@ def obj2(x, sx):
     return sx["my sim"][1]
 
 # Create a MOOP
-moop = MOOP(GlobalGPS)
+moop = MOOP(GlobalSurrogate_PS)
 
 # Add design variables
 moop.addDesign({'name': "cont var", 'ub': 1.0, 'lb': 0.0,
@@ -51,9 +52,9 @@ moop.addDesign({'name': "cat var 1", 'des_type': "categorical",
 moop.addDesign({'name': "cat var 2", 'des_type': "categorical",
                 'levels': ["low", "med", "high"]})
 moop.addDesign({'name': "custom var", 'des_type': "custom",
+                'ub': 1.0, 'lb': 0.0,
                 'embedding_size': 1,
-                'embedder': lambda x: float(x),
-                'extracter': lambda x: str(x)})
+                'embedder': ContinuousEmbedder})
 
 # Add the simulation
 moop.addSimulation({'name': "my sim",
@@ -66,14 +67,14 @@ moop.addSimulation({'name': "my sim",
 # Add user objective functions
 moop.addObjective({'obj_func': obj1}, {'obj_func': obj2})
 
-# Add NUM_OBJ acquisition funcitons
+# Add 1 single acquisition function
 for i in range(1):
     moop.addAcquisition({'acquisition': RandomConstraint, 'hyperparams': {}})
 
-# Solve the problem with 5 iterations with checkpointing on
-moop.solve(20)
+# Solve the problem with 10 iterations with checkpointing on
+moop.solve(10)
 
-# Check that 40 simulations were evaluated and solutions are feasible
-assert(moop.getSimulationData()["my sim"].size == 40)
-assert(moop.getObjectiveData().size == 40)
+# Check that 30 simulations were evaluated and solutions are feasible
+assert(moop.getSimulationData()["my sim"].size == 30)
+assert(moop.getObjectiveData().size == 30)
 assert(moop.getPF().size > 0)

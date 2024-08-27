@@ -3,17 +3,18 @@ version: 2
 # conda:
 #     environment: install/environment.yml
 
+build:
+    os: ubuntu-lts-latest
+    tools:
+        python: "3.8"
+
 sphinx:
     configuration: docs/conf.py
-
-build:
-    image: latest
 
 formats:
   - pdf
 
 python:
-    version: 3.8
     install:
       - requirements: REQUIREMENTS
       - method: pip

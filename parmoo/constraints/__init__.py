@@ -1,2 +1,8 @@
-from .const_func import const_func
-from .const_lib import *
+from .const_lib import (
+                        SingleSimBound,
+                        SumOfSimSquaresBound,
+                        SumOfSimsBound,
+                        SingleSimBoundGradient,
+                        SumOfSimSquaresBoundGradient,
+                        SumOfSimsBoundGradient
+                        )

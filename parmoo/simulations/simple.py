@@ -9,7 +9,7 @@ functions:
 """
 
 from parmoo.simulations import sim_func
-from parmoo.util import unpack
+from parmoo.util import to_array
 import numpy as np
 
 
@@ -62,7 +62,7 @@ class LinearSim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Calculate output
         result = np.zeros(self.m * self.o)
         for j in range(self.m * self.o):
@@ -120,7 +120,7 @@ class QuadraticSim(sim_func):
         """
 
         # Extract x into xx, if names are used
-        xx = unpack(x, self.des_type)
+        xx = to_array(x, self.des_type)
         # Calculate output
         result = np.zeros(self.o)
         temp = np.zeros(self.m * self.o)
