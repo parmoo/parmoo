@@ -26,6 +26,7 @@ comms
 CompositeFunction
 const
 ConstraintFunction
+conv
 CPUs
 csv
 cx
@@ -42,6 +43,7 @@ des
 Deserialize
 dev
 df
+dimensionality
 dirs
 dists
 docstrings
@@ -58,6 +60,7 @@ embedder
 Embedder
 embedders
 embeddings
+env
 eps
 eval
 evaluateGradients
@@ -89,6 +92,7 @@ getPF
 getSimulationData
 getSimulationType
 getUpperBounds
+github
 globalGPS
 GlobalGPS
 GlobalPS
@@ -99,6 +103,7 @@ grey
 hacky
 html
 http
+https
 hyperparameter
 hyperparameters
 hyperparams
@@ -137,6 +142,7 @@ lexicographically
 Lexicographically
 LHS
 libe
+libensemble
 libE
 libEnsemble
 LinearSim
@@ -188,6 +194,7 @@ Plotly
 png
 poppler
 pre
+Precompute
 precomputed
 profiler
 ps
@@ -202,6 +209,7 @@ RandomConstraint
 RandomSearch
 RBF
 RBFs
+reproducibility
 resample
 rescales
 rescaling
@@ -278,6 +286,7 @@ Typecheck
 TypeError
 ub
 un
+Uncomment
 UniformAugChebyshev
 UniformRandom
 UniformWeights
@@ -286,6 +295,8 @@ updateAll
 updatePF
 updateSimDb
 useSD
+usr
+utf
 vals
 ValueError
 ValueErrors
