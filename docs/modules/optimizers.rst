@@ -18,7 +18,7 @@ by adding code to handle the optional ``der`` input.*
 
     def f(x, sx, der=0):
         # When using gradient-based solvers, define extra if-cases for
-        # handling der=1 (calculate df/dx) and der=2 (caldculate df/dsx).
+        # handling der=1 (calculate df/dx) and der=2 (calculate df/dsx).
 
 Pattern Search Techniques (gradient-free)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

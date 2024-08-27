@@ -177,7 +177,7 @@ def check_inputs(db,
             points: The item passed to the 'points' keyword in a
                 user-facing function.
                 If points cannot be cast to a string corresponding to one of
-                the supported contraint filters, a ValueError is raised.
+                the supported constraint filters, a ValueError is raised.
 
             height: The item passed to the 'height' keyword in a user-facing
                 function.
@@ -232,12 +232,12 @@ def check_inputs(db,
 
             dev_mode: The item passed to the 'dev_mode' keyword in a
                 user-facing function.
-                If dev_mode cannot be cast to one of the boolean values True
+                If dev_mode cannot be cast to one of the Boolean values True
                 and False, a ValueError is raised.
 
             pop_up: The item passed to the 'pop_up' keyword in a user-facing
                 function.
-                If pop_up cannot be cast to one of the boolean values True and
+                If pop_up cannot be cast to one of the Boolean values True and
                 False, a ValueError is raised.
 
             port: The item passed to the 'port' keyword in a user-facing
