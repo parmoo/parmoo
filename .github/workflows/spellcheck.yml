@@ -22,9 +22,3 @@ jobs:
       - name: Spellcheck RST files
         run: |
           pyspelling -c .github/config/.spellcheck.yml 
-
-      - name: Upload spellcheck report
-        uses: actions/upload-artifact@v2
-        with:
-          name: spellcheck-report
-          path: spellcheck-report.txt
