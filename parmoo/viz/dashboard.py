@@ -1,5 +1,5 @@
 """ This module contains private methods for hosting and receiving callbacks
-from an interactiv dashboard. This module is intended only for developer use.
+from an interactive dashboard. This module is intended only for developer use.
 
 Note that some docstrings may be incomplete.
 
@@ -378,7 +378,7 @@ class Dash_App:
             Input(
                 component_id='database_dropdown',
                 component_property='value',),
-            # constraint showr - regenerate
+            # constraint show - regenerate
             Input(
                 component_id='constraint_checkboxes',
                 component_property='value'),

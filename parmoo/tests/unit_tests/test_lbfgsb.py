@@ -14,7 +14,7 @@ def test_GlobalSurrogate_BFGS():
     Use the weights [1, 0], [0, 1], and [0.5, 0.5].
 
     Assert that the solutions are all correct. I.e., (1, 0, 0) is
-    the minizer of $F^T [1, 0]$; (0, 1, 0) is the minimizer of $F^T [0, 1]$;
+    the minimizer of $F^T [1, 0]$; (0, 1, 0) is the minimizer of $F^T [0, 1]$;
     and the minimizer of $F^T [0.5, 0.5]$ satisfies x_3 = 0.
 
     """
@@ -124,7 +124,7 @@ def test_LocalSurrogate_BFGS():
     Use the weights [1, 0], [0, 1], and [0.5, 0.5].
 
     Assert that the solutions are all correct. I.e., (1, 0, 0) is
-    the minizer of $F^T [1, 0]$; (0, 1, 0) is the minimizer of $F^T [0, 1]$;
+    the minimizer of $F^T [1, 0]$; (0, 1, 0) is the minimizer of $F^T [0, 1]$;
     and the minimizer of $F^T [0.5, 0.5]$ satisfies x_3 = 0.
 
     """

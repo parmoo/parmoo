@@ -9,7 +9,7 @@ require any gradients to be defined. This makes them friendly for
 getting started.
 
 The classes include:
- * ``LocalSurrogate_PS`` -- A multi-start pattern search (PS) algorithm
+ * ``LocalSurrogate_PS`` -- A multistart pattern search (PS) algorithm
  * ``GlobalSurrogate_PS`` -- global random search, followed by LocalPS
 
 """
@@ -23,7 +23,7 @@ from scipy.stats.qmc import LatinHypercube
 
 
 class LocalSurrogate_PS(SurrogateOptimizer):
-    """ Use multi-start Pattern Search to solve surrogate problem locally.
+    """ Use multistart Pattern Search to solve surrogate problem locally.
 
     Applies PS to the surrogate problem, in order to identify design
     points that are locally Pareto optimal, with respect to the surrogate
@@ -54,7 +54,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
             hyperparams (dict): A dictionary of hyperparameters for the
                 optimization procedure. It may contain the following:
                  * opt_budget (int): The PS iteration limit (default: 1000).
-                 * opt_restarts (int): Number of multisolve restarts per
+                 * opt_restarts (int): Number of multistart restarts per
                    scalarization (default: n+1).
 
         Returns:
@@ -239,7 +239,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         lb_tmp = np.zeros(self.n)
         ub_tmp = np.ones(self.n)
         self._checkTargets()
-        # For each acqusisition function
+        # For each acquisition function
         for j, acquisition in enumerate(self.acquisitions):
             # Create a new trust region
             rad = self._checkTR(x[j, :])

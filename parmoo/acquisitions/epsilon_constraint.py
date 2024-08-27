@@ -75,7 +75,7 @@ class RandomConstraint(AcquisitionFunction):
         return
 
     def useSD(self):
-        """ Querry whether this method uses uncertainties.
+        """ Query whether this method uses uncertainties.
 
         When False, allows users to shortcut expensive uncertainty
         computations.
@@ -172,7 +172,7 @@ class RandomConstraint(AcquisitionFunction):
                     p_best = p_temp
             return x_best
         else:
-            # Randomly select pts in the convex hull of the nondominate pts
+            # Randomly select pts in the convex hull of the nondominated pts
             ipts = self.np_rng.integers(0, pf['f_vals'].shape[0], size=self.o)
             self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
@@ -253,7 +253,7 @@ class EI_RandomConstraint(AcquisitionFunction):
             hyperparams (dict): A dictionary of hyperparameters for tuning
                 the acquisition function. Including
                  * mc_sample_size (int): The number of samples to use for
-                   monte carlo integration (defaults to 10 * m ** 2).
+                   Monte Carlo integration (defaults to 10 * m ** 2).
 
         Returns:
             RandomConstraint: A new RandomConstraint scalarizer.
@@ -289,7 +289,7 @@ class EI_RandomConstraint(AcquisitionFunction):
         return
 
     def useSD(self):
-        """ Querry whether this method uses uncertainties.
+        """ Query whether this method uses uncertainties.
 
         When False, allows users to shortcut expensive uncertainty
         computations.
@@ -388,7 +388,7 @@ class EI_RandomConstraint(AcquisitionFunction):
                     p_best = p_temp
             return x_best
         else:
-            # Randomly select pts in the convex hull of the nondominate pts
+            # Randomly select pts in the convex hull of the nondominated pts
             ipts = self.np_rng.integers(0, pf['f_vals'].shape[0], size=self.o)
             self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights[:] = self.weights[:] / np.linalg.norm(self.weights)
