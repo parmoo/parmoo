@@ -67,6 +67,10 @@ An administrator will take the following steps.
   - Appends ``+dev`` to the version number (wherever it appears)
   - Changes the coverage badge branch to ``develop`` (for badge and link).
 
+- Update the version number cited in the parMOO solver farm at
+  https://github.com/parmoo/parmoo-solver-farm 
+  and check that the citation, contact, etc. information there is up to date.
+
 After release
 -------------
 
