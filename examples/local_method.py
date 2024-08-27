@@ -10,7 +10,7 @@ from parmoo.objectives import SingleSimObjective, SingleSimGradient
 import logging
 
 # Switch to using the LocalSurrogate_BFGS solver to solve surrogate problems
-# in a trust region with multi-start LBFGSB
+# in a trust region with multistart LBFGSB
 my_moop = MOOP(LocalSurrogate_BFGS, hyperparams={'np_random_gen': 0})
 
 # Massive 50-variable black-box optimization problem
@@ -80,7 +80,7 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # 50 iterations * 4 acquisition funcs + 50 point search = 250 eval budget
-# This could take a few mins to run...
+# This could take a few minutes to run...
 my_moop.solve(50)
 
 # Display the values of x26, ..., x50 for all solution points
@@ -89,5 +89,5 @@ results[[f"x{i}" for i in range(26, 51)]].to_csv("local_method.csv")
 
 # Plot results -- must have extra viz dependencies installed
 from parmoo.viz import scatter
-# The optional arg `output` exports directly to jpg instead of interactive mode
+# The optional arg `output` exports directly to jpeg instead of interactive mode
 scatter(my_moop, output="jpeg")
