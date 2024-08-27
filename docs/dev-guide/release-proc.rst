@@ -22,7 +22,7 @@ Before release
   - Coverage badge branch set to ``main`` (for badge and link)?
 
 - Check for spelling mistakes and typos in the docs and Python docstrings:
-  - ``pyspelling -c .github/workflows/.spellcheck.yml``
+  - ``pyspelling -c .github/config/.spellcheck.yml``
 
 - ``setup.py`` and ``parmoo/__init__.py`` are checked to ensure all
   information is up to date.
