@@ -1,4 +1,4 @@
-name: Spellcheck RST files
+name: Spellcheck RST and Python files
 
 on:
   push:
@@ -16,9 +16,12 @@ jobs:
       - name: Install pyspelling
         run: pip install pyspelling
 
+      - name: Install Aspell
+        run: sudo apt-get install aspell aspell-en        
+
       - name: Spellcheck RST files
         run: |
-          pyspelling -c .spellcheckconfig.yml 
+          pyspelling -c .github/config/.spellcheck.yml 
 
       - name: Upload spellcheck report
         uses: actions/upload-artifact@v2
