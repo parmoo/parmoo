@@ -32,7 +32,7 @@ Major changes:
    of design variable ``Embedder`` classes (corresponding ABCs also added to
    the ``structs.py``)
  - In order to make ParMOO more maintainable and for jax to work smoothly, we
-   have dropped support for unnamed variables (Closes #31)
+   have dropped support for unnamed variables -- Closes #31
  - All ``SurrogateFunction`` and ``AcquisitionFunction`` libraries have been
    updated to be more jax-friendly
  - The ``SurrogateOptimizer`` class has been refactored to include a callback to
@@ -81,14 +81,14 @@ New features:
  - ``SurrogateOptimizer`` is now notified of the results of each simulation
    evaluation. (This allows checks for sufficient improvements)
  - Numerous new ``AcquisitionFunction`` types added
- - Added an option to create a private workdir for each libEnsemble thread
-   (Closes #82)
+ - Added an option to create a private workdir for each libEnsemble thread --
+   Closes #82
 
 Minor changes:
 
  - Updates to support ``numpy 2.0``
  - Added a code coverage badge and updated the release process to reflect the
-   extra steps needed to make this work (Closes #21 , Closes #93)
+   extra steps needed to make this work -- Closes #21 and #93
 
 Requirements:
 
