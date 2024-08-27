@@ -18,10 +18,10 @@ Major changes:
 
  - Under the hood, ParMOO now uses `jax[cpu]` for all gradient evaluations,
    constraint evaluations, and function evaluations (but not simulation
-   evaluations) on the critical path -- this means that objective and
+   evaluations) on the critical path; this means that objective and
    constraint functions can be just-in-time (jit) compiled, which can give
    massive performance improvements.  However, not all Python features are
-   supported by `jax.jit()` so users must be careful to write their objective
+   supported by `jax.jit()`, so users must be careful to write their objective
    and constraint functions mindfully
  - In order for jax to be effective, we have updated ParMOO's interfaces to
    avoid using optional arguments -- this affects the objective and constraint
@@ -33,18 +33,18 @@ Major changes:
    `structs.py`)
  - In order to make ParMOO more maintainable and for jax to work smoothly, we
    have dropped support for unnamed variables (Closes #31)
- - All `SurrogateFunction` and `AcqusitionFunction` libraries have been updated
+ - All `SurrogateFunction` and `AcquisitionFunction` libraries have been updated
    to be more jax-friendly
  - The `SurrogateOptimizer` class has been refactored to include a callback to
    observe simulation evaluation results.  It has also been given almost full
-   control over when model improvement steps are called to make implementing
-   most DFO methods easier
- - The pattern search family of optimizers has been greatly improved.
+   control over when model improvement steps are called in order to make
+   implementing many DFO methods easier
+ - The pattern search family of optimizers has been greatly improved
  - `PyDOE` has been dropped since most relevant DOEs now appear in the newly
    added `scipy.stats.qmc` module
  - Switching to `PyDOE` required us to change how the numpy random seed is set.
    A random seed object is now passed as a hyperparameter to ParMOO and
-   propagated to all libraries, which is the recommended way anyway
+   propagated to all libraries, which is the recommended way
  - Updated docs to reflect above changes
 
 Style changes:
@@ -58,10 +58,10 @@ Interface breaking:
  - The `Embedder` class is now used to define custom design variables (see
    Major changes)
  - jax is now used to evaluate gradients in the `SurrogateOptimizer` class (see
-   Major changes) -- this alone shouldn't break interface most use-cases, but
+   Major changes) -- this alone shouldn't break the interface most use-cases, but
    may lead to decreased performance if not careful (see notes on achieving
    good performance in jax in the docs).  Additionally, jax defaults to single
-   precision so double-precision must be set manually using a `jax.config`
+   precision so double precision must be set manually using a `jax.config`
    command (see docs)
  - `SurrogateFunction`, `SurrogateOptimizer`, and `AcquisitionFunction`
    interfaces have changed (only affects users using custom methods)
@@ -80,7 +80,7 @@ New features:
  - ParMOO now supports jax for autograd (see Major changes above)
  - `SurrogateOptimizer` is now notified of the results of each simulation
    evaluation. (This allows checks for sufficient improvements)
- - Numerous new `AcquisitionFunction` types added.
+ - Numerous new `AcquisitionFunction` types added
  - Added an option to create a private workdir for each libEnsemble thread
    (Closes #82)
 
