@@ -67,7 +67,7 @@ def test_MOOP_embed_extract():
 def test_MOOP_pack_unpack_sim():
     """ Check that the MOOP class handles simulation packing correctly.
 
-    Initialize a MOOP objecti with and without design variable names.
+    Initialize a MOOP object with and without design variable names.
     Add 2 simulations and pack/unpack each output.
 
     """

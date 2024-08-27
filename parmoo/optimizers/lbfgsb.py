@@ -53,7 +53,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
                 optimization procedure. It may contain the following:
                  * opt_budget (int): The iteration limit per solve
                    (default: 100).
-                 * opt_restarts (int): Number of multisolve restarts per
+                 * opt_restarts (int): Number of multistart restarts per
                    scalarization (default: n+1).
 
         Returns:
@@ -135,7 +135,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
         # Create an infinite trust region
         rad = np.ones(self.n) * np.inf
         self.setTR(np.zeros(self.n), rad)
-        # Loop over and solve acqusisition functions
+        # Loop over and solve acquisition functions
         result = []
         for j, acquisition in enumerate(self.acquisitions):
 
@@ -237,7 +237,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                 optimization procedure. It may contain the following:
                  * opt_budget (int): The iteration limit per solve
                    (default: 500).
-                 * opt_restarts (int): Number of multisolve restarts per
+                 * opt_restarts (int): Number of multistart restarts per
                    scalarization (default: 2).
 
         Returns:
@@ -394,7 +394,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
         self.__checkTargets()
         # Initialize an empty list of results
         result = []
-        # For each acqusisition function
+        # For each acquisition function
         for j, acquisition in enumerate(self.acquisitions):
 
             # Define the scalarized wrapper functions

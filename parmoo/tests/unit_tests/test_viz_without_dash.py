@@ -748,8 +748,8 @@ def test_inputs_to_dash():
     os.remove("Pareto Front.html")
 
     # test invalid dev_mode values
-    # currently all inputs that can be cast to a boolean are valid
-    # in Python, everything can be cast to a boolean
+    # currently all inputs that can be cast to a Boolean are valid
+    # in Python, everything can be cast to a Boolean
 
     # * pop_up
     # test valid pop_up values
@@ -762,8 +762,8 @@ def test_inputs_to_dash():
     os.remove("Pareto Front.html")
 
     # test invalid pop_up values
-    # currently all inputs that can be cast to a boolean are valid
-    # in Python, everything can be cast to a boolean
+    # currently all inputs that can be cast to a Boolean are valid
+    # in Python, everything can be cast to a Boolean
 
     # * port
     # test valid port values

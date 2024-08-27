@@ -5,7 +5,7 @@ def test_GaussRBF():
     Generate random x and y values for a 3D input space and 2D output space,
     then use the GaussRBF class to fit Gaussian RBFs to the data.
 
-    Check that the GaussianRBFs interpolate the original data.
+    Check that the Gaussian RBFs interpolate the original data.
 
     """
 

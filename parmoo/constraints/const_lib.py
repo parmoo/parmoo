@@ -268,14 +268,14 @@ class SumOfSimsBound(CompositeFunction):
 
     ```
     def const_func(x, sx):
-        return sum([abs(sx[i]) forall i]) - upper_bound
+        return sum([abs(sx[i]) for all i]) - upper_bound
     ```
 
     If lower bounding absolute sum:
 
     ```
     def const_func(x, sx):
-        return lower_bound - sum([abs(sx[i]) forall i])
+        return lower_bound - sum([abs(sx[i]) for all i])
     ```
 
     Also supports derivative usage.

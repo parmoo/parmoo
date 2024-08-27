@@ -111,7 +111,7 @@ Fixed several serious bugs/limitations:
    the lines of code that filter out duplicate candidates, resulting in
    significantly decreased performance but no errors being raised
  - Allow for ParMOO to still generate target points for the
-   ``AcqusitionFunction``, even when there are no feasible points in the
+   ``AcquisitionFunction``, even when there are no feasible points in the
    database
  - Increase the number of characters allowed in a name when working with
    libEnsemble from 10 to 40 characters

@@ -872,7 +872,7 @@ class libE_MOOP(MOOP):
         Args:
             filename (str, optional): The filepath to serialized
                 checkpointing file(s). Do not include file extensions,
-                they will be appended automaically. May create
+                they will be appended automatically. May create
                 several save files with extensions of this name, in order
                 to recursively save dependencies objects. Defaults to
                 the value "parmoo" (filename will be "parmoo.moop").
@@ -888,8 +888,8 @@ class libE_MOOP(MOOP):
         Args:
             filename (str, optional): The filepath to the serialized
                 checkpointing file(s). Do not include file extensions,
-                they will be appended automaically. This method may also
-                load from other save files with the same name, but different
+                they will be appended automatically. This method may also
+                load from other saved files with the same name, but different
                 file extensions, in order to recursively load dependency
                 objects (such as surrogate models) as needed.
                 Defaults to the value "parmoo" (filename will be
@@ -906,7 +906,7 @@ class libE_MOOP(MOOP):
         Args:
             filename (str, optional): The filepath to the checkpointing
                 file(s). Do not include file extensions, they will be
-                appended automaically. Defaults to the value "parmoo"
+                appended automatically. Defaults to the value "parmoo"
                 (filename will be "parmoo.simdb.json").
 
         """
