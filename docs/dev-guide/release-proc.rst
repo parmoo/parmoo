@@ -27,9 +27,11 @@ Before release
 - ``setup.py`` and ``parmoo/__init__.py`` are checked to ensure all
   information is up to date.
 
-- ``MANIFEST.in`` is checked. Locally, try out ``python setup.py sdist`` and
-  check created tarball contains correct files and directories for PyPI
-  package.
+- ``MANIFEST.in`` and ``setup.py`` ``packages`` list are checked for
+  completeness.  In particular, if new modules or subdirectories have been
+  added, the ``setup.py`` file must be updated accordingly.  Locally, try out
+  ``python setup.py sdist`` and check created tarball contains correct files
+  and directories for PyPI package.
 
 - Check that ``parmoo`` requirements (in ``REQUIREMENTS.txt``)
   are compatible with ``readthedocs.io`` (in ``.readthedocs.yml``)
