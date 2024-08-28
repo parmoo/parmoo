@@ -29,7 +29,7 @@ Before release
 
 - ``MANIFEST.in`` and ``setup.py`` ``packages`` list are checked for
   completeness.  In particular, if new modules or subdirectories have been
-  added, they ``setup.py`` file must be updated accordingly.  Locally, try out
+  added, the ``setup.py`` file must be updated accordingly.  Locally, try out
   ``python setup.py sdist`` and check created tarball contains correct files
   and directories for PyPI package.
 
