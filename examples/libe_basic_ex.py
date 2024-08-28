@@ -39,7 +39,8 @@ if __name__ == "__main__":
     my_moop.addDesign({'name': "x2", 'des_type': "categorical",
                        'levels': 3})
     
-    # Add the simulation (note the budget of 20 sim evals during search phase)
+    # Add the simulation (note the budget of 20 simulation evaluations
+    # during search phase)
     my_moop.addSimulation({'name': "MySim",
                            'm': 2,
                            'sim_func': sim_func,

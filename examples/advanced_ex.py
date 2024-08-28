@@ -38,7 +38,7 @@ def quad_sim(x):
                      (x["x3"] - 1.0) ** 2])
 
 # Add the quadratic simulation to the problem
-# Use a 10 point LH search for ex design and a Gaussian RBF surrogate model
+# Use a 10-point LHS experimental design and a Gaussian RBF surrogate model
 my_moop.addSimulation({'name': "f_conv",
                        'm': 2,
                        'sim_func': quad_sim,

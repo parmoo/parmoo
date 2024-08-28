@@ -6,7 +6,7 @@ from parmoo.surrogates import GaussRBF
 from parmoo.acquisitions import RandomConstraint
 from parmoo.optimizers import GlobalSurrogate_PS
 
-# Fix the random seed for reproducibility using the np_random_gen hyperparam
+# Fix the random seed for reproducibility using the np_random_gen hyperparams
 my_moop = MOOP(GlobalSurrogate_PS, hyperparams={'np_random_gen': 0})
 
 my_moop.addDesign({'name': "x1",
@@ -52,5 +52,5 @@ print(results)
 
 # Plot results -- must have extra viz dependencies installed
 from parmoo.viz import scatter
-# The optional arg `output` exports directly to jpg instead of interactive mode
+# The optional arg `output` exports directly to jpeg instead of interactive mode
 scatter(my_moop, output="jpeg")

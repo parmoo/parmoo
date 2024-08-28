@@ -1,0 +1,24 @@
+name: Spellcheck RST and Python files
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  spellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install pyspelling
+        run: pip install pyspelling
+
+      - name: Install Aspell
+        run: sudo apt-get install aspell aspell-en        
+
+      - name: Spellcheck RST files
+        run: |
+          pyspelling -c .github/config/.spellcheck.yml 
