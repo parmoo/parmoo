@@ -6,6 +6,16 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
+Release 0.4.1
+-------------
+
+:Date: Aug 30, 2024
+
+Hotfix to packaging in ``setup.py``:
+
+ - Added the ``embedders`` module, which was accidentally omitted in v0.4.0
+ - Updated the release process to ensure this doesn't get missed again
+
 Release 0.4.0
 -------------
 
