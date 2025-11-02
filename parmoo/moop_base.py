@@ -13,7 +13,7 @@ import logging
 import jax
 from jax import numpy as jnp
 
-from parmoo.simulation_database import SimulationDatabase
+from parmoo.databases import NumpyDatabase
 from parmoo.util import gradient_error
 
 
@@ -98,6 +98,8 @@ class MOOP_base(ABC):
                  'obj_funcs', 'obj_grads', 'con_funcs', 'con_grads',
                  # Database information
                  'database',
+                 # Solver components
+                 'surrogates', 'optimizer',
                  # Compiled function definitions -- These are only defined
                  # after calling the MOOP.compile() method
                  'obj_bwd', 'con_bwd', 'pen_bwd'
@@ -111,10 +113,6 @@ class MOOP_base(ABC):
 
             hyperparams (dict, optional): A dictionary of hyperparameters for
                 the opt_func, and any other procedures that will be used.
-
-        Returns:
-            MOOP: A new MOOP object with no design variables, objectives, or
-            constraints.
 
         """
 
@@ -143,10 +141,12 @@ class MOOP_base(ABC):
         self.obj_funcs, self.obj_grads = [], []
         self.con_funcs, self.con_grads = [], []
         # Initialize the database
-        self.database = SimulationDatabase()
+        self.database = NumpyDatabase(hyperparams)
+        # Initilaize solver components
+        self.surrogates = []
+        self.optimizer = None
         # Initialize backward pass functions
         self.obj_bwd, self.con_bwd, self.pen_bwd = None, None, None
-        return
 
     @abstractmethod
     def addDesign(self, *args):
@@ -420,26 +420,26 @@ class MOOP_base(ABC):
     def _fit_surrogates(self):
         """ Fit the surrogate models using the current sim databases. """
 
-        sim_db = self.database.getSimulationData()
+        new_sim_db = self.database.getNewSimulationData()
         for i, dti in enumerate(self.sim_schema):
             sim_namei = dti[0]
-            n = len(sim_db[sim_namei])
+            n = len(new_sim_db[sim_namei])
             x_vals = np.zeros((n, self.n_latent))
-            for j, xj in enumerate(sim_db[sim_namei]):
+            for j, xj in enumerate(new_sim_db[sim_namei]):
                 x_vals[j, :] = self._embed(xj)
-            self.surrogates[i].fit(x_vals, sim_db[sim_namei]['out'])
-        return
+            self.surrogates[i].fit(x_vals, new_sim_db[sim_namei]['out'])
 
     def _update_surrogates(self):
         """ Update the surrogate models using the current sim databases. """
 
-        for i in range(self.s):
-            n_old = self.sim_db[i]['old']
-            n_new = self.sim_db[i]['n']
-            self.surrogates[i].update(self.sim_db[i]['x_vals'][n_old:n_new, :],
-                                      self.sim_db[i]['s_vals'][n_old:n_new, :])
-            self.sim_db[i]['old'] = self.sim_db[i]['n']
-        return
+        new_sim_db = self.database.getNewSimulationData()
+        for i, dti in enumerate(self.sim_schema):
+            sim_namei = dti[0]
+            n = len(new_sim_db[sim_namei])
+            x_vals = np.zeros((n, self.n_latent))
+            for j, xj in enumerate(new_sim_db[sim_namei]):
+                x_vals[j, :] = self._embed(xj)
+            self.surrogates[i].update(x_vals, new_sim_db[sim_namei]['out'])
 
     def _set_surrogate_tr(self, center, radius):
         """ Alert the surrogate functions of a new trust region.
@@ -458,7 +458,6 @@ class MOOP_base(ABC):
         self.optimizer.setObjective(eval_obj)
         self.optimizer.setConstraints(eval_con)
         self.optimizer.setPenalty(eval_pen)
-        return
 
     def _evaluate_surrogates(self, x):
         """ Evaluate all simulation surrogates.
@@ -746,8 +745,9 @@ class MOOP_base(ABC):
             xx2 = jax.jit(self._embed_grads)(x)
             assert (xx2.shape == xx.shape)
         except BaseException:
-            logging.info("     WARNING: 1 or more grad embedders failed to "
-                         "jit...")
+            logging.info(
+                "     WARNING: 1 or more grad embedders failed to jit..."
+            )
         try:
             sx = jax.jit(self._unpack_sim)(sx)
             for key in self.sim_schema:
@@ -778,8 +778,9 @@ class MOOP_base(ABC):
             try:
                 _, _ = jax.jit(self._obj_bwd)((xx, sx), jnp.zeros(self.o))
             except BaseException:
-                logging.info("     WARNING: 1 or more obj_grads failed to "
-                             "jit...")
+                logging.info(
+                    "     WARNING: 1 or more obj_grads failed to jit..."
+                )
             self.obj_bwd = self._obj_bwd
         else:
             self.obj_bwd = gradient_error
@@ -787,15 +788,17 @@ class MOOP_base(ABC):
             try:
                 _, _ = jax.jit(self._con_bwd)((xx, sx), jnp.zeros(self.p))
             except BaseException:
-                logging.info("     WARNING: 1 or more con_grads failed to "
-                             "jit...")
+                logging.info(
+                    "     WARNING: 1 or more con_grads failed to jit..."
+                )
             self.con_bwd = self._con_bwd
         else:
             self.con_bwd = gradient_error
         if len(self.obj_grads) == self.o and len(self.con_grads) == self.p:
             try:
-                _, _ = jax.jit(self._pen_bwd)((xx, sx, jnp.zeros(self.p)),
-                                              jnp.zeros(self.o))
+                _, _ = jax.jit(self._pen_bwd)(
+                    (xx, sx, jnp.zeros(self.p)), jnp.zeros(self.o)
+                )
             except BaseException:
                 logging.info("     WARNING: MOOP._pen_grads failed to jit...")
             self.pen_bwd = self._pen_bwd

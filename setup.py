@@ -64,6 +64,7 @@ setup(
               "parmoo.constraints",
               "parmoo.embeddings",
               "parmoo.extras",
+              "parmoo.databases",
               "parmoo.objectives",
               "parmoo.optimizers",
               "parmoo.searches",

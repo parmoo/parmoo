@@ -555,28 +555,29 @@ class SimulationDatabase:
         for sname in self.sim_schema:
             # Construct the dtype for this simulation database
             dt = self.des_schema.copy()
-            if len(sname) == 2:
-                dt.append(('out', sname[1]))
-            else:
+            if len(sname) > 2:
                 dt.append(('out', sname[1], sname[2]))
-            # Fill the results array
+            else:
+                dt.append(('out', sname[1]))
+            # Fill the results arrays with entries n_old:n
             result[sname[0]] = np.zeros(
                 self.sim_db[sname[0]]['n'] - self.sim_db[sname[0]]['n_old'],
                 dtype=dt
             )
-            for j in range(
-                self.sim_db[sname[0]]['n_old'], self.sim_db[sname[0]]['n']
-            ):
+            n_old = self.sim_db[sname[0]]['n_old']
+            n = self.sim_db[sname[0]]['n']
+            for j in range(n_old, n):
                 for (name, t) in self.des_schema:
-                    result[sname[0]][name][j] = (
+                    result[sname[0]][name][j - n_old] = \
                         self.sim_db[sname[0]]['x_vals'][name][j]
-                    )
             if len(sname) > 2:
-                result[sname[0]]['out'] = self.sim_db[sname[0]]['s_vals']
+                result[sname[0]]['out'] = \
+                    self.sim_db[sname[0]]['s_vals'][n_old:n]
             else:
-                result[sname[0]]['out'] = self.sim_db[sname[0]]['s_vals'][:, 0]
+                result[sname[0]]['out'] = \
+                    self.sim_db[sname[0]]['s_vals'][n_old:n, 0]
             # Update the tracker
-            self.sim_db[sname[0]]['n_old'] =  self.sim_db[sname[0]]['n']
+            self.sim_db[sname[0]]['n_old'] = n
         return result
 
     def getObjectiveData(self, format='ndarray'):
