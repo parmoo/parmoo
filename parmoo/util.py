@@ -1,13 +1,15 @@
 """ This module contains several auxiliary functions used throughout ParMOO.
 
 These functions may also be of external interest. They are:
- * xerror(o, lb, ub, hyperparams)
- * check_names(name, des_schema, sim_schema, obj_schema, con_schema)
- * check_sims(n, arg1, arg2, ...)
- * lex_leq(a, b)
- * updatePF(data, nondom)
- * to_array(x, dtype)
- * from_array(x, dtype)
+ * `xerror(o, lb, ub, hyperparams)`
+ * `check_names(name, des_schema, sim_schema, obj_schema, con_schema)`
+ * `check_sims(n, arg1, arg2, ...)`
+ * `lex_leq(a, b)`
+ * `updatePF(data, nondom)`
+ * `to_array(x, dtype)`
+ * `from_array(x, dtype)`
+ * `gradient_error(arg1, arg2)`
+ * `approx_equal(x1, x2, des_tols)`
 
 """
 
@@ -441,3 +443,46 @@ def from_array(x, dtype):
         xx[namei] = x1[istart:iend].copy()
         istart = iend
     return xx
+
+
+def gradient_error(arg1, arg2):
+    """ Raises an error, warning users that the gradient is undefined.
+
+    Args:
+        arg1 (un-used): Here to match the interface of a gradient or bwd pass
+            function.
+        arg2 (un-used): Here to match the interface of a gradient or bwd pass
+            function.
+
+    """
+
+    raise ValueError("1 or more grad func is undefined")
+
+
+def approx_equal(x1, x2, des_tols):
+    """ Check whether two dicts contain equal values up to the given tolerance.
+
+    Note:  This function allows that a value in x1/x2 could be non numeric, in
+    which case exact equality is checked. This is triggered if the
+    corresponding value in des_tols <= 0.
+
+    Args:
+        x1 (dict): A dictionary of design variable names and corresponding
+            values.
+        x2 (dict): A dictionary of design variable names and corresponding
+            values. Must contain all the keys in x1, but could contain
+            additional keys that are not in x1.
+        des_tols (dict): A dictionary of design variable names and
+            corresponding tolerances. Keys must match those in x1 and x2.
+            Values must be numerical. Any value less than or equal to zero
+            results in direct comparison for the corresponding
+
+    """
+
+    results = []
+    for key in x1:
+        results.append(
+            (des_tols[key] <= 0 and x1[key] == x2[key]) or
+            abs(x1[key] - x2[key]) < des_tols[key]
+        )
+    return all(results)

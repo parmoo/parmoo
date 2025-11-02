@@ -10,13 +10,14 @@ simulations, specified using dictionaries.
 import codecs
 from importlib import import_module
 import inspect
-import jax
 from jax import numpy as jnp
 import json
 import logging
 import numpy as np
 from os.path import exists as file_exists
 import pandas as pd
+
+from parmoo.moop_base import MOOP_base
 from parmoo import structs
 from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
                                                 IntegerEmbedder,     \
@@ -28,7 +29,7 @@ import shutil
 import warnings
 
 
-class MOOP:
+class MOOP(MOOP_base):
     """ Class for defining a multiobjective optimization problem (MOOP).
 
     Upon initialization, supply a scalar optimization procedure and
@@ -99,30 +100,6 @@ class MOOP:
      * ``MOOP.save([filename="parmoo"])``
      * ``MOOP.load([filename="parmoo"])``
 
-    The following private methods are not recommended for external usage:
-     * ``MOOP._embed(x)``
-     * ``MOOP._extract(x)``
-     * ``MOOP._embed_grads(x)``
-     * ``MOOP._pack_sim(sx)``
-     * ``MOOP._unpack_sim(sx)``
-     * ``MOOP._vobj_funcs(x, sx)``
-     * ``MOOP._vcon_funcs(x, sx)``
-     * ``MOOP._vpen_funcs(x, sx, cx)``
-     * ``MOOP._fit_surrogates()``
-     * ``MOOP._update_surrogates()``
-     * ``MOOP._set_surrogate_tr(center, radius)``
-     * ``MOOP._evaluate_surrogates(x)``
-     * ``MOOP._surrogate_uncertainty(x)``
-     * ``MOOP._evaluate_objectives(x, sx)``
-     * ``MOOP._obj_fwd(x, sx)``
-     * ``MOOP._obj_bwd(res, w)``
-     * ``MOOP._evaluate_constraints(x, sx)``
-     * ``MOOP._con_fwd(x, sx)``
-     * ``MOOP._con_bwd(res, w)``
-     * ``MOOP._evaluate_penalty(x, sx)``
-     * ``MOOP._pen_fwd(x, sx)``
-     * ``MOOP._pen_bwd(res, w)``
-
     """
 
     __slots__ = [
@@ -145,7 +122,7 @@ class MOOP:
                  # Solver components
                  'acquisitions', 'searches', 'surrogates', 'optimizer',
                  # Database information
-                 'data', 'sim_db', 'n_dat',
+                 'database',
                  # Temporary solver components and metadata used during setup
                  'acq_tmp', 'opt_tmp', 'search_tmp', 'sur_tmp',
                  'acq_hp', 'opt_hp', 'sim_hp',
@@ -171,8 +148,6 @@ class MOOP:
 
         """
 
-        # Configure jax to use only CPUs
-        jax.config.update('jax_platform_name', 'cpu')
         # Initialize the problem dimensions
         self.m = 0
         self.m_list, self.n_embed = [], []
@@ -208,8 +183,7 @@ class MOOP:
         self.optimizer, self.opt_tmp = None, None
         self.opt_hp = {}
         # Initialize the database
-        self.data, self.sim_db = {}, []
-        self.n_dat = 0
+        self.database = SimulationDatabase()
         # Set up the surrogate optimizer and its hyperparameters
         if hyperparams is not None:
             if isinstance(hyperparams, dict):
@@ -610,12 +584,6 @@ class MOOP:
         """
 
         logging.info(" Compiling the MOOP object...")
-        # For safety reasons, don't let silly users delete their data
-        if self.n_dat > 0 or (len(self.sim_db) > 0 and
-                              any([sdi['n'] > 0 for sdi in self.sim_db])):
-            raise RuntimeError("Cannot re-compile a MOOP with a nonempty "
-                               "database. If that's really what you want, "
-                               "then please reset this MOOP.")
         # Verify that the MOOP is in a valid state before compiling
         if self.n_feature <= 0:
             raise RuntimeError("Cannot compile a MOOP with no design "
@@ -638,80 +606,7 @@ class MOOP:
         ubs = np.asarray(self.latent_ub)
         des_tols = np.asarray(self.latent_des_tols)
         # Try jitting ParMOO embedders and extractors
-        logging.info("   jitting and testing ParMOO's embedders...")
-        xx1 = (lbs + ubs) / 2
-        sx1 = np.zeros(self.m)
-        try:
-            x = jax.jit(self._extract)(xx1)
-            for key in self.des_schema:
-                assert (key[0] in x)
-        except BaseException:
-            logging.info("     WARNING: 1 or more extractors failed to jit...")
-        try:
-            xx2 = jax.jit(self._embed)(x)
-            assert (xx2.shape == xx1.shape)
-        except BaseException:
-            logging.info("     WARNING: 1 or more embedders failed to jit...")
-        try:
-            xx2 = jax.jit(self._embed_grads)(x)
-            assert (xx2.shape == xx1.shape)
-        except BaseException:
-            logging.info("     WARNING: 1 or more grad embedders failed to "
-                         "jit...")
-        try:
-            sx = jax.jit(self._unpack_sim)(sx1)
-            for key in self.sim_schema:
-                assert (key[0] in sx)
-        except BaseException:
-            logging.info("     WARNING: MOOP._unpack_sim failed to jit...")
-        try:
-            sx2 = jax.jit(self._pack_sim)(sx)
-            assert (sx2.shape == sx1.shape)
-        except BaseException:
-            logging.info("     WARNING: MOOP._pack_sim failed to jit...")
-        logging.info("   Done.")
-        # Jitting ParMOO objectives and constraints
-        logging.info("   jitting ParMOO's objective and constraints...")
-        try:
-            _ = jax.jit(self._vobj_funcs)(x, sx)
-        except BaseException:
-            logging.info("     WARNING: 1 or more obj_funcs failed to jit...")
-        try:
-            _ = jax.jit(self._vcon_funcs)(x, sx)
-        except BaseException:
-            logging.info("     WARNING: 1 or more con_funcs failed to jit...")
-        try:
-            _ = jax.jit(self._vpen_funcs)(x, sx, 0., 1.)
-        except BaseException:
-            logging.info("     WARNING: MOOP._vpen_funcs failed to jit...")
-        if len(self.obj_grads) == self.o:
-            try:
-                _, _ = jax.jit(self._obj_bwd)((xx1, sx1), jnp.zeros(self.o))
-            except BaseException:
-                logging.info("     WARNING: 1 or more obj_grads failed to "
-                             "jit...")
-            self.obj_bwd = self._obj_bwd
-        else:
-            self.obj_bwd = _gerr
-        if len(self.con_grads) == self.p:
-            try:
-                _, _ = jax.jit(self._con_bwd)((xx1, sx1), jnp.zeros(self.p))
-            except BaseException:
-                logging.info("     WARNING: 1 or more con_grads failed to "
-                             "jit...")
-            self.con_bwd = self._con_bwd
-        else:
-            self.con_bwd = _gerr
-        if len(self.obj_grads) == self.o and len(self.con_grads) == self.p:
-            try:
-                _, _ = jax.jit(self._pen_bwd)((xx1, sx1, jnp.zeros(self.p)),
-                                              jnp.zeros(self.o))
-            except BaseException:
-                logging.info("     WARNING: MOOP._pen_grads failed to jit...")
-            self.pen_bwd = self._pen_bwd
-        else:
-            self.pen_bwd = _gerr
-        logging.info("   Done.")
+        self._jit_all((lbs + ubs) / 2, np.zeros(self.m))
         # Initialize the simulation components
         for i in range(self.s):
             mi = self.m_list[i]
@@ -739,23 +634,6 @@ class MOOP:
         for i, acquisition in enumerate(self.acquisitions):
             self.optimizer.addAcquisition(acquisition)
         self.optimizer.setTrFunc(self._set_surrogate_tr)
-        logging.info("   Done.")
-        # Initialize the optimizer database
-        logging.info("   Initializing ParMOO's internal databases...")
-        self.n_dat = 0
-        self.data = {'x_vals': np.zeros((1, self.n_latent)),
-                     'f_vals': np.zeros((1, self.o)),
-                     'c_vals': np.zeros((1, 1))}
-        # Initialize all the simulation databases
-        for stype in self.sim_schema:
-            if len(stype) > 2:
-                mi = stype[2]
-            else:
-                mi = 1
-            self.sim_db.append({'x_vals': np.zeros((1, self.n_latent)),
-                                's_vals': np.zeros((1, mi)),
-                                'n': 0,
-                                'old': 0})
         logging.info("   Done.")
         # Set compiled flat go True
         logging.info(" Compilation finished.")
@@ -975,6 +853,8 @@ class MOOP:
                 raise ValueError("s_name did not contain a legal name/index")
             sx = np.asarray(self.sim_funcs[i](x))
             self.updateSimDb(x, sx, s_name)
+            if self.checkpoint:
+                self.save(filename=self.checkpoint_file)
         return sx
 
     def addObjData(self, x, sx):
@@ -1983,474 +1863,3 @@ class MOOP:
             json.dump(toadd, fp)
         self.new_data = False
         return
-
-    def _embed(self, x):
-        """ Embed a design input as a n-dimensional vector for ParMOO.
-
-        Args:
-            x (dict): A Python dictionary whose keys match the design
-                variable names, and whose values contain design variable
-                values.
-
-        Returns:
-            ndarray: A 1D array of length n_latent containing the embedded
-            design vector.
-
-        """
-
-        xx = []
-        for i, ei in enumerate(self.embedders):
-            xx.append(ei.embed(x[self.des_schema[i][0]]))
-        return jnp.concatenate(xx, axis=None)
-
-    def _extract(self, x):
-        """ Extract a design variable from an n-dimensional vector.
-
-        Args:
-            x (ndarray): A 1D array of length n_latent containing the embedded
-                design vector.
-
-        Returns:
-            dict: A Python dictionary whose keys match the design variable
-            names, and whose values contain design variable values.
-
-        """
-
-        xx = {}
-        istart = 0
-        for i, ei in enumerate(self.embedders):
-            iend = istart + self.n_embed[i]
-            xx[self.des_schema[i][0]] = ei.extract(x[istart:iend])
-            istart = iend
-        return xx
-
-    def _embed_grads(self, dx):
-        """ Embed a design input as a n-dimensional vector for ParMOO.
-
-        Args:
-            dx (dict): A Python dictionary whose keys match the design
-                variable names, and whose values contain the partials
-                with respect to each of the design variables.
-
-        Returns:
-            ndarray: A 1D array of length n_latent containing the embedded
-            design vector.
-
-        """
-
-        dxx = jnp.zeros(sum(self.n_embed))
-        for i in self.cont_var_inds:
-            istart = sum(self.n_embed[:i])
-            iend = istart + self.n_embed[i]
-            dxx = dxx.at[istart:iend].set(self.embedders[i].embed_grad(
-                                          dx[self.des_schema[i][0]]))
-        return dxx
-
-    def _pack_sim(self, sx):
-        """ Pack a simulation output into a m-dimensional vector.
-
-        Args:
-            sx (dict): A dictionary with keys corresponding to simulation
-                names and values corresponding to simulation outputs.
-
-        Returns:
-            ndarray: A 1D ndarray of length m containing the vectorized
-            simulation outputs.
-
-        """
-
-        sx_list = [self.empty]
-        for i in range(self.s):
-            sx_list.append(sx[self.sim_schema[i][0]])
-        return jnp.concatenate(sx_list, axis=None)
-
-    def _unpack_sim(self, sx):
-        """ Extract a simulation output from a m-dimensional vector.
-
-        Args:
-            sx (ndarray): A 1D array of length m containing the vectorized
-                simulation outputs.
-
-        Returns:
-            dict: A dictionary with keys corresponding to simulation names
-            and values corresponding to simulation outputs.
-
-        """
-
-        sx_out = {}
-        istart = 0
-        for i, mi in enumerate(self.m_list):
-            iend = istart + mi
-            sx_out[self.sim_schema[i][0]] = sx[istart:iend]
-            istart = iend
-        return sx_out
-
-    def _vobj_funcs(self, x, sx):
-        """ Jittable evaluation of all objectives from the feature space.
-
-        Args:
-            x (dict): A Python dictionary containing the design point to
-                evaluate.
-
-            sx (dict): A Python dictionary containing the simulation outputs
-                at x.
-
-        Returns:
-            ndarray: A 1D array containing the result of the evaluation.
-
-        """
-
-        fx_list = [self.empty]
-        for obj_func in self.obj_funcs:
-            fx_list.append(obj_func(x, sx))
-        return jnp.concatenate(fx_list, axis=None)
-
-    def _vcon_funcs(self, x, sx):
-        """ Jittable evaluation of all constraints from the feature space.
-
-        Args:
-            x (dict): A Python dictionary containing the design point to
-                evaluate.
-
-            sx (dict): A Python dictionary containing the simulation outputs
-                at x.
-
-        Returns:
-            ndarray: A 1D array containing the list of constraint violations
-            at x, where a negative or zero score implies feasibility.
-
-        """
-
-        cx_list = [self.empty]
-        for con_func in self.con_funcs:
-            cx_list.append(con_func(x, sx))
-        return jnp.concatenate(cx_list, axis=None)
-
-    def _vpen_funcs(self, x, sx, cx, lamx):
-        """ Jittable evaluation of all penalties from the feature space.
-
-        Args:
-            x (dict): A Python dictionary containing the design point to
-                evaluate.
-
-            sx (dict): A Python dictionary containing the simulation outputs
-                at x.
-
-            cx (float): The aggregated constraint violations at x.
-
-            lamx (float): The penalty parameter to apply.
-
-        Returns:
-            ndarray: A 1D array containing the result of the evaluation.
-
-        """
-
-        px = cx * lamx
-        fx_list = [self.empty]
-        for obj_func in self.obj_funcs:
-            fx_list.append(obj_func(x, sx) + px)
-        return jnp.concatenate(fx_list, axis=None)
-
-    def _fit_surrogates(self):
-        """ Fit the surrogate models using the current sim databases. """
-
-        for i in range(self.s):
-            n_new = self.sim_db[i]['n']
-            self.surrogates[i].fit(self.sim_db[i]['x_vals'][:n_new, :],
-                                   self.sim_db[i]['s_vals'][:n_new, :])
-            self.sim_db[i]['old'] = self.sim_db[i]['n']
-        return
-
-    def _update_surrogates(self):
-        """ Update the surrogate models using the current sim databases. """
-
-        for i in range(self.s):
-            n_old = self.sim_db[i]['old']
-            n_new = self.sim_db[i]['n']
-            self.surrogates[i].update(self.sim_db[i]['x_vals'][n_old:n_new, :],
-                                      self.sim_db[i]['s_vals'][n_old:n_new, :])
-            self.sim_db[i]['old'] = self.sim_db[i]['n']
-        return
-
-    def _set_surrogate_tr(self, center, radius):
-        """ Alert the surrogate functions of a new trust region.
-
-        Args:
-            center (ndarray): A 1D array containing the (embedded) coordinates
-                of the new trust region center.
-
-            radius (ndarray or float): The trust region radius.
-
-        """
-
-        for surrogate in self.surrogates:
-            surrogate.setTrustRegion(center, radius)
-        eval_obj, eval_con, eval_pen = self._link()
-        self.optimizer.setObjective(eval_obj)
-        self.optimizer.setConstraints(eval_con)
-        self.optimizer.setPenalty(eval_pen)
-        return
-
-    def _evaluate_surrogates(self, x):
-        """ Evaluate all simulation surrogates.
-
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point to
-                evaluate.
-
-        Returns:
-            ndarray: A 1D array containing the (packed) result of the
-            surrogate model evaluations.
-
-        """
-
-        sx_list = [self.empty]
-        for surrogate in self.surrogates:
-            sx_list.append(surrogate.evaluate(x))
-        return jnp.concatenate(sx_list, axis=None)
-
-    def _surrogate_uncertainty(self, x):
-        """ Evaluate the standard deviation of the possible surrogate outputs.
-
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point to
-                evaluate the surrogate uncertainties at.
-
-        Returns:
-            ndarray: A 1D array containing the standard deviation of the
-            surrogate prediction at x.
-
-        """
-
-        sdx_list = [self.empty]
-        for surrogate in self.surrogates:
-            sdx_list.append(surrogate.stdDev(x))
-        return jnp.concatenate(sdx_list, axis=None)
-
-    def _evaluate_objectives(self, x, sx):
-        """ Evaluate all objectives from the latent space.
-
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point to
-                evaluate.
-
-            sx (ndarray): A 1D array containing the (packed) simulation vector
-                at x.
-
-        Returns:
-            ndarray: A 1D array containing the result of the evaluation.
-
-        """
-
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        return self._vobj_funcs(xx, ssx)
-
-    def _obj_fwd(self, x, sx):
-        """ Evaluate a forward pass over the objective functions.
-
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point to
-                evaluate.
-
-            sx (ndarray): A 1D array containing the (packed) simulation vector
-                at x.
-
-        Returns:
-            (ndarray, (ndarray, ndarray)): The first entry is a 1D array
-            containing the result of the evaluation, and the second entry
-            contains the extracted pair (xx, ssx).
-
-        """
-
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        return self._vobj_funcs(xx, ssx), (x, sx)
-
-    def _obj_bwd(self, res, w):
-        """ Evaluate a backward pass over the objective functions.
-
-        Args:
-            res (tuple of ndarrays): Contains extracted value of x and the
-                unpacked value of sx computed during the forward pass.
-
-            w (ndarray): Contains the adjoint vector for the computation
-                succeeding the objective evaluation in the compute graph.
-
-        Returns:
-            (ndarray, ndarray): A pair of 1D arrays containing the products
-            w * jac(f wrt x) and w * jac(f wrt s), respectively.
-
-        """
-
-        x, sx = res
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        dfdx, dfds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
-        for i, obj_grad in enumerate(self.obj_grads):
-            x_grad, s_grad = obj_grad(xx, ssx)
-            dfdx += self._embed_grads(x_grad) * w[i]
-            dfds += self._pack_sim(s_grad) * w[i]
-        return dfdx, dfds
-
-    def _evaluate_constraints(self, x, sx):
-        """ Evaluate the constraints from the latent space.
-
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point to
-                evaluate.
-
-            sx (ndarray): A 1D array containing the (packed) simulation vector
-                at x.
-
-        Returns:
-            ndarray: A 1D array containing the list of constraint violations
-            at x, where a negative or zero score implies feasibility.
-
-        """
-
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        return self._vcon_funcs(xx, ssx)
-
-    def _con_fwd(self, x, sx):
-        """ Evaluate a forward pass over the constraint functions.
-
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point to
-                evaluate.
-
-            sx (ndarray): A 1D array containing the (packed) simulation vector
-                at x.
-
-        Returns:
-            (ndarray, (ndarray, ndarray)): The first entry is a 1D array
-            containing the constraint violations at x, and the second entry
-            contains the extracted pair (xx, ssx).
-
-        """
-
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        return self._vcon_funcs(xx, ssx), (x, sx)
-
-    def _con_bwd(self, res, w):
-        """ Evaluate a backward pass over the constraint functions.
-
-        Args:
-            res (tuple of ndarrays): Contains extracted value of x and the
-                unpacked value of sx computed during the forward pass.
-
-            w (ndarray): Contains the adjoint vector for the computation
-                succeeding the constraint evaluation in the compute graph.
-
-        Returns:
-            (ndarray, ndarray): A pair of 1D arrays containing the products
-            w * jac(c wrt x) and w * jac(c wrt s), respectively.
-
-        """
-
-        x, sx = res
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        dcdx, dcds = jnp.zeros(self.n_latent), jnp.zeros(self.m)
-        for i, con_grad in enumerate(self.con_grads):
-            x_grad, s_grad = con_grad(xx, ssx)
-            dcdx += self._embed_grads(x_grad) * w[i]
-            dcds += self._pack_sim(s_grad) * w[i]
-        return dcdx, dcds
-
-    def _evaluate_penalty(self, x, sx):
-        """ Evaluate the penalized objective from the latent space.
-
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point to
-                evaluate.
-
-            sx (ndarray): A 1D array containing the (packed) simulation vector
-                at x.
-
-        Returns:
-            ndarray: A 1D array containing the result of the objective
-            evaluation with a penalty added for violated constraints.
-
-        """
-
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        cx = jnp.sum(jnp.maximum(self._vcon_funcs(xx, ssx), 0.0))
-        return self._vpen_funcs(xx, ssx, cx, self.lam)
-
-    def _pen_fwd(self, x, sx):
-        """ Evaluate a forward pass over the penalized objective functions.
-
-        Args:
-            x (ndarray): A 1D array containing the (embedded) design point
-                to evaluate.
-
-            sx (ndarray): A 1D array containing the (packed) simulation
-                vector at x.
-
-        Returns:
-            (ndarray, tuple): The first entry is a 1D array containing the
-            result of the evaluation, and the second entry contains the tuple
-            (xx, ssx, activities) where xx and ssx are the extracted values of
-            x and sx, and "activities" gives the active constraint penalties.
-
-        """
-
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        cx = jnp.maximum(self._vcon_funcs(xx, ssx), 0.0)
-        act = (jnp.isclose(cx, jnp.zeros(cx.shape)) - 1) * -self.lam
-        return self._vpen_funcs(xx, ssx, jnp.sum(cx), self.lam), (x, sx, act)
-
-    def _pen_bwd(self, res, w):
-        """ Evaluate a backward pass over the penalized objective functions.
-
-        Args:
-            res (tuple of ndarrays): Contains extracted value of x and the
-                unpacked value of sx computed during the forward pass followed
-                by a vector encoding the indices/penalties for the active
-                constraints.
-
-            w (ndarray): Contains the adjoint vector for the computation
-                succeeding the penalty evaluation in the compute graph.
-
-        Returns:
-            (ndarray, ndarray): A pair of 1D arrays containing the products
-            w * jac(c wrt x) and w * jac(c wrt s), respectively.
-
-        """
-
-        x, sx, act = res
-        xx = self._extract(x)
-        ssx = self._unpack_sim(sx)
-        dcdx, dcds = self._con_bwd((x, sx), act)
-        dfdx = dcdx * jnp.sum(w)
-        dfds = dcds * jnp.sum(w)
-        for i, obj_grad in enumerate(self.obj_grads):
-            x_grad, s_grad = obj_grad(xx, ssx)
-            dfdx += self._embed_grads(x_grad) * w[i]
-            dfds += self._pack_sim(s_grad) * w[i]
-        return dfdx, dfds
-
-    def _link(self):
-        """ Link the forward/backward pass functions """
-
-        @jax.custom_vjp
-        def eval_obj(x, sx): return self._evaluate_objectives(x, sx)
-        def obj_fwd(x, sx): return self._obj_fwd(x, sx)
-        eval_obj.defvjp(obj_fwd, self.obj_bwd)
-        @jax.custom_vjp
-        def eval_con(x, sx): return self._evaluate_constraints(x, sx)
-        def con_fwd(x, sx): return self._con_fwd(x, sx)
-        eval_con.defvjp(con_fwd, self.con_bwd)
-        @jax.custom_vjp
-        def eval_pen(x, sx): return self._evaluate_penalty(x, sx)
-        def pen_fwd(x, sx): return self._pen_fwd(x, sx)
-        eval_pen.defvjp(pen_fwd, self.pen_bwd)
-        return eval_obj, eval_con, eval_pen
-
-
-def _gerr(x, sx): raise ValueError("1 or more grad func is undefined")
