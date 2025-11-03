@@ -104,10 +104,7 @@ def test_MOOP_addObjData():
     moop1.addObjData(x0, s0)
     moop1.addObjData(x0, s0)
     moop1.addObjData(x1, s1)
-    assert (moop1.data['f_vals'].shape == (2, 2))
-    assert (moop1.data['x_vals'].shape == (2, 3))
-    assert (moop1.data['c_vals'].shape == (2, 1))
-    assert (moop1.n_dat == 2)
+    assert len(moop1.getObjectiveData()) == 2
     # Initialize another continuous MOOP with some constraints
     moop2 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -125,10 +122,7 @@ def test_MOOP_addObjData():
     moop2.addObjData(x0, s0)
     moop2.addObjData(xe2, s0)
     moop2.addObjData(x1, s1)
-    assert (moop2.data['f_vals'].shape == (3, 2))
-    assert (moop2.data['x_vals'].shape == (3, 3))
-    assert (moop2.data['c_vals'].shape == (3, 3))
-    assert (moop2.n_dat == 3)
+    assert len(moop2.getObjectiveData()) == 3
     # Initialize another MOOP with mixed variables
     moop3 = MOOP(LocalSurrogate_PS)
     for i in range(3):
@@ -145,10 +139,7 @@ def test_MOOP_addObjData():
     # Test adding some data
     x1 = moop3._extract(np.ones(5))
     moop3.addObjData(x1, s1)
-    assert (moop3.data['f_vals'].shape == (1, 2))
-    assert (moop3.data['x_vals'].shape == (1, 5))
-    assert (moop3.data['c_vals'].shape == (1, 3))
-    assert (moop3.n_dat == 1)
+    assert len(moop3.getObjectiveData()) == 1
 
 
 def test_MOOP_getPF():
@@ -190,26 +181,19 @@ def test_MOOP_getPF():
         moop.addAcquisition({'acquisition': UniformWeights})
     moop.compile()
     # Directly set the MOOP's database to produce a known Pareto front
-    moop.data = {'x_vals': np.zeros((5, 4)),
-                 'f_vals': np.zeros((5, 3)),
-                 'c_vals': np.zeros((5, 1))}
     sx = np.zeros(0)
-    moop.data['x_vals'][0, :] = np.array([0.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][0, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][1, :] = np.array([1.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][1, :] = moop._evaluate_objectives(
-                                   np.array([1.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][2, :] = np.array([0.0, 1.0, 0.0, 0.0])
-    moop.data['f_vals'][2, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 1.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][3, :] = np.array([0.0, 0.0, 1.0, 0.0])
-    moop.data['f_vals'][3, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 1.0, 0.0]), sx)
-    moop.data['x_vals'][4, :] = np.array([0.0, 0.0, 0.0, 1.0])
-    moop.data['f_vals'][4, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 1.0]), sx)
-    moop.n_dat = 5
+    for data in [
+        {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
+        {"x1": 1.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
+        {"x1": 0.0, "x2": 1.0, "x3": 0.0, "x4": 0.0},
+        {"x1": 0.0, "x2": 0.0, "x3": 1.0, "x4": 0.0},
+        {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 1.0},
+    ]:
+        data["f1"] = f1(data, sx)
+        data["f2"] = f2(data, sx)
+        data["f3"] = f3(data, sx)
+        data["c1"] = c1(data, sx)
+        moop.database.updateObjDb(data, data, data)
     soln = moop.getPF()
     assert (soln.shape[0] == 4)
     assert (soln['f1'].size == 4)
@@ -318,35 +302,18 @@ def test_MOOP_getObjectiveData():
     moop.compile()
     # Directly set the MOOP's database to produce a known output
     sx = np.zeros(0)
-    moop.data = {'x_vals': np.zeros((5, 4)),
-                 'f_vals': np.zeros((5, 3)),
-                 'c_vals': np.zeros((5, 1))}
-    moop.data['x_vals'][0, :] = np.array([0.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][0, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['c_vals'][0, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][1, :] = np.array([1.0, 0.0, 0.0, 0.0])
-    moop.data['f_vals'][1, :] = moop._evaluate_objectives(
-                                   np.array([1.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['c_vals'][1, :] = moop._evaluate_constraints(
-                                   np.array([1.0, 0.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][2, :] = np.array([0.0, 1.0, 0.0, 0.0])
-    moop.data['f_vals'][2, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 1.0, 0.0, 0.0]), sx)
-    moop.data['c_vals'][2, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 1.0, 0.0, 0.0]), sx)
-    moop.data['x_vals'][3, :] = np.array([0.0, 0.0, 1.0, 0.0])
-    moop.data['f_vals'][3, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 1.0, 0.0]), sx)
-    moop.data['c_vals'][3, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 1.0, 0.0]), sx)
-    moop.data['x_vals'][4, :] = np.array([0.0, 0.0, 0.0, 1.0])
-    moop.data['f_vals'][4, :] = moop._evaluate_objectives(
-                                   np.array([0.0, 0.0, 0.0, 1.0]), sx)
-    moop.data['c_vals'][4, :] = moop._evaluate_constraints(
-                                   np.array([0.0, 0.0, 0.0, 1.0]), sx)
-    moop.n_dat = 5
+    for data in [
+        {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
+        {"x1": 1.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
+        {"x1": 0.0, "x2": 1.0, "x3": 0.0, "x4": 0.0},
+        {"x1": 0.0, "x2": 0.0, "x3": 1.0, "x4": 0.0},
+        {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 1.0},
+    ]:
+        data["f1"] = f1(data, sx)
+        data["f2"] = f2(data, sx)
+        data["f3"] = f3(data, sx)
+        data["c1"] = c1(data, sx)
+        moop.database.updateObjDb(data, data, data)
     soln = moop.getObjectiveData()
     assert (soln.shape[0] == 5)
 
@@ -403,6 +370,9 @@ def test_MOOP_save_load_functions():
     # Add 3 acquisition functions
     for i in range(3):
         moop1.addAcquisition({'acquisition': UniformWeights})
+    # Activate data checkpointing
+    moop1.database.setCheckpoint(True)
+    # Collect some data
     batch = moop1.iterate(0)
     batch = moop1.filterBatch(batch)
     for (xi, i) in batch:
@@ -430,13 +400,11 @@ def test_MOOP_save_load_functions():
     # Try to save and overwrite old data
     with pytest.raises(OSError):
         moop3.save()
-    # Save a data point with moop1
-    moop1.savedata(np.zeros(1, dtype=moop3.getDesignType())[0],
-                   np.zeros(1), "sim1")
+    # Start a checkpoint file with moop1
+    moop1.setCheckpoint(True)
     # Try to overwrite with moop3
     with pytest.raises(OSError):
-        moop3.savedata(np.zeros(1, dtype=moop3.getDesignType())[0],
-                       np.zeros(1), "sim1")
+        moop3.setCheckpoint(True)
     # Clean up test directory
     os.remove("parmoo.moop")
     os.remove("parmoo.simdb.json")
@@ -504,6 +472,7 @@ def test_MOOP_save_load_classes():
     for i in range(3):
         moop1.addAcquisition({'acquisition': UniformWeights})
     moop1.compile()
+    moop1.setCheckpoint(True)
     # Test save and reload
     moop1.save()
     moop2 = MOOP(LocalSurrogate_PS)
@@ -511,6 +480,7 @@ def test_MOOP_save_load_classes():
     check_moops(moop1, moop2)
     # Clean up test directory
     os.remove("parmoo.moop")
+    os.remove("parmoo.simdb.json")
     os.remove("parmoo.surrogate.1")
     os.remove("parmoo.optimizer")
 
@@ -597,7 +567,8 @@ def check_moops(moop1, moop2):
             moop2.n_feature == moop1.n_feature and
             moop2.n_latent == moop1.n_latent and
             moop2.o == moop1.o and moop2.p == moop1.p and
-            moop2.s == moop1.s and moop2.n_dat == moop1.n_dat and
+            moop2.s == moop1.s and
+            len(moop2.getObjectiveData()) == len(moop2.getObjectiveData()) and
             moop2.lam == moop1.lam and
             moop2.iteration == moop1.iteration)
     # Check lists
@@ -617,11 +588,14 @@ def check_moops(moop1, moop2):
     assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.con_schema,
                                                       moop1.con_schema)]))
     # Check dictionaries
-    assert (all([moop2.data[ki].shape == moop1.data[ki].shape
-                 for ki in moop2.data.keys()]))
-    assert (all([all([moop2.sim_db[j][ki].shape == moop1.sim_db[j][ki].shape
-                      for ki in ["x_vals", "s_vals"]])
-                 for j in range(len(moop1.sim_db))]))
+    assert all([
+        x1 == x2
+        for x1, x2 in zip(moop2.getObjectiveData(), moop1.getObjectiveData())
+    ])
+    assert all([
+        x1 == x2
+        for x1, x2 in zip(moop2.getSimulationData(), moop1.getSimulationData())
+    ])
     for obj1, obj2 in zip(moop1.obj_funcs, moop2.obj_funcs):
         if hasattr(obj1, "__name__"):
             assert (obj1.__name__ == obj2.__name__)

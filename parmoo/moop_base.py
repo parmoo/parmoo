@@ -12,6 +12,7 @@ import logging
 
 import jax
 from jax import numpy as jnp
+import numpy as np
 
 from parmoo.databases import NumpyDatabase
 from parmoo.util import gradient_error
@@ -55,7 +56,6 @@ class MOOP_base(ABC):
      * ``MOOP.setCheckpoint(checkpoint, [checkpoint_data, filename])``
      * ``MOOP.save([filename="parmoo"])``
      * ``MOOP.load([filename="parmoo"])``
-     * ``MOOP.savedata(x, sx, s_name, [filename="parmoo"])``
 
     The following private methods are implemented herein:
      * ``MOOP._embed(x)``
@@ -246,10 +246,6 @@ class MOOP_base(ABC):
     def load(self, filename="parmoo"):
         """ Load a serialized MOOP object and all of its dependencies. """
 
-    @abstractmethod
-    def savedata(self, x, sx, s_name, filename="parmoo"):
-        """ Save the current simulation database for this MOOP. """
-
     def _embed(self, x):
         """ Embed a design input as a n-dimensional vector for ParMOO.
 
@@ -427,7 +423,10 @@ class MOOP_base(ABC):
             x_vals = np.zeros((n, self.n_latent))
             for j, xj in enumerate(new_sim_db[sim_namei]):
                 x_vals[j, :] = self._embed(xj)
-            self.surrogates[i].fit(x_vals, new_sim_db[sim_namei]['out'])
+            s_vals = np.reshape(
+                new_sim_db[sim_namei]['out'], (n, self.m_list[i])
+            )
+            self.surrogates[i].fit(x_vals, s_vals)
 
     def _update_surrogates(self):
         """ Update the surrogate models using the current sim databases. """
@@ -439,7 +438,10 @@ class MOOP_base(ABC):
             x_vals = np.zeros((n, self.n_latent))
             for j, xj in enumerate(new_sim_db[sim_namei]):
                 x_vals[j, :] = self._embed(xj)
-            self.surrogates[i].update(x_vals, new_sim_db[sim_namei]['out'])
+            s_vals = np.reshape(
+                new_sim_db[sim_namei]['out'], (n, self.m_list[i])
+            )
+            self.surrogates[i].update(x_vals, s_vals)
 
     def _set_surrogate_tr(self, center, radius):
         """ Alert the surrogate functions of a new trust region.

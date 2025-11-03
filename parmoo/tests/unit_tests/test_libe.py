@@ -142,9 +142,11 @@ def test_libE_MOOP():
     # Test checkpointing features
     moop.setCheckpoint(True)
     moop.save()
-    moop.load()
+    moop2 = libE_MOOP(LocalSurrogate_PS)
+    moop2.load()
     # Clean up test directory
     os.remove("parmoo.moop")
+    os.remove("parmoo.simdb.json")
     os.remove("parmoo.surrogate.1")
     os.remove("parmoo.optimizer")
 

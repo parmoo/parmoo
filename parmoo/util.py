@@ -481,8 +481,9 @@ def approx_equal(x1, x2, des_tols):
 
     results = []
     for key in x1:
-        results.append(
-            (des_tols[key] <= 0 and x1[key] == x2[key]) or
-            abs(x1[key] - x2[key]) < des_tols[key]
-        )
-    return all(results)
+        if (
+            (des_tols[key] > 0 and abs(x1[key] - x2[key]) >= des_tols[key]) or
+            (des_tols[key] <= 0 and x1[key] != x2[key])
+        ):
+            return False
+    return True

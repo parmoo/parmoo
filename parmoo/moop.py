@@ -15,15 +15,15 @@ import json
 import logging
 import numpy as np
 from os.path import exists as file_exists
-import pandas as pd
 
 from parmoo.moop_base import MOOP_base
+from parmoo.databases import NumpyDatabase
 from parmoo import structs
 from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
                                                 IntegerEmbedder,     \
                                                 CategoricalEmbedder, \
                                                 IdentityEmbedder
-from parmoo.util import check_names, check_sims, updatePF
+from parmoo.util import check_names, check_sims
 import pickle
 import shutil
 import warnings
@@ -114,7 +114,7 @@ class MOOP(MOOP_base):
                  # Constants, counters, and adaptive parameters
                  'compiled', 'empty', 'epsilon', 'iteration', 'lam',
                  # Checkpointing markers
-                 'checkpoint', 'checkpoint_data', 'checkpoint_file',
+                 'checkpoint', 'checkpoint_file',
                  'new_checkpoint', 'new_data',
                  # Design variables, simulations, objectives, and constraints
                  'embedders', 'emb_hp', 'sim_funcs',
@@ -167,7 +167,7 @@ class MOOP(MOOP_base):
         self.iteration = 0
         self.lam = 1.0
         # Initialize checkpointing markers
-        self.checkpoint, self.checkpoint_data = False, False
+        self.checkpoint = False
         self.checkpoint_file = "parmoo"
         self.new_checkpoint, self.new_data = True, True
         # Initialize design variable embeddings
@@ -183,7 +183,7 @@ class MOOP(MOOP_base):
         self.optimizer, self.opt_tmp = None, None
         self.opt_hp = {}
         # Initialize the database
-        self.database = SimulationDatabase()
+        self.database = NumpyDatabase(hyperparams)
         # Set up the surrogate optimizer and its hyperparameters
         if hyperparams is not None:
             if isinstance(hyperparams, dict):
@@ -331,6 +331,7 @@ class MOOP(MOOP_base):
             self.des_schema.append((name, dtype))
             self.embedders.append(embedder)
             self.emb_hp.append(arg1)  # This is saved for re-loading
+            self.database.addDesign(name, dtype, self.feature_des_tols[-1])
         return
 
     def addSimulation(self, *args):
@@ -392,6 +393,7 @@ class MOOP(MOOP_base):
             self.sim_hp.append(hps)
             # Add the simulation function
             self.sim_funcs.append(arg['sim_func'])
+            self.database.addSimulation(name, m)
         return
 
     def addObjective(self, *args):
@@ -452,6 +454,7 @@ class MOOP(MOOP_base):
             if 'obj_grad' in arg:
                 self.obj_grads.append(arg['obj_grad'])
             self.o += 1
+            self.database.addObjective(name)
         return
 
     def addConstraint(self, *args):
@@ -527,6 +530,7 @@ class MOOP(MOOP_base):
             if 'con_grad' in arg:
                 self.con_grads.append(arg['con_grad'])
             self.p += 1
+            self.database.addConstraint(name)
         return
 
     def addAcquisition(self, *args):
@@ -591,11 +595,12 @@ class MOOP(MOOP_base):
         if self.o <= 0:
             raise RuntimeError("Cannot compile a MOOP with no objectives.")
         if len(self.acq_tmp) == 0:
-            warnings.warn("You are compiling a MOOP with no acquisition "
-                          "functions. I'll let you do it for analysis "
-                          "purposes, but the ``solve()`` command won't "
-                          "work correctly until you recompile with "
-                          "one or more acquisition functions...")
+            warnings.warn(
+                "You are compiling a MOOP with no acquisition functions."
+                " I'll let you do it for analysis purposes, but the solve()"
+                " command won't work correctly until you recompile with"
+                " one or more acquisition functions..."
+            )
         logging.info("   Initializing MOOP solver's component objects...")
         # Reset the internal lists
         self.searches, self.surrogates = [], []
@@ -634,6 +639,8 @@ class MOOP(MOOP_base):
         for i, acquisition in enumerate(self.acquisitions):
             self.optimizer.addAcquisition(acquisition)
         self.optimizer.setTrFunc(self._set_surrogate_tr)
+        # Start the Database
+        self.database.startDatabase()
         logging.info("   Done.")
         # Set compiled flat go True
         logging.info(" Compilation finished.")
@@ -655,8 +662,9 @@ class MOOP(MOOP_base):
                      f" {len(self.acquisitions) * self.s}")
         return
 
-    def setCheckpoint(self, checkpoint,
-                      checkpoint_data=True, filename="parmoo"):
+    def setCheckpoint(
+        self, checkpoint=True, checkpoint_data=True, filename="parmoo"
+    ):
         """ Set ParMOO's checkpointing feature.
 
         Note that for checkpointing to work, all simulation, objective,
@@ -687,8 +695,8 @@ class MOOP(MOOP_base):
         if not isinstance(filename, str):
             raise TypeError("filename must have the string type")
         self.checkpoint = checkpoint
-        self.checkpoint_data = checkpoint_data
         self.checkpoint_file = filename
+        self.database.setCheckpoint(checkpoint_data, filename)
         return
 
     def getDesignType(self):
@@ -764,21 +772,7 @@ class MOOP(MOOP_base):
 
         """
 
-        # Extract the simulation name
-        i = -1
-        for j, sj in enumerate(self.sim_schema):
-            if sj[0] == s_name:
-                i = j
-                break
-        if i < 0 or i > self.s - 1:
-            raise ValueError("s_name did not contain a legal name/index")
-        # Check the database for previous evaluations of x
-        xx = self._embed(x)
-        des_tols = np.asarray(self.latent_des_tols)
-        for j in range(self.sim_db[i]['n']):
-            if np.all(np.abs(self.sim_db[i]['x_vals'][j, :] - xx) < des_tols):
-                return self.sim_db[i]['s_vals'][j, :]
-        return None
+        return self.database.checkSimDb(x, s_name)
 
     def updateSimDb(self, x, sx, s_name):
         """ Update sim_db[s_name] by adding a design/simulation output pair.
@@ -795,36 +789,7 @@ class MOOP(MOOP_base):
 
         """
 
-        if not self.compiled:
-            raise RuntimeError("Cannot begin adding items to the database "
-                               "before compiling")
-        # Extract the simulation name
-        i = -1
-        for j, sj in enumerate(self.sim_schema):
-            if sj[0] == s_name:
-                i = j
-                break
-        if i < 0 or i > self.s - 1:
-            raise ValueError("s_name did not contain a legal name/index")
-        xx = self._embed(x)
-        if self.sim_db[i]['n'] > 0:
-            # If sim_db[i]['n'] > 0, then append to the database
-            self.sim_db[i]['x_vals'] = np.append(self.sim_db[i]['x_vals'],
-                                                 [xx], axis=0)
-            self.sim_db[i]['s_vals'] = np.append(self.sim_db[i]['s_vals'],
-                                                 [sx], axis=0)
-            self.sim_db[i]['n'] += 1
-        else:
-            # If sim_db[i]['n'] == 0, then set the zeroth value
-            self.sim_db[i]['x_vals'][0, :] = xx
-            self.sim_db[i]['s_vals'][0, :] = sx
-            self.sim_db[i]['n'] += 1
-        # If various checkpointing modes are on, then save the current states
-        if self.checkpoint_data:
-            self.savedata(x, sx, s_name, filename=self.checkpoint_file)
-        if self.checkpoint:
-            self.save(filename=self.checkpoint_file)
-        return
+        self.database.updateSimDb(x, sx, s_name)
 
     def evaluateSimulation(self, x, s_name):
         """ Evaluate sim_func[s_name] and store the result in the database.
@@ -852,7 +817,7 @@ class MOOP(MOOP_base):
             if i < 0 or i > self.s - 1:
                 raise ValueError("s_name did not contain a legal name/index")
             sx = np.asarray(self.sim_funcs[i](x))
-            self.updateSimDb(x, sx, s_name)
+            self.database.updateSimDb(x, sx, s_name)
             if self.checkpoint:
                 self.save(filename=self.checkpoint_file)
         return sx
@@ -871,46 +836,15 @@ class MOOP(MOOP_base):
 
         """
 
-        xx = self._embed(x)
-        des_tols = np.asarray(self.latent_des_tols)
-        # Initialize the database if needed
-        if self.n_dat == 0:
-            self.data['x_vals'][0, :] = xx
-            self.data['f_vals'] = np.zeros((1, self.o))
-            for i, obj_func in enumerate(self.obj_funcs):
-                self.data['f_vals'][0, i] = obj_func(x, sx)
-            # Check if there are constraint violations to maintain
-            if self.p > 0:
-                self.data['c_vals'] = np.zeros((1, self.p))
-                for i, constraint_func in enumerate(self.con_funcs):
-                    self.data['c_vals'][0, i] = constraint_func(x, sx)
-            else:
-                self.data['c_vals'] = np.zeros((1, 1))
-            self.n_dat = 1
-        # Check for duplicate values (up to the design tolerance)
-        elif any([np.all(np.abs(xx - xj) < des_tols)
-                  for xj in self.data['x_vals']]):
+        if self.database.checkObjDb(x) is not None:
             return
-        # Otherwise append the objectives
-        else:
-            self.data['x_vals'] = np.append(self.data['x_vals'], [xx], axis=0)
-            fx = np.zeros(self.o)
-            for i, obj_func in enumerate(self.obj_funcs):
-                fx[i] = obj_func(x, sx)
-            self.data['f_vals'] = np.append(self.data['f_vals'],
-                                            [fx], axis=0)
-            # Check if there are constraint violations to maintain
-            if self.p > 0:
-                cx = np.zeros(self.p)
-                for i, constraint_func in enumerate(self.con_funcs):
-                    cx[i] = constraint_func(x, sx)
-                self.data['c_vals'] = np.append(self.data['c_vals'],
-                                                [cx], axis=0)
-            else:
-                self.data['c_vals'] = np.append(self.data['c_vals'],
-                                                [np.zeros(1)], axis=0)
-            self.n_dat += 1
-        return
+        fx = {}
+        for i, obj_func in enumerate(self.obj_funcs):
+            fx[self.obj_schema[i][0]] = obj_func(x, sx)
+        cx = {}
+        for i, constraint_func in enumerate(self.con_funcs):
+            cx[self.con_schema[i][0]] = constraint_func(x, sx)
+        self.database.updateObjDb(x, fx, cx)
 
     def iterate(self, k, ib=None):
         """ Perform an iteration of ParMOO's solver and generate candidates.
@@ -960,7 +894,7 @@ class MOOP(MOOP_base):
         # Special rule for the k=0 iteration
         xbatch = []
         if k == 0:
-            # Compile the MOOP if needed
+            # Compile the MOOP and start the database if needed
             if not self.compiled:
                 self.compile()
             # Generate search data
@@ -972,10 +906,24 @@ class MOOP(MOOP_base):
                                    self.sim_schema[j][0]))
         # General case for k>0 iterations
         else:
+            # TODO(thchang): Remove this expensive query
+            obj_data = self.database.getObjectiveData()
+            xx = np.zeros((len(obj_data), self.n_latent))
+            fxx = np.zeros((len(obj_data), self.o))
+            cxx = np.zeros((len(obj_data), self.p))
+            for i, datum in enumerate(obj_data):
+                xx[i, :] = self._embed(datum)
+                for j, dt in enumerate(self.obj_schema):
+                    fxx[i, j] = datum[dt[0]]
+                for j, dt in enumerate(self.con_schema):
+                    cxx[i, j] = datum[dt[0]]
             # Set acquisition function targets
             x0 = np.zeros((len(self.acquisitions), self.n_latent))
             for i, acqi in enumerate(self.acquisitions):
-                x0[i, :] = acqi.setTarget(self.data, self._evaluate_penalty)
+                x0[i, :] = acqi.setTarget(
+                    {'x_vals': xx, 'f_vals': fxx, 'c_vals': cxx},
+                    self._evaluate_penalty
+                )
             # Solve the surrogate problem
             x_candidates = self.optimizer.solve(x0)
             # Create a batch for filtering methods
@@ -1090,31 +1038,15 @@ class MOOP(MOOP_base):
         if k == 0:
             self._fit_surrogates()
             if self.s > 0:
-                # Check every point in sim_db[0]
-                des_tols = np.asarray(self.latent_des_tols)
-                for xi, si in zip(self.sim_db[0]['x_vals'],
-                                  self.sim_db[0]['s_vals']):
-                    sim = np.zeros(self.m)
-                    sim[0:self.m_list[0]] = si[:]
-                    m_count = self.m_list[0]
-                    is_shared = True
-                    # Check for xi in sim_db[1:s]
-                    for j in range(1, self.s):
-                        is_shared = False
-                        for xj, sj in zip(self.sim_db[j]['x_vals'],
-                                          self.sim_db[j]['s_vals']):
-                            # If found, update sim value and break loop
-                            if np.all(np.abs(xi - xj) < des_tols):
-                                sim[m_count:m_count + self.m_list[j]] = sj[:]
-                                m_count = m_count + self.m_list[j]
-                                is_shared = True
-                                break
-                        if not is_shared:
-                            break
-                    # If xi was in every sim_db, add it to the database
-                    if is_shared:
-                        self.addObjData(self._extract(xi),
-                                        self._unpack_sim(sim))
+                for x, sx in self.database.browseCompleteSimulations():
+                    fx = {}
+                    for i, obj_func in enumerate(self.obj_funcs):
+                        fx[self.obj_schema[i][0]] = obj_func(x, sx)
+                    cx = {}
+                    for i, con_func in enumerate(self.con_funcs):
+                        cx[self.con_schema[i][0]] = con_func(x, sx)
+                    if self.database.checkObjDb(x) is None:
+                        self.database.updateObjDb(x, fx, cx)
         else:
             # If any constraints are violated, increase lam toward the limit
             for (xi, i) in batch:
@@ -1124,40 +1056,43 @@ class MOOP(MOOP_base):
                 if np.any(self._evaluate_constraints(xxi, sxi) > eps):
                     self.lam = min(1e4, self.lam * 2.0)
                     break
-            # Update the models and objective database
+            # Update the surrogate models and objective database
             self._update_surrogates()
             for xi in batch:
                 (x, i) = xi
-                xx = self._embed(x)
-                is_shared = True
-                sim = np.zeros(self.m)
-                m_count = 0
-                if self.s > 0:
+                if self.database.checkObjDb(x) is None:
+                    sx = {}
+                    xx = self._embed(x)
+                    sxx = np.zeros(self.m)
+                    m_count = 0
                     # Check for xi in every sim_db
-                    des_tols = np.asarray(self.latent_des_tols)
                     for j in range(self.s):
-                        is_shared = False
-                        for xj, sj in zip(self.sim_db[j]['x_vals'],
-                                          self.sim_db[j]['s_vals']):
-                            # If found, update sim value and break loop
-                            if np.all(np.abs(xx - xj) < des_tols):
-                                sim[m_count:m_count + self.m_list[j]] = sj[:]
-                                m_count = m_count + self.m_list[j]
-                                is_shared = True
-                                break
-                        # If not found, stop checking
-                        if not is_shared:
+                        sim_namej = self.sim_schema[j][0]
+                        sx[sim_namej] = self.database.checkSimDb(x, sim_namej)
+                        if sx[sim_namej] is None:
+                            sx = None
                             break
-                # If xi was in every sim_db, add it to the database and report
-                # to the optimizer
-                if is_shared:
-                    fx = np.zeros(self.o)
-                    sx = self._unpack_sim(sim)
-                    for i, obj_func in enumerate(self.obj_funcs):
-                        fx[i] = obj_func(x, sx)
-                    self.addObjData(x, sx)
-                    self.optimizer.returnResults(xx, fx, sim,
-                                                 np.zeros(self.m))
+                        else:
+                            sxx[m_count:m_count + self.m_list[j]] = \
+                                sx[sim_namej][:]
+                            m_count = m_count + self.m_list[j]
+                    # If xi was in every sim_db, add it to the database and
+                    # report to the optimizer
+                    if sx is not None:
+                        fx = {}
+                        fxx = np.zeros(self.o)
+                        for i, obj_func in enumerate(self.obj_funcs):
+                            fxx[i] = obj_func(x, sx)
+                            fx[self.obj_schema[i][0]] = fxx[i]
+                        cx = {}
+                        cxx = np.zeros(self.p)
+                        for i, con_func in enumerate(self.con_funcs):
+                            cxx[i] = con_func(x, sx)
+                            cx[self.con_schema[i][0]] = cxx[i]
+                        self.database.updateObjDb(x, fx, cx)
+                        self.optimizer.returnResults(
+                            xx, fxx, sxx, np.zeros(self.m)
+                        )
         # If checkpointing is on, save the moop before continuing
         if self.checkpoint:
             self.save(filename=self.checkpoint_file)
@@ -1300,39 +1235,7 @@ class MOOP(MOOP_base):
 
         """
 
-        # Get the solutions using function call
-        if self.n_dat > 0:
-            pf = updatePF(self.data, {})
-        else:
-            pf = {'x_vals': np.zeros(0),
-                  'f_vals': np.zeros(0),
-                  'c_vals': np.zeros(0)}
-        # Build the data type
-        dt = []
-        for dname in self.des_schema:
-            dt.append((str(dname[0]), dname[1]))
-        for fname in self.obj_schema:
-            dt.append((str(fname[0]), fname[1]))
-        for cname in self.con_schema:
-            dt.append((str(cname[0]), cname[1]))
-        # Initialize result array
-        result = np.zeros(pf['x_vals'].shape[0], dtype=dt)
-        # Extract all results
-        if self.n_dat > 0:
-            for i, xi in enumerate(pf['x_vals']):
-                xxi = self._extract(xi)
-                for (name, t) in self.des_schema:
-                    result[str(name)][i] = xxi[name]
-            for i, (name, t) in enumerate(self.obj_schema):
-                result[str(name)][:] = pf['f_vals'][:, i]
-            for i, (name, t) in enumerate(self.con_schema):
-                result[str(name)][:] = pf['c_vals'][:, i]
-        if format == 'pandas':
-            return pd.DataFrame(result)
-        elif format == 'ndarray':
-            return result
-        else:
-            raise ValueError(str(format) + " is an invalid value for 'format'")
+        return self.database.getPF(format)
 
     def getSimulationData(self, format='ndarray'):
         """ Extract all computed simulation outputs from the MOOP's database.
@@ -1353,49 +1256,7 @@ class MOOP(MOOP_base):
 
         """
 
-        # Build a results dict with a key for each simulation
-        result = {}
-        for i, sname in enumerate(self.sim_schema):
-            # Construct the dtype for this simulation database
-            dt = []
-            for dname in self.des_schema:
-                dt.append((str(dname[0]), dname[1]))
-            if len(sname) == 2:
-                dt.append(('out', sname[1]))
-            else:
-                dt.append(('out', sname[1], sname[2]))
-            # Fill the results array
-            result[sname[0]] = np.zeros(self.sim_db[i]['n'], dtype=dt)
-            if self.sim_db[i]['n'] > 0:
-                for j, xj in enumerate(self.sim_db[i]['x_vals']):
-                    xxj = self._extract(xj)
-                    for (name, t) in self.des_schema:
-                        result[sname[0]][name][j] = xxj[name]
-                if len(sname) > 2:
-                    result[sname[0]]['out'] = self.sim_db[i]['s_vals']
-                else:
-                    result[sname[0]]['out'] = self.sim_db[i]['s_vals'][:, 0]
-        if format == 'pandas':
-            # For simulation data, converting to pandas is a little more
-            # complicated...
-            result_pd = {}
-            for i, snamei in enumerate(result.keys()):
-                rtempi = {}
-                for (name, t) in self.des_schema:
-                    rtempi[name] = result[snamei][name]
-                # Need to break apart the output column manually
-                if self.m_list[i] > 1:
-                    for i in range(self.m_list[i]):
-                        rtempi[f'out_{i}'] = result[snamei]['out'][:, i]
-                else:
-                    rtempi['out'] = result[snamei]['out'][:, 0]
-                # Create dictionary of dataframes, indexed by sim names
-                result_pd[snamei] = pd.DataFrame(rtempi)
-            return result_pd
-        elif format == 'ndarray':
-            return result
-        else:
-            raise ValueError(str(format) + "is an invalid value for 'format'")
+        return self.database.getSimulationData(format)
 
     def getObjectiveData(self, format='ndarray'):
         """ Extract all computed objective scores from this MOOP's database.
@@ -1415,35 +1276,7 @@ class MOOP(MOOP_base):
 
         """
 
-        # Build the data type
-        dt = []
-        for dname in self.des_schema:
-            dt.append(dname)
-        for fname in self.obj_schema:
-            dt.append(fname)
-        for cname in self.con_schema:
-            dt.append(cname)
-        # Initialize result array
-        if self.n_dat > 0:
-            result = np.zeros(self.data['x_vals'].shape[0], dtype=dt)
-        else:
-            result = np.zeros(0, dtype=dt)
-        # Extract all results
-        if self.n_dat > 0:
-            for i, xi in enumerate(self.data['x_vals']):
-                xxi = self._extract(xi)
-                for (name, t) in self.des_schema:
-                    result[name][i] = xxi[name]
-            for i, (name, t) in enumerate(self.obj_schema):
-                result[name][:] = self.data['f_vals'][:, i]
-            for i, (name, t) in enumerate(self.con_schema):
-                result[name][:] = self.data['c_vals'][:, i]
-        if format == 'pandas':
-            return pd.DataFrame(result)
-        elif format == 'ndarray':
-            return result
-        else:
-            raise ValueError(str(format) + " is an invalid value for 'format'")
+        return self.database.getObjectiveData(format)
 
     def save(self, filename="parmoo"):
         """ Serialize and save the MOOP object and all of its dependencies.
@@ -1488,7 +1321,6 @@ class MOOP(MOOP_base):
                         'iteration': self.iteration,
                         'lam': self.lam,
                         'checkpoint': self.checkpoint,
-                        'checkpoint_data': self.checkpoint_data,
                         'checkpoint_file': self.checkpoint_file,
                         'np_random_state':
                         self.np_random_gen.bit_generator.state,
@@ -1583,21 +1415,6 @@ class MOOP(MOOP_base):
                 shutil.move(fname_tmp, fname)
             except NotImplementedError:
                 pass
-        # Serialize the internal databases
-        parmoo_state['n_dat'] = self.n_dat
-        parmoo_state['data'] = {}
-        if 'x_vals' in self.data:
-            parmoo_state['data']['x_vals'] = self.data['x_vals'].tolist()
-        if 'f_vals' in self.data:
-            parmoo_state['data']['f_vals'] = self.data['f_vals'].tolist()
-        if 'c_vals' in self.data:
-            parmoo_state['data']['c_vals'] = self.data['c_vals'].tolist()
-        parmoo_state['sim_db'] = []
-        for dbi in self.sim_db:
-            parmoo_state['sim_db'].append({'x_vals': dbi['x_vals'].tolist(),
-                                           's_vals': dbi['s_vals'].tolist(),
-                                           'n': dbi['n'],
-                                           'old': dbi['old']})
         # Save the serialized ParMOO dictionary
         fname = filename + ".moop"
         fname_tmp = "." + fname + ".swap"
@@ -1622,11 +1439,13 @@ class MOOP(MOOP_base):
 
         """
 
-        PYDOCS = "https://docs.python.org/3/tutorial/modules.html" + \
-                 "#the-module-search-path"
+        PYDOCS = (
+            "https://docs.python.org/3/tutorial/modules.html"
+            "#the-module-search-path"
+        )
 
         # Load the serialized dictionary object
-        fname = filename + ".moop"
+        fname = f"{filename}.moop"
         with open(fname, 'r') as fp:
             parmoo_state = json.load(fp)
         # Reload intrinsic types (scalar values and Python lists)
@@ -1650,7 +1469,6 @@ class MOOP(MOOP_base):
         self.iteration = parmoo_state['iteration']
         self.lam = parmoo_state['lam']
         self.checkpoint = parmoo_state['checkpoint']
-        self.checkpoint_data = parmoo_state['checkpoint_data']
         self.checkpoint_file = parmoo_state['checkpoint_file']
         self.np_random_gen = np.random.default_rng()
         self.np_random_gen.bit_generator.state = \
@@ -1674,18 +1492,19 @@ class MOOP(MOOP_base):
             try:
                 mod = import_module(emb_mod)
             except ModuleNotFoundError:
-                raise ModuleNotFoundError(f"module: {emb_mod} could not be "
-                                          "loaded. Please make sure that "
-                                          f"{emb_mod} exists on this machine "
-                                          "and is part of the module search "
-                                          "path: " + PYDOCS)
+                raise ModuleNotFoundError(
+                    f"module: {emb_mod} could not be loaded. Please make"
+                    f" sure that {emb_mod} exists on this machine and"
+                    f" is part of the module search path: {PYDOCS}"
+                )
             try:
                 new_emb = getattr(mod, emb_name)
             except KeyError:
-                raise KeyError(f"function: {emb_name} defined in"
-                               f"{emb_mod} could not be loaded."
-                               f"Please make sure that {emb_name} is "
-                               f"defined in {emb_mod} with global scope.")
+                raise KeyError(
+                    f"function: {emb_name} defined in {emb_mod} could not be"
+                    f" loaded. Please make sure that {emb_name} is defined"
+                    f" in {emb_mod} with global scope."
+                )
             toadd = new_emb(self.emb_hp[i])
             self.embedders.append(toadd)
         self.sim_funcs = []
@@ -1694,18 +1513,19 @@ class MOOP(MOOP_base):
             try:
                 mod = import_module(sim_mod)
             except ModuleNotFoundError:
-                raise ModuleNotFoundError(f"module: {sim_mod} could not be "
-                                          "loaded. Please make sure that "
-                                          f"{sim_mod} exists on this machine "
-                                          "and is part of the module search "
-                                          "path: " + PYDOCS)
+                raise ModuleNotFoundError(
+                    f"module: {sim_mod} could not be loaded. Please make"
+                    f" sure that {sim_mod} exists on this machine and"
+                    f" is part of the module search path: {PYDOCS}"
+                 )
             try:
                 sim_ptr = getattr(mod, sim_name)
             except KeyError:
-                raise KeyError(f"function: {sim_name} defined in"
-                               f"{sim_mod} could not be loaded."
-                               f"Please make sure that {sim_name} is "
-                               f"defined in {sim_mod} with global scope.")
+                raise KeyError(
+                    f"function: {sim_name} defined in {sim_mod} could not be"
+                    f" loaded. Please make sure that {sim_name} is defined"
+                    f" in {emb_mod} with global scope."
+                )
             if info == "function":
                 toadd = sim_ptr
             else:
@@ -1775,11 +1595,9 @@ class MOOP(MOOP_base):
             mod = import_module(a_mod)
             new_acq = getattr(mod, a_name)
             self.acq_tmp.append(new_acq)
-        # Re-compile the MOOP
-        self.data = {}
-        self.n_dat = 0
-        self.sim_db = []
+        # Re-compile the MOOP and re-load the database
         self.compile()
+        self.database.loadCheckpoint(filename)
         # Try to re-load each solver component's previous state
         try:
             fname = filename + ".optimizer"
@@ -1803,63 +1621,5 @@ class MOOP(MOOP_base):
                 self.acquisitions[i].load(fname)
             except NotImplementedError:
                 pass
-        # Re-load the serialized internal databases
-        self.n_dat = parmoo_state['n_dat']
-        self.data = {}
-        if 'x_vals' in parmoo_state['data']:
-            self.data['x_vals'] = np.array(parmoo_state['data']['x_vals'])
-        if 'f_vals' in parmoo_state['data']:
-            self.data['f_vals'] = np.array(parmoo_state['data']['f_vals'])
-        if 'c_vals' in parmoo_state['data']:
-            self.data['c_vals'] = np.array(parmoo_state['data']['c_vals'])
-        self.sim_db = []
-        for dbi in parmoo_state['sim_db']:
-            self.sim_db.append({'x_vals': np.array(dbi['x_vals']),
-                                's_vals': np.array(dbi['s_vals']),
-                                'n': dbi['n'],
-                                'old': dbi['old']})
         self.new_checkpoint = False
-        self.new_data = False
-        return
-
-    def savedata(self, x, sx, s_name, filename="parmoo"):
-        """ Save the current simulation database for this MOOP.
-
-        Args:
-            filename (str, optional): The filepath to the checkpointing
-                file(s). Do not include file extensions, they will be
-                appended automatically. Defaults to the value "parmoo"
-                (filename will be "parmoo.simdb.json").
-
-        """
-
-        # Check whether file exists first
-        exists = file_exists(filename + ".simdb.json")
-        if exists and self.new_data:
-            raise OSError("Creating a new save file, but " +
-                          filename + ".simdb.json already exists! " +
-                          "Move the existing file to a new location or " +
-                          "delete it so that ParMOO doesn't overwrite your " +
-                          "existing data...")
-        # Unpack x/sx pair into a dict for saving
-        toadd = {'sim_id': s_name}
-        for dname in self.des_schema:
-            key = dname[0]
-            if np.issubdtype(x[key], np.integer) or \
-                    jnp.issubdtype(x[key], jnp.integer):
-                toadd[key] = int(x[key])
-            elif np.issubdtype(x[key], np.floating) or \
-                    jnp.issubdtype(x[key], jnp.floating):
-                toadd[key] = float(x[key])
-            else:
-                toadd[key] = str(x[key])
-        if isinstance(sx, np.ndarray) or isinstance(sx, jnp.ndarray):
-            toadd['out'] = [float(sxi) for sxi in sx]
-        else:
-            toadd['out'] = float(sx)
-        # Save in file with proper extension
-        fname = filename + ".simdb.json"
-        with open(fname, 'a') as fp:
-            json.dump(toadd, fp)
-        self.new_data = False
         return

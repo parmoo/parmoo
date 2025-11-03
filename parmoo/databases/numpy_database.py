@@ -1,8 +1,8 @@
 
-""" Contains the SimulationDatabase class for storing simulation results.
+""" Contains the NumpyDatabase class for storing simulation results.
 
-``parmoo.SimulationDatabase`` is the base class for storing multiobjective
-simulation outputs. Each SimulationDatabase object may contain several
+``parmoo.NumpyDatabase`` is the base class for storing multiobjective
+simulation outputs. Each NumpyDatabase object may contain several
 simulations, and their corresponding objective and constraint violation scores.
 
 """
@@ -16,43 +16,46 @@ from os.path import exists as file_exists
 import pandas as pd
 
 from parmoo.util import check_names, updatePF, approx_equal
+from parmoo.structs import SimulationDatabase
 
 
-class SimulationDatabase:
+class NumpyDatabase(SimulationDatabase):
     """ A Database class for simulation optimization problems (SOPs)
     specialized for storing and filtering multiobjective data.
 
-    To define the SimulationDatabase, add each design variable, simulation,
+    To define the NumpyDatabase, add each design variable, simulation,
     objective, and constraint by using the following functions:
-     * ``SimulationDatabase.addDesign(*args)``
-     * ``SimulationDatabase.addSimulation(*args)``
-     * ``SimulationDatabase.addObjective(*args)``
-     * ``SimulationDatabase.addConstraint(*args)``
+     * ``NumpyDatabase.addDesign(*args)``
+     * ``NumpyDatabase.addSimulation(*args)``
+     * ``NumpyDatabase.addObjective(*args)``
+     * ``NumpyDatabase.addConstraint(*args)``
 
-    After creating a SimulationDatabase, the following methods may be useful
+    After creating a NumpyDatabase, the following methods may be useful
     for getting the numpy.dtype of the input/output arrays:
-     * ``SimulationDatabase.getDesignType()``
-     * ``SimulationDatabase.getSimulationType()``
-     * ``SimulationDatabase.getObjectiveType()``
-     * ``SimulationDatabase.getConstraintType()``
+     * ``NumpyDatabase.getDesignType()``
+     * ``NumpyDatabase.getSimulationType()``
+     * ``NumpyDatabase.getObjectiveType()``
+     * ``NumpyDatabase.getConstraintType()``
 
     To add simulation data, use:
-     * ``SimulationDatabase.checkSimDb(x, sim_name)``
-     * ``SimulationDatabase.updateSimDb(x, sx, sim_name)``
+     * ``NumpyDatabase.checkSimDb(x, sim_name)``
+     * ``NumpyDatabase.updateSimDb(x, sx, sim_name)``
 
     Once all simulation's have been updated for a given x, the objective
     database can be updated using:
-     * ``SimulationDatabase.addObjData(x, fx, cx)``
+     * ``NumpyDatabase.addObjData(x, fx, cx)``
 
     To force a save (checkpoint) of the current state of the simulation
     database, use:
-     * ``MOOP.savedata(x, sx, sim_name, [filename="parmoo"])``
+     * ``NumpyDatabase.checkpointSimData(x, sx, sim_name, filename="parmoo")``
+     * ``NumpyDatabase.checkpointObjData(x, fx, cx, filename="parmoo")``
+     * ``NumpyDatabase.loadCheckpoint(filename="parmoo")``
 
     Finally, the following methods are used to retrieve (filtered) simultation
     and objective data:
-     * ``SimulationDatabase.getPF(format='ndarray')``
-     * ``SimulationDatabase.getSimulationData(format='ndarray')``
-     * ``SimulationDatabase.getObjectiveData(format='ndarray')``
+     * ``NumpyDatabase.getPF(format='ndarray')``
+     * ``NumpyDatabase.getSimulationData(format='ndarray')``
+     * ``NumpyDatabase.getObjectiveData(format='ndarray')``
 
     """
 
@@ -62,35 +65,40 @@ class SimulationDatabase:
         # Design tolerances for lookup
         'des_tols',
         # Compiled flag
-        'compiled',
+        'running',
         # Checkpointing markers
-        'checkpoint_data', 'checkpoint_file', 'new_data',
+        'checkpoint_data', 'checkpoint_file', 'checkpoint_new',
         # Database information
-        'data', 'sim_db',
+        'obj_db', 'sim_db',
     ]
 
-    def __init__(self):
-        """ Initializer for the SimulationDatabase class. """
+    def __init__(self, hyperparams):
+        """ Initializer for the NumpyDatabase class.
+
+        Args:
+            hyperparams (dict): Any parameters for configuring the database.
+
+        """
 
         # Initialize the schemas
         self.des_schema, self.sim_schema = [], []
         self.obj_schema, self.con_schema = [], []
         # Initialize design tolerances for lookup
         self.des_tols = {}
-        # Initialize the compiled flag
-        self.compiled = False
+        # Initialize the running flag
+        self.running = False
         # Initialize checkpointing markers
         self.checkpoint_data = False
         self.checkpoint_file = "parmoo"
-        self.new_data = True
+        self.checkpoint_new = True
         # Initialize the database
-        self.obj_db, self.sim_db = {}, {}
+        self.obj_db, self.sim_db = None, None
 
     def addDesign(self, name, dtype, tolerance):
-        """ Add a new design variable to the SimulationDatabase schema.
+        """ Add a new design variable to the NumpyDatabase schema.
 
         Args:
-            name (str, optional): The unique name of this design variable.
+            name (str): The unique name of this design variable.
             dtype (str): The string-representation for the numpy dtype for this
                 design variable.
             tolerance (float): The tolerance up to which two different values
@@ -104,10 +112,10 @@ class SimulationDatabase:
             self.des_schema, self.sim_schema, self.obj_schema, self.con_schema
         )
         self.des_schema.append((name, dtype))
-        self.des_tols[name] = des_tol
+        self.des_tols[name] = tolerance
 
     def addSimulation(self, name, m):
-        """ Add new simulations to the SimulationDatabase schema.
+        """ Add new simulations to the NumpyDatabase schema.
 
         Args:
             name (str): The unique name of this simulation output.
@@ -125,7 +133,7 @@ class SimulationDatabase:
             self.sim_schema.append((name, 'f8'))
 
     def addObjective(self, name):
-        """ Add a new objective to the SimulationDatabase schema.
+        """ Add a new objective to the NumpyDatabase schema.
 
         Args:
             name (str): The unique name of this objective output.
@@ -139,7 +147,7 @@ class SimulationDatabase:
         self.obj_schema.append((name, 'f8'))
 
     def addConstraint(self, name):
-        """ Add a new constraint to the SimulationDatabase schema.
+        """ Add a new constraint to the NumpyDatabase schema.
 
         Args:
             name (str, optional): The unique name of this constraint violation.
@@ -209,13 +217,10 @@ class SimulationDatabase:
             return np.dtype(self.con_schema)
 
     def startDatabase(self):
-        """ Initialize the SimulationDatabase. """
+        """ Initialize the NumpyDatabase. """
 
         # For safety reasons, don't let silly users delete their data
-        if (
-            self.obj_db['n'] > 0 or
-            any([self.sim_db[key]['n'] > 0 for key in self.sim_db])
-        ):
+        if not self.isEmpty():
             raise RuntimeError(
                 "Cannot re-compile a MOOP with a nonempty database. "
                 "If that's really what you want, then please reset this MOOP."
@@ -227,6 +232,7 @@ class SimulationDatabase:
             'c_vals': np.zeros(50, dtype=self.con_schema),
             'n': 0,
         }
+        self.sim_db = {}
         for stype in self.sim_schema:
             if len(stype) > 2:
                 mi = stype[2]
@@ -238,8 +244,11 @@ class SimulationDatabase:
                 'n': 0,
                 'n_old': 0,
             }
-        self.compiled = True
+        self.running = True
         logging.info("   Done.")
+        # If checkpointing is on, we need to start the checkpoint file
+        if self.checkpoint_data:
+            self._checkpoint_metadata(self.checkpoint_file)
 
     def checkSimDb(self, x, sim_name):
         """ Check self.sim_db[sim_name] to see if the design x was evaluated.
@@ -295,7 +304,7 @@ class SimulationDatabase:
             x (dict): A Python dictionary specifying the keys/names and
                 corresponding values of a design point to add.
 
-            sx (ndarray): A 1D array containing the corresponding
+            sx (ndarray or list): A 1D array containing the corresponding
                 simulation output(s).
 
             sim_name (str): The name of the simulation to whose database the
@@ -303,7 +312,7 @@ class SimulationDatabase:
 
         """
 
-        if not self.compiled:
+        if not self.running:
             raise RuntimeError(
                 "Cannot begin adding items to the database before compiling"
             )
@@ -314,6 +323,8 @@ class SimulationDatabase:
             len(self.sim_db[sim_name]['s_vals'])
         ):
             raise RuntimeError(f"{sim_name} database has become inconsistent")
+        # Convert all simulation data to flat arrays
+        sx_flat = np.array(sx).flatten()
         i = self.sim_db[sim_name]['n']
         # Check if database needs to be resized
         if i >= len(self.sim_db[sim_name]['x_vals']):
@@ -323,15 +334,17 @@ class SimulationDatabase:
             )
             self.sim_db[sim_name]['s_vals'] = np.append(
                 self.sim_db[sim_name]['s_vals'],
-                np.zeros((i, sx.size)), axis=0
+                np.zeros((i, sx_flat.size)), axis=0
             )
-        for key in x:
-            self.sim_db[sim_name]['x_vals'][key][i] = x[key]
-        self.sim_db[sim_name]['s_vals'][i, :] = sx
+        for key in self.des_schema:
+            self.sim_db[sim_name]['x_vals'][key[0]][i] = x[key[0]]
+        self.sim_db[sim_name]['s_vals'][i, :] = sx_flat[:]
         self.sim_db[sim_name]['n'] += 1
         # If various checkpointing modes are on, then save the current states
         if self.checkpoint_data:
-            self.savedata(x, sx, sim_name, filename=self.checkpoint_file)
+            self.checkpointSimData(
+                x, sx_flat, sim_name, filename=self.checkpoint_file
+            )
 
     def updateObjDb(self, x, fx, cx):
         """ Update the internal objective database with a true evaluation of x.
@@ -344,7 +357,7 @@ class SimulationDatabase:
 
         """
 
-        if not self.compiled:
+        if not self.running:
             raise RuntimeError(
                 "Cannot begin adding items to the database before compiling"
             )
@@ -368,15 +381,34 @@ class SimulationDatabase:
                 self.obj_db['c_vals'], np.zeros(i, self.con_schema),
                 axis=0
             )
-        for key in x:
-            self.obj_db['x_vals'][key][i] = x[key]
-        for key in fx:
-            self.obj_db['f_vals'][key][i] = fx[key]
-        for key in cx:
-            self.obj_db['c_vals'][key][i] = cx[key]
-        self.obj_db['n'] = 1
+        for key in self.des_schema:
+            self.obj_db['x_vals'][key[0]][i] = x[key[0]]
+        for key in self.obj_schema:
+            self.obj_db['f_vals'][key[0]][i] = fx[key[0]]
+        for key in self.con_schema:
+            self.obj_db['c_vals'][key[0]][i] = cx[key[0]]
+        self.obj_db['n'] += 1
+        # If various checkpointing modes are on, then save the current states
+        if self.checkpoint_data:
+            self.checkpointObjData(x, fx, cx, filename=self.checkpoint_file)
 
-    def browseSimDb(self):
+    def isEmpty(self):
+        """ Check whether the database is completely empty.
+
+        Returns:
+            bool: True if and only if every simulation database and the
+            objective database is completely empty (size 0).
+
+        """
+        return (
+            (self.obj_db is None or self.obj_db['n'] == 0) and
+            (
+                self.sim_db is None or
+                all([self.sim_db[key]['n'] == 0 for key in self.sim_db])
+            )
+        )
+
+    def browseCompleteSimulations(self):
         """ Browse all design values that are present in every sim database.
 
         Yields:
@@ -388,7 +420,7 @@ class SimulationDatabase:
 
         if len(self.sim_schema) > 0:
             sim0 = self.sim_schema[0]
-            n0 = self.sim_db[sim0]['n']
+            n0 = self.sim_db[sim0[0]]['n']
             for xi, sxi in zip(
                 self.sim_db[sim0[0]]['x_vals'][:n0],
                 self.sim_db[sim0[0]]['s_vals'][:n0]
@@ -396,7 +428,7 @@ class SimulationDatabase:
                 # Initialize the x vals and s vals
                 x_vals = {}
                 for name in self.des_schema:
-                    x_vals[name[0]] = xi[name]
+                    x_vals[name[0]] = xi[name[0]]
                 if len(sim0) > 2:
                     s_vals = {sim0[0]: sxi.copy()}
                 else:
@@ -410,7 +442,7 @@ class SimulationDatabase:
                         self.sim_db[simi[0]]['x_vals'][:ni],
                         self.sim_db[simi[0]]['s_vals'][:ni]
                     ):
-                        if approx_equal(x_vals, xj, des_tols):
+                        if approx_equal(x_vals, xj, self.des_tols):
                             if len(simi) > 2:
                                 s_vals[simi[0]] = sxj.copy()
                             else:
@@ -440,23 +472,30 @@ class SimulationDatabase:
 
         """
 
-        # Sort the objective values
         n = self.obj_db['n']
-        lex_inds = np.lexsort([
-            self.obj_db['f_vals'][obj[0]][:n] for obj in obj_schema
-        ])
-        # Loop over all points and look for nondominated points
+        o = len(self.obj_schema)
+        p = len(self.con_schema)
+        dt = self.obj_schema[0][1]
+        # Create a view of the objective and constraint values for computation
+        f_view = self.obj_db['f_vals'][:n].view(dt).reshape(-1, o)
+        if p > 0:
+            c_view = self.obj_db['c_vals'][:n].view(dt).reshape(-1, p)
+        # Initialize the output arrays
+        ndpts = 0
         nondom_out = {
             'x_vals': np.zeros(n, dtype=self.des_schema),
             'f_vals': np.zeros(n, dtype=self.obj_schema),
             'c_vals': np.zeros(n, dtype=self.con_schema)
         }
-        ndpts = 0
+        # Create a view of the output array for easy computations
+        nondom_view = nondom_out['f_vals'].view(dt).reshape(n, o)
+        # Loop over the f-values in lexicographical order
+        lex_inds = np.lexsort(f_view.T)
         for i in lex_inds:
             if (
-                np.all(self.obj_db['c_vals'] < 1e-8) and np.all(np.any(
-                    self.obj_db['f_vals'][i] <
-                    nondom_out['f_vals'][:ndpts, :], axis=1
+                (p == 0 or np.all(c_view[i, :] < 1e-8)) and
+                np.all(np.any(
+                    f_view[i, :] < nondom_view[:ndpts, :], axis=1
                 ))
             ):
                 nondom_out['x_vals'][ndpts] = self.obj_db['x_vals'][i]
@@ -472,7 +511,7 @@ class SimulationDatabase:
         for dt in self.obj_schema:
             result[dt[0]] = nondom_out['f_vals'][dt[0]][:ndpts]
         for dt in self.con_schema:
-            result[dt[0]] = nondom_out['f_vals'][dt[0]][:ndpts]
+            result[dt[0]] = nondom_out['c_vals'][dt[0]][:ndpts]
         if format == 'pandas':
             return pd.DataFrame(result)
         elif format == 'ndarray':
@@ -604,14 +643,12 @@ class SimulationDatabase:
             n, dtype=(self.des_schema + self.obj_schema + self.con_schema)
         )
         # Extract all results
-        if self.obj_db['n'] > 0:
-            for i, xi in enumerate(self.obj_db['x_vals']):
-                for (name, t) in self.des_schema:
-                    result[name][i] = xi[name]
-            for i, (name, t) in enumerate(self.obj_schema):
-                result[name][:] = self.obj_db['f_vals'][:, i]
-            for i, (name, t) in enumerate(self.con_schema):
-                result[name][:] = self.obj_db['c_vals'][:, i]
+        for (name, t) in self.des_schema:
+            result[name][:] = self.obj_db['x_vals'][name][:n]
+        for (name, t) in self.obj_schema:
+            result[name][:] = self.obj_db['f_vals'][name][:n]
+        for (name, t) in self.con_schema:
+            result[name][:] = self.obj_db['c_vals'][name][:n]
         if format == 'pandas':
             return pd.DataFrame(result)
         elif format == 'ndarray':
@@ -619,10 +656,34 @@ class SimulationDatabase:
         else:
             raise ValueError(f"{format} is an invalid value for 'format'")
 
-    def savedata(self, x, sx, sim_name, filename="parmoo"):
-        """ Save the current simulation database for this MOOP.
+    def setCheckpoint(self, checkpoint, filename="parmoo"):
+        """ Activate checkpointing.
 
         Args:
+            checkpoint (bool): Turn checkpointing on (True) or off (False).
+            filename (str, optional): Set the base checkpoint filename/path.
+                The checkpoint file will have the JSON format and the
+                extension ".simdb.json" appended to the end of filename.
+
+        """
+
+        if not isinstance(checkpoint, bool):
+            raise TypeError("checkpoint must have the bool type")
+        if not isinstance(filename, str):
+            raise TypeError("filename must have the string type")
+        self.checkpoint_data = checkpoint
+        self.checkpoint_file = filename
+        if self.running:
+            self._checkpoint_metadata(self.checkpoint_file)
+
+    def checkpointSimData(self, x, sx, sim_name, filename="parmoo"):
+        """ Append the given simulation data point to the checkpoint file.
+
+        Args:
+            x (dict or numpy structured element): The design value to append.
+            sx (dict or numpy structured element): The simulation output to
+                append. 
+            sim_name (str): The simulation name/index to append to.
             filename (str, optional): The filepath to the checkpointing
                 file(s). Do not include file extensions, they will be
                 appended automatically. Defaults to the value "parmoo"
@@ -630,16 +691,10 @@ class SimulationDatabase:
 
         """
 
-        # Check whether file exists first
-        exists = file_exists(f"{filename}.simdb.json")
-        if exists and self.new_data:
-            raise OSError(
-                f"Creating a new save file, but {filename}.simdb.json already"
-                " exists! Move the existing file to a new location or delete"
-                " it so that ParMOO doesn't overwrite your existing data..."
-            )
-        # Unpack x/sx pair into a dict for saving
-        toadd = {'sim_id': sim_name}
+        # Unpack x/sx pair into a json-compatible dict for saving
+        toadd = {
+            'name': sim_name
+        }
         for dname in self.des_schema:
             key = dname[0]
             if (
@@ -654,12 +709,166 @@ class SimulationDatabase:
                 toadd[key] = float(x[key])
             else:
                 toadd[key] = str(x[key])
-        if isinstance(sx, np.ndarray) or isinstance(sx, jnp.ndarray):
+        if (
+            isinstance(sx, np.ndarray) or isinstance(sx, jnp.ndarray) or
+            isinstance(sx, list)
+        ):
             toadd['out'] = [float(sxi) for sxi in sx]
         else:
-            toadd['out'] = float(sx)
-        # Save in file with proper extension
+            toadd['out'] = [float(sx)]
         fname = f"{filename}.simdb.json"
+        # Don't overwrite existing data when the new data flag is set
+        if self.checkpoint_new and file_exists(fname):
+            raise OSError(
+                f"Creating a new save file, but {filename}.simdb.json already"
+                " exists! Move the existing file to a new location, delete it"
+                " or load it first so that ParMOO doesn't overwrite your"
+                " existing data..."
+            )
+        # Append new entries to a new line in existing file
         with open(fname, 'a') as fp:
+            print(file=fp)
             json.dump(toadd, fp)
-        self.new_data = False
+
+    def checkpointObjData(self, x, fx, cx, filename="parmoo"):
+        """ Append the given objective data point to the checkpoint file.
+
+        Args:
+            x (dict or numpy structured element): The design value to append.
+            fx (dict or numpy structured element): The objective values to
+                append.
+            cx (dict or numpy structured element): The constraint violations to
+                append.
+            filename (str, optional): The filepath to the checkpointing
+                file(s). Do not include file extensions, they will be
+                appended automatically. Defaults to the value "parmoo"
+                (filename will be "parmoo.simdb.json").
+
+        """
+
+        # Unpack x/fx/cx into a json-compatible dict for saving
+        toadd = {
+            'name': "obj_db"
+        }
+        for dname in self.des_schema:
+            key = dname[0]
+            if (
+                np.issubdtype(x[key], np.integer) or
+                jnp.issubdtype(x[key], jnp.integer)
+            ):
+                toadd[key] = int(x[key])
+            elif (
+                np.issubdtype(x[key], np.floating) or
+                jnp.issubdtype(x[key], jnp.floating)
+            ):
+                toadd[key] = float(x[key])
+            else:
+                toadd[key] = str(x[key])
+        for oname in self.obj_schema:
+            toadd[oname[0]] = float(fx[oname[0]])
+        for cname in self.con_schema:
+            toadd[cname[0]] = float(cx[cname[0]])
+        fname = f"{filename}.simdb.json"
+        # Don't overwrite existing data when the new data flag is set
+        if self.checkpoint_new and file_exists(fname):
+            raise OSError(
+                f"Creating a new save file, but {filename}.simdb.json already"
+                " exists! Move the existing file to a new location, delete it"
+                " or load it first so that ParMOO doesn't overwrite your"
+                " existing data..."
+            )
+        # Append new entries to a new line in existing file
+        with open(fname, 'a') as fp:
+            print(file=fp)
+            json.dump(toadd, fp)
+
+    def loadCheckpoint(self, filename="parmoo"):
+        """ Reload from the given checkpoint file.
+
+        Args:
+            filename (str, optional): The filepath to the checkpointing
+                file(s). Do not include file extensions, they will be
+                appended automatically. Defaults to the value "parmoo"
+                (filename will be "parmoo.simdb.json").
+
+        """
+
+        if not self.isEmpty():
+            raise RuntimeError(
+                "Attempting to load a previous checkpoint but the database"
+                " is non empty. Proceeding could overwrite existing"
+                " data or create incosistent states. Please save any existing"
+                " data and reset the database before proceeding."
+            )
+        with open(f"{filename}.simdb.json", 'r') as fp:
+            for i, linei in enumerate(fp):
+                entryi = json.loads(linei)
+                if 'name' not in entryi:
+                    raise IOError(
+                        f"{filename}.simdb.json contains an invalid entry."
+                    )
+                elif i == 0:
+                    if entryi['name'] != 'metadata':
+                        raise IOError(
+                            f"{filename}.simdb.json is missing the metadata"
+                            " header."
+                        )
+                    self.des_schema = [
+                        tuple(tj) for tj in entryi['des_schema']
+                    ]
+                    self.sim_schema = [
+                        tuple(tj) for tj in entryi['sim_schema']
+                    ]
+                    self.obj_schema = [
+                        tuple(tj) for tj in entryi['obj_schema']
+                    ]
+                    self.con_schema = [
+                        tuple(tj) for tj in entryi['con_schema']
+                    ]
+                    self.des_tols = entryi['des_tols']
+                    self.checkpoint_data = False  # Disable temporarily
+                    self.checkpoint_file = filename
+                    self.checkpoint_new = False
+                    self.startDatabase()
+                elif entryi['name'] == 'obj_db':
+                    x = {}
+                    for key in self.des_schema:
+                        x[key[0]] = entryi[key[0]]
+                    fx = {}
+                    for key in self.obj_schema:
+                        fx[key[0]] = entryi[key[0]]
+                    cx = {}
+                    for key in self.con_schema:
+                        cx[key[0]] = entryi[key[0]]
+                    self.updateObjDb(x, fx, cx)
+                else:
+                    x = {}
+                    for key in self.des_schema:
+                        x[key[0]] = entryi[key[0]]
+                    sx = entryi['out']
+                    sim_name = entryi['name']
+                    self.updateSimDb(x, sx, sim_name)
+        self.checkpoint_data = True  # Re-enable
+
+    def _checkpoint_metadata(self, filename="parmoo"):
+        """ Private helper to write metadata to the checkpoint file. """
+
+        fname = f"{filename}.simdb.json"
+        # Don't overwrite existing data when the new data flag is set
+        if self.checkpoint_new and file_exists(fname):
+            raise OSError(
+                f"Creating a new save file, but {filename}.simdb.json already"
+                " exists! Move the existing file to a new location, delete it"
+                " or load it first so that ParMOO doesn't overwrite your"
+                " existing data..."
+            )
+        with open(fname, "w") as fp:
+            json.dump({
+                'name': "metadata",
+                'des_schema': self.des_schema,
+                'sim_schema': self.sim_schema,
+                'obj_schema': self.obj_schema,
+                'con_schema': self.con_schema,
+                'des_tols': self.des_tols,
+            }, fp)
+        self.checkpoint_new = False

@@ -11,12 +11,14 @@ The classes include:
  * GlobalSearch
  * SurrogateFunction
  * SurrogateOptimizer
+ * SimulationDatabase
 
 """
 
 from abc import ABC, abstractmethod
 import inspect
 import numpy as np
+from os.path import exists as file_exists
 from scipy.stats import tstd
 
 
@@ -962,8 +964,6 @@ class SimulationDatabase(ABC):
         'des_schema', 'sim_schema', 'obj_schema', 'con_schema',
         # Design tolerances for lookup
         'des_tols',
-        # Checkpointing markers
-        'checkpoint_data', 'checkpoint_file', 'new_data',
         # Hyperparams
         'hyperparams'
     ]
@@ -981,10 +981,6 @@ class SimulationDatabase(ABC):
         self.obj_schema, self.con_schema = [], []
         # Initialize design tolerances for lookup
         self.des_tols = {}
-        # Initialize checkpointing markers
-        self.checkpoint_data = False
-        self.checkpoint_file = "parmoo"
-        self.new_data = True
         # Initialize the hyperparameter dict
         self.hyperparams = hyperparams
 
@@ -1176,6 +1172,16 @@ class SimulationDatabase(ABC):
         """
 
     @abstractmethod
+    def isEmpty(self):
+        """ Check whether the database is completely empty.
+
+        Returns:
+            bool: True if and only if every simulation database and the
+            objective database is completely empty (size 0).
+
+        """
+
+    @abstractmethod
     def browseCompleteSimulations(self):
         """ Browse all design values that are present in every sim database.
 
@@ -1255,6 +1261,7 @@ class SimulationDatabase(ABC):
 
         """
 
+    @abstractmethod
     def setCheckpoint(self, checkpoint, filename="parmoo"):
         """ Activate checkpointing.
 
@@ -1266,15 +1273,8 @@ class SimulationDatabase(ABC):
 
         """
 
-        if not isinstance(checkpoint, bool):
-            raise TypeError("checkpoint must have the bool type")
-        if not isinstance(filename, str):
-            raise TypeError("filename must have the string type")
-        self.checkpoint_data = checkpoint_data
-        self.checkpoint_file = checkpoint_filename
-
     @abstractmethod
-    def appendData(self, x, sx, sim_name, filename="parmoo"):
+    def checkpointSimData(self, x, sx, sim_name, filename="parmoo"):
         """ Append the given simulation data point to the checkpoint file.
 
         Args:
@@ -1282,6 +1282,35 @@ class SimulationDatabase(ABC):
             sx (dict or numpy structured element): The simulation output to
                 append. 
             sim_name (str): The simulation name/index to append to.
+            filename (str, optional): The filepath to the checkpointing
+                file(s). Do not include file extensions, they will be
+                appended automatically. Defaults to the value "parmoo"
+                (filename will be "parmoo.simdb.json").
+
+        """
+
+    @abstractmethod
+    def checkpointObjData(self, x, fx, cx, filename="parmoo"):
+        """ Append the given objective data point to the checkpoint file.
+
+        Args:
+            x (dict or numpy structured element): The design value to append.
+            fx (dict or numpy structured element): The objective values to
+                append.
+            cx (dict or numpy structured element): The constraint violations to
+                append.
+            filename (str, optional): The filepath to the checkpointing
+                file(s). Do not include file extensions, they will be
+                appended automatically. Defaults to the value "parmoo"
+                (filename will be "parmoo.simdb.json").
+
+        """
+
+    @abstractmethod
+    def loadCheckpoint(self, filename="parmoo"):
+        """ Reload from the given checkpoint file.
+
+        Args:
             filename (str, optional): The filepath to the checkpointing
                 file(s). Do not include file extensions, they will be
                 appended automatically. Defaults to the value "parmoo"
