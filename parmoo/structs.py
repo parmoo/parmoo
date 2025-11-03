@@ -18,7 +18,6 @@ The classes include:
 from abc import ABC, abstractmethod
 import inspect
 import numpy as np
-from os.path import exists as file_exists
 from scipy.stats import tstd
 
 
@@ -976,14 +975,9 @@ class SimulationDatabase(ABC):
 
         """
 
-        # Initialize the schemas
-        self.des_schema, self.sim_schema = [], []
-        self.obj_schema, self.con_schema = [], []
-        # Initialize design tolerances for lookup
-        self.des_tols = {}
-        # Initialize the hyperparameter dict
-        self.hyperparams = hyperparams
+        pass
 
+    @abstractmethod
     def addDesign(self, name, dtype, tolerance):
         """ Add a new design variable to the SimulationDatabase schema.
 
@@ -997,13 +991,7 @@ class SimulationDatabase(ABC):
 
         """
 
-        check_names(
-            name,
-            self.des_schema, self.sim_schema, self.obj_schema, self.con_schema
-        )
-        self.des_schema.append((name, dtype))
-        self.des_tols[name] = des_tol
-
+    @abstractmethod
     def addSimulation(self, name, m):
         """ Add new simulations to the SimulationDatabase schema.
 
@@ -1013,15 +1001,7 @@ class SimulationDatabase(ABC):
 
         """
 
-        check_names(
-            name,
-            self.des_schema, self.sim_schema, self.obj_schema, self.con_schema
-        )
-        if m > 1:
-            self.sim_schema.append((name, 'f8', m))
-        else:
-            self.sim_schema.append((name, 'f8'))
-
+    @abstractmethod
     def addObjective(self, name):
         """ Add a new objective to the SimulationDatabase schema.
 
@@ -1030,12 +1010,7 @@ class SimulationDatabase(ABC):
 
         """
 
-        check_names(
-            name,
-            self.des_schema, self.sim_schema, self.obj_schema, self.con_schema
-        )
-        self.obj_schema.append((name, 'f8'))
-
+    @abstractmethod
     def addConstraint(self, name):
         """ Add a new constraint to the SimulationDatabase schema.
 
@@ -1044,12 +1019,7 @@ class SimulationDatabase(ABC):
 
         """
 
-        check_names(
-            name,
-            self.des_schema, self.sim_schema, self.obj_schema, self.con_schema
-        )
-        self.con_schema.append((name, 'f8'))
-
+    @abstractmethod
     def getDesignType(self):
         """ Get the numpy dtype of all design points for this MOOP.
 
@@ -1059,11 +1029,7 @@ class SimulationDatabase(ABC):
 
         """
 
-        if len(self.des_schema) < 1:
-            return None
-        else:
-            return np.dtype(self.des_schema)
-
+    @abstractmethod
     def getSimulationType(self):
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
 
@@ -1073,11 +1039,7 @@ class SimulationDatabase(ABC):
 
         """
 
-        if len(self.sim_schema) < 1:
-            return None
-        else:
-            return np.dtype(self.sim_schema)
-
+    @abstractmethod
     def getObjectiveType(self):
         """ Get the numpy dtype of an objective point for this MOOP.
 
@@ -1087,11 +1049,7 @@ class SimulationDatabase(ABC):
 
         """
 
-        if len(self.obj_schema) < 1:
-            return None
-        else:
-            return np.dtype(self.obj_schema)
-
+    @abstractmethod
     def getConstraintType(self):
         """ Get the numpy dtype of the constraint violations for this MOOP.
 
@@ -1100,11 +1058,6 @@ class SimulationDatabase(ABC):
             outputs. If no constraint functions have been given, returns None.
 
         """
-
-        if len(self.con_schema) < 1:
-            return None
-        else:
-            return np.dtype(self.con_schema)
 
     @abstractmethod
     def startDatabase(self):
@@ -1280,7 +1233,7 @@ class SimulationDatabase(ABC):
         Args:
             x (dict or numpy structured element): The design value to append.
             sx (dict or numpy structured element): The simulation output to
-                append. 
+                append.
             sim_name (str): The simulation name/index to append to.
             filename (str, optional): The filepath to the checkpointing
                 file(s). Do not include file extensions, they will be

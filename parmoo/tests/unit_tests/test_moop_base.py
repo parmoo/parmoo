@@ -106,10 +106,11 @@ def test_MOOP_base_pack_unpack_sim():
 
 
 def test_MOOP_base_fit_update_surrogates():
-    """ Check that the MOOP_base class handles evaluating surrogate models properly.
+    """ Check that the MOOP_base class handles evaluating surrogate models
+    properly.
 
-    Initialize a MOOP_base object and check that the _evaluate_surrogates() function
-    works correctly.
+    Initialize a MOOP_base object and check that the _evaluate_surrogates()
+    function works correctly.
 
     """
 
@@ -187,10 +188,11 @@ def test_MOOP_base_fit_update_surrogates():
 
 
 def test_MOOP_base_evaluate_surrogates():
-    """ Check that the MOOP_base class handles evaluating surrogate models properly.
+    """ Check that the MOOP_base class handles evaluating surrogate models
+    properly.
 
-    Initialize a MOOP_base object and check that the _evaluate_surrogates() function
-    works correctly.
+    Initialize a MOOP_base object and check that the _evaluate_surrogates()
+    function works correctly.
 
     """
 
@@ -289,8 +291,8 @@ def test_MOOP_base_evaluate_surrogates():
 def test_MOOP_base_evaluate_objectives():
     """ Check that the MOOP_base class handles evaluating objectives properly.
 
-    Initialize a MOOP_base object and check that the _evaluate_objectives() function
-    works correctly.
+    Initialize a MOOP_base object and check that the _evaluate_objectives()
+    function works correctly.
 
     """
 
@@ -428,10 +430,11 @@ def test_MOOP_base_evaluate_constraints():
 
 
 def test_MOOP_base_evaluate_penalty():
-    """ Check that the MOOP_base class handles evaluating penalty function properly.
+    """ Check that the MOOP_base class handles evaluating penalty function
+    properly.
 
-    Initialize a MOOP_base object and check that the _evaluate_penalty() function
-    works correctly.
+    Initialize a MOOP_base object and check that the _evaluate_penalty()
+    function works correctly.
 
     """
 

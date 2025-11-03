@@ -7,7 +7,6 @@ simulations, and their corresponding objective and constraint violation scores.
 
 """
 
-import inspect
 from jax import numpy as jnp
 import json
 import logging
@@ -15,7 +14,7 @@ import numpy as np
 from os.path import exists as file_exists
 import pandas as pd
 
-from parmoo.util import check_names, updatePF, approx_equal
+from parmoo.util import check_names, approx_equal
 from parmoo.structs import SimulationDatabase
 
 
@@ -365,7 +364,7 @@ class NumpyDatabase(SimulationDatabase):
             len(self.obj_db['x_vals']) != len(self.obj_db['f_vals']) !=
             len(self.obj_db['c_vals'])
         ):
-            raise RuntimeError(f"objective database has become inconsistent")
+            raise RuntimeError("objective database has become inconsistent")
         # Resize the database if needed
         i = self.obj_db['n']
         if i >= len(self.obj_db['x_vals']):
@@ -556,7 +555,8 @@ class NumpyDatabase(SimulationDatabase):
             if len(sname) > 2:
                 result[sname[0]]['out'] = self.sim_db[sname[0]]['s_vals'][:n]
             else:
-                result[sname[0]]['out'] = self.sim_db[sname[0]]['s_vals'][:n, 0]
+                result[sname[0]]['out'] = \
+                    self.sim_db[sname[0]]['s_vals'][:n, 0]
         if format == 'pandas':
             # For simulation data, converting to pandas is a little more
             # complicated...
@@ -682,7 +682,7 @@ class NumpyDatabase(SimulationDatabase):
         Args:
             x (dict or numpy structured element): The design value to append.
             sx (dict or numpy structured element): The simulation output to
-                append. 
+                append.
             sim_name (str): The simulation name/index to append to.
             filename (str, optional): The filepath to the checkpointing
                 file(s). Do not include file extensions, they will be

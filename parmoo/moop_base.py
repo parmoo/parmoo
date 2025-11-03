@@ -43,7 +43,7 @@ class MOOP_base(ABC):
      * ``MOOP.getPF(format='ndarray')``
      * ``MOOP.getSimulationData(format='ndarray')``
      * ``MOOP.getObjectiveData(format='ndarray')``
-   
+
    Solver steps:
      * ``MOOP.evaluateSimulation(x, s_name)``
      * ``MOOP.addObjData(x, sx)``

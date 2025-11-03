@@ -479,7 +479,6 @@ def approx_equal(x1, x2, des_tols):
 
     """
 
-    results = []
     for key in x1:
         if (
             (des_tols[key] > 0 and abs(x1[key] - x2[key]) >= des_tols[key]) or
