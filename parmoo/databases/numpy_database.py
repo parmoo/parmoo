@@ -349,10 +349,12 @@ class NumpyDatabase(SimulationDatabase):
         """ Update the internal objective database with a true evaluation of x.
 
         Args:
-            x (dict): A Python dictionary containing the value of the design
-                variable to add to ParMOO's database.
-            fx (numpy.ndarray): An array of objective values to add.
-            cx (numpy.ndarray): An array of constraint values to add.
+            x (dict): A dictionary containing the value of the design variable
+                to add to ParMOO's database.
+            fx (dict): A dictionary containing the values of the corresponding
+                objective scores to add to ParMOO's database.
+            cx (dict): A dictionary containing the values of the corresponding
+                constraint violations to add to ParMOO's database.
 
         """
 
@@ -381,11 +383,11 @@ class NumpyDatabase(SimulationDatabase):
                 axis=0
             )
         for key in self.des_schema:
-            self.obj_db['x_vals'][key[0]][i] = x[key[0]]
+            self.obj_db['x_vals'][key[0]][i:i+1] = x[key[0]]
         for key in self.obj_schema:
-            self.obj_db['f_vals'][key[0]][i] = fx[key[0]]
+            self.obj_db['f_vals'][key[0]][i:i+1] = fx[key[0]]
         for key in self.con_schema:
-            self.obj_db['c_vals'][key[0]][i] = cx[key[0]]
+            self.obj_db['c_vals'][key[0]][i:i+1] = cx[key[0]]
         self.obj_db['n'] += 1
         # If various checkpointing modes are on, then save the current states
         if self.checkpoint_data:
@@ -399,6 +401,7 @@ class NumpyDatabase(SimulationDatabase):
             objective database is completely empty (size 0).
 
         """
+
         return (
             (self.obj_db is None or self.obj_db['n'] == 0) and
             (
