@@ -554,6 +554,7 @@ def test_NumpyDatabase_checkpoint():
     for key in db2.getSimulationData():
         assert len(new_db2_data[key]) == len(new_db1_data[key])
         assert np.all(new_db2_data[key]['out'] == new_db1_data[key]['out'])
+
     # Cleanup
     os.remove("parmoo.simdb.json")
 
