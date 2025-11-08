@@ -7,7 +7,6 @@ simulations, and their corresponding objective and constraint violation scores.
 
 """
 
-from jax import numpy as jnp
 import json
 import logging
 import numpy as np
@@ -319,11 +318,6 @@ class NumpyDatabase(SimulationDatabase):
             raise RuntimeError("Cannot add to a database that is not running")
         if sim_name not in self.sim_db:
             raise ValueError(f"{sim_name} is not a legal name/index")
-        if (
-            len(self.sim_db[sim_name]['x_vals']) !=
-            len(self.sim_db[sim_name]['s_vals'])
-        ):
-            raise RuntimeError(f"{sim_name} database has become inconsistent")
         # Convert all simulation data to flat arrays
         sx_flat = np.array(sx).flatten()
         i = self.sim_db[sim_name]['n']
@@ -362,11 +356,6 @@ class NumpyDatabase(SimulationDatabase):
 
         if not self.running:
             raise RuntimeError("Cannot add to a database that is not running")
-        if (
-            len(self.obj_db['x_vals']) != len(self.obj_db['f_vals']) !=
-            len(self.obj_db['c_vals'])
-        ):
-            raise RuntimeError("objective database has become inconsistent")
         # Resize the database if needed
         i = self.obj_db['n']
         if i >= len(self.obj_db['x_vals']):
@@ -712,8 +701,7 @@ class NumpyDatabase(SimulationDatabase):
 
         Args:
             x (dict or numpy structured element): The design value to append.
-            sx (list, float, or numpy array): The simulation output to
-                append.
+            sx (list or numpy array): The simulation output to append.
             sim_name (str): The simulation name/index to append to.
             filename (str, optional): The filepath to the checkpointing
                 file(s). Do not include file extensions, they will be
@@ -735,13 +723,7 @@ class NumpyDatabase(SimulationDatabase):
                 toadd[key] = float(x[key])
             else:
                 toadd[key] = str(x[key])
-        if (
-            isinstance(sx, np.ndarray) or isinstance(sx, jnp.ndarray) or
-            isinstance(sx, list)
-        ):
-            toadd['out'] = [float(sxi) for sxi in sx]
-        else:
-            toadd['out'] = [float(sx)]
+        toadd['out'] = [float(sxi) for sxi in sx]
         fname = f"{filename}.simdb.json"
         # Append new entries to a new line in existing file
         with open(fname, 'a') as fp:

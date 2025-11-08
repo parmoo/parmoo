@@ -1082,12 +1082,12 @@ class MOOP(MOOP_base):
                         fx = {}
                         fxx = np.zeros(self.o)
                         for i, obj_func in enumerate(self.obj_funcs):
-                            fxx[i] = obj_func(x, sx)
+                            fxx[i:i+1] = obj_func(x, sx)
                             fx[self.obj_schema[i][0]] = fxx[i]
                         cx = {}
                         cxx = np.zeros(self.p)
                         for i, con_func in enumerate(self.con_funcs):
-                            cxx[i] = con_func(x, sx)
+                            cxx[i:i+1] = con_func(x, sx)
                             cx[self.con_schema[i][0]] = cxx[i]
                         self.database.updateObjDb(x, fx, cx)
                         self.optimizer.returnResults(
