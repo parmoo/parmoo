@@ -265,6 +265,8 @@ class NumpyDatabase(SimulationDatabase):
 
         """
 
+        if not self.running:
+            raise RuntimeError("Cannot check a database that is not running")
         if sim_name not in self.sim_db:
             raise ValueError(f"{sim_name} is not a legal name/index")
         for i in range(self.sim_db[sim_name]['n']):
@@ -289,6 +291,8 @@ class NumpyDatabase(SimulationDatabase):
 
         """
 
+        if not self.running:
+            raise RuntimeError("Cannot check a database that is not running")
         for i in range(self.obj_db['n']):
             if approx_equal(
                 x, self.obj_db['x_vals'][i], self.des_tols
@@ -312,9 +316,7 @@ class NumpyDatabase(SimulationDatabase):
         """
 
         if not self.running:
-            raise RuntimeError(
-                "Cannot begin adding items to the database before compiling"
-            )
+            raise RuntimeError("Cannot add to a database that is not running")
         if sim_name not in self.sim_db:
             raise ValueError(f"{sim_name} is not a legal name/index")
         if (
@@ -359,9 +361,7 @@ class NumpyDatabase(SimulationDatabase):
         """
 
         if not self.running:
-            raise RuntimeError(
-                "Cannot begin adding items to the database before compiling"
-            )
+            raise RuntimeError("Cannot add to a database that is not running")
         if (
             len(self.obj_db['x_vals']) != len(self.obj_db['f_vals']) !=
             len(self.obj_db['c_vals'])
@@ -420,6 +420,8 @@ class NumpyDatabase(SimulationDatabase):
 
         """
 
+        if not self.running:
+            raise RuntimeError("Cannot browse a database that is not running")
         if len(self.sim_schema) > 0:
             sim0 = self.sim_schema[0]
             n0 = self.sim_db[sim0[0]]['n']
@@ -474,6 +476,8 @@ class NumpyDatabase(SimulationDatabase):
 
         """
 
+        if not self.running:
+            raise RuntimeError("Cannot get a database that is not running")
         n = self.obj_db['n']
         o = len(self.obj_schema)
         p = len(self.con_schema)
@@ -540,6 +544,8 @@ class NumpyDatabase(SimulationDatabase):
 
         """
 
+        if not self.running:
+            raise RuntimeError("Cannot get a database that is not running")
         # Build a results dict with a key for each simulation
         result = {}
         for i, sname in enumerate(self.sim_schema):
@@ -573,7 +579,7 @@ class NumpyDatabase(SimulationDatabase):
                     for j in range(self.sim_schema[i][2]):
                         rtempi[f'out_{j}'] = result[snamei]['out'][:, j]
                 else:
-                    rtempi['out'] = result[snamei]['out'][:, 0]
+                    rtempi['out'] = result[snamei]['out'][:]
                 # Create dictionary of dataframes, indexed by sim names
                 result_pd[snamei] = pd.DataFrame(rtempi)
             return result_pd
@@ -592,6 +598,8 @@ class NumpyDatabase(SimulationDatabase):
 
         """
 
+        if not self.running:
+            raise RuntimeError("Cannot get a database that is not running")
         # Build a results dict with a key for each simulation
         result = {}
         for sname in self.sim_schema:
@@ -620,6 +628,8 @@ class NumpyDatabase(SimulationDatabase):
                     self.sim_db[sname[0]]['s_vals'][n_old:n, 0]
             # Update the tracker
             self.sim_db[sname[0]]['n_old'] = n
+        if self.checkpoint_data:
+            self._log_new_data_call(self.checkpoint_file)
         return result
 
     def getObjectiveData(self, format='ndarray'):
@@ -640,6 +650,8 @@ class NumpyDatabase(SimulationDatabase):
 
         """
 
+        if not self.running:
+            raise RuntimeError("Cannot get a database that is not running")
         # Initialize result array
         n = self.obj_db['n']
         result = np.zeros(
@@ -678,13 +690,29 @@ class NumpyDatabase(SimulationDatabase):
         self.checkpoint_file = filename
         if self.running:
             self._checkpoint_metadata(self.checkpoint_file)
+            # Save any pre-existing data
+            for sim_name in self.sim_db:
+                for i in range(self.sim_db[sim_name]['n']):
+                    self.checkpointSimData(
+                        self.sim_db[sim_name]['x_vals'][i],
+                        self.sim_db[sim_name]['s_vals'][i],
+                        sim_name,
+                        self.checkpoint_file
+                    )
+            for i in range(self.obj_db['n']):
+                self.checkpointObjData(
+                    self.obj_db['x_vals'][i],
+                    self.obj_db['f_vals'][i],
+                    self.obj_db['c_vals'][i],
+                    self.checkpoint_file
+                )
 
     def checkpointSimData(self, x, sx, sim_name, filename="parmoo"):
         """ Append the given simulation data point to the checkpoint file.
 
         Args:
             x (dict or numpy structured element): The design value to append.
-            sx (dict or numpy structured element): The simulation output to
+            sx (list, float, or numpy array): The simulation output to
                 append.
             sim_name (str): The simulation name/index to append to.
             filename (str, optional): The filepath to the checkpointing
@@ -700,15 +728,10 @@ class NumpyDatabase(SimulationDatabase):
         }
         for dname in self.des_schema:
             key = dname[0]
-            if (
-                np.issubdtype(x[key], np.integer) or
-                jnp.issubdtype(x[key], jnp.integer)
-            ):
+            dtype = dname[1]
+            if dtype[0] in ["i", "u"]:
                 toadd[key] = int(x[key])
-            elif (
-                np.issubdtype(x[key], np.floating) or
-                jnp.issubdtype(x[key], jnp.floating)
-            ):
+            elif dtype[0] in ["f"]:
                 toadd[key] = float(x[key])
             else:
                 toadd[key] = str(x[key])
@@ -720,14 +743,6 @@ class NumpyDatabase(SimulationDatabase):
         else:
             toadd['out'] = [float(sx)]
         fname = f"{filename}.simdb.json"
-        # Don't overwrite existing data when the new data flag is set
-        if self.checkpoint_new and file_exists(fname):
-            raise OSError(
-                f"Creating a new save file, but {filename}.simdb.json already"
-                " exists! Move the existing file to a new location, delete it"
-                " or load it first so that ParMOO doesn't overwrite your"
-                " existing data..."
-            )
         # Append new entries to a new line in existing file
         with open(fname, 'a') as fp:
             print(file=fp)
@@ -755,15 +770,10 @@ class NumpyDatabase(SimulationDatabase):
         }
         for dname in self.des_schema:
             key = dname[0]
-            if (
-                np.issubdtype(x[key], np.integer) or
-                jnp.issubdtype(x[key], jnp.integer)
-            ):
+            dtype = dname[1]
+            if dtype[0] in ["i", "u"]:
                 toadd[key] = int(x[key])
-            elif (
-                np.issubdtype(x[key], np.floating) or
-                jnp.issubdtype(x[key], jnp.floating)
-            ):
+            elif dtype[0] in ["f"]:
                 toadd[key] = float(x[key])
             else:
                 toadd[key] = str(x[key])
@@ -772,14 +782,6 @@ class NumpyDatabase(SimulationDatabase):
         for cname in self.con_schema:
             toadd[cname[0]] = float(cx[cname[0]])
         fname = f"{filename}.simdb.json"
-        # Don't overwrite existing data when the new data flag is set
-        if self.checkpoint_new and file_exists(fname):
-            raise OSError(
-                f"Creating a new save file, but {filename}.simdb.json already"
-                " exists! Move the existing file to a new location, delete it"
-                " or load it first so that ParMOO doesn't overwrite your"
-                " existing data..."
-            )
         # Append new entries to a new line in existing file
         with open(fname, 'a') as fp:
             print(file=fp)
@@ -844,6 +846,9 @@ class NumpyDatabase(SimulationDatabase):
                     for key in self.con_schema:
                         cx[key[0]] = entryi[key[0]]
                     self.updateObjDb(x, fx, cx)
+                elif entryi['name'] == "get_new_data":
+                    for key in self.sim_db:
+                        self.sim_db[key]['n_old'] = self.sim_db[key]['n']
                 else:
                     x = {}
                     for key in self.des_schema:
@@ -875,3 +880,11 @@ class NumpyDatabase(SimulationDatabase):
                 'des_tols': self.des_tols,
             }, fp)
         self.checkpoint_new = False
+
+    def _log_new_data_call(self, filename="parmoo"):
+        """ Private helper to log when new data was requested. """
+
+        fname = f"{filename}.simdb.json"
+        with open(fname, "a") as fp:
+            print(file=fp)
+            json.dump({'name': "get_new_data"}, fp)
