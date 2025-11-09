@@ -37,7 +37,7 @@ class MOOP_base(ABC):
      * ``MOOP.getObjectiveType()``
      * ``MOOP.getConstraintType()``
 
-    Database accessors:
+    Database lookups:
      * ``MOOP.updateSimDb(x, sx, s_name)``
      * ``MOOP.checkSimDb(x, s_name)``
      * ``MOOP.getPF(format='ndarray')``
@@ -142,7 +142,7 @@ class MOOP_base(ABC):
         self.con_funcs, self.con_grads = [], []
         # Initialize the database
         self.database = NumpyDatabase(hyperparams)
-        # Initilaize solver components
+        # Initialize solver components
         self.surrogates = []
         self.optimizer = None
         # Initialize backward pass functions
@@ -726,8 +726,9 @@ class MOOP_base(ABC):
         """ Attempt to JIT all internal functions and log any failures.
 
         Args:
-            xx (jnp.ndarray):  A sample design point used to trigger JIT.
-            sx (jnp.ndarray):  A sample simulation output used to trigger JIT.
+            xx (jax.numpy.ndarray):  A sample design point used to trigger JIT.
+            sx (jax.numpy.ndarray):  A sample simulation output used to trigger
+                JIT.
 
         """
 

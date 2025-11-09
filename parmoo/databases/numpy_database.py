@@ -431,7 +431,7 @@ class NumpyDatabase(SimulationDatabase):
                     s_vals = {sim0[0]: sxi.copy()}
                 else:
                     s_vals = {sim0[0]: sxi[0]}
-                # Look for matches in all other sim_dbs
+                # Look for matches in all other simultation databases
                 matched = True
                 for simi in self.sim_schema[1:]:
                     matched = False
@@ -446,9 +446,9 @@ class NumpyDatabase(SimulationDatabase):
                             else:
                                 s_vals[simi[0]] = sxj[0]
                             matched = True
-                            break  # Break once we found a match in simi's db
+                            break  # Break once we found a match
                     if not matched:
-                        break  # Break if there was no match in simi's db
+                        break  # Break if there was no match
                 if matched:
                     yield x_vals, s_vals
 

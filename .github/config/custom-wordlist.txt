@@ -17,9 +17,11 @@ BFGS
 biobjective
 bool
 bools
+browseCompleteSimulations
 bwd
 centroid
 Chebyshev
+checkObjDb
 checkpointing
 checkpointObjData
 checkpointSimData
@@ -88,6 +90,7 @@ getFeatureDesTols
 getInputType
 getLatentDesTols
 getLowerBounds
+getNewSimulationData
 getObjectiveData
 getObjectiveType
 getPF
@@ -118,6 +121,7 @@ inds
 init
 initializations
 Initializer
+isEmpty
 istarts
 iter
 jac
@@ -153,6 +157,8 @@ loadCheckpoint
 LocalGaussRBF
 LocalGPS
 LocalSurrogate
+lookup
+lookups
 MacOS
 mc
 minimizer
@@ -261,6 +267,7 @@ SPD
 Springer
 sqrt
 ssx
+startDatabase
 startSearch
 stddev
 stdDev
@@ -299,6 +306,7 @@ UniformRandom
 UniformWeights
 unscaled
 updateAll
+updateObjDb
 updatePF
 updateSimDb
 useSD

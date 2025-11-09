@@ -303,7 +303,7 @@ def test_NumpyDatabase_simulation_database():
     assert db.getSimulationData()["s2"][0]["x3"] == "0"
     assert np.all(db.getSimulationData()["s2"][0]["out"] == np.ones(4))
 
-    # Try to add a non-existant simulation to the database
+    # Try to add a non-existent simulation to the database
     with pytest.raises(ValueError):
         db.updateSimDb(
             {"x1": 0.0, "x2": 0, "x3": "0"},
