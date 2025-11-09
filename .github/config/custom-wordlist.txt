@@ -35,12 +35,8 @@ LatinHypercube
 Laumanns
 Lexicographically
 LinearSim
-LinearSim
-LocalGPS
 LocalGPS
 LocalGaussRBF
-LocalGaussRBF
-LocalSurrogate
 LocalSurrogate
 MDML
 MOOP
