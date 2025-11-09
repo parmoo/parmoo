@@ -23,3 +23,41 @@ matrix:
   dictionary:
     wordlists:
     - .github/config/custom-wordlist.txt
+- name: rst
+  sources:
+  - docs/**/*.rst  
+  - "*.rst"
+  aspell:
+    lang: en
+    d: en_US
+  pipeline:
+  - pyspelling.filters.context:
+      context_visible_first: true
+      delimiters:
+      # Ignore code blocks
+      # TODO(thchang): This is not working
+      - open: "[^`]`[^`]"
+        close: "`"
+      - open: "[^`]``[^`]"
+        close: "``"
+      - open: "[^`]```[^`]"
+        close: "```"
+      - open: "\\.\\. code-block::"  # .*(\\n\\s+.*|\\n)+
+        close: "^\\w+"  # Recurse until unindented word
+      # Ignore all URLs
+      - open: "http|www"
+        close: "\\b"
+      # Ignore et al.
+      - open: '"et'
+        close: 'al."'
+      # Ignore all rst primitives beginning with ".."
+      - open: "\\.\\.\\s+"
+        close: ": [a-zA-Z-_]+"
+      - open: "\\.\\.\\s+"
+        close: "::"
+      # Ignore all rst primitives beginning with ":"
+      - open: "\\s+:"
+        close: "\\w+:"
+  dictionary:
+    wordlists:
+    - .github/config/custom-wordlist.txt

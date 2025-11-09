@@ -187,7 +187,7 @@ Docs:
 
 Requirements:
 
- - We now require scipy v1.10 or newer, due to usage of qmc integration tools
+ - We now require scipy v1.10 or newer, due to usage of QMC integration tools
  - At the time of this release, libEnsemble is using a deprecated version of
    Pydantic -- for this release only we have fixed the requirement on
    libEnsemble to v0.9.2, but we will relax this requirement in the future
@@ -311,7 +311,7 @@ Desired features:
  - allow user to choose whether or not to use named variables via ``useNames``
    method, or similar
  - add a funcx simulation interface, using libEnsemble release 0.9
- - add predicter interface and standalone module
+ - add predictor interface and standalone module
  - a GUI interface for creating MOOPs
  - static visualization tools for plotting results
    (from ``MOOP.getPF()`` method)
