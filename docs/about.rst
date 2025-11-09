@@ -36,10 +36,10 @@ process of sufficient complexity, including
  * physical experiments performed in a laboratory environment, and
  * other nontrivial data-generating campaigns.
 
-A simulation's expense can be judged by any of several factors, including
+A simulation\'s expense can be judged by any of several factors, including
 
  * the amount of time that is required to complete the simulation;
- * the simulation's occupation of valuable scientific resources,
+ * the simulation\'s occupation of valuable scientific resources,
    such as computing nodes or laboratory equipment; 
  * the need for expert/human involvement to validate simulation outputs;  and
  * consumption of raw resources such as energy or laboratory materials.
@@ -172,7 +172,7 @@ Glossary
    An *acquisition function* is our language for a family of scalarizing
    functions, which can be used to specify targets on the Pareto front.
    Acquisition functions may use objective scores, gradient values, and/or
-   uncertainty information in order to guide ParMOO's search for an
+   uncertainty information in order to guide ParMOO\'s search for an
    approximation to the Pareto front.
 
     * **Ex.--** common acquisition functions from the literature
