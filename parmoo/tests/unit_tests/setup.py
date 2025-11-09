@@ -9,7 +9,7 @@ def makeNumpyDatabase(with_constraints=True):
 
     Returns:
         NumpyDatabase: A database with 3 design variables ("x1", "x2", "x3"), 2
-        simultions ("s1", "s2"), and 2 objectives ("f1", "f2").  If
+        simulations ("s1", "s2"), and 2 objectives ("f1", "f2").  If
         with_constraints is set (default) then there are also 2 constraints
         ("c1", "c2"); otherwise, there are no constraints.
 

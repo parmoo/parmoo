@@ -21,6 +21,8 @@ bwd
 centroid
 Chebyshev
 checkpointing
+checkpointObjData
+checkpointSimData
 checkSimDb
 comms
 CompositeFunction
@@ -147,6 +149,7 @@ libensemble
 libE
 libEnsemble
 LinearSim
+loadCheckpoint
 LocalGaussRBF
 LocalGPS
 LocalSurrogate

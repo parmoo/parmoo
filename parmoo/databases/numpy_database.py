@@ -35,25 +35,30 @@ class NumpyDatabase(SimulationDatabase):
      * ``NumpyDatabase.getObjectiveType()``
      * ``NumpyDatabase.getConstraintType()``
 
-    To add simulation data, use:
+    To check or add to the simulation database, use:
      * ``NumpyDatabase.checkSimDb(x, sim_name)``
      * ``NumpyDatabase.updateSimDb(x, sx, sim_name)``
 
-    Once all simulation's have been updated for a given x, the objective
-    database can be updated using:
+    To check or add to the objective database, use:
+     * ``NumpyDatabase.checkObjData(x)``
      * ``NumpyDatabase.addObjData(x, fx, cx)``
 
-    To force a save (checkpoint) of the current state of the simulation
-    database, use:
+    Finally, the following methods are used to retrieve (filtered) simulation
+    and objective data:
+     * ``NumpyDatabase.isEmpty()``
+     * ``NumpyDatabase.browseCompleteSimulations()``
+     * ``NumpyDatabase.getPF(format='ndarray')``
+     * ``NumpyDatabase.getSimulationData(format='ndarray')``
+     * ``NumpyDatabase.getNewSimulationData()``
+     * ``NumpyDatabase.getObjectiveData(format='ndarray')``
+
+    To activate checkpointing, use:
+     * ``NumpyDatabase.setCheckpoint(checkpoint, filename="parmoo")``
+
+    Then to force a save or load of the current state, use:
      * ``NumpyDatabase.checkpointSimData(x, sx, sim_name, filename="parmoo")``
      * ``NumpyDatabase.checkpointObjData(x, fx, cx, filename="parmoo")``
      * ``NumpyDatabase.loadCheckpoint(filename="parmoo")``
-
-    Finally, the following methods are used to retrieve (filtered) simultation
-    and objective data:
-     * ``NumpyDatabase.getPF(format='ndarray')``
-     * ``NumpyDatabase.getSimulationData(format='ndarray')``
-     * ``NumpyDatabase.getObjectiveData(format='ndarray')``
 
     """
 
