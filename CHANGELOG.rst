@@ -265,7 +265,7 @@ Official release corresponding to accepted JOSS article.
    still be solved
  - Various style changes and additional usage environments requested by
    JOSS reviewers openjournals/joss-reviews#4468 including parmoo/parmoo#32
- - Added support for multistarting optimization solvers when solving
+ - Added support for multistart optimization solvers when solving
    surrogate problems. This is particularly important for the global
    ``GaussRBF`` surrogate
  - Fixed an issue in how model improvement points are calculated, as
