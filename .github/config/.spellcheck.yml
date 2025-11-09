@@ -3,8 +3,6 @@ matrix:
   sources:
   - parmoo/**/*.py
   - examples/**/*.py
-  - docs/**/*.rst  
-  - "*.rst"
   - "*.py"
   aspell:
     lang: en
@@ -12,6 +10,41 @@ matrix:
   pipeline:
   - pyspelling.filters.python:
       strings: false
+  dictionary:
+    wordlists:
+    - .github/config/custom-wordlist.txt
+- name: rst
+  sources:
+  - docs/**/*.rst  
+  - "*.rst"
+  aspell:
+    lang: en
+    d: en_US
+  pipeline:
+  - pyspelling.filters.context:
+      context_visible_first: true
+      # There is no filter for .rst, so we write some custom filters below
+      delimiters:
+      # Ignore code blocks
+      - open: "```"
+        close: "```"
+      - open: "``"
+        close: "``"
+      - open: "`"
+        close: "`"
+      - open: "^\\s"
+        close: "\\n"
+      # Ignore all rst primitives beginning with ".."
+      - open: "\\.\\.\\s+:[a-zA-Z\\-_0-9]+"
+        close: "\\n"
+      - open: "\\.\\.\\s+[a-zA-Z\\-_0-9]+:"
+        close: "\\n"
+      # Ignore all rst primitives beginning with ":"
+      - open: "\\s+:[a-zA-Z\\-_0-9]+:"
+        close: "\\n"
+      # Ignore all URLs
+      - open: "http|www"
+        close: "\\b"
   dictionary:
     wordlists:
     - .github/config/custom-wordlist.txt

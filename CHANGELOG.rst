@@ -187,7 +187,7 @@ Docs:
 
 Requirements:
 
- - We now require scipy v1.10 or newer, due to usage of qmc integration tools
+ - We now require scipy v1.10 or newer, due to usage of QMC integration tools
  - At the time of this release, libEnsemble is using a deprecated version of
    Pydantic -- for this release only we have fixed the requirement on
    libEnsemble to v0.9.2, but we will relax this requirement in the future
@@ -265,7 +265,7 @@ Official release corresponding to accepted JOSS article.
    still be solved
  - Various style changes and additional usage environments requested by
    JOSS reviewers openjournals/joss-reviews#4468 including parmoo/parmoo#32
- - Added support for multistarting optimization solvers when solving
+ - Added support for multistart optimization solvers when solving
    surrogate problems. This is particularly important for the global
    ``GaussRBF`` surrogate
  - Fixed an issue in how model improvement points are calculated, as
@@ -311,7 +311,7 @@ Desired features:
  - allow user to choose whether or not to use named variables via ``useNames``
    method, or similar
  - add a funcx simulation interface, using libEnsemble release 0.9
- - add predicter interface and standalone module
+ - add predictor interface and standalone module
  - a GUI interface for creating MOOPs
  - static visualization tools for plotting results
    (from ``MOOP.getPF()`` method)
