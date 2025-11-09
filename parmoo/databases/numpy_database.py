@@ -18,8 +18,7 @@ from parmoo.structs import SimulationDatabase
 
 
 class NumpyDatabase(SimulationDatabase):
-    """ A Database class for simulation optimization problems (SOPs)
-    specialized for storing and filtering multiobjective data.
+    """ A Database class specialized for multiobjective data.
 
     To define the NumpyDatabase, add each design variable, simulation,
     objective, and constraint by using the following functions:
@@ -431,7 +430,7 @@ class NumpyDatabase(SimulationDatabase):
                     s_vals = {sim0[0]: sxi.copy()}
                 else:
                     s_vals = {sim0[0]: sxi[0]}
-                # Look for matches in all other simultation databases
+                # Look for matches in all other simulation databases
                 matched = True
                 for simi in self.sim_schema[1:]:
                     matched = False

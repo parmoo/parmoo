@@ -25,6 +25,7 @@ checkObjDb
 checkpointing
 checkpointObjData
 checkpointSimData
+checkObjDb
 checkSimDb
 comms
 CompositeFunction
@@ -263,6 +264,7 @@ SingleSimBound
 SingleSimBoundGradient
 SingleSimGradient
 SingleSimObjective
+smwild
 SPD
 Springer
 sqrt
@@ -290,6 +292,7 @@ SVD
 svg
 sx
 tcp
+thchang
 Thiele
 TODO
 tol
