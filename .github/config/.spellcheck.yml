@@ -34,9 +34,6 @@ matrix:
         close: "`"
       - open: "^\\s"
         close: "\\n"
-      # Ignore et al.
-      - open: "\\<et\\>"
-        close: "\\<al\\.\\>"
       # Ignore all rst primitives beginning with ".."
       - open: "\\.\\.\\s+:[a-zA-Z\\-_0-9]+"
         close: "\\n"
