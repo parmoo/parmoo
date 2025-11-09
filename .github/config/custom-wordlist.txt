@@ -54,6 +54,8 @@ Plotly
 Precompute
 Pydantic
 PyDOE
+PyPI
+PYTHONPATH
 QMC
 QuadraticModel
 QuadraticSim
@@ -319,6 +321,7 @@ stddev
 str
 structs
 stype
+subclasses
 subdirectory
 subregion
 svg

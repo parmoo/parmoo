@@ -3,7 +3,7 @@ Release Process
 
 A release can be undertaken only by a project administrator.
 A project administrator should have an administrator role on the ParMOO
-GitHub, PyPI, and readthedocs pages.
+GitHub, PyPI, and ReadTheDocs pages.
 
 Before release
 --------------

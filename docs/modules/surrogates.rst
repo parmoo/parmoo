@@ -3,7 +3,7 @@ Surrogate Functions
 
 A surrogate model is associated with each simulation when its
 simulation dictionary is added to the ``MOOP`` object.
-This technique is used for generatng an approximation to the simulation's
+This technique is used for generating an approximation to the simulation's
 response surface, based on data gathered during the solve.
 
 .. code-block:: python
