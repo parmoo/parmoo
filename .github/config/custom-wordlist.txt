@@ -1,5 +1,4 @@
 AcquisitionFunction
-al
 Args
 BFGS
 CPUs
@@ -11,7 +10,6 @@ DOEs
 DataFrame
 Deserialize
 EI
-et
 Embedder
 FixedAugChebyshev
 FixedWeights
@@ -111,6 +109,7 @@ addObjData
 addObjective
 addSimulation
 adjoint
+al
 arg
 args
 asctime
@@ -125,6 +124,7 @@ centroid
 checkSimDb
 checkpointing
 comms
+compilable
 config
 const
 conv
@@ -162,6 +162,7 @@ embedders
 embeddings
 env
 eps
+et
 eval
 evaluateGradients
 evaluateSimulation
@@ -241,7 +242,6 @@ moops
 mpiexec
 multiobjective
 multistart
-multistarting
 nd
 ndarray
 ndarrays
