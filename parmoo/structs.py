@@ -946,26 +946,23 @@ class SimulationDatabase(ABC):
      * ``SimulationDatabase.getSimulationType()``
      * ``SimulationDatabase.getObjectiveType()``
      * ``SimulationDatabase.getConstraintType()``
+     * ``SimulationDatabase.startDatabase()``
      * ``SimulationDatabase.checkSimDb(x, sim_name)``
-     * ``SimulationDatabase.checkObjDb(x, sim_name)``
+     * ``SimulationDatabase.checkObjDb(x)``
      * ``SimulationDatabase.updateSimDb(x, sx, sim_name)``
      * ``SimulationDatabase.updateObjDb(x, fx, cx)``
+     * ``SimulationDatabase.isEmpty()``
+     * ``SimulationDatabase.browseCompleteSimulations()``
      * ``SimulationDatabase.getPF(format='ndarray')``
      * ``SimulationDatabase.getSimulationData(format='ndarray')``
+     * ``SimulationDatabase.getNewSimulationData()``
      * ``SimulationDatabase.getObjectiveData(format='ndarray')``
-
-     * ``MOOP.savedata(x, sx, sim_name, [filename="parmoo"])``
+     * ``SimulationDatabase.setCheckpoint(checkpoint, filename="parmoo")``
+     * ``SimulationDatabase.checkpointSimData(x, sx, sim_name, filename)``
+     * ``SimulationDatabase.checkpointObjData(x, fx, cx, filename)``
+     * ``SimulationDatabase.loadCheckpoint(filename="parmoo")``
 
     """
-
-    __slots__ = [
-        # Schemas
-        'des_schema', 'sim_schema', 'obj_schema', 'con_schema',
-        # Design tolerances for lookup
-        'des_tols',
-        # Hyperparams
-        'hyperparams'
-    ]
 
     def __init__(self, hyperparams):
         """ Initializer for the SimulationDatabase class.

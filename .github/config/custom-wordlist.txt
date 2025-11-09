@@ -91,6 +91,7 @@ getObjectiveType
 getPF
 getSimulationData
 getSimulationType
+getters
 getUpperBounds
 github
 globalGPS
@@ -175,6 +176,7 @@ num
 NUM
 numer
 numpy
+NumpyDatabase
 nworkers
 ObjectiveFunction
 objs
@@ -239,6 +241,7 @@ setObjective
 setPenalty
 setSimulation
 setTarget
+setters
 setTR
 setTrFunc
 setTrustRegion
@@ -246,6 +249,7 @@ showticklabels
 si
 simdb
 SimGroups
+SimulationDatabase
 SingleSimBound
 SingleSimBoundGradient
 SingleSimGradient

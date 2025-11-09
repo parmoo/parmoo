@@ -460,7 +460,7 @@ def gradient_error(arg1, arg2):
 
 
 def approx_equal(x1, x2, des_tols):
-    """ Check whether two dicts contain equal values up to the given tolerance.
+    """ Check if two dictionaries contain equal values up to the tolerance.
 
     Note:  This function allows that a value in x1/x2 could be non numeric, in
     which case exact equality is checked. This is triggered if the
