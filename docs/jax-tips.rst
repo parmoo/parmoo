@@ -4,7 +4,7 @@ Jax Tips and Tricks
 .. _jax_tips:
 
 As of version 0.4.0, ParMOO uses jax_ for algorithmic differentiation
-and just-in-time compilation.
+and just-in-time (jit) compilation.
 
 We have carefully implemented core functionality so that ParMOO will try
 to ``jit`` and ``jacrev`` with jax_, but easily fall-back to derivative free
@@ -75,7 +75,7 @@ and we will link them for you!
 However, if you are writing a custom surrogate or acquisition function,
 you should be aware that the ``surrogate.evaluate()`` and
 ``acquisition.scalarize()`` function must be differentiable and preferably
-jitt-able.
+jit compilable.
 
 Again, see the jax_ docs or read the jax_sharp_bits_ to get a feel for how
 this works.
@@ -87,8 +87,8 @@ There are a few items that ParMOO does not need to jit or differentiate to
 achieve optimal performance.
 Most notably, we will not attempt to differentiate or jit your simulation
 function, which is assumed to be complex.
-However, if possible, you may be interested in jitting your simulation for
-performance gains if you are not already implementing it in a compiled
+However, if possible, you may be interested in jit compiling your simulation
+for performance gains if you are not already implementing it in a compiled
 language!
 
 Other methods of the ``SurrogateFunction`` and ``AcquisitionFunction``
