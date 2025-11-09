@@ -25,7 +25,6 @@ checkObjDb
 checkpointing
 checkpointObjData
 checkpointSimData
-checkObjDb
 checkSimDb
 comms
 CompositeFunction

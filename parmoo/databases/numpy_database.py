@@ -39,8 +39,8 @@ class NumpyDatabase(SimulationDatabase):
      * ``NumpyDatabase.updateSimDb(x, sx, sim_name)``
 
     To check or add to the objective database, use:
-     * ``NumpyDatabase.checkObjData(x)``
-     * ``NumpyDatabase.addObjData(x, fx, cx)``
+     * ``NumpyDatabase.checkObjDb(x)``
+     * ``NumpyDatabase.updateObjDb(x, fx, cx)``
 
     Finally, the following methods are used to retrieve (filtered) simulation
     and objective data:
