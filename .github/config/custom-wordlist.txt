@@ -176,7 +176,7 @@ nd
 ndarray
 ndarrays
 ndpts
-Nesterov's
+Nesterov
 nondom
 nondominated
 nondominating
