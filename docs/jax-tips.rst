@@ -75,7 +75,7 @@ and we will link them for you!
 However, if you are writing a custom surrogate or acquisition function,
 you should be aware that the ``surrogate.evaluate()`` and
 ``acquisition.scalarize()`` function must be differentiable and preferably
-jit compile-able.
+jit compilable.
 
 Again, see the jax_ docs or read the jax_sharp_bits_ to get a feel for how
 this works.
