@@ -12,11 +12,6 @@ matrix:
   pipeline:
   - pyspelling.filters.python:
       strings: false
-  - pyspelling.filters.context:
-      context_visible_first: true
-      delimiters:
-      - open: "\\'"
-        close: "\\b"
   dictionary:
     wordlists:
     - .github/config/custom-wordlist.txt
