@@ -263,7 +263,6 @@ SingleSimBound
 SingleSimBoundGradient
 SingleSimGradient
 SingleSimObjective
-smwild
 SPD
 Springer
 sqrt
@@ -324,6 +323,7 @@ vobj
 vpen
 webp
 WID
+wildsm
 wrt
 xaxes
 xerror
