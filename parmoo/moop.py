@@ -708,10 +708,7 @@ class MOOP(MOOP_base):
 
         """
 
-        if self.n_feature < 1:
-            return None
-        else:
-            return np.dtype(self.des_schema)
+        return self.database.getDesignType()
 
     def getSimulationType(self):
         """ Get the numpy dtypes of the simulation outputs for this MOOP.
@@ -722,10 +719,7 @@ class MOOP(MOOP_base):
 
         """
 
-        if self.m < 1:
-            return None
-        else:
-            return np.dtype(self.sim_schema)
+        return self.database.getSimulationType()
 
     def getObjectiveType(self):
         """ Get the numpy dtype of an objective point for this MOOP.
@@ -736,10 +730,7 @@ class MOOP(MOOP_base):
 
         """
 
-        if self.o < 1:
-            return None
-        else:
-            return np.dtype(self.obj_schema)
+        return self.database.getObjectiveType()
 
     def getConstraintType(self):
         """ Get the numpy dtype of the constraint violations for this MOOP.
@@ -750,10 +741,7 @@ class MOOP(MOOP_base):
 
         """
 
-        if self.p < 1:
-            return None
-        else:
-            return np.dtype(self.con_schema)
+        return self.database.getConstraintType()
 
     def checkSimDb(self, x, s_name):
         """ Check self.sim_db[s_name] to see if the design x was evaluated.
