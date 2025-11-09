@@ -53,6 +53,7 @@ Ph
 Plotly
 Precompute
 Pydantic
+PyDOE
 QMC
 QuadraticModel
 QuadraticSim
@@ -62,6 +63,7 @@ README
 RHS
 RandomConstraint
 RandomSearch
+ReadTheDocs
 SPD
 SVD
 Scalable
