@@ -44,18 +44,21 @@ MOOP's
 MOOPs
 MPI
 MacOS
+MacOS
 NUM
+Nesterov
 Nesterov's
+NumpyDatabase
 ObjectiveFunction
+PYTHONPATH
 ParMOO
 ParMOO's
 Ph
 Plotly
 Precompute
-Pydantic
 PyDOE
 PyPI
-PYTHONPATH
+Pydantic
 QMC
 QuadraticModel
 QuadraticSim
@@ -72,6 +75,7 @@ Scalable
 ScalarOpt
 Schemas
 SimGroups
+SimulationDatabase
 SingleSimBound
 SingleSimBoundGradient
 SingleSimGradient
@@ -119,9 +123,13 @@ biobjective
 blackbox
 bool
 bools
+browseCompleteSimulations
 bwd
 centroid
+checkObjDb
 checkSimDb
+checkpointObjData
+checkpointSimData
 checkpointing
 comms
 compilable
@@ -185,6 +193,7 @@ getFeatureDesTols
 getInputType
 getLatentDesTols
 getLowerBounds
+getNewSimulationData
 getObjectiveData
 getObjectiveType
 getPF
@@ -192,6 +201,7 @@ getSimulationData
 getSimulationType
 getUpperBounds
 getter
+getters
 github
 globalGPS
 gradFunc
@@ -212,6 +222,7 @@ inds
 init
 initializations
 interpolant
+isEmpty
 istarts
 iter
 jac
@@ -234,6 +245,9 @@ libEnsemble
 libEnsemble's
 libe
 libensemble
+loadCheckpoint
+lookup
+lookups
 mc
 minimizer
 minimizers
@@ -312,11 +326,13 @@ setTR
 setTarget
 setTrFunc
 setTrustRegion
+setters
 showticklabels
 si
 simdb
 sqrt
 ssx
+startDatabase
 startSearch
 stdDev
 stddev
@@ -329,6 +345,7 @@ subregion
 svg
 sx
 tcp
+thchang
 threadsafe
 tol
 tols
@@ -340,6 +357,7 @@ un
 uncompiled
 unscaled
 updateAll
+updateObjDb
 updatePF
 updateSimDb
 useSD
@@ -352,6 +370,7 @@ vobj
 vpen
 webp
 whitespace
+wildsm
 workdir
 wrt
 xaxes

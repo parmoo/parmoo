@@ -344,13 +344,13 @@ Our design principles paper:
 
 .. code-block:: bibtex
 
-    @techreport{ParMOODesign24,
+    @article{ParMOODesign25,
         title = {Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
         author = {Tyler H. Chang and Stefan M. Wild},
-        institution = {arXiv},
-        number = {2304.06881},
-        year = {2024},
-        url = {https://arxiv.org/abs/2304.06881},
+        journal = {INFORMS Journal on Computing},
+        year = {2025},
+        doi = {10.1287/ijoc.2023.0250},
+        note = {To appear}
     }
 
 

@@ -12,3 +12,4 @@ __credits__ = ("Argonne National Laboratory and " +
                "Lawrence Berkeley National Laboratory")
 
 from .moop import MOOP
+from .moop_base import MOOP_base
