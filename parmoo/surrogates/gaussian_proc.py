@@ -14,7 +14,7 @@ from jax import numpy as jnp
 from jax import lax
 import numpy as np
 from parmoo.structs import SurrogateFunction
-from parmoo.util import xerror
+from parmoo.core.moop_utils import xerror
 from scipy.stats import tstd
 
 

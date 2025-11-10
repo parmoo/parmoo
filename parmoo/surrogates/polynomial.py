@@ -12,7 +12,7 @@ The classes include:
 from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import SurrogateFunction
-from parmoo.util import xerror
+from parmoo.core.moop_utils import xerror
 
 
 class Linear(SurrogateFunction):

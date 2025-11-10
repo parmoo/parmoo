@@ -18,7 +18,7 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import SurrogateOptimizer
-from parmoo.util import xerror
+from parmoo.core.moop_utils import xerror
 config.update("jax_enable_x64", True)  # scipy.optimize.lbfgsb requires 64-bit
 
 

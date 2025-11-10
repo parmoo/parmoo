@@ -11,7 +11,7 @@ The classes include:
 
 import numpy as np
 from parmoo.structs import GlobalSearch
-from parmoo.util import xerror
+from parmoo.core.moop_utils import xerror
 from scipy.stats import qmc
 
 

@@ -13,7 +13,7 @@ import numpy as np
 from os.path import exists as file_exists
 import pandas as pd
 
-from parmoo.util import check_names, approx_equal
+from parmoo.core.moop_utils import check_names, approx_equal
 from parmoo.structs import SimulationDatabase
 
 

@@ -10,7 +10,7 @@ def test_RandomConstraint():
     from jax import jacrev
     import numpy as np
     from parmoo.acquisitions import RandomConstraint
-    from parmoo.util import updatePF
+    from parmoo.core.moop_utils import updatePF
     import pytest
 
     # Define the objective function
@@ -82,7 +82,7 @@ def test_EI_RandomConstraint():
     """
 
     from parmoo.acquisitions import EI_RandomConstraint
-    from parmoo.util import updatePF
+    from parmoo.core.moop_utils import updatePF
     import numpy as np
     import pytest
 

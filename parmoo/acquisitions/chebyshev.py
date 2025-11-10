@@ -14,7 +14,7 @@ from jax import numpy as jnp
 import numpy as np
 import inspect
 from parmoo.structs import AcquisitionFunction
-from parmoo.util import xerror
+from parmoo.core.moop_utils import xerror
 
 
 class UniformAugChebyshev(AcquisitionFunction):
@@ -116,7 +116,7 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.core.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False
@@ -357,7 +357,7 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.core.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False

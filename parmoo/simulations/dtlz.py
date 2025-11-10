@@ -62,7 +62,7 @@ corresponding to an objective:
 """
 
 from parmoo.simulations import sim_func
-from parmoo.util import to_array
+from parmoo.core.moop_utils import to_array
 import numpy as np
 
 

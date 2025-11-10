@@ -13,7 +13,7 @@ import inspect
 from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import AcquisitionFunction
-from parmoo.util import xerror
+from parmoo.core.moop_utils import xerror
 from scipy import stats, integrate
 
 
@@ -106,7 +106,7 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.core.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False
@@ -320,7 +320,7 @@ class EI_RandomConstraint(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.core.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False
