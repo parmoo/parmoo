@@ -16,7 +16,7 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import SurrogateOptimizer
-from parmoo.core.moop_utils import xerror
+from parmoo.utilities.error_checks import xerror
 
 
 class GlobalSurrogate_RS(SurrogateOptimizer):
@@ -100,7 +100,7 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
 
         """
 
-        from parmoo.core.moop_utils import updatePF
+        from parmoo.utilities.moop_utils import updatePF
 
         # Check that x is legal
         if self.n != x.shape[1]:

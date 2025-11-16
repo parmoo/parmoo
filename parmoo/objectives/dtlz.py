@@ -32,7 +32,7 @@ The 7 DTLZ problems included here are:
 from jax import numpy as jnp
 import numpy as np
 from parmoo.structs import CompositeFunction
-from parmoo.core.moop_utils import to_array, from_array
+from parmoo.utilities.moop_utils import to_array, from_array
 
 
 class dtlz1_obj(CompositeFunction):

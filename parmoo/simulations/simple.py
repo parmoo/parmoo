@@ -9,7 +9,7 @@ functions:
 """
 
 from parmoo.simulations import sim_func
-from parmoo.core.moop_utils import to_array
+from parmoo.utilities.moop_utils import to_array
 import numpy as np
 
 

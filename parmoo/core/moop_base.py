@@ -22,7 +22,7 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 
-from parmoo.core.moop_utils import check_names, check_sims, gradient_error
+from parmoo.core.moop_checks import check_sims
 
 from parmoo.embeddings.embedder import Embedder
 from parmoo.databases import NumpyDatabase
@@ -31,6 +31,7 @@ from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
                                                 IntegerEmbedder,     \
                                                 CategoricalEmbedder, \
                                                 IdentityEmbedder
+from parmoo.utilities.error_checks import check_names, gradient_error
 
 
 class MOOP_base(ABC):
