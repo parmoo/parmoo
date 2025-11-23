@@ -15,10 +15,10 @@ And the corresponding gradients are defined in:
 
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import CompositeFunction
+from parmoo.objectives.obj_func import ObjectiveFunction
 
 
-class SingleSimObjective(CompositeFunction):
+class SingleSimObjective(ObjectiveFunction):
     """ Class for min/maxing a single simulation's output.
 
     If minimizing:
@@ -35,7 +35,7 @@ class SingleSimObjective(CompositeFunction):
      * ``__init__(des_type, sim_type, sim_ind, goal='min')``
      * ``__call__(x, sim)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ObjectiveFunction ABC.
 
     The ``__call__`` returns sim[self.sim_ind].
 
@@ -113,7 +113,7 @@ class SingleSimObjective(CompositeFunction):
         return fx
 
 
-class SumOfSimSquaresObjective(CompositeFunction):
+class SumOfSimSquaresObjective(ObjectiveFunction):
     """ Class for min/maxing the sum-of-squared simulation outputs.
 
     If minimizing, equivalent to:
@@ -136,7 +136,7 @@ class SumOfSimSquaresObjective(CompositeFunction):
      * ``__init__(des_type, sim_type, sim_inds, goal='min')``
      * ``__call__(x, sx)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ObjectiveFunction ABC.
 
     The ``__call__`` evaluates the sum-of-squared simulation outputs.
 
@@ -229,7 +229,7 @@ class SumOfSimSquaresObjective(CompositeFunction):
         return fx * self.goal
 
 
-class SumOfSimsObjective(CompositeFunction):
+class SumOfSimsObjective(ObjectiveFunction):
     """ Class for min/maxing the sum of simulation outputs.
 
     If minimizing:
@@ -258,7 +258,7 @@ class SumOfSimsObjective(CompositeFunction):
      * ``__init__(des_type, sim_type, sim_inds, goal='min', absolute=False)``
      * ``__call__(x, sx)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ObjectiveFunction ABC.
 
     The ``__call__`` evaluate the (absolute) sum outputs.
 

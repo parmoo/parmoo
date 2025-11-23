@@ -31,11 +31,11 @@ The 7 DTLZ problems included here are:
 
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import CompositeFunction
+from parmoo.objectives.obj_func import ObjectiveFunction
 from parmoo.utilities.moop_utils import to_array, from_array
 
 
-class dtlz1_obj(CompositeFunction):
+class dtlz1_obj(ObjectiveFunction):
     """ Class defining the DTLZ1 objectives.
 
     Use this class in combination with the g1_sim() class from the
@@ -50,7 +50,7 @@ class dtlz1_obj(CompositeFunction):
      * ``__init__(des_type, sim_type, obj_ind)``
      * ``__call__(x, sx)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ObjectiveFunction ABC.
 
     The ``__call__`` method performs an evaluation of the DTLZ1 problem.
 
@@ -118,7 +118,7 @@ class dtlz1_obj(CompositeFunction):
         return fx
 
 
-class dtlz2_obj(CompositeFunction):
+class dtlz2_obj(ObjectiveFunction):
     """ Class defining the DTLZ2 objectives.
 
     Use this class in combination with the g2_sim() class from the
@@ -132,7 +132,7 @@ class dtlz2_obj(CompositeFunction):
      * ``__init__(des_type, sim_type, obj_ind)``
      * ``__call__(x, sx)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ObjectiveFunction ABC.
 
     The ``__call__`` method performs an evaluation of the DTLZ2 problem.
 
@@ -200,7 +200,7 @@ class dtlz2_obj(CompositeFunction):
         return fx
 
 
-class dtlz3_obj(CompositeFunction):
+class dtlz3_obj(ObjectiveFunction):
     """ Class defining the DTLZ3 objectives.
 
     Use this class in combination with the g1_sim() class from the
@@ -215,7 +215,7 @@ class dtlz3_obj(CompositeFunction):
      * ``__init__(des_type, sim_type, obj_ind)``
      * ``__call__(x, sx)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ObjectiveFunction ABC.
 
     The ``__call__`` method performs an evaluation of the DTLZ3 problem.
 
@@ -283,7 +283,7 @@ class dtlz3_obj(CompositeFunction):
         return fx
 
 
-class dtlz4_obj(CompositeFunction):
+class dtlz4_obj(ObjectiveFunction):
     """ Class defining the DTLZ4 objectives.
 
     Use this class in combination with the g2_sim() class from the
@@ -300,7 +300,7 @@ class dtlz4_obj(CompositeFunction):
      * ``__init__(des_type, sim_type, obj_ind)``
      * ``__call__(x, sx)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ObjectiveFunction ABC.
 
     The ``__call__`` method performs an evaluation of the DTLZ4 problem.
 
