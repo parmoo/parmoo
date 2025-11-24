@@ -15,7 +15,7 @@ The classes include:
 import jax
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import SurrogateOptimizer
+from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
 from parmoo.utilities.error_checks import xerror
 
 

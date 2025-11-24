@@ -6,7 +6,8 @@ They are:
 """
 
 import numpy as np
-from parmoo import structs
+from parmoo.searches.global_search import GlobalSearch
+from parmoo.surrogates.surrogate_function import SurrogateFunction
 import inspect
 
 
@@ -89,33 +90,32 @@ def check_sims(n, *args):
             # Check the search technique
             if 'search' in arg:
                 try:
-                    assert isinstance(arg['search'](m, np.zeros(n),
-                                                    np.ones(n), {}),
-                                      structs.GlobalSearch)
+                    assert isinstance(
+                        arg['search'](m, np.zeros(n), np.ones(n), {}),
+                        GlobalSearch
+                    )
                 except BaseException:
-                    raise TypeError("sims[" + str(s) + "]['search']"
-                                    + " must be a derivative of the"
-                                    + " GlobalSearch abstract class")
+                    raise TypeError(
+                        f"sims[{s}]['search'] must be a derivative of "
+                        "the GlobalSearch abstract class"
+                    )
             else:
-                raise AttributeError("sims[" + str(s) + "] is missing"
-                                     + " the key 'search'")
+                raise AttributeError(f"sims[{s}] is missing the key 'search'")
             # Check the des_tol, if present
             if 'des_tol' in arg:
                 if isinstance(arg['des_tol'], float):
                     if arg['des_tol'] <= 0.0:
-                        raise ValueError("sims[" + str(s)
-                                         + "]['des_tol']"
-                                         + " must be greater than 0")
+                        raise ValueError(
+                            f"sims[{s}]['des_tol'] must be greater than 0"
+                        )
                 else:
-                    raise TypeError("sims[" + str(s)
-                                    + "]['des_tol'] must"
-                                    + " be a float")
+                    raise TypeError(f"sims[{s}]['des_tol'] must be a float")
             # Get the surrogate function
             if 'surrogate' in arg:
                 try:
                     if not isinstance(arg['surrogate'](m, np.zeros(n),
                                                        np.ones(n), {}),
-                                      structs.SurrogateFunction):
+                                      SurrogateFunction):
                         raise TypeError("sims[" + str(s) + "] :"
                                         + " 'surrogate' must be a"
                                         + " derivative of the"

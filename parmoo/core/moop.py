@@ -13,11 +13,11 @@ import numpy as np
 
 from parmoo.core.moop_base import MOOP_base
 from parmoo.databases import NumpyDatabase
-from parmoo import structs
 from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
                                                 IntegerEmbedder,     \
                                                 CategoricalEmbedder, \
                                                 IdentityEmbedder
+from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
 import warnings
 
 
@@ -192,7 +192,7 @@ class MOOP(MOOP_base):
         except BaseException:
             raise TypeError("opt_func must be a derivative of the "
                             "SurrogateOptimizer abstract class")
-        if not isinstance(self.optimizer, structs.SurrogateOptimizer):
+        if not isinstance(self.optimizer, SurrogateOptimizer):
             raise TypeError("opt_func must be a derivative of the "
                             "SurrogateOptimizer abstract class")
         self.opt_tmp = opt_func

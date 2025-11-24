@@ -24,13 +24,14 @@ import numpy as np
 
 from parmoo.core.moop_checks import check_sims
 
+from parmoo.acquisitions.acquisition_function import AcquisitionFunction
 from parmoo.embeddings.embedder import Embedder
 from parmoo.databases import NumpyDatabase
-from parmoo import structs
 from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
                                                 IntegerEmbedder,     \
                                                 CategoricalEmbedder, \
                                                 IdentityEmbedder
+from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
 from parmoo.utilities.error_checks import check_names, gradient_error
 
 
@@ -197,7 +198,7 @@ class MOOP_base(ABC):
         except BaseException:
             raise TypeError("opt_func must be a derivative of the "
                             "SurrogateOptimizer abstract class")
-        if not isinstance(self.optimizer, structs.SurrogateOptimizer):
+        if not isinstance(self.optimizer, SurrogateOptimizer):
             raise TypeError("opt_func must be a derivative of the "
                             "SurrogateOptimizer abstract class")
         self.opt_tmp = opt_func
@@ -561,7 +562,7 @@ class MOOP_base(ABC):
             except BaseException:
                 raise TypeError("'acquisition' must specify a child of the"
                                 + " AcquisitionFunction class")
-            if not isinstance(acq, structs.AcquisitionFunction):
+            if not isinstance(acq, AcquisitionFunction):
                 raise TypeError("'acquisition' must specify a child of the"
                                 + " AcquisitionFunction class")
             # If all checks passed, add the acquisition to the list

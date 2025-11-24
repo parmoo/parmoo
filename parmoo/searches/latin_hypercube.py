@@ -10,7 +10,7 @@ The classes include:
 """
 
 import numpy as np
-from parmoo.structs import GlobalSearch
+from parmoo.searches.global_search import GlobalSearch
 from parmoo.utilities.error_checks import xerror
 from scipy.stats import qmc
 

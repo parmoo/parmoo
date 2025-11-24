@@ -11,7 +11,7 @@ The classes include:
 
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import SurrogateFunction
+from parmoo.surrogates.surrogate_function import SurrogateFunction
 from parmoo.utilities.error_checks import xerror
 
 
