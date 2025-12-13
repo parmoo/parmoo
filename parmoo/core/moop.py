@@ -247,7 +247,7 @@ class MOOP(MOOP_base):
                    not have numeric types, then ParMOO will not be able to jit
                    the extractor which will lead to seriously degraded
                    performance.
-                 * 'embedder' (parmoo.embeddings.embeder.Embedder): When
+                 * 'embedder' (parmoo.embeddings.embedder.Embedder): When
                    des_type is 'custom', this is a custom Embedder class, which
                    maps the input to a point in the unit hypercube and reports
                    the embedded dimension.
@@ -713,8 +713,8 @@ class MOOP(MOOP_base):
                     if self.database.checkObjDb(x) is None:
                         self.database.updateObjDb(x, fx, cx)
         else:
-            # If any constraints are violated, increase penalty_param toward
-            # the limit
+            # If any constraints are violated, increase the penalty parameter
+            # toward the limit
             for (xi, i) in batch:
                 xxi = self._embed(xi)
                 sxi = self._evaluate_surrogates(xxi)

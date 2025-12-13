@@ -240,7 +240,7 @@ class MOOP_base(ABC):
                    not have numeric types, then ParMOO will not be able to jit
                    the extractor which will lead to seriously degraded
                    performance.
-                 * 'embedder' (parmoo.embeddings.embeder.Embedder): When
+                 * 'embedder' (parmoo.embeddings.embedder.Embedder): When
                    des_type is 'custom', this is a custom Embedder class, which
                    maps the input to a point in the unit hypercube and reports
                    the embedded dimension.

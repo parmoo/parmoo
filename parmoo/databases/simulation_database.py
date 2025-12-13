@@ -1,4 +1,4 @@
-""" The abstract base class (ABC) for ParMOO's SimulationDatabase struct. """
+""" The abstract base class (ABC) for ParMOO's SimulationDatabase structure. """
 
 from abc import ABC, abstractmethod
 
