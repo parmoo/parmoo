@@ -10,7 +10,6 @@ simulations, specified using dictionaries.
 from abc import ABC, abstractmethod
 import codecs
 from importlib import import_module
-import inspect
 import json
 import logging
 from os.path import exists as file_exists
@@ -22,17 +21,10 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 
-from parmoo.core.moop_checks import check_sims
-
-from parmoo.acquisitions.acquisition_function import AcquisitionFunction
 from parmoo.embeddings.embedder import Embedder
 from parmoo.databases import NumpyDatabase
-from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
-                                                IntegerEmbedder,     \
-                                                CategoricalEmbedder, \
-                                                IdentityEmbedder
 from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
-from parmoo.utilities.error_checks import check_names, gradient_error
+from parmoo.utilities.error_checks import gradient_error
 
 
 class MOOP_base(ABC):
@@ -256,58 +248,16 @@ class MOOP_base(ABC):
         """
 
         for arg in args:
-            # Check arg and optional inputs for correct types
-            if not isinstance(arg, dict):
-                raise TypeError("Each argument must be a Python dict")
-            if 'des_type' in arg:
-                if not isinstance(arg['des_type'], str):
-                    raise TypeError("args['des_type'] must be a str")
-            if 'name' in arg:
-                name = arg['name']
-            else:
-                name = f"x{len(self.des_schema) + 1}"
-            check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_schema, self.con_schema)
-            # Append each design variable (default) to the schema
-            if 'des_type' not in arg or \
-               arg['des_type'] in ["continuous", "cont", "real"]:
-                arg1 = arg
-                embedder = ContinuousEmbedder(arg1)
-            elif arg['des_type'] in ["integer", "int"]:
-                arg1 = arg
-                embedder = IntegerEmbedder(arg1)
-            elif arg['des_type'] in ["categorical", "cat"]:
-                arg1 = arg
-                embedder = CategoricalEmbedder(arg1)
-            elif arg['des_type'] in ["custom"]:
-                if 'embedder' not in arg:
-                    raise AttributeError(
-                        "For a custom embedder, the 'embedder' key must be"
-                        " present."
-                    )
-                arg1 = {}
-                for key in arg:
-                    if key != 'embedder':
-                        arg1[key] = arg[key]
-                arg1['np_random_gen'] = self.np_random_gen
-                try:
-                    embedder = arg['embedder'](arg1)
-                except BaseException:
-                    raise TypeError(
-                        "When present, the 'embedder' key must contain a"
-                        " parmoo.embeddings.embedder.Embedder class."
-                    )
-                if not isinstance(embedder, Embedder):
-                    raise TypeError(
-                        "When present, the 'embedder' key must contain a"
-                        " parmoo.embeddings.embedder.Embedder class."
-                    )
-            elif arg['des_type'] in ["raw"]:
-                arg1 = arg
-                embedder = IdentityEmbedder(arg1)
-            else:
-                raise ValueError(
-                    f"des_type={arg['des_type']} is not a recognized value"
+            arg1 = {}
+            for key in arg:
+                if key != 'embedder':
+                    arg1[key] = arg[key]
+            arg1['np_random_gen'] = self.np_random_gen
+            embedder = arg['embedder']
+            if not isinstance(embedder, Embedder):
+                raise TypeError(
+                    "The 'embedder' key must contain an instance of a"
+                    " parmoo.embeddings.embedder.Embedder class."
                 )
             # Collect the metadata for this embedding
             self.n_feature += 1
@@ -328,10 +278,12 @@ class MOOP_base(ABC):
                 self.latent_des_tols.append(float(des_tol))
             # Update the schema and add the embedder to list
             dtype = embedder.getInputType()
-            self.des_schema.append((name, dtype))
+            self.des_schema.append((arg['name'], dtype))
             self.embedders.append(embedder)
             self.emb_hp.append(arg1)  # This is saved for re-loading
-            self.database.addDesign(name, dtype, self.feature_des_tols[-1])
+            self.database.addDesign(
+                arg['name'], dtype, self.feature_des_tols[-1]
+            )
 
     def addSimulation(self, *args):
         """ Add new simulations to the MOOP.
@@ -362,29 +314,17 @@ class MOOP_base(ABC):
 
         """
 
-        # Check that the simulation input is a legal format
-        check_sims(self.n_feature, *args)
         for arg in args:
-            m = arg['m']
-            if 'name' in arg:
-                name = arg['name']
-            else:
-                name = "sim" + str(self.s + 1)
-            check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_schema, self.con_schema)
             # Update the schema and track the simulation output dimensions
-            if m > 1:
-                self.sim_schema.append((name, 'f8', m))
+            if arg['m'] > 1:
+                self.sim_schema.append((arg['name'], 'f8', arg['m']))
             else:
-                self.sim_schema.append((name, 'f8'))
-            self.m_list.append(m)
-            self.m += m
+                self.sim_schema.append((arg['name'], 'f8'))
+            self.m_list.append(arg['m'])
+            self.m += arg['m']
             self.s += 1
             # Initialize the hyperparameter dictionary
-            if 'hyperparams' in arg:
-                hps = arg['hyperparams']
-            else:
-                hps = {}
+            hps = arg['hyperparams']
             hps["np_random_gen"] = self.np_random_gen
             # Add the simulation's search and surrogate techniques
             self.search_tmp.append(arg['search'])
@@ -392,7 +332,7 @@ class MOOP_base(ABC):
             self.sim_hp.append(hps)
             # Add the simulation function
             self.sim_funcs.append(arg['sim_func'])
-            self.database.addSimulation(name, m)
+            self.database.addSimulation(arg['name'], arg['m'])
 
     def addObjective(self, *args):
         """ Add a new objective to the MOOP.
@@ -424,35 +364,12 @@ class MOOP_base(ABC):
         """
 
         for arg in args:
-            # Check that the objective dictionary is a legal format
-            if not isinstance(arg, dict):
-                raise TypeError("Each arg must be a Python dict")
-            if 'obj_func' in arg:
-                if not callable(arg['obj_func']):
-                    raise TypeError("The 'obj_func' must be callable")
-                if len(inspect.signature(arg['obj_func']).parameters) != 2:
-                    raise ValueError("The 'obj_func' must take 2 args")
-            else:
-                raise AttributeError("Each arg must contain an 'obj_func'")
-            if 'obj_grad' in arg:
-                if not callable(arg['obj_grad']):
-                    raise TypeError("The 'obj_grad' must be callable")
-                if len(inspect.signature(arg['obj_grad']).parameters) != 2:
-                    raise ValueError("If present, 'obj_grad' must take 2 args")
-            # Check the objective name
-            if 'name' in arg:
-                name = arg['name']
-            else:
-                name = f"f{self.o + 1}"
-            check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_schema, self.con_schema)
-            # Finally, if all else passed, add the objective
-            self.obj_schema.append((name, 'f8'))
+            self.obj_schema.append((arg['name'], 'f8'))
             self.obj_funcs.append(arg['obj_func'])
             if 'obj_grad' in arg:
                 self.obj_grads.append(arg['obj_grad'])
             self.o += 1
-            self.database.addObjective(name)
+            self.database.addObjective(arg['name'])
 
     def addConstraint(self, *args):
         """ Add a new constraint to the MOOP.
@@ -491,35 +408,7 @@ class MOOP_base(ABC):
         """
 
         for arg in args:
-            # Check that the constraint dictionary is a legal format
-            if not isinstance(arg, dict):
-                raise TypeError("Each arg must be a Python dict")
-            if 'con_func' in arg:
-                if not callable(arg['con_func']):
-                    raise TypeError("The 'con_func' must be callable")
-                if len(inspect.signature(arg['con_func']).parameters) != 2:
-                    raise ValueError("The 'con_func' must take 2 args")
-            elif 'constraint' in arg:
-                if not callable(arg['constraint']):
-                    raise TypeError("The 'constraint' must be callable")
-                if len(inspect.signature(arg['constraint']).parameters) != 2:
-                    raise ValueError("The 'constraint' must take 2 args")
-            else:
-                raise AttributeError("Each arg must contain a 'con_func'")
-            if 'con_grad' in arg:
-                if not callable(arg['con_grad']):
-                    raise TypeError("The 'con_grad' must be callable")
-                if len(inspect.signature(arg['con_grad']).parameters) != 2:
-                    raise ValueError("If present, 'con_grad' must take 2 args")
-            # Check the constraint name
-            if 'name' in arg:
-                name = arg['name']
-            else:
-                name = f"c{self.p + 1}"
-            check_names(name, self.des_schema, self.sim_schema,
-                        self.obj_schema, self.con_schema)
-            # Finally, if all else passed, add the constraint
-            self.con_schema.append((name, 'f8'))
+            self.con_schema.append((arg['name'], 'f8'))
             if 'con_func' in arg:
                 self.con_funcs.append(arg['con_func'])
             else:
@@ -527,7 +416,7 @@ class MOOP_base(ABC):
             if 'con_grad' in arg:
                 self.con_grads.append(arg['con_grad'])
             self.p += 1
-            self.database.addConstraint(name)
+            self.database.addConstraint(arg['name'])
 
     def addAcquisition(self, *args):
         """ Add an acquisition function to the MOOP.
@@ -544,28 +433,8 @@ class MOOP_base(ABC):
         """
 
         for arg in args:
-            # Check that the acquisition dictionary is a legal format
-            if not isinstance(arg, dict):
-                raise TypeError("Every arg must be a Python dict")
-            if 'acquisition' not in arg:
-                raise AttributeError("The 'acquisition' key must be present")
-            if 'hyperparams' in arg:
-                if not isinstance(arg['hyperparams'], dict):
-                    raise TypeError("When present, 'hyperparams' must be a "
-                                    "Python dictionary")
-                hps = arg['hyperparams']
-            else:
-                hps = {}
+            hps = arg['hyperparams']
             hps["np_random_gen"] = self.np_random_gen
-            try:
-                acq = arg['acquisition'](1, np.zeros(1), np.ones(1), {})
-            except BaseException:
-                raise TypeError("'acquisition' must specify a child of the"
-                                + " AcquisitionFunction class")
-            if not isinstance(acq, AcquisitionFunction):
-                raise TypeError("'acquisition' must specify a child of the"
-                                + " AcquisitionFunction class")
-            # If all checks passed, add the acquisition to the list
             self.acq_tmp.append(arg['acquisition'])
             self.acq_hp.append(hps)
 

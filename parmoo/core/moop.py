@@ -7,18 +7,22 @@ simulations, specified using dictionaries.
 
 """
 
+import inspect
 from jax import numpy as jnp
 import logging
 import numpy as np
+import warnings
 
+from parmoo.acquisitions.acquisition_function import AcquisitionFunction
 from parmoo.core.moop_base import MOOP_base
+from parmoo.core.moop_checks import check_sims
 from parmoo.databases import NumpyDatabase
 from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
                                                 IntegerEmbedder,     \
                                                 CategoricalEmbedder, \
                                                 IdentityEmbedder
 from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
-import warnings
+from parmoo.utilities.error_checks import check_names
 
 
 class MOOP(MOOP_base):
@@ -197,6 +201,315 @@ class MOOP(MOOP_base):
                             "SurrogateOptimizer abstract class")
         self.opt_tmp = opt_func
         return
+
+    def addDesign(self, *args):
+        """ Add a new design variables to the MOOP.
+
+        Args:
+            args (dict): Each argument is a dictionary representing one design
+                variable. The dictionary contains information about that
+                design variable, including:
+                 * 'name' (str, optional): The unique name of this design
+                   variable, which ultimately serves as its primary key in
+                   all of ParMOO's databases. This is also how users should
+                   index this variable in all user-defined functions passed
+                   to ParMOO.
+                   If left blank, it defaults to "xi" where i= 1, 2, 3,...
+                   corresponds to the order in which the design variables
+                   were added.
+                 * 'des_type' (str): The type for this design variable.
+                   Currently supported options are:
+                    * 'continuous' (or 'cont' or 'real')
+                    * 'categorical' (or 'cat')
+                    * 'integer' (or 'int')
+                    * 'custom' -- an Embedder class must be provided (below)
+                    * 'raw' -- no re-scaling is performed: *NOT RECOMMENDED*
+                 * 'lb' (float): When des_type is 'continuous', 'integer', or
+                   'raw' this specifies the lower bound for the range of
+                   values this design variable could take.
+                   This value must be specified, and must be strictly less
+                   than 'ub' (below) up to the tolerance (below).
+                 * 'ub' (float): When des_type is 'continuous', 'integer', or
+                   'raw' this specifies the upper bound for the range of
+                   values this design variable could take.
+                   This value must be specified, and must be strictly greater
+                   than 'lb' (above) up to the tolerance (below) or by a whole
+                   numer for integer variables.
+                 * 'des_tol' (float): When des_type is 'continuous', this
+                   specifies the tolerance, i.e., the minimum spacing along
+                   this dimension, before two design values are considered to
+                   have equal values in this dimension. If not specified, the
+                   default value is epsilon * max(ub - lb, 1.0e-4).
+                 * 'levels' (int or list): When des_type is 'categorical', this
+                   specifies the number of levels for the variable (when int)
+                   or the names of each valid category (when a list).
+                   *WARNING*: If a list is given and the entries in the list do
+                   not have numeric types, then ParMOO will not be able to jit
+                   the extractor which will lead to seriously degraded
+                   performance.
+                 * 'embedder' (parmoo.embeddings.embeder.Embedder): When
+                   des_type is 'custom', this is a custom Embedder class, which
+                   maps the input to a point in the unit hypercube and reports
+                   the embedded dimension.
+
+        """
+
+        for arg in args:
+            # Check arg and optional inputs for correct types
+            if not isinstance(arg, dict):
+                raise TypeError("Each argument must be a Python dict")
+            if 'name' in arg:
+                name = arg['name']
+            else:
+                name = f"x{len(self.des_schema) + 1}"
+            check_names(name, self.des_schema, self.sim_schema,
+                        self.obj_schema, self.con_schema)
+            arg['name'] = name
+            # Append each design variable (default) to the schema
+            if 'des_type' in arg:
+                if not isinstance(arg['des_type'], str):
+                    raise TypeError("args['des_type'] must be a str")
+            if (
+                'des_type' not in arg or
+                arg['des_type'] in ["continuous", "cont", "real"]
+            ):
+                arg['embedder'] = ContinuousEmbedder(arg)
+            elif arg['des_type'] in ["integer", "int"]:
+                arg['embedder'] = IntegerEmbedder(arg)
+            elif arg['des_type'] in ["categorical", "cat"]:
+                arg['embedder'] = CategoricalEmbedder(arg)
+            elif arg['des_type'] in ["custom"]:
+                if 'embedder' not in arg:
+                    raise AttributeError(
+                        "For a custom embedder, the 'embedder' key must be"
+                        " present."
+                    )
+                arg1 = {}
+                for key in arg:
+                    if key != 'embedder':
+                        arg1[key] = arg[key]
+                arg1['np_random_gen'] = self.np_random_gen
+                try:
+                    arg['embedder'] = arg['embedder'](arg1)
+                except BaseException:
+                    raise TypeError(
+                        "When present, the 'embedder' key must contain a"
+                        " parmoo.embeddings.embedder.Embedder class."
+                    )
+            elif arg['des_type'] in ["raw"]:
+                arg['embedder'] = IdentityEmbedder(arg)
+            else:
+                raise ValueError(
+                    f"des_type={arg['des_type']} is not a recognized value"
+                )
+            # Add the design variable
+            super().addDesign(arg)
+
+    def addSimulation(self, *args):
+        """ Add new simulations to the MOOP.
+
+        Append new simulation functions to the problem.
+
+        Args:
+            args (dict): Each argument is a dictionary representing one
+                simulation function. The dictionary must contain information
+                about that simulation function, including:
+                 * name (str, optional): The name of this simulation
+                   (defaults to ``sim{i}``, where i = 1, 2, 3, ... for
+                   the first, second, third, ... simulation added to the
+                   MOOP).
+                 * m (int): The number of outputs for this simulation.
+                 * sim_func (function): An implementation of the simulation
+                   function, mapping from X -> R^m (where X is the design
+                   space). The interface should match:
+                   ``sim_out = sim_func(x)``.
+                 * search (GlobalSearch): A GlobalSearch object for performing
+                   the initial search over this simulation's design space.
+                 * surrogate (SurrogateFunction): A SurrogateFunction object
+                   specifying how this simulation's outputs will be modeled.
+                 * hyperparams (dict): A dictionary of hyperparameters, which
+                   will be passed to the surrogate and search routines.
+                   Most notably, the 'search_budget': (int) can be specified
+                   here.
+
+        """
+
+        # Check that the simulation input is a legal format
+        check_sims(self.n_feature, *args)
+        for arg in args:
+            if 'name' in arg:
+                name = arg['name']
+            else:
+                name = f"sim{self.s + 1}"
+            check_names(name, self.des_schema, self.sim_schema,
+                        self.obj_schema, self.con_schema)
+            arg['name'] = name
+            if 'hyperparams' not in arg:
+                arg['hyperparams'] = {}
+            super().addSimulation(arg)
+
+    def addObjective(self, *args):
+        """ Add a new objective to the MOOP.
+
+        Append a new objective to the problem. The objective must be an
+        algebraic function of the design variables and simulation outputs.
+        Note that all objectives must be specified before any acquisition
+        functions can be added.
+
+        Args:
+            *args (dict): Python dictionary containing objective function
+                information, including:
+                 * 'name' (str, optional): The name of this objective
+                   (defaults to "obj" + str(i), where i = 1, 2, 3, ... for the
+                   first, second, third, ... simulation added to the MOOP).
+                 * 'obj_func' (function): An algebraic objective function that
+                   maps from X, S --> R, where X is the design space and S is
+                   the space of simulation outputs. Interface should match:
+                   ``cost = obj_func(x, sx)`` where the value ``sx`` is
+                   given by
+                   ``sx = sim_func(x)`` at runtime.
+                 * 'obj_grad' (function): Evaluates the gradients of
+                   ``obj_func`` wrt s and sx. Interface should match:
+                   ``dx, ds = obj_grad(x, sx)`` where the value ``sx`` is
+                   given by ``sx = sim_func(x)`` at runtime.
+                   The outputs ``dx`` and ``ds`` represent the gradients with
+                   respect to ``x`` and ``sx``, respectively.
+
+        """
+
+        for arg in args:
+            # Check that the objective dictionary is a legal format
+            if not isinstance(arg, dict):
+                raise TypeError("Each arg must be a Python dict")
+            if 'obj_func' in arg:
+                if not callable(arg['obj_func']):
+                    raise TypeError("The 'obj_func' must be callable")
+                if len(inspect.signature(arg['obj_func']).parameters) != 2:
+                    raise ValueError("The 'obj_func' must take 2 args")
+            else:
+                raise AttributeError("Each arg must contain an 'obj_func'")
+            if 'obj_grad' in arg:
+                if not callable(arg['obj_grad']):
+                    raise TypeError("The 'obj_grad' must be callable")
+                if len(inspect.signature(arg['obj_grad']).parameters) != 2:
+                    raise ValueError("If present, 'obj_grad' must take 2 args")
+            # Check the objective name
+            if 'name' in arg:
+                name = arg['name']
+            else:
+                name = f"f{self.o + 1}"
+            check_names(name, self.des_schema, self.sim_schema,
+                        self.obj_schema, self.con_schema)
+            arg['name'] = name
+            # Finally, if all else passed, add the objective
+            super().addObjective(arg)
+
+    def addConstraint(self, *args):
+        """ Add a new constraint to the MOOP.
+
+        Args:
+            args (dict): Python dictionary containing constraint function
+                information, including:
+                 * 'name' (str, optional): The name of this constraint
+                   (defaults to "const" + str(i), where i = 1, 2, 3, ... for
+                   the first, second, third, ... constraint added to the MOOP).
+                 * 'con_func' or 'constraint' (function): An algebraic
+                   constraint function that maps from X, S --> R where X and
+                   S are the design space and space of aggregated simulation
+                   outputs, respectively. The constraint function should
+                   evaluate to zero or a negative number when feasible and
+                   positive otherwise. The interface should match:
+                   ``violation = con_func(x, sx)`` where the value ``sx`` is
+                   given by
+                   ``sx = sim_func(x)`` at runtime.
+                   Note that any
+                   ``constraint(x, sim_func(x), der=0) <= 0``
+                   indicates that x is feasible, while
+                   ``constraint(x, sim_func(x), der=0) > 0``
+                   indicates that x is infeasible, violating the constraint by
+                   an amount proportional to the output.
+                   It is the user's responsibility to ensure that after adding
+                   all constraints, the feasible region is nonempty and has
+                   nonzero measure in the design space.
+                 * 'con_grad' (function): Evaluates the gradients of
+                   ``con_func`` wrt s and sx. Interface should match:
+                   ``dx, ds = con_grad(x, sx)`` where the value ``sx`` is
+                   given by ``sx = sim_func(x)`` at runtime.
+                   The outputs ``dx`` and ``ds`` represent the gradients with
+                   respect to ``x`` and ``sx``, respectively.
+
+        """
+
+        for arg in args:
+            # Check that the constraint dictionary is a legal format
+            if not isinstance(arg, dict):
+                raise TypeError("Each arg must be a Python dict")
+            if 'con_func' in arg:
+                if not callable(arg['con_func']):
+                    raise TypeError("The 'con_func' must be callable")
+                if len(inspect.signature(arg['con_func']).parameters) != 2:
+                    raise ValueError("The 'con_func' must take 2 args")
+            elif 'constraint' in arg:
+                if not callable(arg['constraint']):
+                    raise TypeError("The 'constraint' must be callable")
+                if len(inspect.signature(arg['constraint']).parameters) != 2:
+                    raise ValueError("The 'constraint' must take 2 args")
+            else:
+                raise AttributeError("Each arg must contain a 'con_func'")
+            if 'con_grad' in arg:
+                if not callable(arg['con_grad']):
+                    raise TypeError("The 'con_grad' must be callable")
+                if len(inspect.signature(arg['con_grad']).parameters) != 2:
+                    raise ValueError("If present, 'con_grad' must take 2 args")
+            # Check the constraint name
+            if 'name' in arg:
+                name = arg['name']
+            else:
+                name = f"c{self.p + 1}"
+            check_names(name, self.des_schema, self.sim_schema,
+                        self.obj_schema, self.con_schema)
+            arg['name'] = name
+            # Finally, if all else passed, add the constraint
+            super().addConstraint(arg)
+
+    def addAcquisition(self, *args):
+        """ Add an acquisition function to the MOOP.
+
+        Args:
+            args (dict): Python dictionary of acquisition function info,
+                including:
+                 * 'acquisition' (AcquisitionFunction): An acquisition function
+                   that maps from R^o --> R for scalarizing outputs.
+                 * 'hyperparams' (dict): A dictionary of hyperparameters for
+                   the acquisition functions. Can be omitted if no
+                   hyperparameters are needed.
+
+        """
+
+        for arg in args:
+            # Check that the acquisition dictionary is a legal format
+            if not isinstance(arg, dict):
+                raise TypeError("Every arg must be a Python dict")
+            if 'acquisition' not in arg:
+                raise AttributeError("The 'acquisition' key must be present")
+            if 'hyperparams' in arg:
+                if not isinstance(arg['hyperparams'], dict):
+                    raise TypeError("When present, 'hyperparams' must be a "
+                                    "Python dictionary")
+            else:
+                arg['hyperparams'] = {}
+            try:
+                acq = arg['acquisition'](1, np.zeros(1), np.ones(1), {})
+                if not isinstance(acq, AcquisitionFunction):
+                    raise TypeError(
+                        "'acquisition' must specify a child of the "
+                        "AcquisitionFunction class"
+                    )
+            except BaseException:
+                raise TypeError("'acquisition' must specify a child of the"
+                                + " AcquisitionFunction class")
+            # If all checks passed, add the acquisition to the list
+            super().addAcquisition(arg)
 
     def iterate(self, k, ib=None):
         """ Perform an iteration of ParMOO's solver and generate candidates.
