@@ -1,9 +1,9 @@
 
 """ Contains the MOOP class for defining multiobjective optimization problems.
 
-``parmoo.moop.MOOP`` is the base class for defining and solving multiobjective
-optimization problems (MOOPs). Each MOOP object may contain several
-simulations, specified using dictionaries.
+``parmoo.moop.MOOP`` is the serial implementation of the MOOP_base class for
+defining and solving multiobjective optimization problems (MOOPs). Each MOOP
+object may contain several simulations, specified using dictionaries.
 
 """
 
@@ -36,7 +36,8 @@ class MOOP(MOOP_base):
     and set either an int or ``numpy.random.Generator`` instance
     as the corresponding value.
 
-    Class methods are summarized below.
+    Class methods are summarized below.  Several of these methods may be fully
+    or partially inherited from the ``parmoo.moop_base.MOOP_base`` super class.
 
     To define the MOOP, add each design variable, simulation, objective, and
     constraint by using the following functions:
