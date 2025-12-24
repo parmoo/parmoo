@@ -16,7 +16,27 @@ the following optional hyperparameter keys/values:
 
     from parmoo import searches
 
-Available search techniques are as follows:
+It is also possible to import and extend the ``GlobalSearch`` ABC to implement
+a custom global search technique.
+
+.. code-block:: python
+
+    from parmoo.searches.global_search import GlobalSearch
+
+The ``GlobalSearch`` ABC and existing library of search techniques are
+documented below.
+
+GlobalSearch
+~~~~~~~~~~~~
+
+.. automodule:: searches.global_search
+..    :members: searches/global_search
+
+.. autoclass:: GlobalSearch
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
 
 Latin Hypercube Sampling
 ~~~~~~~~~~~~~~~~~~~~~~~~

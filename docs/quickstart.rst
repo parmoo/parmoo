@@ -127,7 +127,7 @@ Basic Usage
 -----------
 
 ParMOO uses numpy_ and jax_ in an object-oriented design, based around the
-:mod:`MOOP <moop.MOOP>` class.
+:mod:`MOOP <core.moop.MOOP>` class.
 
 Before getting started, note that jax_ runs in single (32-bit) precision
 by default. To run in double precision, the following code is needed at

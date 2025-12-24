@@ -11,7 +11,7 @@ This is the main serial implementation for solving MOOPs with ParMOO.
 
 .. code-block:: python
 
-    from parmoo.core.moop import MOOP
+    from parmoo import MOOP
 
 Use this class to define and solve a MOOP.  Several of the core methods needed
 during setup and usage may be defined in the base class
@@ -72,4 +72,3 @@ In order to solve a MOOP, you must provide an implementation including the
    .. automethod:: _evaluate_penalty
    .. automethod:: _pen_fwd
    .. automethod:: _pen_bwd
-

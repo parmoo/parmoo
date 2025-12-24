@@ -18,7 +18,25 @@ design variable might be implemented.
 
     from parmoo.embeddings import default_embedders
 
-These pre-existing embedders are:
+To implement a custom embedding, import and extend the ``Embedder`` ABC.
+
+.. code-block:: python
+
+    from parmoo.embeddings.embedder import Embedder
+
+The ``Embedder`` class and pre-existing embedders library are documented below.
+
+Embedder
+~~~~~~~~
+
+.. automodule:: embeddings.embedder
+..    :members: embeddings/embedder
+
+.. autoclass:: Embedder
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
 
 Default Embedder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

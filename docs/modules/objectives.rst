@@ -1,9 +1,20 @@
-Objective Templates (ABCs)
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Objective Functions
+-------------------
 
-For templates to define your own objective function, see
-the
-:class:`CompositeFunction ABC in structs <structs.CompositeFunction>`.
+This module provides a library of pre-defined ParMOO objective function
+implementations and templates to define your own objective function.
+
+ObjectiveFunction Template (ABC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: objectives.obj_func
+..    :members: objectives/obj_func
+
+.. autoclass:: ObjectiveFunction
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
 
 Objective Function Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

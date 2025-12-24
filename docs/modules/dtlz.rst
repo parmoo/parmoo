@@ -5,6 +5,11 @@ To facilitate testing and comparison with other methods, we provide
 built-in implementations of the DTLZ problems as ParMOO Simulations and
 Objectives (with gradients defined).
 
+Many of the classes in this library extend the template classes defined in the
+:mod:`simulation <simulations.sim_func>`,
+:mod:`objective <objectives.obj_func>`, and
+:mod:`constraint <constraints.const_func>` ABCs.
+
 .. code-block:: python
 
     from parmoo.simulations import dtlz

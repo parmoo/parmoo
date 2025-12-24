@@ -11,14 +11,29 @@ be used to generate candidate solutions for each iteration.
     from parmoo import optimizers
 
 *Note that when using a gradient-based technique, you must provide
-gradient evaluation options for all objective and constraint functions,
-by adding code to handle the optional ``der`` input.*
+gradient evaluation options for all objective and constraint functions.*
+
+To implement a custom surrogate optimizer, import and extend the
+``SurrogateOptimizer`` ABC.
 
 .. code-block:: python
 
-    def f(x, sx, der=0):
-        # When using gradient-based solvers, define extra if-cases for
-        # handling der=1 (calculate df/dx) and der=2 (calculate df/dsx).
+    from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
+
+The ``SurrogateOptimizer`` ABC and library of all available implementations in
+ParMOO are documented below.
+
+SurrogateOptimizer
+~~~~~~~~~~~~~~~~~~
+
+.. automodule:: optimizers.surrogate_optimizer
+..    :members: optimizers/surrogate_optimizer
+
+.. autoclass:: SurrogateOptimizer
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
 
 Pattern Search Techniques (gradient-free)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
