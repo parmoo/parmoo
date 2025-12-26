@@ -33,7 +33,7 @@ The name Key and Input/Output Types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following `named_var_ex.py <https://github.com/parmoo/parmoo/blob/main/examples/named_var_ex.py>`_ code demonstrates ParMOO's output datatypes
-and proper definition of the :mod:`MOOP <moop.MOOP>` object.
+and proper definition of the :mod:`MOOP <core.moop.MOOP>` object.
 
 .. literalinclude:: ../../examples/named_var_ex.py
     :language: python

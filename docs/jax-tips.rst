@@ -96,7 +96,7 @@ classes such as ``surrogate.fit()`` or ``acquisition.setTarget()`` also
 do not need to jit as they are not on the critical path.
 
 For users interested in implementing custom solvers, there are notes in the
-:mod:`structs module <structs>`.
+ABC for each of the solver components.
 
 
 .. _jax: https://jax.readthedocs.io/en/latest/

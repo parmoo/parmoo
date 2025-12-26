@@ -185,8 +185,7 @@ Frequently asked questions:
          optimizers.
        - If you're a professional optimizer or researcher and you want
          to try your own methods, then you can do so by writing your own
-         implementation for one of our
-         :mod:`Abstract Base Classes <structs>`.
+         implementation for one of our abstract base classes.
          If you try a novel method and it works and you're ready to publish
          it, consider sharing your novel solver on the
          parmoo_solver_farm_!

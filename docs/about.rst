@@ -163,7 +163,7 @@ users to interchange.
 
 You may mix and match built-in techniques to generate your own unique MOOP
 solver, or you may implement your own techniques by employing one of
-the abstract base classes defined in ``parmoo.structs``.
+the abstract base classes defined in ParMOO's solver components libraries.
 
 Glossary
 --------

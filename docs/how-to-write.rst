@@ -4,7 +4,7 @@ Write a ParMOO Script
 The MOOP class
 --------------
 
-The :mod:`MOOP <moop.MOOP>` class is the fundamental data structure in
+The :class:`MOOP <core.moop.MOOP>` class is the fundamental data structure in
 ParMOO.
 
 ..
@@ -29,8 +29,8 @@ ParMOO.
     |
     |    |
 
-To create an instance of the :mod:`MOOP <moop.MOOP>` class,
-use the :meth:`constructor <moop.MOOP.__init__>`.
+To create an instance of the :class:`MOOP <core.moop.MOOP>` class,
+use the :meth:`constructor <core.moop.MOOP.__init__>`.
 
 .. code-block:: python
 
@@ -38,7 +38,8 @@ use the :meth:`constructor <moop.MOOP.__init__>`.
     moop = MOOP(optimizer, hyperparams=hp)
 
 In the above code snippet, ``optimizer`` should be an implementation
-of the :mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`
+of the
+:class:`SurrogateOptimizer <optimizers.surrogate_optimizer.SurrogateOptimizer>`
 Abstract-Base-Class (ABC),
 and the optional input ``hp`` is a dictionary of hyperparameters for the
 ``optimizer`` object.
@@ -68,15 +69,15 @@ To avoid issues, it is best to define your MOOP in the following order,
 but as of version 0.4.0, this is no longer a requirement.
 
  1. Add design variables using
-    :meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>`.
+    :meth:`MOOP.addDesign(*args) <core.moop.MOOP.addDesign>`.
  2. Add simulations using
-    :meth:`MOOP.addSimulation(*args) <moop.MOOP.addSimulation>`.
+    :meth:`MOOP.addSimulation(*args) <core.moop.MOOP.addSimulation>`.
  3. Add objectives using
-    :meth:`MOOP.addObjective(*args) <moop.MOOP.addObjective>`.
+    :meth:`MOOP.addObjective(*args) <core.moop.MOOP.addObjective>`.
  4. Add constraints using
-    :meth:`MOOP.addConstraint(*args) <moop.MOOP.addConstraint>`.
+    :meth:`MOOP.addConstraint(*args) <core.moop.MOOP.addConstraint>`.
  5. Add acquisitions using
-    :meth:`MOOP.addAcquisition(*args) <moop.MOOP.addAcquisition>`.
+    :meth:`MOOP.addAcquisition(*args) <core.moop.MOOP.addAcquisition>`.
 
 All of these methods accept one or more ``args``, each of which is a
 dictionary, as detailed in the corresponding sections below.
@@ -118,10 +119,13 @@ conventions are no longer supported.
 After adding all design variables, simulations, objectives, and constraints
 to the MOOP, you can check the numpy dtype for each of these by using
 
- * :meth:`MOOP.getDesignType() <moop.MOOP.getDesignType>`,
- * :meth:`MOOP.getSimulationType() <moop.MOOP.getSimulationType>`,
- * :meth:`MOOP.getObjectiveType() <moop.MOOP.getObjectiveType>`, and
- * :meth:`MOOP.getConstraintType() <moop.MOOP.getConstraintType>`.
+ * :meth:`MOOP.getDesignType() <core.moop_base.MOOP_base.getDesignType>`,
+ * :meth:`MOOP.getSimulationType()
+   <core.moop_base.MOOP_base.getSimulationType>`,
+ * :meth:`MOOP.getObjectiveType()
+   <core.moop_base.MOOP_base.getObjectiveType>`, and
+ * :meth:`MOOP.getConstraintType()
+   <core.moop_base.MOOP_base.getConstraintType>`.
 
 .. literalinclude:: ../examples/named_var_ex.py
     :language: python
@@ -144,8 +148,8 @@ version 0.4.0.
 Adding Design Variables
 -----------------------
 
-Design variables are added to your :mod:`MOOP <moop.MOOP>` object
-using the :meth:`addDesign(*args) <moop.MOOP.addDesign>` method.
+Design variables are added to your :class:`MOOP <core.moop.MOOP>` object
+using the :meth:`addDesign(*args) <core.moop.MOOP.addDesign>` method.
 ParMOO currently supports
 several types of design variables:
 
@@ -233,7 +237,7 @@ To add a custom design variable, use the following format.
 |
 
  * The ``embedder`` key should be an instance of the
-   :class:`Embedder <structs.Embedder>` class,
+   :class:`Embedder <embeddings.embedder.Embedder>` class,
    defining a user-provided embedding.
    **Warning:** if jax cannot jit the ``embed`` and ``extract`` methods
    for this class, ParMOO's iterations may become extremely slow.
@@ -258,8 +262,8 @@ before solving.
 Adding Simulations
 ------------------
 
-Before you can add a simulation to your :mod:`MOOP <moop.MOOP>`, you must
-define the simulation function.
+Before you can add a simulation to your :class:`MOOP <core.moop.MOOP>`, you
+must define the simulation function.
 
 *The simulation function can be either a Python function or a callable object
 whose __call__ method matches the signature below.*
@@ -279,8 +283,8 @@ For example, with three design variables named ``x1``, ``x2``, and
     def quadratic_sim(x):
         return np.array([x["x1"] ** 2 + x["x2"] ** 2 + x["x3"] ** 2])
 
-To add your simulation to the :mod:`MOOP <moop.MOOP>` object,
-use the :meth:`addSimulation(*args) <moop.MOOP.addSimulation>` method.
+To add your simulation to the :class:`MOOP <core.moop.MOOP>` object,
+use the :meth:`addSimulation(*args) <core.moop.MOOP.addSimulation>` method.
 
 .. code-block:: python
 
@@ -299,10 +303,11 @@ In the above example,
    :ref:`name key <naming>`;
  * ``m`` specifies the number of outputs for this simulation;
  * ``sim_func`` is given a reference to the simulation function;
- * ``search`` specifies the :mod:`GlobalSearch <structs.GlobalSearch>`
+ * ``search`` specifies the
+   :class:`GlobalSearch <searches.global_search.GlobalSearch>`
    that you will use when generating data for this particular simulation;
  * ``surrogate`` specifies the class of
-   :mod:`SurrogateFunction <structs.SurrogateFunction>`
+   :class:`SurrogateFunction <surrogates.surrogate_function.SurrogateFunction>`
    that you will use to model this particular simulation's output;
  * ``hyperparams`` is a dictionary of hyperparameter values that will be
    passed to the surrogate and search technique objects.
@@ -350,7 +355,7 @@ design variable named ``MyDes``.
 in order to offer better support for ``jax.jit()`` compilation.
 
 If you are using a gradient-based
-:mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`,
+:class:`SurrogateOptimizer <optimizers.surrogate_optimizer.SurrogateOptimizer>`
 then you are required to supply an additional function for evaluating
 the gradient of your objective with respect to both ``x`` and ``sim`` inputs.
 
@@ -386,7 +391,7 @@ solver, see :ref:`Solving a MOOP with Derivative-Based Solvers <advanced_ex>`
 in :doc:`Basic Tutorials <tutorials/basic-tutorials>`.
 
 To add the objective(s), use the
-:mod:`MOOP.addObjective(*args) <moop.MOOP.addObjective>` method.
+:mod:`MOOP.addObjective(*args) <core.moop.MOOP.addObjective>` method.
 
 .. code-block:: python
 
@@ -427,8 +432,8 @@ following constraint functions.
         return x["MyDes"] - 0.9
 
 As with objectives, if you want to use a gradient-based
-:mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`, you must
-modify the above constraint functions as follows.
+:class:`SurrogateOptimizer <optimizers.surrogate_optimizer.SurrogateOptimizer>`
+then you must modify the above constraint functions as follows.
 
 .. code-block:: python
 
@@ -451,7 +456,7 @@ modify the above constraint functions as follows.
         return dx, ds
 
 To add the constraint(s), use the
-:mod:`MOOP.addConstraint(*args) <moop.MOOP.addConstraint>` method.
+:mod:`MOOP.addConstraint(*args) <core.moop.MOOP.addConstraint>` method.
 
 .. code-block:: python
 
@@ -475,7 +480,7 @@ Adding Acquisitions
 
 After you have added all of the design variables, simulations, objectives,
 and constraints to your MOOP, you must add one or more acquisitions
-using the :meth:`MOOP.addAcquisition(*args) <moop.MOOP.addAcquisition>`
+using the :meth:`MOOP.addAcquisition(*args) <core.moop.MOOP.addAcquisition>`
 method.
 
 .. code-block:: python
@@ -488,11 +493,13 @@ method.
 
 The acquisition dictionary may contain two keys:
  * ``acquisition`` (required) specifies one
-   :mod:`AcquisitionFunction <structs.AcquisitionFunction>`
+   :class:`AcquisitionFunction
+   <acquisitions.acquisition_function.AcquisitionFunction>`
    that you would like to use for this problem; and
  * ``hyperparams`` (optional) specifies a dictionary of hyperparameter
    values that are used by the specified
-   :mod:`AcquisitionFunction <structs.AcquisitionFunction>`.
+   :class:`AcquisitionFunction
+   <acquisitions.acquisition_function.AcquisitionFunction>`.
 
 The number of acquisitions added determines the batch size for each of
 ParMOO's batches of simulation evaluations (which could be done in parallel).
@@ -505,15 +512,15 @@ Using a Precomputed Simulation Database
 ---------------------------------------
 
 If you would like to specify a precomputed database, use the
-:meth:`MOOP.updateSimDb(x, sx, s_name) <moop.MOOP.updateSimDb>`
+:meth:`MOOP.updateSimDb(x, sx, s_name) <core.moop_base.MOOP_base.updateSimDb>`
 method to add all simulation data into ParMOO's database after creating
 your MOOP but before solving.
 Be careful not to add duplicate points, because these could cause numerical
 issues when fitting surrogate models.
 
 Before doing so, you must first call the
-:meth:`MOOP.compile() <moop.MOOP.compile>` method to "finalize" the
-definition of your MOOP.
+:meth:`MOOP.compile() <core.moop_base.MOOP_base.compile>` method to "finalize"
+the definition of your MOOP.
 This can only be done once, so be sure that you are done defining the MOOP
 before doing so.
 If you turn on logging first (see below), ParMOO will attempt to jit all
@@ -574,7 +581,8 @@ a crash.
 Checkpointing is off by default.
 To turn it on, use the method:
 
- * :meth:`setCheckpoint(checkpoint, [checkpoint_data, filename]) <moop.MOOP.setCheckpoint>`
+ * :meth:`setCheckpoint(checkpoint, [filename])
+   <core.moop_base.MOOP_base.setCheckpoint>`
 
 .. code-block:: python
 
@@ -592,15 +600,14 @@ For this to work:
  * All functions (such as simulation functions, objective functions, and
    constraint functions) are defined in the global scope;
  * All modules are reloaded before attempting to recover a previously-saved
-   MOOP object (by calling the :meth:`load(filename) <moop.MOOP.load>` method);
+   MOOP object (by calling the
+   :meth:`load(filename) <core.moop_base.MOOP_base.load>` method);
  * ParMOO cannot reload ``lambda`` functions. Use only regular functions
    and callable objects when checkpointing.
 
-If the option argument ``checkpoint_data`` is set to ``True`` (default),
-the ParMOO will also save a second copy of all simulation evaluations in a
-human-readable JSON file in the same directory, with the name
+When checkpointins is active, ParMOO will also save a copy of all simulation
+evaluations in a human-readable JSON file in the same directory, with the name
 ``parmoo.simdb.json``.
-This file is not used by ParMOO, it is only provided for user-convenience.
 
 Reloading After Crash or Early Stop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -644,11 +651,12 @@ The result is the following.
 Methods for Solving
 -------------------
 
-Once you have finished creating your :mod:`MOOP <moop.MOOP>` object and
+Once you have finished creating your :class:`MOOP <core.moop.MOOP>` object and
 adding all design variables, simulations, objectives, constraints,
 and acquisitions, you are ready to solve your problem.
 
-The easiest way to solve is by using :meth:`MOOP.solve(k) <moop.MOOP.solve>`.
+The easiest way to solve is by using
+:meth:`MOOP.solve(k) <core.moop.MOOP.solve>`.
 Here, ``k`` is the number of iterations of ParMOO's algorithm
 that you would like to perform.
 Note that a value of ``k=0`` is legal, and will result in ParMOO
@@ -662,14 +670,16 @@ without ever attempting to solve a single scalarized surrogate problems.
 
 Note that the above command will perform all simulation evaluations serially.
 To generate a batch of simulations that you could evaluate in parallel,
-use :meth:`MOOP.iterate(k) <moop.MOOP.iterate>`, where ``k`` is the iteration
-index.
+use :meth:`MOOP.iterate(k) <core.moop.MOOP.iterate>`, where ``k`` is the
+iteration index.
 You can let ParMOO handle the simulation evaluations with
-:meth:`MOOP.evaluateSimulation(x, s_name) <moop.MOOP.evaluateSimulation>`,
+:meth:`MOOP.evaluateSimulation(x, s_name)
+<core.moop_base.MOOP_base.evaluateSimulation>`,
 or you can evaluate the simulations yourself and add them to the simulation
 database using
-:meth:`MOOP.updateSimDb(x, sx, s_name) <moop.MOOP.updateSimDb>`.
-Afterward, call :meth:`MOOP.updateAll(k, batch) <moop.MOOP.updateAll>` to
+:meth:`MOOP.updateSimDb(x, sx, s_name) <core.moop_base.MOOP_base.updateSimDb>`.
+Afterward, call
+:meth:`MOOP.updateAll(k, batch) <core.moop_base.MOOP_base.updateAll>` to
 update the surrogate models and objective database.
 
 .. code-block:: python
@@ -709,7 +719,7 @@ Viewing Your Results
 --------------------
 
 After solving the MOOP, you can view the results using
-:meth:`MOOP.getPF() <moop.MOOP.getPF>`.
+:meth:`MOOP.getPF() <core.moop_base.MOOP_base.getPF>`.
 
 .. code-block:: python
 
@@ -724,9 +734,9 @@ However, you can change it to a pandas dataframe using the optional
     soln = moop.getPF(format="pandas")
 
 To get the full simulation and objective databases, you can also use
-:meth:`MOOP.getSimulationData() <moop.MOOP.getSimulationData>`
+:meth:`MOOP.getSimulationData() <core.moop_base.MOOP_base.getSimulationData>`
 and
-:meth:`MOOP.getObjectiveData() <moop.MOOP.getObjectiveData>`.
+:meth:`MOOP.getObjectiveData() <core.moop_base.MOOP_base.getObjectiveData>`.
 
 .. code-block:: python
 
@@ -762,10 +772,13 @@ Built-in and Custom Components
 By now you can see that the performance of ParMOO is determined
 by your choices of
 
- * :mod:`AcquisitionFunction <structs.AcquisitionFunction>`,
- * :mod:`GlobalSearch <structs.GlobalSearch>`,
- * :mod:`SurrogateFunction <structs.SurrogateFunction>`, and
- * :mod:`SurrogateOptimizer <structs.SurrogateOptimizer>`.
+ * :class:`AcquisitionFunction
+   <acquisitions.acquisition_function.AcquisitionFunction>`,
+ * :class:`GlobalSearch <searches.global_search.GlobalSearch>`,
+ * :class:`SurrogateFunction
+   <surrogates.surrogate_function.SurrogateFunction>`, and
+ * :class:`SurrogateOptimizer
+   <optimizers.surrogate_optimizer.SurrogateOptimizer>`.
 
 You can find the current options for each of these in the following modules.
 
@@ -775,5 +788,4 @@ You can find the current options for each of these in the following modules.
  * :doc:`parmoo.optimizers <modules/optimizers>`
 
 You can also create your own custom implementations for each of the above,
-by implementing one of the abstract base classes in :mod:`structs`.
-
+by implementing the abstract base classes.
