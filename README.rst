@@ -348,8 +348,9 @@ Our design principles paper:
         title = {Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
         author = {Tyler H. Chang and Stefan M. Wild},
         journal = {INFORMS Journal on Computing},
-        year = {2025},
+        year = {2026},
         doi = {10.1287/ijoc.2023.0250},
+        arxivnumber = {2304.06881},
         note = {To appear}
     }
 
