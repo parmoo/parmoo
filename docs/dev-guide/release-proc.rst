@@ -20,6 +20,7 @@ Before release
   - *Citing ParMOO* correct?
   - ``docs/refs.rst`` correct?
   - Coverage badge branch set to ``main`` (for badge and link)?
+  - Email the address listed under Resources and confirm that you have received a response; if not, this address needs to be updated also in ``docs/refs.rst``, ``docs/quickstart.rst``, ``CONTRIBUTING.rst``, ``setup.py``, ``SUPPORT.rst``, and possibly other places.
 
 - Check for spelling mistakes and typos in the docs and Python docstrings:
   - ``pyspelling -c .github/config/.spellcheck.yml``
@@ -38,7 +39,7 @@ Before release
 
 - Tests are run with source to be released (this may iterate):
 
-  - On-line CI (GitHub Actions) tests must pass.
+  - On-line CI (GitHub Actions) tests must pass [#tests1]_. 
 
   - Documentation must build and display correctly wherever hosted (currently
     readthedocs.org).
@@ -46,7 +47,7 @@ Before release
 - Pull request from either the develop or release branch to main requesting
   one or more reviewers (including at least one other administrator).
 
-- Reviewer will check that all tests have passed and will then approve merge.
+- Reviewer will check that all tests have passed [#tests1]_ and will then approve merge.
 
 During release
 --------------
@@ -55,7 +56,7 @@ An administrator will take the following steps.
 
 - Merge the pull request into main.
 
-- Once CI tests have passed on main:
+- Once CI tests have passed [#tests1]_ on main:
 
   - A GitHub release will be taken from the main
 
@@ -81,3 +82,9 @@ After release
 - Check that the conda-forge package has tracked latest release
   and update dependency list if needed -- an admin will need to approve the
   automatically generated PR on https://github.com/conda-forge/parmoo-feedstock
+
+
+.. rubric:: Footnote
+
+.. [#tests1] If coverage tests do not pass (i.e., coverage decreases), this should be
+  noted in PR/review as well as in the release notes.
