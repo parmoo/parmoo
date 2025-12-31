@@ -1,3 +1,4 @@
 sphinx==2.4.1
 sphinxcontrib-bibtex
+sphinx-rtd-theme
 ipykernel
