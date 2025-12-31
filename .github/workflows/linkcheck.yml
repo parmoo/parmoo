@@ -21,11 +21,11 @@ jobs:
       - name: Install documentation dependencies
         run: |
           pip install Sphinx
-          # Install any other dependencies your docs need (e.g., your project itself, specific Sphinx extensions)
-          # pip install -r docs/requirements.txt 
+          # Install any other dependencies docs need (e.g., jax module is needed)
+          pip install -r docs/requirements.txt 
 
       - name: Run Sphinx linkcheck
         run: |
           # Replace 'docs' with the path to your source directory if it's different
           sphinx-build -W -b linkcheck docs build/linkcheck
-        continue-on-error: true # Set to false if you want the action to fail on broken links
+        continue-on-error: false # Set to false if you want the action to fail on broken links
