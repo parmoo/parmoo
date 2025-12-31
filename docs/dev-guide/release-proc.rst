@@ -17,10 +17,17 @@ Before release
   (in ``parmoo/version.py``, ``README.rst``, and ``docs/refs.rst``).
 
 - Check ``README.rst``: 
-  - *Citing ParMOO* correct?
-  - ``docs/refs.rst`` correct?
+
+  - *Citing ParMOO* entries correct?
+
+  - ``docs/refs.rst`` correct and all entries reflect the README?
+
   - Coverage badge branch set to ``main`` (for badge and link)?
-  - Email the address listed under Resources and confirm that you have received a response; if not, this address needs to be updated also in ``docs/refs.rst``, ``docs/quickstart.rst``, ``CONTRIBUTING.rst``, ``setup.py``, ``SUPPORT.rst``, and possibly other places.
+
+  - Email the address listed under Resources and confirm that you have 
+    received a response; if not, this address needs to be updated also in 
+    ``docs/refs.rst``, ``docs/quickstart.rst``, ``CONTRIBUTING.rst``, 
+    ``setup.py``, ``SUPPORT.rst``, and possibly other places.
 
 - Check for spelling mistakes and typos in the docs and Python docstrings:
   - ``pyspelling -c .github/config/.spellcheck.yml``
