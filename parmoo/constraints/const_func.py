@@ -1,4 +1,4 @@
-""" An abstract base classes (ABC) for ParMOO constraint functions. """
+""" An abstract base class (ABC) for ParMOO constraint functions. """
 
 from abc import ABC, abstractmethod
 import numpy as np
