@@ -20,7 +20,7 @@ Before release
 
   - *Citing ParMOO* entries correct?
 
-  - ``docs/refs.rst`` correct and all entries reflect the README?
+    - Citations in ``docs/refs.rst`` and ``docs/tutorials/local_method.rst`` consistent with associated entries in ``README.rst``?
 
   - Coverage badge branch set to ``main`` (for badge and link)?
 
