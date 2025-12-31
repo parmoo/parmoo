@@ -151,7 +151,7 @@ After installation, you can run the tests using either:
 .. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
-.. _jax: https://jax.readthedocs.io/en/latest/
+.. _jax: https://docs.jax.dev/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _libEnsemble_documentation: https://libensemble.readthedocs.io/en/main/advanced_installation.html
