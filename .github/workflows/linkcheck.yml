@@ -22,7 +22,7 @@ jobs:
         run: |
           pip install Sphinx
           # Install any other dependencies docs need (e.g., jax module is needed)
-          pip install -r docs/requirements.txt 
+          pip install -r requirements.txt 
 
       - name: Run Sphinx linkcheck
         run: |
