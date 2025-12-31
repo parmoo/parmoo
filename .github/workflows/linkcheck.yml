@@ -29,5 +29,6 @@ jobs:
       - name: Run Sphinx linkcheck
         run: |
           # Replace 'docs' with the path to your source directory if it's different
-          sphinx-build -W -b linkcheck docs build/linkcheck
+          sphinx-build -W -b -n linkcheck docs build/linkcheck
+          # Note: -n enables nitpicky mode to better handle internal links
         continue-on-error: false # Set to false if you want the action to fail on broken links
