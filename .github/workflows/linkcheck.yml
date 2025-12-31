@@ -1,0 +1,31 @@
+name: Check links, especially in docs
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  linkcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install documentation dependencies
+        run: |
+          pip install Sphinx
+          # Install any other dependencies your docs need (e.g., your project itself, specific Sphinx extensions)
+          # pip install -r docs/requirements.txt 
+
+      - name: Run Sphinx linkcheck
+        run: |
+          # Replace 'docs' with the path to your source directory if it's different
+          sphinx-build -W -b linkcheck docs build/linkcheck
+        continue-on-error: true # Set to false if you want the action to fail on broken links
