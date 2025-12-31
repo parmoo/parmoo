@@ -1,4 +1,5 @@
 sphinx==8.2.3
 sphinxcontrib-bibtex
 sphinx-rtd-theme
-ipykernel
+sphinx-design
+pykernel
