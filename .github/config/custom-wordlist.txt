@@ -28,6 +28,7 @@ Jacobian
 Jittable
 Jitting
 Kaleido
+kaleido
 LBFGS
 LBFGSB
 LHS

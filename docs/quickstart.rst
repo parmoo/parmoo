@@ -48,7 +48,7 @@ ParMOO has been tested on Unix/Linux and MacOS systems.
 
 ParMOO's base has the following dependencies:
 
- * Python_ 3.8+
+ * Python_ 3.9+
  * jax_ -- for algorithmic differentiation and just-in-time (jit) compilation
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
@@ -347,7 +347,7 @@ Please read our LICENSE_ and CONTRIBUTING_ files.
 .. _GitHub: https://github.com/parmoo/parmoo
 .. _jax: https://jax.readthedocs.io/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
-.. _kaleido_get_chrome: https://pypi.org/project/kaleido/
+.. _kaleido_get_chrome: https://pypi.org/project/kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
