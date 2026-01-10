@@ -104,6 +104,10 @@ To install *all* dependencies (including libEnsemble) use:
 
     pip install < --user > "parmoo[extras]"
 
+Note that the full feature set for libEnsemble_ and kaleido_ may require you to
+separately install an MPI implementation (such as Open_MPI_) and Google chrome
+(e.g., via kaleido_get_chrome_), respectively.
+
 You can also clone this project from our GitHub_ and ``pip`` install it
 in-place, so that you can easily pull the latest version or checkout
 the ``develop`` branch for pre-release features.
@@ -132,12 +136,28 @@ Before doing so, it is recommended to create a new conda environment using:
 Testing
 -------
 
-If you have pytest_ with the pytest-cov_ plugin and flake8_ installed,
-then you can test your installation.
+You can install pytest_ with the pytest-cov_ plugin and flake8_ using the
+``tests`` extension, then you can lint the project with ``flake8`` and run the
+unit tests for your installation using ``pytest``. After running unit tests,
+you can view the coverage report using the ``coverage report`` command.
 
 .. code-block:: bash
 
-   python3 setup.py test
+   pip install -e ".[tests]"
+   flake8
+   pytest
+   coverage report
+
+Running the regression tests and libensemble tests is a bit more involved and
+is usually accomplished via the ``-l`` flag for the
+``parmoo/tests/run-tests.sh`` script.
+
+To run all the linter, unit tests, regression tests, and generate the coverage
+report in a single command, run the script with all 4 flags set.
+
+.. code-block::bash
+
+   ./parmoo/tests/run-tests.sh -curl
 
 These tests are run regularly using GitHub Actions_.
 
@@ -363,9 +383,11 @@ Our design principles paper:
 .. _GitHub: https://github.com/parmoo/parmoo
 .. _jax: https://jax.readthedocs.io/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
+.. _kaleido_get_chrome: https://pypi.org/project/kaleido/
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
+.. _Open_MPI: https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/quickstart.html
 .. _pandas: https://pandas.pydata.org
 .. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _plotly: https://plotly.com/python
