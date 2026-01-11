@@ -8,7 +8,7 @@ ParMOO can be installed with ``pip`` or directly from its GitHub_ source.
 ParMOO's base has the following dependencies, which may be automatically
 installed depending on your choice of method:
 
- * Python_ 3.8+
+ * Python_ 3.9+
  * jax_ -- for algorithmic differentiation and just-in-time (jit) compilation
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
@@ -30,6 +30,10 @@ If you want to run the tests (in ``parmoo.tests``), then you will also need:
  * pytest_,
  * pytest-cov_, and
  * flake8_.
+
+Note that the full feature set for libEnsemble_ and kaleido_ may require you to
+separately install an MPI implementation (such as Open_MPI_) and Google chrome
+(e.g., via kaleido_get_chrome_), respectively.
 
 pip
 ---
@@ -153,9 +157,11 @@ After installation, you can run the tests using either:
 .. _GitHub: https://github.com/parmoo/parmoo
 .. _jax: https://docs.jax.dev/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
+.. _kaleido_get_chrome: https://pypi.org/project/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _libEnsemble_documentation: https://libensemble.readthedocs.io/en/main/advanced_installation.html
 .. _numpy: https://numpy.org
+.. _Open_MPI: https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/quickstart.html
 .. _pandas: https://pandas.pydata.org
 .. _plotly: https://plotly.com/python
 .. _pytest: https://docs.pytest.org/en/7.0.x
