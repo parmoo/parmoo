@@ -86,12 +86,14 @@ in Section 5:
 
 .. code-block:: bibtex
 
-    @techreport{parmoo-design,
-        author={Chang, Tyler H. and Wild, Stefan M.},
-        title={Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
-        year={2023},
-        institution={arXiv preprint},
-        doi={10.48550/arXiv.2304.06881}
+    @article{ParMOODesign25,
+        title = {Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
+        author = {Tyler H. Chang and Stefan M. Wild},
+        journal = {INFORMS Journal on Computing},
+        year = {2026},
+        doi = {10.1287/ijoc.2023.0250},
+        arxivnumber = {2304.06881},
+        note = {To appear}
     }
 
 

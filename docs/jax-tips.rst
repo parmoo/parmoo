@@ -99,6 +99,6 @@ For users interested in implementing custom solvers, there are notes in the
 ABC for each of the solver components.
 
 
-.. _jax: https://jax.readthedocs.io/en/latest/
-.. _jax_sharp_bits: https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html
+.. _jax: https://docs.jax.dev/en/latest/
+.. _jax_sharp_bits: https://docs.jax.dev/en/latest/notebooks/Common_Gotchas_in_JAX.html
 .. _tutorials: tutorials/basic-tutorials.html
