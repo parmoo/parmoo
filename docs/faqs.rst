@@ -119,7 +119,7 @@ Frequently asked questions:
        - For practical purposes: you could solve the problem with ParMOO on
          as large of a budget as you can afford with checkpointing turned
          on. Then plot the results using one of the methods from our
-         :mod:`viz <viz>`
+         viz_
          library and see how you are doing. If you are unsatisfied with the
          results, re-load from the last checkpoint and solve with a few added
          iterations. Then plot your results again and see if the performance
@@ -202,3 +202,4 @@ with us inspired this FAQ:
 .. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _quickstart: quickstart.html
 .. _tutorials: tutorials/basic-tutorials.html
+.. _viz: modules/viz.html

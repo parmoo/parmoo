@@ -127,7 +127,7 @@ Basic Usage
 -----------
 
 ParMOO uses numpy_ and jax_ in an object-oriented design, based around the
-:mod:`MOOP <core.moop.MOOP>` class.
+:class:`MOOP <core.moop.MOOP>` class.
 
 Before getting started, note that jax_ runs in single (32-bit) precision
 by default. To run in double precision, the following code is needed at
@@ -144,8 +144,8 @@ However, in many use cases, 32-bit precision may be enough and provides
 substantial speedup in iteration tasks.
 
 Once the precision is set, to get started,
-create a :mod:`MOOP <moop.MOOP>` object, using the
-:meth:`constructor <moop.MOOP.__init__>`.
+create a :class:`MOOP <core.moop.MOOP>` object, using the
+:meth:`constructor <core.moop.MOOP.__init__>`.
 
 .. code-block:: python
 
@@ -165,7 +165,7 @@ that the ``my_moop`` object will use to solve the scalarized surrogate
 problems.
 
 Next, add design variables to the problem as follows using the
-:meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>` method.
+:meth:`MOOP.addDesign(*args) <core.moop.MOOP.addDesign>` method.
 In this example, we define one continuous and one categorical design variable.
 Other options include integer, custom, and raw (using raw variables is not
 recommended except for expert users).
@@ -186,7 +186,7 @@ recommended except for expert users).
                      })
 
 Next, add simulations to the problem as follows using the
-:meth:`MOOP.addSimulation(*args) <moop.MOOP.addSimulation>` method.
+:meth:`MOOP.addSimulation(*args) <core.moop.MOOP.addSimulation>` method.
 In this example, we define a toy simulation ``sim_func(x)``.
 
 .. code-block:: python
@@ -213,8 +213,8 @@ In this example, we define a toy simulation ``sim_func(x)``.
                          })
 
 Now we can add objectives and constraints using
-:meth:`MOOP.addObjective(*args) <moop.MOOP.addObjective>` and
-:meth:`MOOP.addConstraint(*args) <moop.MOOP.addConstraint>`.
+:meth:`MOOP.addObjective(*args) <core.moop.MOOP.addObjective>` and
+:meth:`MOOP.addConstraint(*args) <core.moop.MOOP.addConstraint>`.
 In this example, there are 2 objectives (each corresponding to a single
 simulation output) and one constraint.
 
@@ -231,7 +231,7 @@ simulation output) and one constraint.
    my_moop.addConstraint({'name': "c1", 'con_func': c1})
 
 Finally, we must add one or more acquisition functions using
-:meth:`MOOP.addAcquisition(*args) <moop.MOOP.addAcquisition>`.
+:meth:`MOOP.addAcquisition(*args) <core.moop.MOOP.addAcquisition>`.
 These are used to scalarize the surrogate problems.
 The number of acquisition functions
 typically determines the number of simulation evaluations per batch.
@@ -247,9 +247,9 @@ This is useful to know if you are using a parallel solver.
                               'hyperparams': {}})
 
 Finally, the MOOP is solved using the
-:meth:`MOOP.solve(budget) <moop.MOOP.solve>` method, and the
+:meth:`MOOP.solve(budget) <core.moop.MOOP.solve>` method, and the
 results can be viewed using
-:meth:`MOOP.getPF() <moop.MOOP.getPF>`.
+:meth:`MOOP.getPF() <core.moop.MOOP.getPF>`.
 
 .. code-block:: python
 
