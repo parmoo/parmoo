@@ -1,0 +1,31 @@
+name: Check links, especially in docs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linkcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Warning: hard coded to align with parmoo-ci.yml
+
+      - name: Install documentation dependencies
+        run: |
+          pip install Sphinx
+          # Install any other dependencies docs need (e.g., jax module is needed)
+          pip install -r REQUIREMENTS
+          # Install any other dependencies Sphinx docs need
+          pip install -r docs/REQUIREMENTS.txt           
+
+      - name: Run Sphinx linkcheck
+        run: |
+          # Replace 'docs' with the path to your source directory if it's different
+          sphinx-build -n -W -b linkcheck docs build/linkcheck
+          # Note: -n enables nitpicky mode to better handle internal links
+        continue-on-error: false # Set to false if you want the action to fail on broken links
