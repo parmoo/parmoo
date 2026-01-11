@@ -1,4 +1,4 @@
-""" An abstract base classes (ABC) for ParMOO objective functions. """
+""" An abstract base class (ABC) for ParMOO objective functions. """
 
 from abc import ABC, abstractmethod
 import numpy as np
