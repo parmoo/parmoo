@@ -569,7 +569,7 @@ def check_moops(moop1, moop2):
             moop2.o == moop1.o and moop2.p == moop1.p and
             moop2.s == moop1.s and
             len(moop2.getObjectiveData()) == len(moop2.getObjectiveData()) and
-            moop2.lam == moop1.lam and
+            moop2.penalty_param == moop1.penalty_param and
             moop2.iteration == moop1.iteration)
     # Check lists
     assert (all([dt2i == dt1i for dt2i, dt1i in zip(moop2.latent_des_tols,

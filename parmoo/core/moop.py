@@ -7,26 +7,22 @@ simulations, specified using dictionaries.
 
 """
 
-import codecs
-from importlib import import_module
 import inspect
 from jax import numpy as jnp
-import json
 import logging
 import numpy as np
-from os.path import exists as file_exists
+import warnings
 
-from parmoo.moop_base import MOOP_base
+from parmoo.acquisitions.acquisition_function import AcquisitionFunction
+from parmoo.core.moop_base import MOOP_base
+from parmoo.core.moop_checks import check_sims
 from parmoo.databases import NumpyDatabase
-from parmoo import structs
 from parmoo.embeddings.default_embedders import ContinuousEmbedder,  \
                                                 IntegerEmbedder,     \
                                                 CategoricalEmbedder, \
                                                 IdentityEmbedder
-from parmoo.util import check_names, check_sims
-import pickle
-import shutil
-import warnings
+from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
+from parmoo.utilities.error_checks import check_names
 
 
 class MOOP(MOOP_base):
@@ -67,7 +63,7 @@ class MOOP(MOOP_base):
      * ``MOOP.getConstraintType()``
 
     To turn on checkpointing use:
-     * ``MOOP.setCheckpoint(checkpoint, [checkpoint_data, filename])``
+     * ``MOOP.setCheckpoint(checkpoint, [filename="parmoo"])``
 
     ParMOO also offers logging. To turn on logging, activate INFO-level
     logging by importing Python's built-in logging module.
@@ -112,7 +108,7 @@ class MOOP(MOOP_base):
                  # Schemas
                  'des_schema', 'sim_schema', 'obj_schema', 'con_schema',
                  # Constants, counters, and adaptive parameters
-                 'compiled', 'empty', 'epsilon', 'iteration', 'lam',
+                 'compiled', 'empty', 'epsilon', 'iteration', 'penalty_param',
                  # Checkpointing markers
                  'checkpoint', 'checkpoint_file',
                  'new_checkpoint', 'new_data',
@@ -142,10 +138,6 @@ class MOOP(MOOP_base):
             hyperparams (dict, optional): A dictionary of hyperparameters for
                 the opt_func, and any other procedures that will be used.
 
-        Returns:
-            MOOP: A new MOOP object with no design variables, objectives, or
-            constraints.
-
         """
 
         # Initialize the problem dimensions
@@ -165,7 +157,7 @@ class MOOP(MOOP_base):
         self.empty = jnp.zeros(0)
         self.epsilon = jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)
         self.iteration = 0
-        self.lam = 1.0
+        self.penalty_param = 1.0
         # Initialize checkpointing markers
         self.checkpoint = False
         self.checkpoint_file = "parmoo"
@@ -204,7 +196,7 @@ class MOOP(MOOP_base):
         except BaseException:
             raise TypeError("opt_func must be a derivative of the "
                             "SurrogateOptimizer abstract class")
-        if not isinstance(self.optimizer, structs.SurrogateOptimizer):
+        if not isinstance(self.optimizer, SurrogateOptimizer):
             raise TypeError("opt_func must be a derivative of the "
                             "SurrogateOptimizer abstract class")
         self.opt_tmp = opt_func
@@ -255,10 +247,10 @@ class MOOP(MOOP_base):
                    not have numeric types, then ParMOO will not be able to jit
                    the extractor which will lead to seriously degraded
                    performance.
-                 * 'embedder' (parmoo.structs.Embedder): When des_type is
-                   'custom', this is a custom Embedder class, which maps the
-                   input to a point in the unit hypercube and reports the
-                   embedded dimension.
+                 * 'embedder' (parmoo.embeddings.embedder.Embedder): When
+                   des_type is 'custom', this is a custom Embedder class, which
+                   maps the input to a point in the unit hypercube and reports
+                   the embedded dimension.
 
         """
 
@@ -266,73 +258,52 @@ class MOOP(MOOP_base):
             # Check arg and optional inputs for correct types
             if not isinstance(arg, dict):
                 raise TypeError("Each argument must be a Python dict")
-            if 'des_type' in arg:
-                if not isinstance(arg['des_type'], str):
-                    raise TypeError("args['des_type'] must be a str")
             if 'name' in arg:
                 name = arg['name']
             else:
                 name = f"x{len(self.des_schema) + 1}"
             check_names(name, self.des_schema, self.sim_schema,
                         self.obj_schema, self.con_schema)
+            arg['name'] = name
             # Append each design variable (default) to the schema
-            if 'des_type' not in arg or \
-               arg['des_type'] in ["continuous", "cont", "real"]:
-                arg1 = arg
-                embedder = ContinuousEmbedder(arg1)
+            if 'des_type' in arg:
+                if not isinstance(arg['des_type'], str):
+                    raise TypeError("args['des_type'] must be a str")
+            if (
+                'des_type' not in arg or
+                arg['des_type'] in ["continuous", "cont", "real"]
+            ):
+                arg['embedder'] = ContinuousEmbedder(arg)
             elif arg['des_type'] in ["integer", "int"]:
-                arg1 = arg
-                embedder = IntegerEmbedder(arg1)
+                arg['embedder'] = IntegerEmbedder(arg)
             elif arg['des_type'] in ["categorical", "cat"]:
-                arg1 = arg
-                embedder = CategoricalEmbedder(arg1)
+                arg['embedder'] = CategoricalEmbedder(arg)
             elif arg['des_type'] in ["custom"]:
                 if 'embedder' not in arg:
-                    raise AttributeError("For a custom embedder, the "
-                                         "'embedder' key must be present.")
+                    raise AttributeError(
+                        "For a custom embedder, the 'embedder' key must be"
+                        " present."
+                    )
                 arg1 = {}
                 for key in arg:
                     if key != 'embedder':
                         arg1[key] = arg[key]
                 arg1['np_random_gen'] = self.np_random_gen
                 try:
-                    embedder = arg['embedder'](arg1)
+                    arg['embedder'] = arg['embedder'](arg1)
                 except BaseException:
-                    raise TypeError("When present, the 'embedder' key must "
-                                    "contain an Embedder class.")
-                if not isinstance(embedder, structs.Embedder):
-                    raise TypeError("When present, the 'embedder' key must "
-                                    "contain an Embedder class.")
+                    raise TypeError(
+                        "When present, the 'embedder' key must contain a"
+                        " parmoo.embeddings.embedder.Embedder class."
+                    )
             elif arg['des_type'] in ["raw"]:
-                arg1 = arg
-                embedder = IdentityEmbedder(arg1)
+                arg['embedder'] = IdentityEmbedder(arg)
             else:
-                raise ValueError("des_type=" + arg['des_type'] +
-                                 " is not a recognized value")
-            # Collect the metadata for this embedding
-            self.n_feature += 1
-            self.n_embed.append(embedder.getEmbeddingSize())
-            self.n_latent += self.n_embed[-1]
-            # Update the des tols and latent bound constraints
-            lbs = embedder.getLowerBounds()
-            for lb in lbs:
-                self.latent_lb.append(lb)
-            ubs = embedder.getUpperBounds()
-            for ub in ubs:
-                self.latent_ub.append(ub)
-            self.feature_des_tols.append(embedder.getFeatureDesTols())
-            if self.feature_des_tols[-1] >= 1.0e-16:
-                self.cont_var_inds.append(self.n_feature - 1)
-            des_tols = embedder.getLatentDesTols()
-            for des_tol in des_tols:
-                self.latent_des_tols.append(float(des_tol))
-            # Update the schema and add the embedder to list
-            dtype = embedder.getInputType()
-            self.des_schema.append((name, dtype))
-            self.embedders.append(embedder)
-            self.emb_hp.append(arg1)  # This is saved for re-loading
-            self.database.addDesign(name, dtype, self.feature_des_tols[-1])
-        return
+                raise ValueError(
+                    f"des_type={arg['des_type']} is not a recognized value"
+                )
+            # Add the design variable
+            super().addDesign(arg)
 
     def addSimulation(self, *args):
         """ Add new simulations to the MOOP.
@@ -366,35 +337,16 @@ class MOOP(MOOP_base):
         # Check that the simulation input is a legal format
         check_sims(self.n_feature, *args)
         for arg in args:
-            m = arg['m']
             if 'name' in arg:
                 name = arg['name']
             else:
-                name = "sim" + str(self.s + 1)
+                name = f"sim{self.s + 1}"
             check_names(name, self.des_schema, self.sim_schema,
                         self.obj_schema, self.con_schema)
-            # Update the schema and track the simulation output dimensions
-            if m > 1:
-                self.sim_schema.append((name, 'f8', m))
-            else:
-                self.sim_schema.append((name, 'f8'))
-            self.m_list.append(m)
-            self.m += m
-            self.s += 1
-            # Initialize the hyperparameter dictionary
-            if 'hyperparams' in arg:
-                hps = arg['hyperparams']
-            else:
-                hps = {}
-            hps["np_random_gen"] = self.np_random_gen
-            # Add the simulation's search and surrogate techniques
-            self.search_tmp.append(arg['search'])
-            self.sur_tmp.append(arg['surrogate'])
-            self.sim_hp.append(hps)
-            # Add the simulation function
-            self.sim_funcs.append(arg['sim_func'])
-            self.database.addSimulation(name, m)
-        return
+            arg['name'] = name
+            if 'hyperparams' not in arg:
+                arg['hyperparams'] = {}
+            super().addSimulation(arg)
 
     def addObjective(self, *args):
         """ Add a new objective to the MOOP.
@@ -448,14 +400,9 @@ class MOOP(MOOP_base):
                 name = f"f{self.o + 1}"
             check_names(name, self.des_schema, self.sim_schema,
                         self.obj_schema, self.con_schema)
+            arg['name'] = name
             # Finally, if all else passed, add the objective
-            self.obj_schema.append((name, 'f8'))
-            self.obj_funcs.append(arg['obj_func'])
-            if 'obj_grad' in arg:
-                self.obj_grads.append(arg['obj_grad'])
-            self.o += 1
-            self.database.addObjective(name)
-        return
+            super().addObjective(arg)
 
     def addConstraint(self, *args):
         """ Add a new constraint to the MOOP.
@@ -521,17 +468,9 @@ class MOOP(MOOP_base):
                 name = f"c{self.p + 1}"
             check_names(name, self.des_schema, self.sim_schema,
                         self.obj_schema, self.con_schema)
+            arg['name'] = name
             # Finally, if all else passed, add the constraint
-            self.con_schema.append((name, 'f8'))
-            if 'con_func' in arg:
-                self.con_funcs.append(arg['con_func'])
-            else:
-                self.con_funcs.append(arg['constraint'])
-            if 'con_grad' in arg:
-                self.con_grads.append(arg['con_grad'])
-            self.p += 1
-            self.database.addConstraint(name)
-        return
+            super().addConstraint(arg)
 
     def addAcquisition(self, *args):
         """ Add an acquisition function to the MOOP.
@@ -557,282 +496,20 @@ class MOOP(MOOP_base):
                 if not isinstance(arg['hyperparams'], dict):
                     raise TypeError("When present, 'hyperparams' must be a "
                                     "Python dictionary")
-                hps = arg['hyperparams']
             else:
-                hps = {}
-            hps["np_random_gen"] = self.np_random_gen
+                arg['hyperparams'] = {}
             try:
                 acq = arg['acquisition'](1, np.zeros(1), np.ones(1), {})
+                if not isinstance(acq, AcquisitionFunction):
+                    raise TypeError(
+                        "'acquisition' must specify a child of the "
+                        "AcquisitionFunction class"
+                    )
             except BaseException:
                 raise TypeError("'acquisition' must specify a child of the"
                                 + " AcquisitionFunction class")
-            if not isinstance(acq, structs.AcquisitionFunction):
-                raise TypeError("'acquisition' must specify a child of the"
-                                + " AcquisitionFunction class")
             # If all checks passed, add the acquisition to the list
-            self.acq_tmp.append(arg['acquisition'])
-            self.acq_hp.append(hps)
-        return
-
-    def compile(self):
-        """ Compile the MOOP object and initialize its components.
-
-        This locks the MOOP definition and jits all jit-able methods.
-
-        This must be done *before* adding any simulation or objective data to
-        the internal database.
-
-        This cannot be done *after* simulation or objective data has been added
-        to the internal database.
-
-        """
-
-        logging.info(" Compiling the MOOP object...")
-        # Verify that the MOOP is in a valid state before compiling
-        if self.n_feature <= 0:
-            raise RuntimeError("Cannot compile a MOOP with no design "
-                               "variables.")
-        if self.o <= 0:
-            raise RuntimeError("Cannot compile a MOOP with no objectives.")
-        if len(self.acq_tmp) == 0:
-            warnings.warn(
-                "You are compiling a MOOP with no acquisition functions."
-                " I'll let you do it for analysis purposes, but the solve()"
-                " command won't work correctly until you recompile with"
-                " one or more acquisition functions..."
-            )
-        logging.info("   Initializing MOOP solver's component objects...")
-        # Reset the internal lists
-        self.searches, self.surrogates = [], []
-        self.acquisitions = []
-        self.optimizer = None
-        # Pre-create numpy arrays for initialization
-        lbs = np.asarray(self.latent_lb)
-        ubs = np.asarray(self.latent_ub)
-        des_tols = np.asarray(self.latent_des_tols)
-        # Try jitting ParMOO embedders and extractors
-        self._jit_all((lbs + ubs) / 2, np.zeros(self.m))
-        # Initialize the simulation components
-        for i in range(self.s):
-            mi = self.m_list[i]
-            hpi = self.sim_hp[i]
-            hpi['des_tols'] = des_tols
-            search_i = self.search_tmp[i]
-            surrogate_i = self.sur_tmp[i]
-            self.searches.append(search_i(mi, lbs, ubs, hpi))
-            self.surrogates.append(surrogate_i(mi, lbs, ubs, hpi))
-        # Initialize all acquisition functions
-        for acqi, hpi in zip(self.acq_tmp, self.acq_hp):
-            hpi['des_tols'] = des_tols
-            self.acquisitions.append(acqi(self.o, lbs, ubs, hpi))
-        # Initialize the surrogate optimizer
-        self.opt_hp['des_tols'] = np.asarray(self.latent_des_tols)
-        self.optimizer = self.opt_tmp(self.o,
-                                      np.asarray(self.latent_lb),
-                                      np.asarray(self.latent_ub),
-                                      self.opt_hp)
-        self.optimizer.setObjective(self._evaluate_objectives)
-        self.optimizer.setSimulation(self._evaluate_surrogates,
-                                     self._surrogate_uncertainty)
-        self.optimizer.setPenalty(self._evaluate_penalty)
-        self.optimizer.setConstraints(self._evaluate_constraints)
-        for i, acquisition in enumerate(self.acquisitions):
-            self.optimizer.addAcquisition(acquisition)
-        self.optimizer.setTrFunc(self._set_surrogate_tr)
-        # Start the Database
-        self.database.startDatabase()
-        logging.info("   Done.")
-        # Set compiled flat go True
-        logging.info(" Compilation finished.")
-        self.compiled = True
-        # Print problem summary
-        logging.info(" Summary of ParMOO problem and settings:")
-        logging.info(f"   {self.n_feature} design dimensions")
-        logging.info(f"   {self.n_latent} embedded design dimensions")
-        logging.info(f"   {self.m} simulation outputs")
-        logging.info(f"   {self.s} simulations")
-        for i in range(self.s):
-            logging.info(f"     {self.m_list[i]} outputs for simulation {i}")
-            logging.info(f"     {self.searches[i].budget} search evaluations" +
-                         f" in iteration 0 for simulation {i}")
-        logging.info(f"   {self.o} objectives")
-        logging.info(f"   {self.p} constraints")
-        logging.info(f"   {len(self.acquisitions)} acquisition functions")
-        logging.info("   estimated simulation evaluations per iteration:" +
-                     f" {len(self.acquisitions) * self.s}")
-        return
-
-    def setCheckpoint(
-        self, checkpoint=True, checkpoint_data=True, filename="parmoo"
-    ):
-        """ Set ParMOO's checkpointing feature.
-
-        Note that for checkpointing to work, all simulation, objective,
-        and constraint functions must be defined in the global scope.
-        ParMOO also cannot save lambda functions.
-
-        Args:
-            checkpoint (bool): Turn checkpointing on (True) or off (False).
-
-            checkpoint_data (bool, optional): Also save raw simulation output
-                in a separate JSON file (True) or rely on ParMOO's internal
-                simulation database (False). When omitted, this parameter
-                defaults to False.
-
-            filename (str, optional): Set the base checkpoint filename/path.
-                The checkpoint file will have the JSON format and the
-                extension ".moop" appended to the end of filename.
-                Additional checkpoint files may be created with the same
-                filename but different extensions, depending on the choice
-                of AcquisitionFunction, SurrogateFunction, and GlobalSearch.
-                When omitted, this parameter defaults to "parmoo" and
-                is saved inside current working directory.
-
-        """
-
-        if not isinstance(checkpoint, bool):
-            raise TypeError("checkpoint must have the bool type")
-        if not isinstance(filename, str):
-            raise TypeError("filename must have the string type")
-        self.checkpoint = checkpoint
-        self.checkpoint_file = filename
-        self.database.setCheckpoint(checkpoint_data, filename)
-        return
-
-    def getDesignType(self):
-        """ Get the numpy dtype of all design points for this MOOP.
-
-        Returns:
-            dtype: The numpy dtype of this MOOP's design points.
-            If no design variables have yet been added, returns None.
-
-        """
-
-        return self.database.getDesignType()
-
-    def getSimulationType(self):
-        """ Get the numpy dtypes of the simulation outputs for this MOOP.
-
-        Returns:
-            dtype: The numpy dtype of this MOOP's simulation outputs.
-            If no simulations have been given, returns None.
-
-        """
-
-        return self.database.getSimulationType()
-
-    def getObjectiveType(self):
-        """ Get the numpy dtype of an objective point for this MOOP.
-
-        Returns:
-            dtype: The numpy dtype of this MOOP's objective points.
-            If no objectives have yet been added, returns None.
-
-        """
-
-        return self.database.getObjectiveType()
-
-    def getConstraintType(self):
-        """ Get the numpy dtype of the constraint violations for this MOOP.
-
-        Returns:
-            dtype: The numpy dtype of this MOOP's constraint violation
-            outputs. If no constraint functions have been given, returns None.
-
-        """
-
-        return self.database.getConstraintType()
-
-    def checkSimDb(self, x, s_name):
-        """ Check self.sim_db[s_name] to see if the design x was evaluated.
-
-        Args:
-            x (dict): A Python dictionary specifying the keys/names and
-                corresponding values of a design point to search for.
-
-            s_name (str): The name of the simulation whose database will be
-                searched.
-
-        Returns:
-            None or numpy.ndarray: returns None if x is not in
-            self.sim_db[s_name] (up to the design tolerance). Otherwise,
-            returns the corresponding value of sx.
-
-        """
-
-        return self.database.checkSimDb(x, s_name)
-
-    def updateSimDb(self, x, sx, s_name):
-        """ Update sim_db[s_name] by adding a design/simulation output pair.
-
-        Args:
-            x (dict): A Python dictionary specifying the keys/names and
-                corresponding values of a design point to add.
-
-            sx (ndarray): A 1D array containing the corresponding
-                simulation output(s).
-
-            s_name (str): The name of the simulation to whose database the
-                pair (x, sx) will be added into.
-
-        """
-
-        self.database.updateSimDb(x, sx, s_name)
-
-    def evaluateSimulation(self, x, s_name):
-        """ Evaluate sim_func[s_name] and store the result in the database.
-
-        Args:
-            x (dict): A Python dictionary with keys/names corresponding
-                to the design variable names given and values containing
-                the corresponding values of the design point to evaluate.
-
-            s_name (str): The name of the simulation to evaluate.
-
-        Returns:
-            ndarray: A 1D array containing the output from the evaluation
-            sx = simulation[s_name](x).
-
-        """
-
-        sx = self.checkSimDb(x, s_name)
-        if sx is None:
-            i = -1
-            for j, sj in enumerate(self.sim_schema):
-                if sj[0] == s_name:
-                    i = j
-                    break
-            if i < 0 or i > self.s - 1:
-                raise ValueError("s_name did not contain a legal name/index")
-            sx = np.asarray(self.sim_funcs[i](x))
-            self.database.updateSimDb(x, sx, s_name)
-            if self.checkpoint:
-                self.save(filename=self.checkpoint_file)
-        return sx
-
-    def addObjData(self, x, sx):
-        """ Update the internal objective database by truly evaluating x.
-
-        Args:
-            x (dict): A Python dictionary containing the value of the design
-                variable to add to ParMOO's database.
-
-            sx (dict): A Python dictionary containing the values of the
-                corresponding simulation outputs for ALL simulations involved
-                in this MOOP -- sx['s_name'][:] contains the output(s)
-                for sim_func['s_name'].
-
-        """
-
-        if self.database.checkObjDb(x) is not None:
-            return
-        fx = {}
-        for i, obj_func in enumerate(self.obj_funcs):
-            fx[self.obj_schema[i][0]] = obj_func(x, sx)
-        cx = {}
-        for i, constraint_func in enumerate(self.con_funcs):
-            cx[self.con_schema[i][0]] = constraint_func(x, sx)
-        self.database.updateObjDb(x, fx, cx)
+            super().addAcquisition(arg)
 
     def iterate(self, k, ib=None):
         """ Perform an iteration of ParMOO's solver and generate candidates.
@@ -1036,13 +713,14 @@ class MOOP(MOOP_base):
                     if self.database.checkObjDb(x) is None:
                         self.database.updateObjDb(x, fx, cx)
         else:
-            # If any constraints are violated, increase lam toward the limit
+            # If any constraints are violated, increase the penalty parameter
+            # toward the limit
             for (xi, i) in batch:
                 xxi = self._embed(xi)
                 sxi = self._evaluate_surrogates(xxi)
                 eps = np.sqrt(self.epsilon)
                 if np.any(self._evaluate_constraints(xxi, sxi) > eps):
-                    self.lam = min(1e4, self.lam * 2.0)
+                    self.penalty_param = min(1e4, self.penalty_param * 2.0)
                     break
             # Update the surrogate models and objective database
             self._update_surrogates()
@@ -1092,7 +770,7 @@ class MOOP(MOOP_base):
         If desired, be sure to turn on checkpointing before starting the
         solve, using:
 
-        ``MOOP.setCheckpoint(checkpoint, [checkpoint_data, filename])``
+        ``MOOP.setCheckpoint(checkpoint, [filename="parmoo"])``
 
         and turn on INFO-level logging for verbose output, using:
 
@@ -1203,411 +881,4 @@ class MOOP(MOOP_base):
         logging.info(" Done.")
         logging.info(f" ParMOO has successfully completed {self.iteration} " +
                      "iterations.")
-        return
-
-    def getPF(self, format='ndarray'):
-        """ Extract nondominated and efficient sets from internal databases.
-
-        Args:
-            format (str, optional): Either 'ndarray' (default) or 'pandas',
-                in order to produce output as a numpy structured array or
-                pandas dataframe. Note: format='pandas' is only valid for
-                named inputs.
-
-        Returns:
-            numpy structured array or pandas DataFrame: Either a structured
-            array or dataframe (depending on the option selected above)
-            whose column/key names match the names of the design variables,
-            objectives, and constraints. It contains a discrete approximation
-            of the Pareto front and efficient set.
-
-        """
-
-        return self.database.getPF(format)
-
-    def getSimulationData(self, format='ndarray'):
-        """ Extract all computed simulation outputs from the MOOP's database.
-
-        Args:
-            format (str, optional): Either 'ndarray' (default) or 'pandas',
-                in order to produce output as a numpy structured array or
-                pandas dataframe. Note: format='pandas' is only valid for
-                named inputs.
-
-        Returns:
-            dict: A Python dictionary whose keys match the names of the
-            simulations. Each value is either a numpy structured array or
-            pandas dataframe (depending on the option selected above)
-            whose column/key names match the names of the design variables
-            plus either and 'out' field for single-output simulations,
-            or 'out_1', 'out_2', ... for multi-output simulations.
-
-        """
-
-        return self.database.getSimulationData(format)
-
-    def getObjectiveData(self, format='ndarray'):
-        """ Extract all computed objective scores from this MOOP's database.
-
-        Args:
-            format (str, optional): Either 'ndarray' (default) or 'pandas',
-                in order to produce output as a numpy structured array or
-                pandas dataframe. Note: format='pandas' is only valid for
-                named inputs.
-
-        Returns:
-            numpy structured array or pandas DataFrame: Either a structured
-            array or dataframe (depending on the option selected above)
-            whose column/key names match the names of the design variables,
-            objectives, and constraints. It contains the results for every
-            fully evaluated design point.
-
-        """
-
-        return self.database.getObjectiveData(format)
-
-    def save(self, filename="parmoo"):
-        """ Serialize and save the MOOP object and all of its dependencies.
-
-        Args:
-            filename (str, optional): The filepath to serialized
-                checkpointing file(s). Do not include file extensions,
-                they will be appended automatically. This method may create
-                several additional save files with this same name, but
-                different file extensions, in order to recursively save
-                dependency objects (such as surrogate models). Defaults to
-                the value "parmoo" (filename will be "parmoo.moop").
-
-        """
-
-        # Check whether the file exists first
-        exists = file_exists(filename + ".moop")
-        if exists and self.new_checkpoint:
-            raise OSError("Creating a new checkpoint file, but " +
-                          filename + ".moop already exists! " +
-                          "Move the existing file to a new location or " +
-                          "delete it, so that ParMOO doesn't accidentally " +
-                          "overwrite your data...")
-        # Create a serializable ParMOO dictionary
-        parmoo_state = {'m': self.m,
-                        'm_list': self.m_list,
-                        'n_embed': self.n_embed,
-                        'n_feature': self.n_feature,
-                        'n_latent': self.n_latent,
-                        'o': self.o,
-                        'p': self.p,
-                        's': self.s,
-                        'feature_des_tols': self.feature_des_tols,
-                        'latent_des_tols': self.latent_des_tols,
-                        'cont_var_inds': self.cont_var_inds,
-                        'latent_lb': self.latent_lb,
-                        'latent_ub': self.latent_ub,
-                        'des_schema': self.des_schema,
-                        'sim_schema': self.sim_schema,
-                        'obj_schema': self.obj_schema,
-                        'con_schema': self.con_schema,
-                        'iteration': self.iteration,
-                        'lam': self.lam,
-                        'checkpoint': self.checkpoint,
-                        'checkpoint_file': self.checkpoint_file,
-                        'np_random_state':
-                        self.np_random_gen.bit_generator.state,
-                        }
-        # Pickle and add a list of the model and solver hyperparameters
-        parmoo_state['hyperparams'] = []
-        for hpi in [self.emb_hp, self.acq_hp, self.opt_hp, self.sim_hp]:
-            parmoo_state['hyperparams'].append(
-                codecs.encode(pickle.dumps(hpi), "base64").decode())
-        # Add the names/modules for all components of the MOOP definition
-        parmoo_state['embedders'] = [(embedder.__class__.__name__,
-                                      embedder.__class__.__module__)
-                                     for embedder in self.embedders]
-        parmoo_state['sim_funcs'] = []
-        parmoo_state['sim_funcs_info'] = []
-        for si in self.sim_funcs:
-            if type(si).__name__ == "function":
-                parmoo_state['sim_funcs'].append((si.__name__, si.__module__))
-                parmoo_state['sim_funcs_info'].append("function")
-            else:
-                parmoo_state['sim_funcs'].append((si.__class__.__name__,
-                                                  si.__class__.__module__))
-                parmoo_state['sim_funcs_info'].append(
-                        codecs.encode(pickle.dumps(si), "base64").decode())
-        parmoo_state['obj_funcs'] = []
-        parmoo_state['obj_funcs_info'] = []
-        for fi in self.obj_funcs:
-            if type(fi).__name__ == "function":
-                parmoo_state['obj_funcs'].append((fi.__name__, fi.__module__))
-                parmoo_state['obj_funcs_info'].append("function")
-            else:
-                parmoo_state['obj_funcs'].append((fi.__class__.__name__,
-                                                  fi.__class__.__module__))
-                parmoo_state['obj_funcs_info'].append(
-                        codecs.encode(pickle.dumps(fi), "base64").decode())
-        parmoo_state['con_funcs'] = []
-        parmoo_state['con_funcs_info'] = []
-        for ci in self.con_funcs:
-            if type(si).__name__ == "function":
-                parmoo_state['con_funcs'].append((ci.__name__,
-                                                  ci.__module__))
-                parmoo_state['con_funcs_info'].append("function")
-            else:
-                parmoo_state['con_funcs'].append((ci.__class__.__name__,
-                                                  ci.__class__.__module__))
-                parmoo_state['con_funcs_info'].append(
-                        codecs.encode(pickle.dumps(ci), "base64").decode())
-        # Store names/modules of solver component classes
-        parmoo_state['optimizer'] = (self.optimizer.__class__.__name__,
-                                     self.optimizer.__class__.__module__)
-        parmoo_state['searches'] = [(search.__class__.__name__,
-                                     search.__class__.__module__)
-                                    for search in self.searches]
-        parmoo_state['surrogates'] = [(sur.__class__.__name__,
-                                       sur.__class__.__module__)
-                                      for sur in self.surrogates]
-        parmoo_state['acquisitions'] = [(acq.__class__.__name__,
-                                         acq.__class__.__module__)
-                                        for acq in self.acquisitions]
-        # Try to save optimizer object state
-        try:
-            fname = filename + ".optimizer"
-            fname_tmp = "." + fname + ".swap"
-            self.optimizer.save(fname_tmp)
-            shutil.move(fname_tmp, fname)
-        except NotImplementedError:
-            pass
-        # Try to save search states
-        for i, search in enumerate(self.searches):
-            try:
-                fname = filename + ".search." + str(i + 1)
-                fname_tmp = "." + fname + ".swap"
-                search.save(fname_tmp)
-                shutil.move(fname_tmp, fname)
-            except NotImplementedError:
-                pass
-        # Try to save surrogate states
-        for i, surrogate in enumerate(self.surrogates):
-            try:
-                fname = filename + ".surrogate." + str(i + 1)
-                fname_tmp = "." + fname + ".swap"
-                surrogate.save(fname_tmp)
-                shutil.move(fname_tmp, fname)
-            except NotImplementedError:
-                pass
-        # Try to save acquisition states
-        for i, acquisition in enumerate(self.acquisitions):
-            try:
-                fname = filename + ".acquisition." + str(i + 1)
-                fname_tmp = "." + fname + ".swap"
-                acquisition.save(fname_tmp)
-                shutil.move(fname_tmp, fname)
-            except NotImplementedError:
-                pass
-        # Save the serialized ParMOO dictionary
-        fname = filename + ".moop"
-        fname_tmp = "." + fname + ".swap"
-        with open(fname_tmp, 'w') as fp:
-            json.dump(parmoo_state, fp)
-        shutil.move(fname_tmp, fname)
-        self.new_checkpoint = False
-        return
-
-    def load(self, filename="parmoo"):
-        """ Load a serialized MOOP object and all of its dependencies.
-
-        Args:
-            filename (str, optional): The filepath to the serialized
-                checkpointing file(s). Do not include file extensions,
-                they will be appended automatically. This method may also
-                load from other save files with the same name, but different
-                file extensions, in order to recursively load dependency
-                objects (such as surrogate models) as needed.
-                Defaults to the value "parmoo" (filename will be
-                "parmoo.moop").
-
-        """
-
-        PYDOCS = (
-            "https://docs.python.org/3/tutorial/modules.html"
-            "#the-module-search-path"
-        )
-
-        # Load the serialized dictionary object
-        fname = f"{filename}.moop"
-        with open(fname, 'r') as fp:
-            parmoo_state = json.load(fp)
-        # Reload intrinsic types (scalar values and Python lists)
-        self.m = parmoo_state['m']
-        self.m_list = parmoo_state['m_list']
-        self.n_embed = parmoo_state['n_embed']
-        self.n_feature = parmoo_state['n_feature']
-        self.n_latent = parmoo_state['n_latent']
-        self.o = parmoo_state['o']
-        self.p = parmoo_state['p']
-        self.s = parmoo_state['s']
-        self.feature_des_tols = parmoo_state['feature_des_tols']
-        self.cont_var_inds = parmoo_state['cont_var_inds']
-        self.latent_des_tols = parmoo_state['latent_des_tols']
-        self.latent_lb = parmoo_state['latent_lb']
-        self.latent_ub = parmoo_state['latent_ub']
-        self.des_schema = parmoo_state['des_schema']
-        self.sim_schema = parmoo_state['sim_schema']
-        self.obj_schema = parmoo_state['obj_schema']
-        self.con_schema = parmoo_state['con_schema']
-        self.iteration = parmoo_state['iteration']
-        self.lam = parmoo_state['lam']
-        self.checkpoint = parmoo_state['checkpoint']
-        self.checkpoint_file = parmoo_state['checkpoint_file']
-        self.np_random_gen = np.random.default_rng()
-        self.np_random_gen.bit_generator.state = \
-            parmoo_state['np_random_state']
-        # Recover the pickled hyperparameter dictionaries
-        hps = []
-        for i, hpi in enumerate(parmoo_state['hyperparams']):
-            hps.append(pickle.loads(codecs.decode(hpi.encode(), "base64")))
-            if i != 2:
-                for j in range(len(hps[i])):
-                    hps[i][j]['np_random_gen'] = self.np_random_gen
-            else:
-                hps[i]['np_random_gen'] = self.np_random_gen
-        self.emb_hp = hps[0]
-        self.acq_hp = hps[1]
-        self.opt_hp = hps[2]
-        self.sim_hp = hps[3]
-        # Recover design vars, sims, objectives, and constraints by module name
-        self.embedders = []
-        for i, (emb_name, emb_mod) in enumerate(parmoo_state['embedders']):
-            try:
-                mod = import_module(emb_mod)
-            except ModuleNotFoundError:
-                raise ModuleNotFoundError(
-                    f"module: {emb_mod} could not be loaded. Please make"
-                    f" sure that {emb_mod} exists on this machine and"
-                    f" is part of the module search path: {PYDOCS}"
-                )
-            try:
-                new_emb = getattr(mod, emb_name)
-            except KeyError:
-                raise KeyError(
-                    f"function: {emb_name} defined in {emb_mod} could not be"
-                    f" loaded. Please make sure that {emb_name} is defined"
-                    f" in {emb_mod} with global scope."
-                )
-            toadd = new_emb(self.emb_hp[i])
-            self.embedders.append(toadd)
-        self.sim_funcs = []
-        for (sim_name, sim_mod), info in zip(parmoo_state['sim_funcs'],
-                                             parmoo_state['sim_funcs_info']):
-            try:
-                mod = import_module(sim_mod)
-            except ModuleNotFoundError:
-                raise ModuleNotFoundError(
-                    f"module: {sim_mod} could not be loaded. Please make"
-                    f" sure that {sim_mod} exists on this machine and"
-                    f" is part of the module search path: {PYDOCS}"
-                 )
-            try:
-                sim_ptr = getattr(mod, sim_name)
-            except KeyError:
-                raise KeyError(
-                    f"function: {sim_name} defined in {sim_mod} could not be"
-                    f" loaded. Please make sure that {sim_name} is defined"
-                    f" in {emb_mod} with global scope."
-                )
-            if info == "function":
-                toadd = sim_ptr
-            else:
-                toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
-            self.sim_funcs.append(toadd)
-        self.obj_funcs = []
-        for (obj_name, obj_mod), info in zip(parmoo_state['obj_funcs'],
-                                             parmoo_state['obj_funcs_info']):
-            try:
-                mod = import_module(obj_mod)
-            except ModuleNotFoundError:
-                raise ModuleNotFoundError(f"module: {obj_mod} could not be "
-                                          "loaded. Please make sure that "
-                                          f"{obj_mod} exists on this machine "
-                                          "and is part of the module search "
-                                          "path: " + PYDOCS)
-            try:
-                obj_ptr = getattr(mod, obj_name)
-            except KeyError:
-                raise KeyError(f"function: {obj_name} defined in"
-                               f"{obj_mod} could not be loaded."
-                               f"Please make sure that {obj_name} is "
-                               f"defined in {obj_mod} with global scope.")
-            if info == "function":
-                toadd = obj_ptr
-            else:
-                toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
-            self.obj_funcs.append(toadd)
-        self.con_funcs = []
-        for (con_name, con_mod), info in zip(parmoo_state['con_funcs'],
-                                             parmoo_state['con_funcs_info']):
-            try:
-                mod = import_module(con_mod)
-            except ModuleNotFoundError:
-                raise ModuleNotFoundError(f"module: {con_mod} could not be "
-                                          "loaded. Please make sure that "
-                                          f"{con_mod} exists on this machine "
-                                          "and is part of the module search "
-                                          "path: " + PYDOCS)
-            try:
-                con_ptr = getattr(mod, con_name)
-            except KeyError:
-                raise KeyError(f"function: {con_name} defined in"
-                               f"{con_mod} could not be loaded."
-                               f"Please make sure that {con_name} is "
-                               f"defined in {con_mod} with global scope.")
-            if info == "function":
-                toadd = con_ptr
-            else:
-                toadd = pickle.loads(codecs.decode(info.encode(), "base64"))
-            self.con_funcs.append(toadd)
-        # Recover solver component classes by their module name
-        mod = import_module(parmoo_state['optimizer'][1])
-        self.opt_tmp = getattr(mod, parmoo_state['optimizer'][0])
-        self.search_tmp = []
-        for i, (s_name, s_mod) in enumerate(parmoo_state['searches']):
-            mod = import_module(s_mod)
-            new_search = getattr(mod, s_name)
-            self.search_tmp.append(new_search)
-        self.sur_tmp = []
-        for i, (s_name, s_mod) in enumerate(parmoo_state['surrogates']):
-            mod = import_module(s_mod)
-            new_sur = getattr(mod, s_name)
-            self.sur_tmp.append(new_sur)
-        self.acq_tmp = []
-        for i, (a_name, a_mod) in enumerate(parmoo_state['acquisitions']):
-            mod = import_module(a_mod)
-            new_acq = getattr(mod, a_name)
-            self.acq_tmp.append(new_acq)
-        # Re-compile the MOOP and re-load the database
-        self.compile()
-        self.database.loadCheckpoint(filename)
-        # Try to re-load each solver component's previous state
-        try:
-            fname = filename + ".optimizer"
-            self.optimizer.load(fname)
-        except NotImplementedError:
-            pass
-        for i in range(self.s):
-            try:
-                fname = filename + ".search." + str(i + 1)
-                self.searches[i].load(fname)
-            except NotImplementedError:
-                pass
-            try:
-                fname = filename + ".surrogate." + str(i + 1)
-                self.surrogates[i].load(fname)
-            except NotImplementedError:
-                pass
-        for i in range(len(self.acquisitions)):
-            try:
-                fname = filename + ".acquisition." + str(i + 1)
-                self.acquisitions[i].load(fname)
-            except NotImplementedError:
-                pass
-        self.new_checkpoint = False
         return

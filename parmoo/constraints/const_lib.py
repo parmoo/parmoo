@@ -15,10 +15,10 @@ And their corresponding gradient functions are:
 
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import CompositeFunction
+from parmoo.constraints.const_func import ConstraintFunction
 
 
-class SingleSimBound(CompositeFunction):
+class SingleSimBound(ConstraintFunction):
     """ Class for bounding a single simulation's output.
 
     If upper-bounding:
@@ -41,7 +41,7 @@ class SingleSimBound(CompositeFunction):
      * ``__init__(des_type, sim_type, sim_ind, bound_type='min', bound=0)``
      * ``__call__(x, sim)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ConstraintFunction ABC.
 
     The ``__call__`` returns the slack (negative when feasible).
 
@@ -125,7 +125,7 @@ class SingleSimBound(CompositeFunction):
         return fx - self.bound
 
 
-class SumOfSimSquaresBound(CompositeFunction):
+class SumOfSimSquaresBound(ConstraintFunction):
     """ Class for constraining the sum-of-squared simulation outputs.
 
     If upper bounding:
@@ -148,7 +148,7 @@ class SumOfSimSquaresBound(CompositeFunction):
      * ``__init__(des_type, sim_type, sim_inds, bound_type='upper', bound=0)``
      * ``__call__(x, sx)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ConstraintFunction ABC.
 
     The ``__call__`` evaluate the slack (negative values are feasible).
 
@@ -247,7 +247,7 @@ class SumOfSimSquaresBound(CompositeFunction):
         return fx * self.goal - self.bound
 
 
-class SumOfSimsBound(CompositeFunction):
+class SumOfSimsBound(ConstraintFunction):
     """ Class for bounding the (absolute) sum of simulation outputs.
 
     If upper bounding:
@@ -285,7 +285,7 @@ class SumOfSimsBound(CompositeFunction):
                   bound_type='upper', bound=0, absolute=False)``
      * ``__call__(x, sim)``
 
-    The ``__init__`` method inherits from the CompositeFunction ABC.
+    The ``__init__`` method inherits from the ConstraintFunction ABC.
 
     The ``__call__`` evaluate the slack (negative values are feasible).
 

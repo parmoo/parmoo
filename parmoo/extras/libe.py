@@ -184,7 +184,7 @@ class libE_MOOP(MOOP):
      * ``libE_MOOP.getConstraintType()``
 
     To turn on checkpointing use:
-     * ``libE_MOOP.setCheckpoint(checkpoint, [checkpoint_data, filename])``
+     * ``libE_MOOP.setCheckpoint(checkpoint, [filename="parmoo"])``
 
     ParMOO's logging feature is not active for the `libE_MOOP` class
     since libEnsemble already provides this feature.
@@ -442,8 +442,7 @@ class libE_MOOP(MOOP):
         self.moop.compile()
         return
 
-    def setCheckpoint(self, checkpoint,
-                      checkpoint_data=True, filename="parmoo"):
+    def setCheckpoint(self, checkpoint, filename="parmoo"):
         """ Set ParMOO's checkpointing feature.
 
         Note that for checkpointing to work, all simulation, objective,
@@ -452,11 +451,6 @@ class libE_MOOP(MOOP):
 
         Args:
             checkpoint (bool): Turn checkpointing on (True) or off (False).
-
-            checkpoint_data (bool, optional): Also save raw simulation output
-                in a separate JSON file (True) or rely on ParMOO's internal
-                simulation database (False). When omitted, this parameter
-                defaults to False.
 
             filename (str, optional): Set the base checkpoint filename/path.
                 The checkpoint file will have the JSON format and the
@@ -469,8 +463,7 @@ class libE_MOOP(MOOP):
 
         """
 
-        self.moop.setCheckpoint(checkpoint, checkpoint_data=checkpoint_data,
-                                filename=filename)
+        self.moop.setCheckpoint(checkpoint, filename=filename)
         return
 
     def getDesignType(self):
@@ -681,7 +674,7 @@ class libE_MOOP(MOOP):
         If desired, be sure to turn on checkpointing before starting the
         solve, using:
 
-        ``MOOP.setCheckpoint(checkpoint, [checkpoint_data, filename])``
+        ``MOOP.setCheckpoint(checkpoint, [filename="parmoo"])``
 
         ParMOO will solve the MOOP and use libEnsemble to distribute
         simulations over available resources.

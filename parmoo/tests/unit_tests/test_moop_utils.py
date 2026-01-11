@@ -7,7 +7,7 @@ def test_xerror():
 
     """
 
-    from parmoo.util import xerror
+    from parmoo.utilities.error_checks import xerror
     import numpy as np
     import pytest
 
@@ -39,7 +39,7 @@ def test_check_sims():
 
     """
 
-    from parmoo.util import check_sims
+    from parmoo.core.moop_checks import check_sims
     from parmoo.surrogates import GaussRBF
     from parmoo.searches import LatinHypercube
     import numpy as np
@@ -136,7 +136,7 @@ def test_lex_leq():
 
     """
 
-    from parmoo.util import lex_leq
+    from parmoo.utilities.moop_utils import lex_leq
     import numpy as np
 
     # Check for a < b
@@ -169,7 +169,7 @@ def test_updatePF():
 
     """
 
-    from parmoo.util import updatePF
+    from parmoo.utilities.moop_utils import updatePF
     import numpy as np
 
     # Set problem dimensions and initialize a RandomSearch object
@@ -236,7 +236,7 @@ def test_updatePF():
 def test_to_from_array():
     """ Test the from_array function. """
 
-    from parmoo.util import from_array, to_array
+    from parmoo.utilities.moop_utils import from_array, to_array
     import numpy as np
 
     # Create test inputs

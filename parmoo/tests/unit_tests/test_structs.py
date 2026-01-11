@@ -2,7 +2,7 @@
 def test_AcquisitionFunction():
     """ Test that the AcquisitionFunction ABC raises a TypeError"""
 
-    from parmoo.structs import AcquisitionFunction
+    from parmoo.acquisitions.acquisition_function import AcquisitionFunction
     import pytest
 
     with pytest.raises(TypeError):
@@ -12,7 +12,7 @@ def test_AcquisitionFunction():
 def test_GlobalSearch():
     """ Test that the GlobalSearch ABC raises a TypeError"""
 
-    from parmoo.structs import GlobalSearch
+    from parmoo.searches.global_search import GlobalSearch
     import pytest
 
     with pytest.raises(TypeError):
@@ -22,7 +22,7 @@ def test_GlobalSearch():
 def test_SurrogateFunction():
     """ Test that the SurrogateFunction ABC raises a TypeError"""
 
-    from parmoo.structs import SurrogateFunction
+    from parmoo.surrogates.surrogate_function import SurrogateFunction
     import pytest
 
     with pytest.raises(TypeError):
@@ -32,7 +32,7 @@ def test_SurrogateFunction():
 def test_SurrogateOptimizer():
     """ Test that the SurrogateFunction ABC raises a TypeError"""
 
-    from parmoo.structs import SurrogateOptimizer
+    from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
     import pytest
 
     with pytest.raises(TypeError):

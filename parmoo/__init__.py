@@ -11,5 +11,4 @@ __author__ = "Tyler H. Chang, Stefan M. Wild, and Hyrum Dickinson"
 __credits__ = ("Argonne National Laboratory and " +
                "Lawrence Berkeley National Laboratory")
 
-from .moop import MOOP
-from .moop_base import MOOP_base
+from .core import MOOP

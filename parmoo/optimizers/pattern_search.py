@@ -17,8 +17,8 @@ The classes include:
 import jax
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import SurrogateOptimizer
-from parmoo.util import xerror
+from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
+from parmoo.utilities.error_checks import xerror
 from scipy.stats.qmc import LatinHypercube
 
 
@@ -476,7 +476,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.utilities.moop_utils import updatePF
 
         # Check that x is legal
         if self.n != x.shape[1]:

@@ -13,8 +13,9 @@ import numpy as np
 from os.path import exists as file_exists
 import pandas as pd
 
-from parmoo.util import check_names, approx_equal
-from parmoo.structs import SimulationDatabase
+from parmoo.databases.simulation_database import SimulationDatabase
+from parmoo.utilities.error_checks import check_names
+from parmoo.utilities.moop_utils import approx_equal
 
 
 class NumpyDatabase(SimulationDatabase):
