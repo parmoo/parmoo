@@ -65,7 +65,7 @@ and with Python's built-in multiprocessing module.
    command inside an ``if __name__ == '__main__':`` block, as shown in the
    example above.
    Read more about the issue here:
-   https://libensemble.readthedocs.io/en/main/running_libE.html#local-comms
+   https://libensemble.readthedocs.io/en/main/running_libE.html
 
 The result from running the example is shown below.
 

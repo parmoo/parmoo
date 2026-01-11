@@ -325,7 +325,7 @@ Please read our LICENSE_ and CONTRIBUTING_ files.
 .. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
-.. _jax: https://jax.readthedocs.io/en/latest/
+.. _jax: https://docs.jax.dev/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
