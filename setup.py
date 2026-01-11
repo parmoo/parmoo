@@ -85,7 +85,7 @@ setup(
 
     extras_require={
         'extras': ["libensemble", "plotly", "dash", "kaleido"],
-        'docs': ["sphinx", "sphinxcontrib.bibtex", "sphinx_rtd_theme"]},
+        'docs': ["sphinx", "sphinxcontrib.bibtex", "sphinx_rtd_theme", "sphinx-design"]},
 
     classifiers=[
         "Development Status :: 4 - Beta",
