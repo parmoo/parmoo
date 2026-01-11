@@ -42,8 +42,8 @@ To run in double precision, the following code is needed at startup:
 Things that often fail to jit
 -----------------------------
 
-When the :meth:`MOOP.compile() <core.moop.MOOP.compile>` method is called,
-ParMOO attempts to jit many common items.
+When the :meth:`MOOP.compile() <core.moop_base.MOOP_base.compile>` method is
+called, ParMOO attempts to jit many common items.
 If info-level logging is turned on (see the logging tutorial) then
 ParMOO will print warnings for items that failed to ``jit``.
 

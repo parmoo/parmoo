@@ -249,7 +249,7 @@ This is useful to know if you are using a parallel solver.
 Finally, the MOOP is solved using the
 :meth:`MOOP.solve(budget) <core.moop.MOOP.solve>` method, and the
 results can be viewed using
-:meth:`MOOP.getPF() <core.moop.MOOP.getPF>`.
+:meth:`MOOP.getPF() <core.moop_base.MOOP_base.getPF>`.
 
 .. code-block:: python
 

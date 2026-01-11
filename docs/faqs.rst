@@ -146,9 +146,14 @@ Frequently asked questions:
       All of this expense adds up, especially if you are using a large
       total budget, since the cost of fitting such Gaussian processes grows
       cubically with the number of data points.
-      One solution is to switch to using a
-      :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
-      surrogate, which does not use the entire database when fitting
+      One solution is to switch to using local solver, by switching to one of
+      the local optimizers, such as
+      :class:`LocalSurrogate_PS <optimizers.pattern_search.LocalSurrogate_PS>`
+      or
+      :class:`LocalSurrogate_BFGS <optimizers.lbfgsb.LocalSurrogate_BFGS>`.
+      This will allow the
+      :class:`GaussRBF <surrogates.gaussian_proc.GaussRBF>`
+      surrogate to update without using the entire database when fitting
       surrogates, and therefore is more scalable for handling large budgets.
       See our :ref:`tutorial on local methods <high_d_ex>`
       for an example.
