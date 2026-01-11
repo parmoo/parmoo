@@ -107,7 +107,7 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                                 "must be a float")
         else:
             self.momentum = 9e-1
-        self.eps = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
+        self.eps = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size != self.n:
@@ -401,7 +401,7 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
         else:
             self.opt_budget = 1500
         # Check that the contents of hyperparams are legal
-        self.eps = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
+        self.eps = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
         if 'gps_budget' in hyperparams:
             if isinstance(hyperparams['gps_budget'], int):
                 if hyperparams['gps_budget'] < 1 or \
@@ -628,7 +628,7 @@ def _accelerated_pattern_search(n, lb, ub, x0, obj_func, ibudget,
     if np_rng is None:
         np_rng = np.random.default_rng()
     # Check working tolerance (unit roundoff)
-    mu = jnp.finfo(jnp.ones(1)).eps
+    mu = jnp.finfo(jnp.ones(1).dtype).eps
     root_mu = np.sqrt(mu)
     # Loop over all starts
     for kk in range(istarts):

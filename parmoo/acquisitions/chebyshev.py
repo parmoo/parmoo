@@ -64,7 +64,7 @@ class UniformAugChebyshev(AcquisitionFunction):
         # Initialize the weights array
         self.weights = np.zeros(o)
         # Check hyperparameters
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         self.alpha = self.eps ** 0.25 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
@@ -315,7 +315,7 @@ class FixedAugChebyshev(AcquisitionFunction):
             self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
         # Check hyperparameters dictionary for alpha
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         self.alpha = self.eps ** 0.25 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
