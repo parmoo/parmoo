@@ -28,7 +28,6 @@ Jacobian
 Jittable
 Jitting
 Kaleido
-kaleido
 LBFGS
 LBFGSB
 LHS
@@ -235,6 +234,7 @@ jits
 jitting
 jpeg
 json
+kaleido
 lamx
 lbfgsb
 leq

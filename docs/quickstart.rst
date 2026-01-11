@@ -130,7 +130,7 @@ you can view the coverage report using the ``coverage report`` command.
    pytest
    coverage report
 
-Running the regression tests and libensemble tests is a bit more involved and
+Running the regression tests and libEnsemble tests is a bit more involved and
 is usually accomplished via the ``-l`` flag for the
 ``parmoo/tests/run-tests.sh`` script.
 
