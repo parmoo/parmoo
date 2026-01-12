@@ -1,12 +1,7 @@
 name: Check links, especially in docs
 
-# Uncomment to turn link checking back on
-# on:
-#   workflow_dispatch:
-#   push:
-#     branches: [ main, develop ]
-#   pull_request:
-#     branches: [ main, develop ]
+on:
+  workflow_dispatch:
 
 jobs:
   linkcheck:
