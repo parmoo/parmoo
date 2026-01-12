@@ -5,6 +5,7 @@ CPUs
 Chebyshev
 CompositeFunction
 ConstraintFunction
+cov
 DFO
 DOEs
 DataFrame
@@ -234,6 +235,7 @@ jits
 jitting
 jpeg
 json
+kaleido
 lamx
 lbfgsb
 leq
