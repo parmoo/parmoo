@@ -154,7 +154,7 @@ class MOOP_base(ABC):
         # Initialize the constants, counters, and adaptive parameters
         self.compiled = False
         self.empty = jnp.zeros(0)
-        self.epsilon = jnp.sqrt(jnp.finfo(jnp.ones(1)).eps)
+        self.epsilon = jnp.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
         self.iteration = 0
         self.penalty_param = 1.0
         # Initialize checkpointing markers

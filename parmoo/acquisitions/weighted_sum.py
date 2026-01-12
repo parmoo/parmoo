@@ -70,7 +70,7 @@ class UniformWeights(AcquisitionFunction):
                                 "numpy.random.Generator")
         else:
             self.np_rng = np.random.default_rng()
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         return
 
     def useSD(self):
@@ -248,7 +248,7 @@ class FixedWeights(AcquisitionFunction):
         else:
             self.np_rng = np.random.default_rng()
         # Check the hyperparams dictionary for weights
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         if 'weights' in hyperparams:
             # If weights are provided, check that they are legal
             if not isinstance(hyperparams['weights'], np.ndarray):

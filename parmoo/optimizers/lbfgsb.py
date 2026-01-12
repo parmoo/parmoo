@@ -67,7 +67,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
         self.bounds = np.zeros((self.n, 2))
         self.bounds[:, 0] = lb
         self.bounds[:, 1] = ub
-        self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
         # Check that the contents of hyperparams is legal
         if 'opt_restarts' in hyperparams:
             if isinstance(hyperparams['opt_restarts'], int):
@@ -277,7 +277,7 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                                 "must be an integer")
         else:
             self.restarts = 2
-        self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size != self.n:

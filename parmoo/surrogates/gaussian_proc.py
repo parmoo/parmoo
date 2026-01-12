@@ -90,7 +90,7 @@ class GaussRBF(SurrogateFunction):
         else:
             self.nugget = 0.0
         # Check for 'des_tols' optional key in hyperparams
-        self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:
