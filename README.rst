@@ -136,6 +136,10 @@ Before doing so, it is recommended to create a new conda environment using:
 Testing
 -------
 
+Note that in order to run the unit tests, you must first install the
+``parmoo[extras]``, as described above.  This may include the additional steps
+such as ``kaleido_get_chrome``.
+
 You can install pytest_ with the pytest-cov_ plugin and flake8_ using the
 ``tests`` extension, then you can lint the project with ``flake8`` and run the
 unit tests for your installation using ``pytest``. After running unit tests,

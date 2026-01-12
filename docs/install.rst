@@ -62,32 +62,6 @@ Again, note that the full feature set for libEnsemble_ and kaleido_ may require
 you to separately install an MPI implementation (such as Open_MPI_) and Google
 chrome (e.g., via kaleido_get_chrome_), respectively.
 
-To run the tests, you can install pytest_ with the pytest-cov_ plugin and
-flake8_ using the ``tests`` extension, then you can lint the project with
-``flake8`` and run the unit tests for your installation using ``pytest``. After
-running unit tests, you can view the coverage report using the ``coverage
-report`` command.
-
-.. code-block:: bash
-
-   pip install -e ".[tests]"
-   flake8 parmoo
-   pytest
-   coverage report
-
-Running the regression tests and libensemble tests is a bit more involved and
-is usually accomplished via the ``-l`` flag for the
-``parmoo/tests/run-tests.sh`` script.
-
-To run all the linter, unit tests, regression tests, and generate the coverage
-report in a single command, run the script with all 4 flags set.
-
-.. code-block::bash
-
-   ./parmoo/tests/run-tests.sh -curl
-
-These tests are run regularly using GitHub Actions_.
-
 Conda Forge
 -----------
 
@@ -160,17 +134,38 @@ To install libEnsemble with PyPI, use
 
 or visit the libEnsemble_documentation_ for detailed installation instructions.
 
-After installation, you can run the unit tests using either:
+Testing
+-------
+
+If you've done a full installation using any of the above methods (including
+all the ``parmoo[extras]``), you can also run the unit tests to confirm the
+installation.
+To run the tests, you can install pytest_ with the pytest-cov_ plugin and
+flake8_ using the ``tests`` extension, then you can lint the project with
+``flake8`` and run the unit tests for your installation using ``pytest``. After
+running unit tests, you can view the coverage report using the
+``coverage report`` command.
+E.g., using ``pip``, running the tests looks something like this:
 
 .. code-block:: bash
 
-    python3 -m pytest
+   pip install -e ".[tests]"
+   flake8 parmoo
+   pytest
+   coverage report
 
-(if you used the ``pip install -e .`` method), or:
+Running the regression tests and libensemble tests is a bit more involved and
+is usually accomplished via the ``-l`` flag for the
+``parmoo/tests/run-tests.sh`` script.
 
-.. code-block:: bash
+To run all the linter, unit tests, regression tests, and generate the coverage
+report in a single command, run the script with all 4 flags set.
 
-    parmoo/tests/run-tests.sh -cu<rl>
+.. code-block::bash
+
+   ./parmoo/tests/run-tests.sh -curl
+
+These tests are run regularly using GitHub Actions_.
 
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
