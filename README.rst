@@ -144,7 +144,7 @@ you can view the coverage report using the ``coverage report`` command.
 .. code-block:: bash
 
    pip install -e ".[tests]"
-   flake8
+   flake8 parmoo
    pytest
    coverage report
 

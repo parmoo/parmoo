@@ -28,8 +28,9 @@ And for using the Pareto front visualization library in ``parmoo.viz``:
 If you want to run the tests (in ``parmoo.tests``), then you will also need:
 
  * pytest_,
- * pytest-cov_, and
- * flake8_.
+ * pytest-cov_,
+ * flake8_, and
+ * flake8-pyproject.
 
 Note that the full feature set for libEnsemble_ and kaleido_ may require you to
 separately install an MPI implementation (such as Open_MPI_) and Google chrome
@@ -57,14 +58,35 @@ To install *all* dependencies, use:
 
     pip install < --user > parmoo[extras]
 
-To check the installation by running the full test suite, use:
+Again, note that the full feature set for libEnsemble_ and kaleido_ may require
+you to separately install an MPI implementation (such as Open_MPI_) and Google
+chrome (e.g., via kaleido_get_chrome_), respectively.
+
+To run the tests, you can install pytest_ with the pytest-cov_ plugin and
+flake8_ using the ``tests`` extension, then you can lint the project with
+``flake8`` and run the unit tests for your installation using ``pytest``. After
+running unit tests, you can view the coverage report using the ``coverage
+report`` command.
 
 .. code-block:: bash
 
-    python3 setup.py test
+   pip install -e ".[tests]"
+   flake8 parmoo
+   pytest
+   coverage report
 
-which will also install the test dependencies (pytest_, pytest-cov_, and
-flake8_).
+Running the regression tests and libensemble tests is a bit more involved and
+is usually accomplished via the ``-l`` flag for the
+``parmoo/tests/run-tests.sh`` script.
+
+To run all the linter, unit tests, regression tests, and generate the coverage
+report in a single command, run the script with all 4 flags set.
+
+.. code-block::bash
+
+   ./parmoo/tests/run-tests.sh -curl
+
+These tests are run regularly using GitHub Actions_.
 
 Conda Forge
 -----------
@@ -112,7 +134,7 @@ In a bash shell, that looks like this.
    cd parmoo
    pip install -e .
 
-This command will use the ``setup.py`` file to generate an ``egg`` inside
+This command will use the ``pyproject.toml`` file to generate an ``egg`` inside
 the ``parmoo`` base directory.
 
 Alternatively, you could just add the ``parmoo`` base directory to your
@@ -138,11 +160,11 @@ To install libEnsemble with PyPI, use
 
 or visit the libEnsemble_documentation_ for detailed installation instructions.
 
-After installation, you can run the tests using either:
+After installation, you can run the unit tests using either:
 
 .. code-block:: bash
 
-    python3 setup.py test
+    python3 -m pytest
 
 (if you used the ``pip install -e .`` method), or:
 

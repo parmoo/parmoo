@@ -82,7 +82,8 @@ tests = [
   "pytest",
   "pytest-cov",
   "pyspelling",
-  "flake8"
+  "flake8",
+  "flake8-pyproject"
 ]
 
 [tool.setuptools]
@@ -108,3 +109,13 @@ packages = [
 
 [tool.setuptools.dynamic]
 version = { attr = "parmoo.version.__version__" }
+
+[tool.flake8]
+filename = "*.py"
+exclude = [
+  "parmoo/tests/regression_tests/*",
+  "parmoo/tests/libe_tests/*",
+]
+per-file-ignores = [
+  "__init__.py:F401"
+]
