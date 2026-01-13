@@ -1,12 +1,12 @@
 Embedder Classes for Custom Variable Types
 ------------------------------------------
 
-When defining your :class:`MOOP <moop.MOOP>` object as described in
+When defining your :class:`MOOP <core.moop.MOOP>` object as described in
 :ref:`the name key section <naming>`, it is possible to provide a
 custom variable by using the ``embedder`` key.
 
 When used, this key must contain a value with the
-:class:`Embedder <structs.Embedder>` type.
+:class:`Embedder <embeddings.embedder.Embedder>` type.
 Embeddings for several common variable types are defined below, and
 provided behind the scenes by ParMOO whenever a non custom design variable
 is added to a problem.
@@ -18,9 +18,27 @@ design variable might be implemented.
 
     from parmoo.embeddings import default_embedders
 
-These pre-existing embedders are:
+To implement a custom embedding, import and extend the ``Embedder`` ABC.
 
-Default Embedder
+.. code-block:: python
+
+    from parmoo.embeddings.embedder import Embedder
+
+The ``Embedder`` class and pre-existing embedders library are documented below.
+
+Embedder
+~~~~~~~~
+
+.. automodule:: embeddings.embedder
+..    :members: embeddings/embedder
+
+.. autoclass:: Embedder
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
+
+Default Embedders
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: embeddings.default_embedders

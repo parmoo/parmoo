@@ -1,9 +1,12 @@
 
-""" Contains the MOOP class for defining multiobjective optimization problems.
+""" Contains the MOOP_base class defining multiobjective optimization problems.
 
-``parmoo.moop.MOOP`` is the base class for defining and solving multiobjective
-optimization problems (MOOPs). Each MOOP object may contain several
-simulations, specified using dictionaries.
+``parmoo.moop.MOOP_base`` is the base class for defining and solving
+multiobjective optimization problems (MOOPs). Each MOOP object may contain
+several simulations, specified using dictionaries.  This class defines all
+private utilities and several setter/getter methods.  The methods used for
+actually solving the MOOP must be defined in another instantiation of this
+class.
 
 """
 
@@ -30,7 +33,8 @@ from parmoo.utilities.error_checks import gradient_error
 class MOOP_base(ABC):
     """ ABC for defining a multiobjective optimization problem (MOOP).
 
-    The following public methods must be defined by the implementation:
+    The following public methods are defined herein, but may need to be
+    extended by an implementation class:
 
     Setters and problem definition:
      * ``MOOP.addDesign(*args)``
@@ -46,27 +50,28 @@ class MOOP_base(ABC):
      * ``MOOP.getObjectiveType()``
      * ``MOOP.getConstraintType()``
 
-    Database lookups:
+    Database lookups and evaluator utilities:
      * ``MOOP.updateSimDb(x, sx, s_name)``
      * ``MOOP.checkSimDb(x, s_name)``
      * ``MOOP.getPF(format='ndarray')``
      * ``MOOP.getSimulationData(format='ndarray')``
      * ``MOOP.getObjectiveData(format='ndarray')``
-
-   Solver steps:
      * ``MOOP.evaluateSimulation(x, s_name)``
      * ``MOOP.addObjData(x, sx)``
-     * ``MOOP.iterate(k, ib=None)``
-     * ``MOOP.filterBatch(*args)``
-     * ``MOOP.updateAll(k, batch)``
-     * ``MOOP.solve(iter_max=None, sim_max=None)``
 
     Checkpointing methods:
      * ``MOOP.setCheckpoint(checkpoint, [filename="parmoo"])``
      * ``MOOP.save([filename="parmoo"])``
      * ``MOOP.load([filename="parmoo"])``
 
-    The following private methods are implemented herein:
+   The following solver steps must be defined in another implementation class
+   (subclass) of this:
+     * ``MOOP.iterate(k, ib=None)``
+     * ``MOOP.filterBatch(*args)``
+     * ``MOOP.updateAll(k, batch)``
+     * ``MOOP.solve(iter_max=None, sim_max=None)``
+
+    The following private methods are also implemented herein:
      * ``MOOP._embed(x)``
      * ``MOOP._extract(x)``
      * ``MOOP._embed_grads(x)``

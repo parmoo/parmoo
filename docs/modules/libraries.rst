@@ -1,5 +1,5 @@
-Built-in Problem Libraries
---------------------------
+Built-in Problem Libraries and Custom Problem Templates
+-------------------------------------------------------
 
 We provide several modules containing common objective and constraint
 functions, which match the ParMOO interface and already support
@@ -12,13 +12,14 @@ You can import these and use them to help define your MOOP.
     from parmoo import objectives
     from parmoo import constraints
 
-We also provide templates for defining callable objects, which match
-ParMOO's interface.
+We also provide templates for defining callable simulations, objectives, and
+constraints, which match ParMOO's callable object interface.
 
 .. code-block:: python
 
     from parmoo.simulations import sim_func
-    from parmoo.structs import CompositeFunction
+    from parmoo.objectives.objective_function import ObjectiveFunction
+    from parmoo.constraints.constraint_function import ConstraintFunction
 
 Current options are:
 

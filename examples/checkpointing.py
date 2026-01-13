@@ -57,7 +57,7 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # Use checkpointing without saving a separate data file (in "parmoo.moop" file)
-my_moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
+my_moop.setCheckpoint(True, filename="parmoo")
 
 # Solve the problem with 4 iterations
 my_moop.solve(4)

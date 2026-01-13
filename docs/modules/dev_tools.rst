@@ -8,5 +8,4 @@ useful for developers.
    :maxdepth: 1
    :caption: Modules:
 
-   structs
    util

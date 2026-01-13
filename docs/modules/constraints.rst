@@ -1,9 +1,20 @@
-Constraint Function Templates (ABCs)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Constraint Functions
+-------------------
 
-For templates to define your own constraint function, see
-the
-:class:`CompositeFunction ABC in structs <structs.CompositeFunction>`.
+This module provides a library of pre-defined ParMOO constraint function
+implementations and templates to define your own constraint function.
+
+ConstraintFunction Template (ABC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: constraints.const_func
+..    :members: constraints/const_func
+
+.. autoclass:: ConstraintFunction
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
 
 Constraint Function Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

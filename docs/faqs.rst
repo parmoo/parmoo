@@ -119,7 +119,7 @@ Frequently asked questions:
        - For practical purposes: you could solve the problem with ParMOO on
          as large of a budget as you can afford with checkpointing turned
          on. Then plot the results using one of the methods from our
-         :mod:`viz <viz>`
+         viz_
          library and see how you are doing. If you are unsatisfied with the
          results, re-load from the last checkpoint and solve with a few added
          iterations. Then plot your results again and see if the performance
@@ -146,9 +146,14 @@ Frequently asked questions:
       All of this expense adds up, especially if you are using a large
       total budget, since the cost of fitting such Gaussian processes grows
       cubically with the number of data points.
-      One solution is to switch to using a
-      :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
-      surrogate, which does not use the entire database when fitting
+      One solution is to switch to using local solver, by switching to one of
+      the local optimizers, such as
+      :class:`LocalSurrogate_PS <optimizers.pattern_search.LocalSurrogate_PS>`
+      or
+      :class:`LocalSurrogate_BFGS <optimizers.lbfgsb.LocalSurrogate_BFGS>`.
+      This will allow the
+      :class:`GaussRBF <surrogates.gaussian_proc.GaussRBF>`
+      surrogate to update without using the entire database when fitting
       surrogates, and therefore is more scalable for handling large budgets.
       See our :ref:`tutorial on local methods <high_d_ex>`
       for an example.
@@ -185,8 +190,7 @@ Frequently asked questions:
          optimizers.
        - If you're a professional optimizer or researcher and you want
          to try your own methods, then you can do so by writing your own
-         implementation for one of our
-         :mod:`Abstract Base Classes <structs>`.
+         implementation for one of our abstract base classes.
          If you try a novel method and it works and you're ready to publish
          it, consider sharing your novel solver on the
          parmoo_solver_farm_!
@@ -199,7 +203,8 @@ with us inspired this FAQ:
  - Nicholas Antoniou (independent researcher)
 
 
-.. _advanced_example: https://parmoo.readthedocs.io/en/latest/tutorials/basic-tutorials.html#Solving
+.. _advanced_example: https://parmoo.readthedocs.io/en/latest/tutorials/basic-tutorials.html
 .. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _quickstart: quickstart.html
 .. _tutorials: tutorials/basic-tutorials.html
+.. _viz: modules/viz.html

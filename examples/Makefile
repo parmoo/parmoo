@@ -34,7 +34,7 @@ local_method.jpeg: local_method.py
 libe_basic_ex.out: libe_basic_ex.py
 	python3 libe_basic_ex.py --comms local --nworkers 3 > libe_basic_ex.out
 	rm -f parmoo.moop parmoo.surrogate.1 parmoo.search.1 parmoo.optimizer
-	rm -f libE_stats.txt ensemble.log
+	rm -f parmoo.simdb.json libE_stats.txt ensemble.log
 
 clean:
 	rm -f *.out libE_stats.txt ensemble.log *.jpeg

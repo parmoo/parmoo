@@ -10,7 +10,27 @@ response surface, based on data gathered during the solve.
 
     from parmoo import surrogates
 
-Available techniques are:
+To implement your own custom surrogate function in ParMOO, import and extend
+the ``SurrogateFunction`` ABC.
+
+.. code-block:: python
+
+    from parmoo.surrogates.surrogate_function import SurrogateFunction
+
+The ``SurrogateFunction`` ABC and the library of existing surrogate functions
+are documented below.
+
+SurrogateFunction
+~~~~~~~~~~~~~~~~~
+
+.. automodule:: surrogates.surrogate_function
+..    :members: surrogates/surrogate_function
+
+.. autoclass:: SurrogateFunction
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
 
 Gaussian Process (RBF) Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

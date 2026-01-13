@@ -7,6 +7,7 @@ ParMOO API
 
    modules/class_api
    modules/embeddings
+   modules/databases
    modules/acquisitions
    modules/optimizers
    modules/searches
