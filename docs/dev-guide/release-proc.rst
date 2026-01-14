@@ -27,19 +27,19 @@ Before release
   - Email the address listed under Resources and confirm that you have 
     received a response; if not, this address needs to be updated also in 
     ``docs/refs.rst``, ``docs/quickstart.rst``, ``CONTRIBUTING.rst``, 
-    ``setup.py``, ``SUPPORT.rst``, and possibly other places.
+    ``pyproject.toml``, ``SUPPORT.rst``, and possibly other places.
 
 - Check for spelling mistakes and typos in the docs and Python docstrings:
   - ``pyspelling -c .github/config/.spellcheck.yml``
 
-- ``setup.py`` and ``parmoo/__init__.py`` are checked to ensure all
+- ``pyproject.toml`` and ``parmoo/__init__.py`` are checked to ensure all
   information is up to date.
 
-- ``MANIFEST.in`` and ``setup.py`` ``packages`` list are checked for
+- ``MANIFEST.in`` and ``pyproject.toml`` ``packages`` list are checked for
   completeness.  In particular, if new modules or subdirectories have been
-  added, the ``setup.py`` file must be updated accordingly.  Locally, try out
-  ``python setup.py sdist`` and check created tarball contains correct files
-  and directories for PyPI package.
+  added, the ``pyproject.toml`` file must be updated accordingly.  Locally, try
+  out ``python -m build --sdist`` and check created tarball contains correct
+  files and directories for PyPI package.
 
 - Check that ``parmoo`` requirements (in ``REQUIREMENTS.txt``)
   are compatible with ``readthedocs.io`` (in ``.readthedocs.yml``)
