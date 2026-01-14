@@ -9,7 +9,7 @@ https://github.com/parmoo/parmoo/issues
 Release 0.5.0
 -------------
 
-:Date: Jan ??, 2026
+:Date: Jan 14, 2026
 
 Update and internal refactor for long-term maintainability.
 Primarily addresses items in #109.
