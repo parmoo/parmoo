@@ -18,9 +18,10 @@ Before release
 
 - Check ``README.rst``: 
 
-  - *Citing ParMOO* entries correct?
+  - *Citing ParMOO* entries correct (including version and year of documentation)?
 
-    - Citations in ``docs/refs.rst`` and ``docs/tutorials/local_method.rst`` consistent with associated entries in ``README.rst``?
+    - Citations in ``docs/refs.rst`` and ``docs/tutorials/local_method.rst`` 
+      consistent with associated entries in ``README.rst``?
 
   - Coverage badge branch set to ``main`` (for badge and link)?
 
