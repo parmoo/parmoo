@@ -6,6 +6,47 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
+Release 0.5.0
+-------------
+
+:Date: Jan ??, 2026
+
+Update and internal refactor for long-term maintainability.
+Primarily addresses items in #109.
+Should be little to no change to public user interface.
+
+Major changes:
+
+ - Break up the ``MOOP`` class into a jax-enabled ``MOOP_base`` class that
+   handles problem representation and jax functions
+ - Create a separate simulation-optimization-specific ``Database`` class that
+   the ``MOOP`` class can use to handle all database operations
+ - Replace a lot of the user-definition checks in the ``MOOP`` class with
+   utility functions to clean up the code footprint and improve testing and
+   error handling
+ - Restructure the ``MOOP`` class and its base to make things that are just
+   describing problem setup and representation all encapsulated in the
+   ``MOOP_base`` class, leaving the ``moop.py`` file to contain only code that
+   describes the actual optimization algorithm (in terms of high-level
+   operations defined in the ``MOOP_base``)
+ - Break up the ``structs.py`` file, and put each base class in the
+   corresponding directory. This will be easier to navigate and maintain going
+   forward as we are starting to have a lot of base classes that are mostly
+   unrelated
+ - Replace the ``setup.py`` (which is deprecated) with a ``pyproject.toml``, in
+   particular this slightly changes our development and testing workflow
+ - Update documentation to reflect above changes
+ - Fix spellcheck configuration file to ignore code blocks and links
+ - Add a link-checker workflow (not active) to check dead links in the
+   documentation
+
+After this release, only the following bullet remains to close #109:
+
+ - Restructure the unit tests to test each of these new files individually and
+   with higher coverage. Also take this opportunity to improve readability by
+   moving redundant setup code into a new parmoo/tests/unit_tests/setup.py
+   utility file.
+
 Release 0.4.1
 -------------
 
