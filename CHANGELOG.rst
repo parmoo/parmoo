@@ -12,8 +12,8 @@ Release 0.5.0
 :Date: Jan 14, 2026
 
 Update and internal refactor for long-term maintainability.
-Primarily addresses items in #109.
-Should be little to no change to public user interface.
+Primarily addresses items in #109, with
+little to no change to public user interface.
 
 Major changes:
 
@@ -24,8 +24,8 @@ Major changes:
  - Replace a lot of the user-definition checks in the ``MOOP`` class with
    utility functions to clean up the code footprint and improve testing and
    error handling
- - Restructure the ``MOOP`` class and its base to make things that are just
-   describing problem setup and representation all encapsulated in the
+ - Restructure the ``MOOP`` class and its base to make things that just
+   describe problem setup and representation all encapsulated in the
    ``MOOP_base`` class, leaving the ``moop.py`` file to contain only code that
    describes the actual optimization algorithm (in terms of high-level
    operations defined in the ``MOOP_base``)
@@ -33,11 +33,11 @@ Major changes:
    corresponding directory. This will be easier to navigate and maintain going
    forward as we are starting to have a lot of base classes that are mostly
    unrelated
- - Replace the ``setup.py`` (which is deprecated) with a ``pyproject.toml``, in
-   particular this slightly changes our development and testing workflow
+ - Replace ``setup.py`` (which is deprecated) with ``pyproject.toml``; in
+   particular this slightly changes the development and testing workflow
  - Update documentation to reflect above changes
  - Fix spellcheck configuration file to ignore code blocks and links
- - Add a link-checker workflow (not active) to check dead links in the
+ - Add a link-checker workflow (manually triggered) to check dead links in the
    documentation
 
 After this release, only the following bullet remains to close #109:
