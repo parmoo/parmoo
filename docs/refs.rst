@@ -46,7 +46,7 @@ Our online documentation:
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
         number      = {Version 0.5.0},
-        year        = {2024},
+        year        = {2026},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }
 
