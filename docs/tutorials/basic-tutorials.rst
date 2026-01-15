@@ -33,7 +33,7 @@ The name Key and Input/Output Types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following `named_var_ex.py <https://github.com/parmoo/parmoo/blob/main/examples/named_var_ex.py>`_ code demonstrates ParMOO's output datatypes
-and proper definition of the :mod:`MOOP <moop.MOOP>` object.
+and proper definition of the :mod:`MOOP <core.moop.MOOP>` object.
 
 .. literalinclude:: ../../examples/named_var_ex.py
     :language: python
@@ -89,7 +89,8 @@ This example shows how to minimize two conflicting quadratic functions
 of three variables (named ``x1``, ``x2``, and ``x3``),
 under the constraint that an additional categorical variable (``x4``)
 must be fixed in class ``0`` :math:`^*`,
-using the derivative-based solver :mod:`LBFGSB <optimizers.lbfgsb.LBFGSB>`.
+using the derivative-based solvers, such as one of the
+:mod:`LBFGSB <optimizers.lbfgsb>` solvers.
 
 :math:`^*` No, this constraint does not really affect the solution;
 it is just here to demonstrate how constraints/categorical variables

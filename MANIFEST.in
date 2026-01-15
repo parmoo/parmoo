@@ -8,17 +8,27 @@ recursive-include parmoo *
 recursive-include examples *
 recursive-include docs *
 
-recursive-exclude * *.gitignore
-recursive-exclude * *.coverage
-recursive-exclude * __pycache__
-recursive-exclude * *pytest_cache
 recursive-exclude docs/build *
 recursive-exclude * cov_*
-recursive-exclude * *.o
-recursive-exclude * *.py[co]
-recursive-exclude * *.npy
-recursive-exclude * *.log
-recursive-exclude * libE_stats.txt
-recursive-exclude * parmoo.moop
-recursive-exclude * parmoo.simdb.json
-recursive-exclude * parmoo.surrogate.*
+
+global-exclude *.gitignore
+global-exclude *.coverage
+global-exclude __pycache__/*
+global-exclude __pycache__/*/*
+global-exclude __pycache__/*/*/*
+global-exclude __pycache__/*/*/*/*
+global-exclude .pytest_cache/*
+global-exclude .pytest_cache/*/*
+global-exclude .pytest_cache/*/*/*
+global-exclude .pytest_cache/*/*/*/*
+global-exclude *.o
+global-exclude *.py[co]
+global-exclude *.npy
+global-exclude *.log
+global-exclude libE_stats.txt
+global-exclude parmoo.moop
+global-exclude parmoo.simdb.json
+global-exclude parmoo.surrogate.*
+global-exclude parmoo.search.*
+global-exclude parmoo.optimizer.*
+global-exclude parmoo.acquisition.*

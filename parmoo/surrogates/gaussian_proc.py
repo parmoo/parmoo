@@ -13,8 +13,8 @@ from jax import jit, vmap
 from jax import numpy as jnp
 from jax import lax
 import numpy as np
-from parmoo.structs import SurrogateFunction
-from parmoo.util import xerror
+from parmoo.surrogates.surrogate_function import SurrogateFunction
+from parmoo.utilities.error_checks import xerror
 from scipy.stats import tstd
 
 
@@ -90,7 +90,7 @@ class GaussRBF(SurrogateFunction):
         else:
             self.nugget = 0.0
         # Check for 'des_tols' optional key in hyperparams
-        self.mu = np.sqrt(jnp.finfo(jnp.ones(1)).eps)
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
         if 'des_tols' in hyperparams:
             if isinstance(hyperparams['des_tols'], np.ndarray):
                 if hyperparams['des_tols'].size == self.n:

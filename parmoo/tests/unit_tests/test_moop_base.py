@@ -1,6 +1,6 @@
 
-def test_MOOP_embed_extract():
-    """ Test that the MOOP class can embed/extract design variables.
+def test_MOOP_base_embed_extract():
+    """ Test that the MOOP_base class can embed/extract design variables.
 
     Add several design variables and generate an embedding. Then embed and
     extract several inputs, and check that the results match up to the
@@ -64,10 +64,10 @@ def test_MOOP_embed_extract():
         assert (np.abs(moop._extract(xxi)["x7"] - xi["x7"]) < 1.0e-8)
 
 
-def test_MOOP_pack_unpack_sim():
-    """ Check that the MOOP class handles simulation packing correctly.
+def test_MOOP_base_pack_unpack_sim():
+    """ Check that the MOOP_base class handles simulation packing correctly.
 
-    Initialize a MOOP object with and without design variable names.
+    Initialize a MOOP_base object with and without design variable names.
     Add 2 simulations and pack/unpack each output.
 
     """
@@ -105,11 +105,12 @@ def test_MOOP_pack_unpack_sim():
     assert (moop._unpack_sim(sx)['sim2'][1] == sxx[0]['sim2'][1])
 
 
-def test_MOOP_fit_update_surrogates():
-    """ Check that the MOOP class handles evaluating surrogate models properly.
+def test_MOOP_base_fit_update_surrogates():
+    """ Check that the MOOP_base class handles evaluating surrogate models
+    properly.
 
-    Initialize a MOOP object and check that the _evaluate_surrogates() function
-    works correctly.
+    Initialize a MOOP_base object and check that the _evaluate_surrogates()
+    function works correctly.
 
     """
 
@@ -186,11 +187,12 @@ def test_MOOP_fit_update_surrogates():
         assert (np.linalg.norm(s1i - s2i) < 1.0e-8)
 
 
-def test_MOOP_evaluate_surrogates():
-    """ Check that the MOOP class handles evaluating surrogate models properly.
+def test_MOOP_base_evaluate_surrogates():
+    """ Check that the MOOP_base class handles evaluating surrogate models
+    properly.
 
-    Initialize a MOOP object and check that the _evaluate_surrogates() function
-    works correctly.
+    Initialize a MOOP_base object and check that the _evaluate_surrogates()
+    function works correctly.
 
     """
 
@@ -286,11 +288,11 @@ def test_MOOP_evaluate_surrogates():
                            moop2._evaluate_surrogates(xx)) < 1.0e-8)
 
 
-def test_MOOP_evaluate_objectives():
-    """ Check that the MOOP class handles evaluating objectives properly.
+def test_MOOP_base_evaluate_objectives():
+    """ Check that the MOOP_base class handles evaluating objectives properly.
 
-    Initialize a MOOP object and check that the _evaluate_objectives() function
-    works correctly.
+    Initialize a MOOP_base object and check that the _evaluate_objectives()
+    function works correctly.
 
     """
 
@@ -355,10 +357,10 @@ def test_MOOP_evaluate_objectives():
         assert (np.linalg.norm(fi - fxi) < 1.0e-8)
 
 
-def test_MOOP_evaluate_constraints():
-    """ Check that the MOOP class handles evaluating constraints properly.
+def test_MOOP_base_evaluate_constraints():
+    """ Check that the MOOP_base class handles evaluating constraints properly.
 
-    Initialize a MOOP object and check that the _evaluate_constraints()
+    Initialize a MOOP_base object and check that the _evaluate_constraints()
     function works correctly.
 
     """
@@ -427,11 +429,12 @@ def test_MOOP_evaluate_constraints():
         assert (np.linalg.norm(ci - cxi) < 1.0e-8)
 
 
-def test_MOOP_evaluate_penalty():
-    """ Check that the MOOP class handles evaluating penalty function properly.
+def test_MOOP_base_evaluate_penalty():
+    """ Check that the MOOP_base class handles evaluating penalty function
+    properly.
 
-    Initialize a MOOP object and check that the _evaluate_penalty() function
-    works correctly.
+    Initialize a MOOP_base object and check that the _evaluate_penalty()
+    function works correctly.
 
     """
 
@@ -498,10 +501,10 @@ def test_MOOP_evaluate_penalty():
 
 
 if __name__ == "__main__":
-    test_MOOP_embed_extract()
-    test_MOOP_pack_unpack_sim()
-    test_MOOP_fit_update_surrogates()
-    test_MOOP_evaluate_surrogates()
-    test_MOOP_evaluate_objectives()
-    test_MOOP_evaluate_constraints()
-    test_MOOP_evaluate_penalty()
+    test_MOOP_base_embed_extract()
+    test_MOOP_base_pack_unpack_sim()
+    test_MOOP_base_fit_update_surrogates()
+    test_MOOP_base_evaluate_surrogates()
+    test_MOOP_base_evaluate_objectives()
+    test_MOOP_base_evaluate_constraints()
+    test_MOOP_base_evaluate_penalty()

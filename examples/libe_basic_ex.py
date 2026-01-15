@@ -61,7 +61,7 @@ if __name__ == "__main__":
                                'hyperparams': {}})
     
     # Turn on checkpointing -- creates files parmoo.moop & parmoo.surrogate.1
-    my_moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
+    my_moop.setCheckpoint(True, filename="parmoo")
     
     # Use sim_max = 30 to perform just 30 simulations
     my_moop.solve(sim_max=30)

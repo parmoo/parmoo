@@ -3,14 +3,34 @@ Surrogate Functions
 
 A surrogate model is associated with each simulation when its
 simulation dictionary is added to the ``MOOP`` object.
-This technique is used for generatng an approximation to the simulation's
+This technique is used for generating an approximation to the simulation's
 response surface, based on data gathered during the solve.
 
 .. code-block:: python
 
     from parmoo import surrogates
 
-Available techniques are:
+To implement your own custom surrogate function in ParMOO, import and extend
+the ``SurrogateFunction`` ABC.
+
+.. code-block:: python
+
+    from parmoo.surrogates.surrogate_function import SurrogateFunction
+
+The ``SurrogateFunction`` ABC and the library of existing surrogate functions
+are documented below.
+
+SurrogateFunction
+~~~~~~~~~~~~~~~~~
+
+.. automodule:: surrogates.surrogate_function
+..    :members: surrogates/surrogate_function
+
+.. autoclass:: SurrogateFunction
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
 
 Gaussian Process (RBF) Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

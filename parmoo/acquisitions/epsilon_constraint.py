@@ -12,8 +12,8 @@ The classes include:
 import inspect
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import AcquisitionFunction
-from parmoo.util import xerror
+from parmoo.acquisitions.acquisition_function import AcquisitionFunction
+from parmoo.utilities.error_checks import xerror
 from scipy import stats, integrate
 
 
@@ -71,7 +71,7 @@ class RandomConstraint(AcquisitionFunction):
                                 "numpy.random.Generator")
         else:
             self.np_rng = np.random.default_rng()
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         return
 
     def useSD(self):
@@ -106,7 +106,7 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.utilities.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False
@@ -285,7 +285,7 @@ class EI_RandomConstraint(AcquisitionFunction):
                                 "numpy.random.Generator")
         else:
             self.np_rng = np.random.default_rng()
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         return
 
     def useSD(self):
@@ -320,7 +320,7 @@ class EI_RandomConstraint(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.utilities.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False

@@ -13,7 +13,8 @@ Read more about libEnsemble by visiting the
 The :mod:`libE_MOOP <extras.libe.libE_MOOP>` class is used to solve
 MOOPs using libEnsemble.
 The :mod:`libE_MOOP <extras.libe.libE_MOOP>` class inherits from
-:mod:`MOOP <moop.MOOP>` and supports all of the public methods in its API.
+:class:`MOOP <core.moop.MOOP>` and supports all of the public methods in its
+API.
 
 To create an instance of the :mod:`libE_MOOP <extras.libe.libE_MOOP>` class,
 import it from the :mod:`extras.libe` module and then create a MOOP, just as
@@ -28,10 +29,11 @@ Below we reproduce the example from the :doc:`Quickstart <quickstart>`
 guide, using a :mod:`libE_MOOP <extras.libe.libE_MOOP>` object.
 
 Note that it is always recommended that you turn on
-:meth:`checkpointing <moop.MOOP.setCheckpoint>` when using libEnsemble.
-Since :meth:`setCheckpoint <moop.MOOP.setCheckpoint>` method does not
-support the usage of Python ``lambda`` functions, each of the objectives
-and constraints is explicitly defined.
+:meth:`checkpointing <core.moop_base.MOOP_base.setCheckpoint>` when using
+libEnsemble.
+Since :meth:`setCheckpoint <core.moop_base.MOOP_base.setCheckpoint>` method
+does not support the usage of Python ``lambda`` functions, each of the
+objectives and constraints is explicitly defined.
 
 .. literalinclude:: ../examples/libe_basic_ex.py
     :language: python
@@ -65,7 +67,7 @@ and with Python's built-in multiprocessing module.
    command inside an ``if __name__ == '__main__':`` block, as shown in the
    example above.
    Read more about the issue here:
-   https://libensemble.readthedocs.io/en/main/running_libE.html#local-comms
+   https://libensemble.readthedocs.io/en/main/running_libE.html
 
 The result from running the example is shown below.
 

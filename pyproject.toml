@@ -1,0 +1,123 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parmoo"
+dynamic = ["version"]
+description = "Python library for parallel multiobjective simulation optimization"
+readme = { text = """
+ParMOO is a Python library for solving parallel multiobjective simulation
+optimization problems.
+
+ParMOO uses response surface methodology (surrogate modeling) and is
+flexible enough to allow users to specify their own search techniques,
+surrogates, optimization solvers, and multiobjective acquisition functions.
+
+ParMOO also seeks to exploit structure in simulation optimization problems,
+by modeling simulations separately from surrogates.
+
+ParMOO is distributed under a BSD 3-clause license.
+""", content-type = "text/plain" }
+
+authors = [
+  { name = "Tyler H. Chang" },
+  { name = "Stefan M. Wild" },
+]
+
+maintainers = [
+  { name = "ParMOO Developers", email = "parmoo@lbl.gov" }
+]
+
+license = "BSD-3-Clause"
+license-files = [ "LICENSE" ]
+
+requires-python = ">=3.9"
+
+dependencies = [
+  "jax[cpu]",
+  "numpy",
+  "scipy",
+  "pandas"
+]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Natural Language :: English",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: Unix",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[project.urls]
+Homepage = "https://github.com/parmoo/parmoo"
+Source = "https://github.com/parmoo/parmoo"
+Issues = "https://github.com/parmoo/parmoo/issues"
+
+[project.optional-dependencies]
+extras = [
+  "libensemble",
+  "plotly",
+  "dash",
+  "kaleido"
+]
+
+docs = [
+  "sphinx",
+  "sphinxcontrib.bibtex",
+  "sphinx_rtd_theme",
+  "sphinx-design",
+]
+
+tests = [
+  "pytest",
+  "pytest-cov",
+  "pyspelling",
+  "flake8",
+  "flake8-pyproject"
+]
+
+[tool.setuptools]
+packages = [
+  "parmoo",
+  "parmoo.acquisitions",
+  "parmoo.constraints",
+  "parmoo.core",
+  "parmoo.databases",
+  "parmoo.embeddings",
+  "parmoo.extras",
+  "parmoo.objectives",
+  "parmoo.optimizers",
+  "parmoo.searches",
+  "parmoo.simulations",
+  "parmoo.surrogates",
+  "parmoo.tests",
+  "parmoo.tests.unit_tests",
+  "parmoo.tests.libe_tests",
+  "parmoo.tests.regression_tests",
+  "parmoo.utilities",
+  "parmoo.viz"
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "parmoo.version.__version__" }
+
+[tool.flake8]
+filename = "*.py"
+exclude = [
+  "parmoo/tests/regression_tests/*",
+  "parmoo/tests/libe_tests/*",
+]
+per-file-ignores = [
+  "__init__.py:F401"
+]

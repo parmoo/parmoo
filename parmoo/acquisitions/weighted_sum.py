@@ -13,8 +13,8 @@ The classes include:
 from jax import numpy as jnp
 import numpy as np
 import inspect
-from parmoo.structs import AcquisitionFunction
-from parmoo.util import xerror
+from parmoo.acquisitions.acquisition_function import AcquisitionFunction
+from parmoo.utilities.error_checks import xerror
 
 
 class UniformWeights(AcquisitionFunction):
@@ -70,7 +70,7 @@ class UniformWeights(AcquisitionFunction):
                                 "numpy.random.Generator")
         else:
             self.np_rng = np.random.default_rng()
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         return
 
     def useSD(self):
@@ -101,7 +101,7 @@ class UniformWeights(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.utilities.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False
@@ -248,7 +248,7 @@ class FixedWeights(AcquisitionFunction):
         else:
             self.np_rng = np.random.default_rng()
         # Check the hyperparams dictionary for weights
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         if 'weights' in hyperparams:
             # If weights are provided, check that they are legal
             if not isinstance(hyperparams['weights'], np.ndarray):
@@ -295,7 +295,7 @@ class FixedWeights(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.utilities.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False

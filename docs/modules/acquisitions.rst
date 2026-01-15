@@ -12,11 +12,30 @@ iteration/batch.
 
     from parmoo import acquisitions
 
-Current options are:
+It is also possible to define your own custom acquisition function by importing
+and extending the ABC
 
-.. toctree::
-    :maxdepth: 1
-    :caption: Modules:
+.. code-block:: python
+
+    from parmoo.acquisitions.acquisition_function import AcquisitionFunction
+
+The ``AcquisitionFunction`` ABC and current options from the existing
+acquisition function library are defined below.
+
+AcquisitionFunction (ABC)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ABC for ``AcquisitionFunction`` base class can be extended by developers
+looking to implement custom multiobjective acquisition functions.
+
+.. automodule:: acquisitions.acquisition_function
+..    :members: acquisitions/acquisition_function
+
+.. autoclass:: AcquisitionFunction
+   :member-order: bysource
+   :members:
+
+   .. automethod:: __init__
 
 Weighted Sum Methods
 ~~~~~~~~~~~~~~~~~~~~

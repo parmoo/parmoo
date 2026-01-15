@@ -5,6 +5,7 @@ from parmoo.acquisitions import RandomConstraint, FixedWeights
 from parmoo.searches import LatinHypercube
 from parmoo.surrogates import GaussRBF
 from parmoo.optimizers import GlobalSurrogate_BFGS
+import logging
 
 # Create a new MOOP with a derivative-based solver
 my_moop = MOOP(GlobalSurrogate_BFGS,
@@ -23,6 +24,7 @@ my_moop.addDesign({'name': "x4",
                    'des_type': "categorical",
                    'levels': 3})
 
+
 def quad_sim(x):
     """ A quadratic simulation function with 2 outputs.
 
@@ -37,6 +39,7 @@ def quad_sim(x):
                      (x["x1"] - 1.0) ** 2 + (x["x2"] - 1.0) ** 2 +
                      (x["x3"] - 1.0) ** 2])
 
+
 # Add the quadratic simulation to the problem
 # Use a 10-point LHS experimental design and a Gaussian RBF surrogate model
 my_moop.addSimulation({'name': "f_conv",
@@ -46,12 +49,15 @@ my_moop.addSimulation({'name': "f_conv",
                        'surrogate': GaussRBF,
                        'hyperparams': {'search_budget': 10}})
 
+
 # Define some objectives below -- try to avoid things that jax can't compile
+
 
 def obj_f1_func(x, sim):
     """ Minimize the first output from 'f_conv' """
 
     return sim['f_conv'][0]
+
 
 def obj_f1_grad(x, sim):
     """ Corresponding gradient evaluations for obj_f1_func """
@@ -60,10 +66,12 @@ def obj_f1_grad(x, sim):
     ds = {'f_conv': np.eye(2)[0]}
     return dx, ds
 
+
 def obj_f2_func(x, sim):
     """ Minimize the second output from 'f_conv' """
 
     return sim['f_conv'][1]
+
 
 def obj_f2_grad(x, sim):
     """ Corresponding gradient evaluations for obj_f2_func """
@@ -71,6 +79,7 @@ def obj_f2_grad(x, sim):
     dx = {'x1': 0.0, 'x2': 0.0, 'x3': 0.0, 'x4': 0.0}
     ds = {'f_conv': np.eye(2)[1]}
     return dx, ds
+
 
 # Minimize each of the 2 outputs from the quadratic simulation
 my_moop.addObjective({'name': "f1",
@@ -80,10 +89,12 @@ my_moop.addObjective({'name': "f2",
                       'obj_func': obj_f2_func,
                       'obj_grad': obj_f2_grad})
 
+
 def const_x4_func(x, sim):
     """ Constrain x["x4"] = 0 """
 
     return 1.0 - (x["x4"] == 0)
+
 
 def const_x4_grad(x, sim):
     """ Gradient for evaluating whether x["x4"] = 0 """
@@ -95,6 +106,7 @@ def const_x4_grad(x, sim):
     dx = {'x1': 0.0, 'x2': 0.0, 'x3': 0.0, 'x4': 0.0}
     ds = {'f_conv': np.zeros(2)}
     return dx, ds
+
 
 # Add the single constraint to the problem
 my_moop.addConstraint({'name': "c_x4",
@@ -111,7 +123,6 @@ my_moop.addAcquisition({'acquisition': FixedWeights,
 my_moop.setCheckpoint(True, checkpoint_data=False, filename="parmoo")
 
 # Turn on logging
-import logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')

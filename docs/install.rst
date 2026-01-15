@@ -8,7 +8,7 @@ ParMOO can be installed with ``pip`` or directly from its GitHub_ source.
 ParMOO's base has the following dependencies, which may be automatically
 installed depending on your choice of method:
 
- * Python_ 3.8+
+ * Python_ 3.9+
  * jax_ -- for algorithmic differentiation and just-in-time (jit) compilation
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
@@ -28,8 +28,13 @@ And for using the Pareto front visualization library in ``parmoo.viz``:
 If you want to run the tests (in ``parmoo.tests``), then you will also need:
 
  * pytest_,
- * pytest-cov_, and
- * flake8_.
+ * pytest-cov_,
+ * flake8_, and
+ * flake8-pyproject.
+
+Note that the full feature set for libEnsemble_ and kaleido_ may require you to
+separately install an MPI implementation (such as Open_MPI_) and Google chrome
+(e.g., via kaleido_get_chrome_), respectively.
 
 pip
 ---
@@ -53,14 +58,9 @@ To install *all* dependencies, use:
 
     pip install < --user > parmoo[extras]
 
-To check the installation by running the full test suite, use:
-
-.. code-block:: bash
-
-    python3 setup.py test
-
-which will also install the test dependencies (pytest_, pytest-cov_, and
-flake8_).
+Again, note that the full feature set for libEnsemble_ and kaleido_ may require
+you to separately install an MPI implementation (such as Open_MPI_) and Google
+chrome (e.g., via kaleido_get_chrome_), respectively.
 
 Conda Forge
 -----------
@@ -108,7 +108,7 @@ In a bash shell, that looks like this.
    cd parmoo
    pip install -e .
 
-This command will use the ``setup.py`` file to generate an ``egg`` inside
+This command will use the ``pyproject.toml`` file to generate an ``egg`` inside
 the ``parmoo`` base directory.
 
 Alternatively, you could just add the ``parmoo`` base directory to your
@@ -134,28 +134,51 @@ To install libEnsemble with PyPI, use
 
 or visit the libEnsemble_documentation_ for detailed installation instructions.
 
-After installation, you can run the tests using either:
+Testing
+-------
+
+If you've done a full installation using any of the above methods (including
+all the ``parmoo[extras]``), you can also run the unit tests to confirm the
+installation.
+To run the tests, you can install pytest_ with the pytest-cov_ plugin and
+flake8_ using the ``tests`` extension, then you can lint the project with
+``flake8`` and run the unit tests for your installation using ``pytest``. After
+running unit tests, you can view the coverage report using the
+``coverage report`` command.
+E.g., using ``pip``, running the tests looks something like this:
 
 .. code-block:: bash
 
-    python3 setup.py test
+   pip install -e ".[tests]"
+   flake8 parmoo
+   pytest
+   coverage report
 
-(if you used the ``pip install -e .`` method), or:
+Running the regression tests and libensemble tests is a bit more involved and
+is usually accomplished via the ``-l`` flag for the
+``parmoo/tests/run-tests.sh`` script.
 
-.. code-block:: bash
+To run all the linter, unit tests, regression tests, and generate the coverage
+report in a single command, run the script with all 4 flags set.
 
-    parmoo/tests/run-tests.sh -cu<rl>
+.. code-block::bash
+
+   ./parmoo/tests/run-tests.sh -curl
+
+These tests are run regularly using GitHub Actions_.
 
 
 .. _Actions: https://github.com/parmoo/parmoo/actions
 .. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
-.. _jax: https://jax.readthedocs.io/en/latest/
+.. _jax: https://docs.jax.dev/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
+.. _kaleido_get_chrome: https://pypi.org/project/Kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _libEnsemble_documentation: https://libensemble.readthedocs.io/en/main/advanced_installation.html
 .. _numpy: https://numpy.org
+.. _Open_MPI: https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/quickstart.html
 .. _pandas: https://pandas.pydata.org
 .. _plotly: https://plotly.com/python
 .. _pytest: https://docs.pytest.org/en/7.0.x

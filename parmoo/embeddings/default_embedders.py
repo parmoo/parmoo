@@ -14,7 +14,7 @@ This includes the following classes:
 
 from jax import numpy as jnp
 import numpy as np
-from parmoo.structs import Embedder
+from parmoo.embeddings.embedder import Embedder
 
 
 class ContinuousEmbedder(Embedder):

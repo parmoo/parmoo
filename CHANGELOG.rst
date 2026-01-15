@@ -6,6 +6,47 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
+Release 0.5.0
+-------------
+
+:Date: Jan 14, 2026
+
+Update and internal refactor for long-term maintainability.
+Primarily addresses items in #109, with
+little to no change to public user interface.
+
+Major changes:
+
+ - Break up the ``MOOP`` class into a jax-enabled ``MOOP_base`` class that
+   handles problem representation and jax functions
+ - Create a separate simulation-optimization-specific ``Database`` class that
+   the ``MOOP`` class can use to handle all database operations
+ - Replace a lot of the user-definition checks in the ``MOOP`` class with
+   utility functions to clean up the code footprint and improve testing and
+   error handling
+ - Restructure the ``MOOP`` class and its base to make things that just
+   describe problem setup and representation all encapsulated in the
+   ``MOOP_base`` class, leaving the ``moop.py`` file to contain only code that
+   describes the actual optimization algorithm (in terms of high-level
+   operations defined in the ``MOOP_base``)
+ - Break up the ``structs.py`` file, and put each base class in the
+   corresponding directory. This will be easier to navigate and maintain going
+   forward as we are starting to have a lot of base classes that are mostly
+   unrelated
+ - Replace ``setup.py`` (which is deprecated) with ``pyproject.toml``; in
+   particular this slightly changes the development and testing workflow
+ - Update documentation to reflect above changes
+ - Fix spellcheck configuration file to ignore code blocks and links
+ - Add a link-checker workflow (manually triggered) to check dead links in the
+   documentation
+
+After this release, only the following bullet remains to close #109:
+
+ - Restructure the unit tests to test each of these new files individually and
+   with higher coverage. Also take this opportunity to improve readability by
+   moving redundant setup code into a new parmoo/tests/unit_tests/setup.py
+   utility file.
+
 Release 0.4.1
 -------------
 
@@ -187,7 +228,7 @@ Docs:
 
 Requirements:
 
- - We now require scipy v1.10 or newer, due to usage of qmc integration tools
+ - We now require scipy v1.10 or newer, due to usage of QMC integration tools
  - At the time of this release, libEnsemble is using a deprecated version of
    Pydantic -- for this release only we have fixed the requirement on
    libEnsemble to v0.9.2, but we will relax this requirement in the future
@@ -265,7 +306,7 @@ Official release corresponding to accepted JOSS article.
    still be solved
  - Various style changes and additional usage environments requested by
    JOSS reviewers openjournals/joss-reviews#4468 including parmoo/parmoo#32
- - Added support for multistarting optimization solvers when solving
+ - Added support for multistart optimization solvers when solving
    surrogate problems. This is particularly important for the global
    ``GaussRBF`` surrogate
  - Fixed an issue in how model improvement points are calculated, as
@@ -311,7 +352,7 @@ Desired features:
  - allow user to choose whether or not to use named variables via ``useNames``
    method, or similar
  - add a funcx simulation interface, using libEnsemble release 0.9
- - add predicter interface and standalone module
+ - add predictor interface and standalone module
  - a GUI interface for creating MOOPs
  - static visualization tools for plotting results
    (from ``MOOP.getPF()`` method)

@@ -48,7 +48,7 @@ ParMOO has been tested on Unix/Linux and MacOS systems.
 
 ParMOO's base has the following dependencies:
 
- * Python_ 3.8+
+ * Python_ 3.9+
  * jax_ -- for algorithmic differentiation and just-in-time (jit) compilation
  * numpy_ -- for data structures and performant numerical linear algebra
  * scipy_ -- for scientific calculations needed for specific modules
@@ -84,6 +84,10 @@ To install *all* dependencies (including libEnsemble) use:
 
     pip install < --user > "parmoo[extras]"
 
+Note that the full feature set for libEnsemble_ and kaleido_ may require you to
+separately install an MPI implementation (such as Open_MPI_) and Google chrome
+(e.g., via kaleido_get_chrome_), respectively.
+
 You can also clone this project from our GitHub_ and ``pip`` install it
 in-place, so that you can easily pull the latest version or checkout
 the ``develop`` branch for pre-release features.
@@ -114,12 +118,32 @@ For detailed instructions, see :doc:`install`.
 Testing
 -------
 
-If you have pytest_ with the pytest-cov_ plugin and flake8_ installed,
-then you can test your installation.
+Note that in order to run the unit tests, you must first install the
+``parmoo[extras]``, as described above.  This may include the additional steps
+such as ``kaleido_get_chrome``.
+
+You can install pytest_ with the pytest-cov_ plugin and flake8_ using the
+``tests`` extension, then you can lint the project with ``flake8`` and run the
+unit tests for your installation using ``pytest``. After running unit tests,
+you can view the coverage report using the ``coverage report`` command.
 
 .. code-block:: bash
 
-   python3 setup.py test
+   pip install -e ".[tests]"
+   flake8 parmoo
+   pytest
+   coverage report
+
+Running the regression tests and libEnsemble tests is a bit more involved and
+is usually accomplished via the ``-l`` flag for the
+``parmoo/tests/run-tests.sh`` script.
+
+To run all the linter, unit tests, regression tests, and generate the coverage
+report in a single command, run the script with all 4 flags set.
+
+.. code-block::bash
+
+   ./parmoo/tests/run-tests.sh -curl
 
 These tests are run regularly using GitHub Actions_.
 
@@ -127,7 +151,7 @@ Basic Usage
 -----------
 
 ParMOO uses numpy_ and jax_ in an object-oriented design, based around the
-:mod:`MOOP <moop.MOOP>` class.
+:class:`MOOP <core.moop.MOOP>` class.
 
 Before getting started, note that jax_ runs in single (32-bit) precision
 by default. To run in double precision, the following code is needed at
@@ -144,8 +168,8 @@ However, in many use cases, 32-bit precision may be enough and provides
 substantial speedup in iteration tasks.
 
 Once the precision is set, to get started,
-create a :mod:`MOOP <moop.MOOP>` object, using the
-:meth:`constructor <moop.MOOP.__init__>`.
+create a :class:`MOOP <core.moop.MOOP>` object, using the
+:meth:`constructor <core.moop.MOOP.__init__>`.
 
 .. code-block:: python
 
@@ -165,7 +189,7 @@ that the ``my_moop`` object will use to solve the scalarized surrogate
 problems.
 
 Next, add design variables to the problem as follows using the
-:meth:`MOOP.addDesign(*args) <moop.MOOP.addDesign>` method.
+:meth:`MOOP.addDesign(*args) <core.moop.MOOP.addDesign>` method.
 In this example, we define one continuous and one categorical design variable.
 Other options include integer, custom, and raw (using raw variables is not
 recommended except for expert users).
@@ -186,7 +210,7 @@ recommended except for expert users).
                      })
 
 Next, add simulations to the problem as follows using the
-:meth:`MOOP.addSimulation(*args) <moop.MOOP.addSimulation>` method.
+:meth:`MOOP.addSimulation(*args) <core.moop.MOOP.addSimulation>` method.
 In this example, we define a toy simulation ``sim_func(x)``.
 
 .. code-block:: python
@@ -213,8 +237,8 @@ In this example, we define a toy simulation ``sim_func(x)``.
                          })
 
 Now we can add objectives and constraints using
-:meth:`MOOP.addObjective(*args) <moop.MOOP.addObjective>` and
-:meth:`MOOP.addConstraint(*args) <moop.MOOP.addConstraint>`.
+:meth:`MOOP.addObjective(*args) <core.moop.MOOP.addObjective>` and
+:meth:`MOOP.addConstraint(*args) <core.moop.MOOP.addConstraint>`.
 In this example, there are 2 objectives (each corresponding to a single
 simulation output) and one constraint.
 
@@ -231,7 +255,7 @@ simulation output) and one constraint.
    my_moop.addConstraint({'name': "c1", 'con_func': c1})
 
 Finally, we must add one or more acquisition functions using
-:meth:`MOOP.addAcquisition(*args) <moop.MOOP.addAcquisition>`.
+:meth:`MOOP.addAcquisition(*args) <core.moop.MOOP.addAcquisition>`.
 These are used to scalarize the surrogate problems.
 The number of acquisition functions
 typically determines the number of simulation evaluations per batch.
@@ -247,9 +271,9 @@ This is useful to know if you are using a parallel solver.
                               'hyperparams': {}})
 
 Finally, the MOOP is solved using the
-:meth:`MOOP.solve(budget) <moop.MOOP.solve>` method, and the
+:meth:`MOOP.solve(budget) <core.moop.MOOP.solve>` method, and the
 results can be viewed using
-:meth:`MOOP.getPF() <moop.MOOP.getPF>`.
+:meth:`MOOP.getPF() <core.moop_base.MOOP_base.getPF>`.
 
 .. code-block:: python
 
@@ -325,11 +349,13 @@ Please read our LICENSE_ and CONTRIBUTING_ files.
 .. _dash: https://dash.plotly.com
 .. _flake8: https://flake8.pycqa.org/en/latest
 .. _GitHub: https://github.com/parmoo/parmoo
-.. _jax: https://jax.readthedocs.io/en/latest/
+.. _jax: https://docs.jax.dev/en/latest/
 .. _kaleido: https://github.com/plotly/Kaleido
+.. _kaleido_get_chrome: https://pypi.org/project/kaleido
 .. _libEnsemble: https://github.com/Libensemble/libensemble
 .. _LICENSE: https://github.com/parmoo/parmoo/blob/main/LICENSE
 .. _numpy: https://numpy.org
+.. _Open_MPI: https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/quickstart.html
 .. _pandas: https://pandas.pydata.org
 .. _parmoo_solver_farm: https://github.com/parmoo/parmoo-solver-farm
 .. _plotly: https://plotly.com/python

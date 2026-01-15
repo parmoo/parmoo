@@ -13,8 +13,8 @@ The classes include:
 from jax import numpy as jnp
 import numpy as np
 import inspect
-from parmoo.structs import AcquisitionFunction
-from parmoo.util import xerror
+from parmoo.acquisitions.acquisition_function import AcquisitionFunction
+from parmoo.utilities.error_checks import xerror
 
 
 class UniformAugChebyshev(AcquisitionFunction):
@@ -64,7 +64,7 @@ class UniformAugChebyshev(AcquisitionFunction):
         # Initialize the weights array
         self.weights = np.zeros(o)
         # Check hyperparameters
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         self.alpha = self.eps ** 0.25 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
@@ -116,7 +116,7 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.utilities.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False
@@ -315,7 +315,7 @@ class FixedAugChebyshev(AcquisitionFunction):
             self.weights = -np.log(1.0 - self.np_rng.random(self.o))
             self.weights = self.weights[:] / sum(self.weights[:])
         # Check hyperparameters dictionary for alpha
-        self.eps = jnp.finfo(jnp.ones(1)).eps
+        self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         self.alpha = self.eps ** 0.25 / self.o
         if 'alpha' in hyperparams.keys():
             if isinstance(hyperparams['alpha'], float):
@@ -357,7 +357,7 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         """
 
-        from parmoo.util import updatePF
+        from parmoo.utilities.moop_utils import updatePF
 
         # Check whether any data was given
         no_data = False

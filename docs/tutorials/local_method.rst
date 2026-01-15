@@ -21,13 +21,12 @@ To quote our FAQ_:
    You will not get any global convergence guarantees, but in many
    cases, you will still be able to *approximately* solve your problem.
  - If you have a lot of design variables, then you might do better
-   with a local solver, by switching your surrogate to the
-   :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
-   surrogate.
-   If you are using the
-   :class:`LBFGSB <optimizers.lbfgsb.LBFGSB>` optimizer, then you
+   with a local solver, by switching your optimization solver to a local
+   variant.
+   E.g., if you are using the
+   :class:`LBFGSB <optimizers.lbfgsb.GlobalSurrogate_BFGS>` optimizer, then you
    will also need to switch to the
-   :class:`TR_LBFGSB <optimizers.lbfgsb.TR_LBFGSB>` optimizer.
+   :class:`TR_LBFGSB <optimizers.lbfgsb.LocalSurrogate_BFGS>` optimizer.
  - The majority of ParMOO's overhead comes from fitting the surrogate
    models and solving the scalarized surrogate problems. If you followed
    the quickstart_, then the default method for surrogate modeling
@@ -38,10 +37,10 @@ To quote our FAQ_:
    All of this expense adds up, especially if you are using a large
    total budget, since the cost of fitting Gaussian processes grows
    cubically with the number of data points.
-   One solution is to switch to using a
-   :class:`LocalGaussRBF <surrogates.gaussian_proc.LocalGaussRBF>`
-   surrogate, which does not use the entire database when fitting
-   surrogates, and therefore is more scalable for handling large budgets.
+   One solution is to switch to using a local solver (see above) so that the
+   :class:`GaussRBF <surrogates.gaussian_proc.GaussRBF>`
+   surrogate does not use the entire database when fitting surrogates, and
+   therefore is more scalable for handling large budgets.
 
 **We will attempt to solve a convex 50-design variable, 2-objective problem
 on a budget of just 250 simulation evaluations.**
@@ -86,12 +85,14 @@ in Section 5:
 
 .. code-block:: bibtex
 
-    @techreport{parmoo-design,
-        author={Chang, Tyler H. and Wild, Stefan M.},
-        title={Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
-        year={2023},
-        institution={arXiv preprint},
-        doi={10.48550/arXiv.2304.06881}
+    @article{ParMOODesign25,
+        title = {Designing a Framework for Solving Multiobjective Simulation Optimization Problems},
+        author = {Tyler H. Chang and Stefan M. Wild},
+        journal = {INFORMS Journal on Computing},
+        year = {2026},
+        doi = {10.1287/ijoc.2023.0250},
+        arxivnumber = {2304.06881},
+        note = {To appear}
     }
 
 
