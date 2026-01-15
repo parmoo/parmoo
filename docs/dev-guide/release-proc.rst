@@ -40,7 +40,9 @@ Before release
   completeness.  In particular, if new modules or subdirectories have been
   added, the ``pyproject.toml`` file must be updated accordingly.  Locally, try
   out ``python -m build --sdist`` and check created tarball contains correct
-  files and directories for PyPI package.
+  files and directories for PyPI package. Note: this command requires the
+  ``build`` package be installed on your Python, although it is not part of any
+  ``parmoo`` requirement lists since it is only used for creating releases.
 
 - Check that ``parmoo`` requirements (in ``REQUIREMENTS.txt``)
   are compatible with ``readthedocs.io`` (in ``.readthedocs.yml``)
