@@ -19,6 +19,7 @@ from jax import numpy as jnp
 import numpy as np
 from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
 from parmoo.utilities.error_checks import xerror
+from parmoo.utilities.moop_utils import get_hp
 config.update("jax_enable_x64", True)  # scipy.optimize.lbfgsb requires 64-bit
 
 
@@ -61,50 +62,23 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         self.bounds = np.zeros((self.n, 2))
         self.bounds[:, 0] = lb
         self.bounds[:, 1] = ub
         self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
-        # Check that the contents of hyperparams is legal
-        if 'opt_restarts' in hyperparams:
-            if isinstance(hyperparams['opt_restarts'], int):
-                if hyperparams['opt_restarts'] < 1:
-                    raise ValueError("hyperparams['opt_restarts'] "
-                                     "must be positive")
-                else:
-                    self.restarts = hyperparams['opt_restarts']
-            else:
-                raise TypeError("hyperparams['opt_restarts'] "
-                                "must be an integer")
-        else:
-            self.restarts = self.n + 1
-        if 'opt_budget' in hyperparams:
-            if isinstance(hyperparams['opt_budget'], int):
-                if hyperparams['opt_budget'] < 1:
-                    raise ValueError("hyperparams['opt_budget'] "
-                                     "must be positive")
-                else:
-                    self.budget = hyperparams['opt_budget']
-            else:
-                raise TypeError("hyperparams['opt_budget'] "
-                                "must be an integer")
-        else:
-            self.budget = 100
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
+        self.restarts = get_hp(
+            "opt_restarts", hyperparams, int, lambda x: x >= 1, self.n + 1
+        )
+        self.budget = get_hp(
+            "opt_budget", hyperparams, int, lambda x: x >= 1, 100
+        )
+        self.np_rng = get_hp(
+            "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
+            np.random.default_rng()
+        )
         self.acquisitions = []
-        return
 
     def solve(self, x):
         """ Solve the surrogate problem using L-BFGS-B.
@@ -245,66 +219,30 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         self.bounds = np.zeros((self.n, 2))
         self.bounds[:, 0] = lb
         self.bounds[:, 1] = ub
-        # Check that the contents of hyperparams is legal
-        if 'opt_budget' in hyperparams:
-            if isinstance(hyperparams['opt_budget'], int):
-                if hyperparams['opt_budget'] < 1:
-                    raise ValueError("hyperparams['opt_budget'] "
-                                     "must be positive")
-                else:
-                    self.budget = hyperparams['opt_budget']
-            else:
-                raise TypeError("hyperparams['opt_budget'] "
-                                "must be an integer")
-        else:
-            self.budget = 500
-        # Check that the contents of hyperparams is legal
-        if 'opt_restarts' in hyperparams:
-            if isinstance(hyperparams['opt_restarts'], int):
-                if hyperparams['opt_restarts'] < 1:
-                    raise ValueError("hyperparams['opt_restarts'] "
-                                     "must be positive")
-                else:
-                    self.restarts = hyperparams['opt_restarts']
-            else:
-                raise TypeError("hyperparams['opt_restarts'] "
-                                "must be an integer")
-        else:
-            self.restarts = 2
         self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
-        if 'des_tols' in hyperparams:
-            if isinstance(hyperparams['des_tols'], np.ndarray):
-                if hyperparams['des_tols'].size != self.n:
-                    raise ValueError("the length of hyperparpams['des_tols']"
-                                     " must match the length of lb and ub")
-                if not np.all(hyperparams['des_tols']):
-                    raise ValueError("all entries in hyperparams['des_tols']"
-                                     " must be greater than 0")
-            else:
-                raise TypeError("hyperparams['des_tols'] must be an array.")
-            self.des_tols = np.asarray(hyperparams['des_tols'])
-        else:
-            self.des_tols = (np.ones(self.n) * self.mu)
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
+        self.restarts = get_hp(
+            "opt_restarts", hyperparams, int, lambda x: x >= 1, 2
+        )
+        self.budget = get_hp(
+            "opt_budget", hyperparams, int, lambda x: x >= 1, 500
+        )
+        self.des_tols = get_hp(
+            "des_tols", hyperparams, np.ndarray,
+            lambda x: x.size == self.n and np.all(x),
+            np.ones(self.n) * self.mu
+        )
+        self.np_rng = get_hp(
+            "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
+            np.random.default_rng()
+        )
         self.acquisitions = []
         self.prev_centers = []
         self.targets = []
-        return
 
     def __checkTR(self, center):
         """ Check the recommended trust region for a new center. """
@@ -339,7 +277,6 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
                 self.prev_centers.append([ci, ri])
         # Reset the list of targets for next iteration
         self.targets = []
-        return
 
     def returnResults(self, x, fx, sx, sdx):
         """ Collect the results of a function evaluation.
@@ -362,7 +299,6 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             # Remove any targets that have been "hit"
             if fxj < ti[2]:
                 del self.targets[i]
-        return
 
     def solve(self, x):
         """ Solve the surrogate problem using L-BFGS-B.
@@ -501,7 +437,6 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
         # Save file
         with open(filename, 'w') as fp:
             json.dump(bfgs_state, fp)
-        return
 
     def load(self, filename):
         """ Reload important data into this class after a previous save.
@@ -530,6 +465,6 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             self.prev_centers.append([np.array(ci), np.array(ri)])
         self.targets = []
         for ti in bfgs_state['targets']:
-            self.targets.append([np.array(ti[0]),
-                                 np.array(ti[1]), ti[2], ti[3]])
-        return
+            self.targets.append(
+                [np.array(ti[0]), np.array(ti[1]), ti[2], ti[3]]
+            )

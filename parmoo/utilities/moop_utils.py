@@ -6,6 +6,7 @@ These functions may also be of external interest. They are:
  * `to_array(x, dtype)`
  * `from_array(x, dtype)`
  * `approx_equal(x1, x2, des_tols)`
+ * `get_hp(key, hyperparams, expected_type, is_legal, default_value)`
 
 """
 
@@ -205,3 +206,41 @@ def approx_equal(x1, x2, des_tols):
         ):
             return False
     return True
+
+
+def get_hp(key, hyperparams, expected_type, is_legal, default_value):
+    """ Search for key in the hyperparams dictionary.
+
+    Args:
+        key (hashable): The key to search for
+        hyperparams (dict): The hyperparameters dictionary to search
+        expected_type (type): The expected type for hyperparams[key]
+        is_legal (callable): A callable object to check the legalality
+            of hyperparams[key]. Returns True if and only if hyperparams[key]
+            contains a legal value
+        default_value (any): The default value to assign when key is not in
+            hyperparams. When the value is None, key is required in
+            hyperparams.
+
+    """
+
+    if key in hyperparams:
+        if isinstance(hyperparams[key], expected_type):
+            if is_legal(hyperparams[key]):
+                return hyperparams[key]
+            else:
+                raise ValueError(
+                    f"hyperparams[{key}] contains an illegal value"
+                )
+        else:
+            raise TypeError(
+                f"hyperparams[{key}] must be an instance of "
+                f"{expected_type.__name__}"
+            )
+    else:
+        if default_value is None:
+            raise KeyError(
+                f"'{key}' is a required key in hyperparams for one or more "
+                "of the methods used"
+            )
+        return default_value
