@@ -1,3 +1,10 @@
+import pytest
+
+# Mark these tests as requiring the additional chrome dependency.
+# Get it using the ``plotly_get_chrome`` command
+pytestmark = pytest.mark.requires_chrome
+
+
 def test_static_export():
     """ Create a MOOP object and export various plot types.
 
@@ -516,7 +523,6 @@ def test_inputs_to_dash():
 
     from parmoo.viz.plot import scatter
     import os
-    import pytest
 
     # Pre-calculate a moop object
     moop1 = run_quickstart()
