@@ -359,7 +359,7 @@ Our online documentation:
         title       = {{ParMOO}: {P}ython Library for Parallel Multiobjective Simulation Optimization},
         author      = {Chang, Tyler H. and Wild, Stefan M. and Dickinson, Hyrum},
         institution = {Argonne National Laboratory},
-        number      = {Version 0.5.0+dev},
+        number      = {Version 0.5.1+dev},
         year        = {2026},
         url         = {https://parmoo.readthedocs.io/en/latest}
     }

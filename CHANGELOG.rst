@@ -6,6 +6,21 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
+Release 0.5.1
+-------------
+
+:Date: Jan 22, 2026
+
+Patch an issue in conda forge release caused by plotly dropping chrome from its
+distribution.
+
+Minor changes:
+
+ - Register a new pytest marker ``requires_chrome`` in the ``pyproject.toml``,
+   and use it to mark all unit tests that require ``chrome``. This allows us to
+   run conda forge tests with the ``pytest -m 'not requires_chrome'`` marker
+   since chrome cannot be installed on the conda forge runners.
+
 Release 0.5.0
 -------------
 
