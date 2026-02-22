@@ -105,11 +105,10 @@ def xerror(o=1, lb=None, ub=None, hyperparams=None):
     if hyperparams is None:
         hyperparams = {}
     # Check the objective count
-    if isinstance(o, int):
-        if o < 1:
-            raise ValueError("o must be positive")
-    else:
+    if not isinstance(o, int):
         raise TypeError("o must be an integer")
+    if o < 1:
+        raise ValueError("o must be positive")
     # Check that the bounds are legal
     if not isinstance(lb, np.ndarray):
         raise TypeError("lb must be a numpy array")
