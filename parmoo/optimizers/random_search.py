@@ -16,7 +16,7 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
-from parmoo.utilities.error_checks import xerror
+from parmoo.utilities.error_checks import get_hp, xerror
 
 
 class GlobalSurrogate_RS(SurrogateOptimizer):
@@ -54,38 +54,19 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.o = o
         self.n = lb.size
         self.lb = lb
         self.ub = ub
-        # Check that the contents of hyperparams is legal
-        if 'opt_budget' in hyperparams:
-            if isinstance(hyperparams['opt_budget'], int):
-                if hyperparams['opt_budget'] < 1:
-                    raise ValueError("hyperparams['opt_budget'] "
-                                     "must be positive")
-                else:
-                    self.budget = hyperparams['opt_budget']
-            else:
-                raise TypeError("hyperparams['opt_budget'] "
-                                "must be an integer")
-        else:
-            self.budget = 10000
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
-        # Initialize the list of acquisition functions
         self.acquisitions = []
-        return
+        self.budget = get_hp(
+            "opt_budget", hyperparams, int, lambda x: x >= 1, 10000
+        )
+        self.np_rng = get_hp(
+            "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
+            np.random.default_rng()
+        )
 
     def solve(self, x):
         """ Solve the surrogate problem using random search.
@@ -106,8 +87,10 @@ class GlobalSurrogate_RS(SurrogateOptimizer):
         if self.n != x.shape[1]:
             raise ValueError("The columns of x must match n")
         elif len(self.acquisitions) != x.shape[0]:
-            raise ValueError("The rows of x must match the number " +
-                             "of acquisition functions")
+            raise ValueError(
+                    "The rows of x must match the number of acquisition "
+                    "functions"
+            )
         # Initialize the surrogates with an infinite trust region
         rad = np.ones(self.n) * np.inf
         self.setTR(x[0, :], rad)

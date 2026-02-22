@@ -14,7 +14,7 @@ from jax import numpy as jnp
 import numpy as np
 import inspect
 from parmoo.acquisitions.acquisition_function import AcquisitionFunction
-from parmoo.utilities.error_checks import xerror
+from parmoo.utilities.error_checks import get_hp, xerror
 
 
 class UniformAugChebyshev(AcquisitionFunction):
@@ -52,41 +52,21 @@ class UniformAugChebyshev(AcquisitionFunction):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
-        # Set the objective count
         self.o = o
-        # Set the design variable count
         self.n = np.size(lb)
-        # Set the bound constraints
         self.lb = lb
         self.ub = ub
-        # Initialize the weights array
         self.weights = np.zeros(o)
-        # Check hyperparameters
         self.eps = jnp.finfo(jnp.ones(1).dtype).eps
-        self.alpha = self.eps ** 0.25 / self.o
-        if 'alpha' in hyperparams.keys():
-            if isinstance(hyperparams['alpha'], float):
-                if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
-                    self.alpha = hyperparams['alpha']
-                else:
-                    raise ValueError("When present, hyperparams['alpha'] " +
-                                     "must be in the range [0, 1]")
-            else:
-                raise TypeError("When present, hyperparams['alpha'] " +
-                                "must be a float type")
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
-        return
+        self.alpha = get_hp(
+                "alpha", hyperparams, float, lambda x: x >= 0 and x <= 1,
+                self.eps ** 0.25 / self.o
+        )
+        self.np_rng = get_hp(
+                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
+                np.random.default_rng()
+        )
 
     def useSD(self):
         """ Query whether this method uses uncertainties.
@@ -278,56 +258,26 @@ class FixedAugChebyshev(AcquisitionFunction):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
-        # Set the objective count
         self.o = o
-        # Set the design variable count
         self.n = np.size(lb)
-        # Set the bound constraints
         self.lb = lb
         self.ub = ub
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
-        # Check the hyperparams dictionary for weights
-        if 'weights' in hyperparams:
-            # If weights are provided, check that they are legal
-            if not isinstance(hyperparams['weights'], np.ndarray):
-                raise TypeError("when present, 'weights' must be a " +
-                                "numpy array")
-            else:
-                if hyperparams['weights'].size != self.o:
-                    raise ValueError("when present, 'weights' must " +
-                                     "have length o")
-                else:
-                    # Assign the weights
-                    self.weights = hyperparams['weights'].flatten()
-        else:
-            # If no weights provided, sample from the unit simplex
-            self.weights = -np.log(1.0 - self.np_rng.random(self.o))
-            self.weights = self.weights[:] / sum(self.weights[:])
-        # Check hyperparameters dictionary for alpha
         self.eps = jnp.finfo(jnp.ones(1).dtype).eps
-        self.alpha = self.eps ** 0.25 / self.o
-        if 'alpha' in hyperparams.keys():
-            if isinstance(hyperparams['alpha'], float):
-                if hyperparams['alpha'] >= 0 and hyperparams['alpha'] <= 1:
-                    self.alpha = hyperparams['alpha']
-                else:
-                    raise ValueError("When present, hyperparams['alpha'] " +
-                                     "must be in the range [0, 1]")
-            else:
-                raise TypeError("When present, hyperparams['alpha'] " +
-                                "must be a float type")
-        return
+        self.alpha = get_hp(
+                "alpha", hyperparams, float, lambda x: x >= 0 and x <= 1,
+                self.eps ** 0.25 / self.o
+        )
+        self.np_rng = get_hp(
+                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
+                np.random.default_rng()
+        )
+        default_weights = -np.log(1.0 - self.np_rng.random(self.o))
+        default_weights /= sum(default_weights)
+        self.weights = get_hp(
+                "weights", hyperparams, np.ndarray, lambda x: x.size == self.o,
+                default_weights
+        ).flatten()
 
     def useSD(self):
         """ Query whether this method uses uncertainties.

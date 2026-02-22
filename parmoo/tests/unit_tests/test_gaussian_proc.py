@@ -18,7 +18,7 @@ def test_GaussRBF():
     import pytest
 
     # Try some bad initializations to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': []})
     with pytest.raises(ValueError):
         GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': -1.0})
@@ -28,7 +28,7 @@ def test_GaussRBF():
     with pytest.raises(ValueError):
         GaussRBF(2, np.zeros(3), np.ones(3),
                  {'nugget': 0.1, 'des_tols': np.zeros(2)})
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         GaussRBF(2, np.zeros(3), np.ones(3),
                  {'nugget': 0.1, 'des_tols': 0.1})
     # Create 2 identical RBFs
@@ -215,7 +215,7 @@ def test_LocalGaussRBF():
     import pytest
 
     # Try some bad initializations to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': []})
     with pytest.raises(ValueError):
         GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': -1.0})
@@ -225,7 +225,7 @@ def test_LocalGaussRBF():
     with pytest.raises(ValueError):
         GaussRBF(2, np.zeros(3), np.ones(3),
                  {'nugget': 0.1, 'des_tols': np.zeros(2)})
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         GaussRBF(2, np.zeros(3), np.ones(3), {'nugget': 0.1, 'des_tols': 0.1})
     # Create 2 identical RBFs
     rbf1 = GaussRBF(2, np.zeros(3), np.ones(3), {'tail_order': 1})

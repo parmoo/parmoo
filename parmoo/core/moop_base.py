@@ -172,10 +172,10 @@ class MOOP_base(ABC):
         self.acq_tmp, self.search_tmp, self.sur_tmp = [], [], []
         self.acq_hp, self.sim_hp = [], []
         self.optimizer, self.opt_tmp = None, None
-        self.opt_hp = {}
         # Initialize the database
         self.database = NumpyDatabase(hyperparams)
         # Set up the surrogate optimizer and its hyperparameters
+        self.opt_hp = {}
         if hyperparams is not None:
             if isinstance(hyperparams, dict):
                 self.opt_hp = hyperparams

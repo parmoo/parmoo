@@ -15,6 +15,7 @@ This includes the following classes:
 from jax import numpy as jnp
 import numpy as np
 from parmoo.embeddings.embedder import Embedder
+from parmoo.utilities.error_checks import get_hp
 
 
 class ContinuousEmbedder(Embedder):
@@ -43,45 +44,30 @@ class ContinuousEmbedder(Embedder):
 
         """
 
-        # Error handling and extracting input bounds
-        if isinstance(settings, dict):
-            if 'lb' in settings:
-                try:
-                    lb = float(settings['lb'])
-                except BaseException:
-                    raise TypeError("lower bound must contain a float or int")
-            else:
-                raise KeyError("'lb' is a required key for continuous "
-                               "design variables")
-            if 'ub' in settings:
-                try:
-                    ub = float(settings['ub'])
-                except BaseException:
-                    raise TypeError("upper bound must contain a float or int")
-            else:
-                raise KeyError("'ub' is a required key for continuous "
-                               "design variables")
-            if 'des_tol' in settings:
-                des_tol = settings['des_tol']
-                if not isinstance(des_tol, float):
-                    raise TypeError("design tolerance must be a float type")
-                if des_tol <= 0:
-                    raise ValueError("design tolerance must be strictly "
-                                     "greater than 0")
-            else:
-                eps = jnp.finfo(jnp.zeros(1).dtype).eps
-                des_tol = eps * max(ub - lb, np.sqrt(eps))
-            if lb + des_tol > ub:
-                raise ValueError("lower bound must be strictly less than "
-                                 "upper bound for all design variables "
-                                 "up to the design tolerance")
-        else:
-            raise TypeError("settings must be a dictionary")
-        # Calculate the embedding as a sequence of matrix operations
+        tmp_settings = {}
+        try:
+            tmp_settings["lb"] = float(settings["lb"])
+            tmp_settings["ub"] = float(settings["ub"])
+        except KeyError:
+            raise KeyError(
+                    "'lb' and 'ub' are required keys for continuous design "
+                    "variables"
+            )
+        lb = get_hp("lb", tmp_settings, float, lambda x: True, None)
+        ub = get_hp("ub", tmp_settings, float, lambda x: True, None)
+        eps = jnp.finfo(jnp.zeros(1).dtype).eps
+        des_tol = get_hp(
+            "des_tol", settings, float, lambda x: x > 0,
+            eps * max(ub - lb, np.sqrt(eps))
+        )
+        if lb + des_tol > ub:
+            raise ValueError(
+                    "lower bound must be strictly less than upper bound for "
+                    "all design variables up to the design tolerance"
+            )
         self.scale = jnp.ones(1) * (ub - lb)
         self.shift = jnp.ones(1) * lb
         self.scaled_des_tol = np.ones(1) * des_tol / self.scale
-        return
 
     def getLatentDesTols(self):
         """ Get the design tolerances along each dimension of the embedding.
@@ -206,43 +192,14 @@ class IntegerEmbedder(Embedder):
                  * 'ub' (float or int, required): This specifies the upper
                    bound for the design variable. This value must be strictly
                    greater than 'lb' (above) up to the tolerance (below).
-                 * 'des_tol' (float, optional): This specifies the design
-                   tolerance for this variable, i.e., the minimum spacing
-                   before two design values are considered equivalent up to
-                   measurement error. If not specified, the
-                   default value is eps * max(ub - lb, sqrt(eps)), where
-                   eps is the unit roundoff.
 
         """
 
-        # Error handling and extracting input bounds
-        if isinstance(settings, dict):
-            if 'lb' in settings:
-                try:
-                    lb = float(settings['lb'])
-                except BaseException:
-                    raise TypeError("lower bound must contain a float or int")
-            else:
-                raise KeyError("'lb' is a required key for continuous "
-                               "design variables")
-            if 'ub' in settings:
-                try:
-                    ub = float(settings['ub'])
-                except BaseException:
-                    raise TypeError("upper bound must contain a float or int")
-            else:
-                raise KeyError("'ub' is a required key for continuous "
-                               "design variables")
-            if lb >= ub:
-                raise ValueError("lower bound must be strictly less than "
-                                 "upper bound for all design variables ")
-        else:
-            raise TypeError("settings must be a dictionary")
-        # Calculate the embedding as a sequence of matrix operations
+        lb = get_hp("lb", settings, int, lambda x: True, None)
+        ub = get_hp("ub", settings, int, lambda x: x > lb, None)
         self.scale = jnp.ones(1) * (ub - lb)
         self.shift = jnp.ones(1) * lb
         self.scaled_des_tol = np.ones(1) * 0.5 / self.scale
-        return
 
     def getLatentDesTols(self):
         """ Get the design tolerances along each dimension of the embedding.
@@ -368,38 +325,28 @@ class CategoricalEmbedder(Embedder):
 
         """
 
-        # Error handling and extracting input types
-        if isinstance(settings, dict) and 'levels' in settings:
-            levels = settings['levels']
-            if isinstance(levels, int):
-                if levels < 2:
-                    raise ValueError("a categorical variable must "
-                                     "have at least 2 levels")
-                n_lvls = levels
-                self.alabels = jnp.array([i for i in range(levels)], dtype=int)
+        n_lvls = 0
+        try:
+            n_lvls = get_hp("levels", settings, int, lambda x: x >= 2, None)
+            self.alabels = jnp.array([i for i in range(n_lvls)], dtype=int)
+            self.in_type = 'i4'
+        except BaseException:
+            levels = get_hp(
+                    "levels", settings, list, lambda x: len(x) >= 2, None
+            )
+            n_lvls = len(levels)
+            if not (
+                    all([isinstance(li, int) for li in levels]) or
+                    all([isinstance(li, str) for li in levels])
+            ):
+                raise TypeError("all levels of categorical variable "
+                                "must have the same type (int or str)")
+            try:
+                self.alabels = jnp.array(levels)
                 self.in_type = 'i4'
-            elif isinstance(levels, list):
-                n_lvls = len(levels)
-                if n_lvls < 2:
-                    raise ValueError("a categorical variable must "
-                                     "have at least 2 levels")
-                if not (all([isinstance(li, int) for li in levels]) or
-                        all([isinstance(li, str) for li in levels])):
-                    raise TypeError("all levels of categorical variable "
-                                    "must have the same type (int or str)")
-                try:
-                    self.alabels = jnp.array(levels)
-                    self.in_type = 'i4'
-                except TypeError:
-                    self.alabels = np.array(levels)
-                    self.in_type = 'U25'
-            else:
-                raise TypeError("settings['levels'] must be an int or list")
-        elif isinstance(settings, dict):
-            raise KeyError("'levels' key is missing for categorical variable")
-        else:
-            raise TypeError("settings must be a dictionary")
-        # Calculate the embedding as a sequence of matrix operations via SVD
+            except TypeError:
+                self.alabels = np.array(levels)
+                self.in_type = 'U25'
         n = n_lvls - 1
         self.cent = jnp.ones(n_lvls) / n_lvls
         u, sigma, vT = jnp.linalg.svd(jnp.eye(n_lvls) - self.cent)
@@ -409,7 +356,6 @@ class CategoricalEmbedder(Embedder):
         self.des_tol = np.sqrt(0.5) / self.scale
         self.zeros = jnp.zeros(n_lvls)
         self.ones = jnp.ones(n_lvls)
-        return
 
     def getLatentDesTols(self):
         """ Get the design tolerances along each dimension of the embedding.
@@ -545,41 +491,27 @@ class IdentityEmbedder(Embedder):
 
         """
 
-        # Error handling and extracting input bounds
-        if isinstance(settings, dict):
-            if 'lb' in settings:
-                try:
-                    self.lb = float(settings['lb'])
-                except BaseException:
-                    raise TypeError("lower bound must contain a float or int")
-            else:
-                raise KeyError("'lb' is a required key for continuous "
-                               "design variables")
-            if 'ub' in settings:
-                try:
-                    self.ub = float(settings['ub'])
-                except BaseException:
-                    raise TypeError("upper bound must contain a float or int")
-            else:
-                raise KeyError("'ub' is a required key for continuous "
-                               "design variables")
-            if 'des_tol' in settings:
-                self.des_tol = settings['des_tol']
-                if not isinstance(self.des_tol, float):
-                    raise TypeError("design tolerance must be a float type")
-                if self.des_tol <= 0:
-                    raise ValueError("design tolerance must be strictly "
-                                     "greater than 0")
-            else:
-                eps = jnp.finfo(jnp.zeros(1).dtype).eps
-                self.des_tol = eps * max(self.ub - self.lb, np.sqrt(eps))
-            if self.lb + self.des_tol > self.ub:
-                raise ValueError("lower bound must be strictly less than "
-                                 "upper bound for all design variables "
-                                 "up to the design tolerance")
-        else:
-            raise TypeError("settings must be a dictionary")
-        return
+        tmp_settings = {}
+        try:
+            tmp_settings["lb"] = float(settings["lb"])
+            tmp_settings["ub"] = float(settings["ub"])
+        except KeyError:
+            raise KeyError(
+                    "'lb' and 'ub' are required keys for continuous design "
+                    "variables"
+            )
+        self.lb = get_hp("lb", tmp_settings, float, lambda x: True, None)
+        self.ub = get_hp("ub", tmp_settings, float, lambda x: True, None)
+        eps = jnp.finfo(jnp.zeros(1).dtype).eps
+        self.des_tol = get_hp(
+                "des_tol", settings, float, lambda x: x > 0,
+                eps * max(self.ub - self.lb, np.sqrt(eps))
+        )
+        if self.lb + self.des_tol > self.ub:
+            raise ValueError(
+                    "lower bound must be strictly less than upper bound for "
+                    "all design variables up to the design tolerance"
+            )
 
     def getLatentDesTols(self):
         """ Get the design tolerances along each dimension of the embedding.

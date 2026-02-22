@@ -18,8 +18,7 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
-from parmoo.utilities.error_checks import xerror
-from parmoo.utilities.moop_utils import get_hp
+from parmoo.utilities.error_checks import get_hp, xerror
 config.update("jax_enable_x64", True)  # scipy.optimize.lbfgsb requires 64-bit
 
 
@@ -68,6 +67,7 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
         self.bounds[:, 0] = lb
         self.bounds[:, 1] = ub
         self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
+        self.acquisitions = []
         self.restarts = get_hp(
             "opt_restarts", hyperparams, int, lambda x: x >= 1, self.n + 1
         )
@@ -78,7 +78,6 @@ class GlobalSurrogate_BFGS(SurrogateOptimizer):
             "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
             np.random.default_rng()
         )
-        self.acquisitions = []
 
     def solve(self, x):
         """ Solve the surrogate problem using L-BFGS-B.
@@ -225,6 +224,9 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
         self.bounds[:, 0] = lb
         self.bounds[:, 1] = ub
         self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
+        self.acquisitions = []
+        self.prev_centers = []
+        self.targets = []
         self.restarts = get_hp(
             "opt_restarts", hyperparams, int, lambda x: x >= 1, 2
         )
@@ -240,9 +242,6 @@ class LocalSurrogate_BFGS(SurrogateOptimizer):
             "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
             np.random.default_rng()
         )
-        self.acquisitions = []
-        self.prev_centers = []
-        self.targets = []
 
     def __checkTR(self, center):
         """ Check the recommended trust region for a new center. """
