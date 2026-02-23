@@ -64,8 +64,8 @@ class UniformAugChebyshev(AcquisitionFunction):
                 self.eps ** 0.25 / self.o
         )
         self.np_rng = get_hp(
-                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
-                np.random.default_rng()
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
         )
 
     def useSD(self):
@@ -269,8 +269,8 @@ class FixedAugChebyshev(AcquisitionFunction):
                 self.eps ** 0.25 / self.o
         )
         self.np_rng = get_hp(
-                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
-                np.random.default_rng()
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
         )
         default_weights = -np.log(1.0 - self.np_rng.random(self.o))
         default_weights /= sum(default_weights)

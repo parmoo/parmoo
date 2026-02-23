@@ -60,8 +60,8 @@ class RandomConstraint(AcquisitionFunction):
         self.lb = lb
         self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         self.np_rng = get_hp(
-                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
-                np.random.default_rng()
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
         )
 
     def useSD(self):
@@ -262,8 +262,8 @@ class EI_RandomConstraint(AcquisitionFunction):
                 "mc_sample_size", hyperparams, int, lambda x: x > 0, -1
         )
         self.np_rng = get_hp(
-                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
-                np.random.default_rng()
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
         )
 
     def useSD(self):

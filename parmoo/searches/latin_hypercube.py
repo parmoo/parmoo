@@ -56,8 +56,8 @@ class LatinHypercube(GlobalSearch):
                 "search_budget", hyperparams, int, lambda x: x >= 0, 100
         )
         self.np_rng = get_hp(
-                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
-                np.random.default_rng()
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
         )
         self.sampler = qmc.LatinHypercube(d=self.n, seed=self.np_rng)
 

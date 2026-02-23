@@ -57,8 +57,8 @@ class UniformWeights(AcquisitionFunction):
         self.weights = np.zeros(o)
         self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         self.np_rng = get_hp(
-                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
-                np.random.default_rng()
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
         )
 
     def useSD(self):
@@ -223,8 +223,8 @@ class FixedWeights(AcquisitionFunction):
         self.ub = ub
         self.eps = jnp.finfo(jnp.ones(1).dtype).eps
         self.np_rng = get_hp(
-                "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
-                np.random.default_rng()
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
         )
         default_weights = -np.log(1.0 - self.np_rng.random(self.o))
         default_weights /= sum(default_weights)

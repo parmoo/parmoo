@@ -47,12 +47,12 @@ def get_hp(key, hyperparams, expected_type, is_legal, default_value):
     """ Search for key in the hyperparams dictionary.
 
     Args:
-        key (hashable): The key to search for
-        hyperparams (dict): The hyperparameters dictionary to search
+        key (hashable): The key to search in the hyperparams dictionary.
+        hyperparams (dict): The hyperparameters dictionary to search.
         expected_type (type): The expected type for hyperparams[key]
-        is_legal (callable): A callable object to check the legalality
-            of hyperparams[key]. Returns True if and only if hyperparams[key]
-            contains a legal value
+        is_legal (callable): A callable object to check the legality of
+            hyperparams[key]. Returns True if and only if hyperparams[key]
+            contains a legal value.
         default_value (any): The default value to assign when key is not in
             hyperparams. When the value is None, key is required in
             hyperparams.

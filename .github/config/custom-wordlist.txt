@@ -208,6 +208,7 @@ globalGPS
 gradFunc
 grey
 hacky
+hashable
 html
 http
 https
