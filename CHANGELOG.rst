@@ -6,6 +6,23 @@ Below are the release notes for ParMOO.
 May reference issues on:
 https://github.com/parmoo/parmoo/issues
 
+Next Release
+------------
+
+:Date: TBD
+
+Summary TBD
+
+Major changes:
+
+ - TBD
+
+Minor changes:
+
+ - Replace complex error handling with external utilities to improve
+   readability and testability of code
+ - Flatten nested error handling logic wherever possible to reduce branch count
+
 Release 0.5.1
 -------------
 

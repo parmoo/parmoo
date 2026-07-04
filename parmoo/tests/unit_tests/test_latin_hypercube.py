@@ -16,7 +16,7 @@ def test_LatinHypercube():
     lb = -1.0 * np.ones(5)
     ub = np.zeros(5)
     # Try to initialize a bad search to test error handling
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         LatinHypercube(2, lb, ub, {'search_budget': 2.0})
     with pytest.raises(ValueError):
         LatinHypercube(2, lb, ub, {'search_budget': -1})

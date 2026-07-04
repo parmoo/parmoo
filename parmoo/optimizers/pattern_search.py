@@ -18,7 +18,7 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 from parmoo.optimizers.surrogate_optimizer import SurrogateOptimizer
-from parmoo.utilities.error_checks import xerror
+from parmoo.utilities.error_checks import get_hp, xerror
 from scipy.stats.qmc import LatinHypercube
 
 
@@ -62,79 +62,33 @@ class LocalSurrogate_PS(SurrogateOptimizer):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         self.lb = lb
         self.ub = ub
         self.q_ind = 0
-        # Check that the contents of hyperparams are legal
-        if 'opt_restarts' in hyperparams:
-            if isinstance(hyperparams['opt_restarts'], int):
-                if hyperparams['opt_restarts'] < 1:
-                    raise ValueError("hyperparams['opt_restarts'] "
-                                     "must be positive")
-                else:
-                    self.restarts = hyperparams['opt_restarts']
-            else:
-                raise TypeError("hyperparams['opt_restarts'] "
-                                "must be an integer")
-        else:
-            self.restarts = self.n + 1
-        # Check that the contents of hyperparams are legal
-        if 'opt_budget' in hyperparams:
-            if isinstance(hyperparams['opt_budget'], int):
-                if hyperparams['opt_budget'] < 1:
-                    raise ValueError("hyperparams['opt_budget'] "
-                                     "must be positive")
-                else:
-                    self.budget = hyperparams['opt_budget']
-            else:
-                raise TypeError("hyperparams['opt_budget'] "
-                                "must be an integer")
-        else:
-            self.budget = 1000
-        # Check that the contents of hyperparams are legal
-        if 'opt_momentum' in hyperparams:
-            if isinstance(hyperparams['opt_momentum'], float):
-                if 0 <= hyperparams['opt_momentum'] < 1:
-                    self.momentum = hyperparams['opt_momentum']
-                else:
-                    raise ValueError("hyperparams['opt_momentum'] "
-                                     "must be in [0, 1)")
-            else:
-                raise TypeError("hyperparams['opt_momentum'] "
-                                "must be a float")
-        else:
-            self.momentum = 9e-1
         self.eps = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
-        if 'des_tols' in hyperparams:
-            if isinstance(hyperparams['des_tols'], np.ndarray):
-                if hyperparams['des_tols'].size != self.n:
-                    raise ValueError("the length of hyperparpams['des_tols']"
-                                     " must match the length of lb and ub")
-                if not np.all(hyperparams['des_tols']):
-                    raise ValueError("all entries in hyperparams['des_tols']"
-                                     " must be greater than 0")
-            else:
-                raise TypeError("hyperparams['des_tols'] must be an array.")
-            self.des_tols = np.asarray(hyperparams['des_tols'])
-        else:
-            self.des_tols = (np.ones(self.n) * self.eps)
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
         self.acquisitions = []
         self.prev_centers = []
         self.targets = []
-        return
+        self.restarts = get_hp(
+            "opt_restarts", hyperparams, int, lambda x: x >= 1, self.n + 1
+        )
+        self.budget = get_hp(
+            "opt_budget", hyperparams, int, lambda x: x >= 1, 1000
+        )
+        self.momentum = get_hp(
+            "opt_momentum", hyperparams, float, lambda x: 0 <= x < 1, 9e-1
+        )
+        self.des_tols = get_hp(
+            "des_tols", hyperparams, np.ndarray,
+            lambda x: x.size == self.n and np.all(x > 0),
+            np.ones(self.n) * self.eps
+        )
+        self.np_rng = get_hp(
+            "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
+            np.random.default_rng()
+        )
 
     def _obj_func(self, x_in):
         """ A wrapper for the objective function and acquisition.
@@ -153,8 +107,9 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         else:
             sdx_in = jnp.zeros(sx_in.size)
         fx_in = self.penalty_func(x_in, sx_in)
-        ax = self.acquisitions[self.q_ind].scalarize(fx_in, x_in,
-                                                     sx_in, sdx_in)
+        ax = self.acquisitions[self.q_ind].scalarize(
+                fx_in, x_in, sx_in, sdx_in
+        )
         return ax
 
     def _checkTR(self, center):
@@ -190,7 +145,6 @@ class LocalSurrogate_PS(SurrogateOptimizer):
                 self.prev_centers.append([ci, ri])
         # Reset the list of targets for next iteration
         self.targets = []
-        return
 
     def returnResults(self, x, fx, sx, sdx):
         """ Collect the results of a function evaluation.
@@ -213,7 +167,6 @@ class LocalSurrogate_PS(SurrogateOptimizer):
             # Remove any targets that have been "hit"
             if fxj < ti[2]:
                 del self.targets[i]
-        return
 
     def solve(self, x):
         """ Solve the surrogate problem in a trust region via pattern search.
@@ -232,8 +185,10 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         if self.n != x.shape[1]:
             raise ValueError("The columns of x must match n")
         elif len(self.acquisitions) != x.shape[0]:
-            raise ValueError("The rows of x must match the number " +
-                             "of acquisition functions")
+            raise ValueError(
+                    "The rows of x must match the number of acquisition "
+                    "functions"
+            )
         # Initialize an empty list of results
         result = []
         lb_tmp = np.zeros(self.n)
@@ -256,14 +211,12 @@ class LocalSurrogate_PS(SurrogateOptimizer):
             except BaseException:
                 obj_func = self._obj_func
             # Get a candidate
-            xj, fj = _accelerated_pattern_search(self.n, lb_tmp,
-                                                 ub_tmp, x[j],
-                                                 obj_func,
-                                                 ibudget=self.budget,
-                                                 mesh_tol=mesh_tol,
-                                                 momentum=self.momentum,
-                                                 istarts=self.restarts,
-                                                 np_rng=self.np_rng)
+            xj, fj = _accelerated_pattern_search(
+                    self.n, lb_tmp, ub_tmp, x[j], obj_func,
+                    ibudget=self.budget, mesh_tol=mesh_tol,
+                    momentum=self.momentum, istarts=self.restarts,
+                    np_rng=self.np_rng
+            )
             result.append(xj)
             # We need to remember this "target" for later
             self.targets.append([x[j, :], rad, fj, j])
@@ -304,7 +257,6 @@ class LocalSurrogate_PS(SurrogateOptimizer):
         # Save file
         with open(filename, 'w') as fp:
             json.dump(ps_state, fp)
-        return
 
     def load(self, filename):
         """ Reload important data into this class after a previous save.
@@ -336,9 +288,9 @@ class LocalSurrogate_PS(SurrogateOptimizer):
             self.prev_centers.append([np.array(ci), np.array(ri)])
         self.targets = []
         for ti in ps_state['targets']:
-            self.targets.append([np.array(ti[0]), np.array(ti[1]),
-                                 ti[2], ti[3]])
-        return
+            self.targets.append([
+                    np.array(ti[0]), np.array(ti[1]), ti[2], ti[3]
+            ])
 
 
 class GlobalSurrogate_PS(SurrogateOptimizer):
@@ -381,66 +333,27 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
         self.o = o
         self.lb = lb
         self.ub = ub
-        # Check that the contents of hyperparams are legal
-        if 'opt_budget' in hyperparams:
-            if isinstance(hyperparams['opt_budget'], int):
-                if hyperparams['opt_budget'] < 1:
-                    raise ValueError("hyperparams['opt_budget'] "
-                                     "must be positive")
-                else:
-                    self.opt_budget = hyperparams['opt_budget']
-            else:
-                raise TypeError("hyperparams['opt_budget'] "
-                                "must be an integer")
-        else:
-            self.opt_budget = 1500
-        # Check that the contents of hyperparams are legal
         self.eps = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
-        if 'gps_budget' in hyperparams:
-            if isinstance(hyperparams['gps_budget'], int):
-                if hyperparams['gps_budget'] < 1 or \
-                   hyperparams['gps_budget'] >= self.opt_budget:
-                    raise ValueError("hyperparams['gps_budget'] "
-                                     "must be between 1 and "
-                                     "hyperparams['opt_budget']")
-                else:
-                    self.gps_budget = hyperparams['gps_budget']
-            else:
-                raise TypeError("hyperparams['opt_budget'] "
-                                "must be an integer")
-        else:
-            self.gps_budget = int(2 * self.opt_budget / 3)
-        # Check that the contents of hyperparams are legal
-        if 'opt_momentum' in hyperparams:
-            if isinstance(hyperparams['opt_momentum'], float):
-                if 0 <= hyperparams['opt_momentum'] < 1:
-                    self.momentum = hyperparams['opt_momentum']
-                else:
-                    raise ValueError("hyperparams['opt_momentum'] "
-                                     "must be in [0, 1)")
-            else:
-                raise TypeError("hyperparams['opt_momentum'] "
-                                "must be a float")
-        else:
-            self.momentum = 9e-1
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
         self.acquisitions = []
-        return
+        self.opt_budget = get_hp(
+            "opt_budget", hyperparams, int, lambda x: x >= 1, 1500
+        )
+        self.gps_budget = get_hp(
+            "gps_budget", hyperparams, int,
+            lambda x: 1 <= x <= self.opt_budget, int(2 * self.opt_budget / 3)
+        )
+        self.momentum = get_hp(
+            "opt_momentum", hyperparams, float, lambda x: 0 <= x < 1, 9e-1
+        )
+        self.np_rng = get_hp(
+            "np_random_gen", hyperparams, np.random.Generator, lambda x: True,
+            np.random.default_rng()
+        )
 
     def _obj_func(self, x_in):
         """ A wrapper for the objective function and acquisition.
@@ -482,8 +395,10 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
         if self.n != x.shape[1]:
             raise ValueError("The columns of x must match n")
         elif len(self.acquisitions) != x.shape[0]:
-            raise ValueError("The rows of x must match the number " +
-                             "of acquisition functions")
+            raise ValueError(
+                    "The rows of x must match the number of acquisition "
+                    "functions"
+            )
         # Create an infinite trust region
         rad = np.ones(self.n) * np.inf
         self.setTR(self.lb, rad)
@@ -543,14 +458,11 @@ class GlobalSurrogate_PS(SurrogateOptimizer):
             except BaseException:
                 obj_func = self._obj_func
             # Get a candidate
-            xj, fj = _accelerated_pattern_search(self.n, self.lb,
-                                                 self.ub, x0,
-                                                 obj_func,
-                                                 ibudget=self.gps_budget,
-                                                 mesh_start=0.1,
-                                                 mesh_tol=mesh_tol,
-                                                 momentum=self.momentum,
-                                                 istarts=1)
+            xj, fj = _accelerated_pattern_search(
+                    self.n, self.lb, self.ub, x0, obj_func,
+                    ibudget=self.gps_budget, mesh_start=0.1, mesh_tol=mesh_tol,
+                    momentum=self.momentum, istarts=1
+            )
             result.append(xj)
         self.objectives = None
         self.constraints = None

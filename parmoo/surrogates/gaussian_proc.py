@@ -14,7 +14,7 @@ from jax import numpy as jnp
 from jax import lax
 import numpy as np
 from parmoo.surrogates.surrogate_function import SurrogateFunction
-from parmoo.utilities.error_checks import xerror
+from parmoo.utilities.error_checks import get_hp, xerror
 from scipy.stats import tstd
 
 
@@ -58,70 +58,33 @@ class GaussRBF(SurrogateFunction):
 
         """
 
-        # Check inputs
         xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
-        # Initialize problem dimensions
         self.m = m
         self.lb = lb
         self.ub = ub
         self.n = self.lb.size
         self.x_std_dev = 0.0
-        # Create empty database
         self.x_vals = np.zeros((0, self.n))
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros((0, 0))
         self.prior = np.zeros((self.n+1, self.m))
         self.v = np.zeros((0, 0))
         self.w = np.zeros((0, 0))
+        self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
         self.y_std_dev = np.ones(self.m)
-        # Initialize trust-region settings
         self.tr_center = np.zeros(0)
         self.loc_inds = []
-        # Check for the 'nugget' optional value in hyperparams
-        if 'nugget' in hyperparams:
-            if isinstance(hyperparams['nugget'], float):
-                self.nugget = hyperparams['nugget']
-                if self.nugget < 0.0:
-                    raise ValueError("hyperparams['nugget'] cannot be a"
-                                     + " negative number")
-            else:
-                raise ValueError("hyperparams['nugget'] contained an illegal"
-                                 + " value")
-        else:
-            self.nugget = 0.0
-        # Check for 'des_tols' optional key in hyperparams
-        self.mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
-        if 'des_tols' in hyperparams:
-            if isinstance(hyperparams['des_tols'], np.ndarray):
-                if hyperparams['des_tols'].size == self.n:
-                    if np.all(hyperparams['des_tols'] > 0.0):
-                        self.eps = hyperparams['des_tols']
-                    else:
-                        raise ValueError("hyperparams['des_tols'] must all be"
-                                         + " greater than 0")
-                else:
-                    raise ValueError("hyperparams['des_tols'] must have length"
-                                     + " n")
-            else:
-                raise ValueError("hyperparams['des_tols'] contained an illegal"
-                                 + " value")
-        else:
-            self.eps = np.zeros(self.n)
-            self.eps[:] = self.mu
-        # Check for 'tail_order' optional key in hyperparams
-        if 'tail_order' in hyperparams:
-            if isinstance(hyperparams['tail_order'], int):
-                if hyperparams['tail_order'] in [0, 1]:
-                    self.order = hyperparams['tail_order']
-                else:
-                    raise ValueError("hyperparams['tail_order'] must be "
-                                     + "0 or 1")
-            else:
-                raise ValueError("hyperparams['tail_order'] contained an "
-                                 + "illegal value")
-        else:
-            self.order = 0
-        return
+        self.nugget = get_hp(
+                "nugget", hyperparams, float, lambda x: x >= 0, 0.0
+        )
+        self.eps = get_hp(
+                "des_tols", hyperparams, np.ndarray,
+                lambda x: x.size == self.n and np.all(x > 0),
+                np.ones(self.n) * self.mu
+        )
+        self.order = get_hp(
+                "tail_order", hyperparams, int, lambda x: x in [0, 1], 0
+        )
 
     def fit(self, x, f):
         """ Fit a new Gaussian RBF to the given data.

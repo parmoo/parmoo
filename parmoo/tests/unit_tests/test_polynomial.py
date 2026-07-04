@@ -21,7 +21,7 @@ def test_Linear():
         Linear(2, np.zeros(3), np.ones(3), {'des_tols': np.zeros(3)})
     with pytest.raises(ValueError):
         Linear(2, np.zeros(3), np.ones(3), {'des_tols': np.zeros(2)})
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Linear(2, np.zeros(3), np.ones(3), {'des_tols': 0.1})
     # Create 2 identical Linear models
     lsm1 = Linear(2, np.zeros(3), np.ones(3), {})

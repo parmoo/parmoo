@@ -11,7 +11,7 @@ The classes include:
 
 import numpy as np
 from parmoo.searches.global_search import GlobalSearch
-from parmoo.utilities.error_checks import xerror
+from parmoo.utilities.error_checks import get_hp, xerror
 from scipy.stats import qmc
 
 
@@ -48,37 +48,18 @@ class LatinHypercube(GlobalSearch):
 
         """
 
-        # Check inputs
         xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
         self.n = lb.size
-        # Assign the bounds
         self.lb = lb
         self.ub = ub
-        # Check for a search budget
-        if 'search_budget' in hyperparams:
-            if isinstance(hyperparams['search_budget'], int):
-                if hyperparams['search_budget'] < 0:
-                    raise ValueError("hyperparams['search_budget'] must "
-                                     "be nonnegative")
-                else:
-                    self.budget = hyperparams['search_budget']
-            else:
-                raise ValueError("hyperparams['search_budget'] must "
-                                 "be an int")
-        else:
-            self.budget = 100
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
+        self.budget = get_hp(
+                "search_budget", hyperparams, int, lambda x: x >= 0, 100
+        )
+        self.np_rng = get_hp(
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
+        )
         self.sampler = qmc.LatinHypercube(d=self.n, seed=self.np_rng)
-        return
 
     def startSearch(self, lb, ub):
         """ Begin a new Latin hypercube sampling.

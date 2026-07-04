@@ -13,7 +13,7 @@ import inspect
 from jax import numpy as jnp
 import numpy as np
 from parmoo.acquisitions.acquisition_function import AcquisitionFunction
-from parmoo.utilities.error_checks import xerror
+from parmoo.utilities.error_checks import get_hp, xerror
 from scipy import stats, integrate
 
 
@@ -51,28 +51,18 @@ class RandomConstraint(AcquisitionFunction):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.o = o
-        # Set the design variable count
         self.n = np.size(lb)
-        # Initialize the objective/design bounds
         self.f_ub = np.zeros(self.o)
         self.weights = np.zeros(self.o)
         self.ub = ub
         self.lb = lb
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
         self.eps = jnp.finfo(jnp.ones(1).dtype).eps
-        return
+        self.np_rng = get_hp(
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
+        )
 
     def useSD(self):
         """ Query whether this method uses uncertainties.
@@ -260,33 +250,21 @@ class EI_RandomConstraint(AcquisitionFunction):
 
         """
 
-        # Check inputs
         xerror(o=o, lb=lb, ub=ub, hyperparams=hyperparams)
         self.o = o
-        # Set the design variable count
         self.n = np.size(lb)
-        # Initialize the objective/design bounds
         self.f_ub = np.zeros(self.o)
         self.weights = np.zeros(self.o)
         self.ub = ub
         self.lb = lb
-        # Check the hyperparameter dictionary for custom MC sample size
-        if 'mc_sample_size' in hyperparams.keys():
-            self.sample_size = hyperparams['mc_sample_size']
-        else:
-            self.sample_size = None
-        # Check the hyperparameter dictionary for random generator
-        if 'np_random_gen' in hyperparams:
-            if isinstance(hyperparams['np_random_gen'], np.random.Generator):
-                self.np_rng = hyperparams['np_random_gen']
-            else:
-                raise TypeError("When present, hyperparams['np_random_gen'] "
-                                "must be an instance of the class "
-                                "numpy.random.Generator")
-        else:
-            self.np_rng = np.random.default_rng()
         self.eps = jnp.finfo(jnp.ones(1).dtype).eps
-        return
+        self.sample_size = get_hp(
+                "mc_sample_size", hyperparams, int, lambda x: x > 0, -1
+        )
+        self.np_rng = get_hp(
+                "np_random_gen", hyperparams, np.random.Generator,
+                lambda x: True, np.random.default_rng()
+        )
 
     def useSD(self):
         """ Query whether this method uses uncertainties.
@@ -464,7 +442,7 @@ class EI_RandomConstraint(AcquisitionFunction):
         # If there is at least one feasible point and the number of sim outs
         # is greater than 1, then evaluate the EI over fi* via MC integration
         else:
-            if self.sample_size is None:
+            if self.sample_size < 0:
                 self.sample_size = int(10 * s_vals_mean.size ** 2)
             # Construct the distribution for sampling
             s_cov = stats.Covariance.from_diagonal(s_vals_sd)

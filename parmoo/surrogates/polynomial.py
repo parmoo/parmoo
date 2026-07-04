@@ -12,7 +12,7 @@ The classes include:
 from jax import numpy as jnp
 import numpy as np
 from parmoo.surrogates.surrogate_function import SurrogateFunction
-from parmoo.utilities.error_checks import xerror
+from parmoo.utilities.error_checks import get_hp, xerror
 
 
 class Linear(SurrogateFunction):
@@ -52,40 +52,22 @@ class Linear(SurrogateFunction):
 
         """
 
-        # Check inputs
         xerror(o=m, lb=lb, ub=ub, hyperparams=hyperparams)
-        # Initialize problem dimensions
         self.m = m
         self.lb = lb
         self.ub = ub
         self.n = self.lb.size
-        # Create empty database
         self.x_vals = np.zeros((0, self.n))
         self.f_vals = np.zeros((0, self.m))
         self.weights = np.zeros(self.n + 1)
-        # Initialize trust-region settings
         self.tr_center = np.zeros(0)
         self.loc_inds = []
-        # Check for 'des_tols' optional key in hyperparams
         mu = np.sqrt(jnp.finfo(jnp.ones(1).dtype).eps)
-        if 'des_tols' in hyperparams:
-            if isinstance(hyperparams['des_tols'], np.ndarray):
-                if hyperparams['des_tols'].size == self.n:
-                    if np.all(hyperparams['des_tols'] > 0.0):
-                        self.eps = hyperparams['des_tols']
-                    else:
-                        raise ValueError("hyperparams['des_tols'] must all be"
-                                         + " greater than 0")
-                else:
-                    raise ValueError("hyperparams['des_tols'] must have length"
-                                     + " n")
-            else:
-                raise ValueError("hyperparams['des_tols'] contained an illegal"
-                                 + " value")
-        else:
-            self.eps = np.zeros(self.n)
-            self.eps[:] = mu
-        return
+        self.eps = get_hp(
+                "des_tols", hyperparams, np.ndarray,
+                lambda x: x.size == self.n and np.all(x > 0),
+                np.ones(self.n) * mu
+        )
 
     def fit(self, x, f):
         """ Fit a new linear model to the given data.

@@ -49,7 +49,7 @@ def test_check_sims():
     with pytest.raises(TypeError):
         check_sims(3, 5.0)
     simdict = {}
-    with pytest.raises(AttributeError):
+    with pytest.raises(KeyError):
         check_sims(3, simdict)
     simdict['m'] = 1.0
     with pytest.raises(TypeError):
@@ -58,7 +58,7 @@ def test_check_sims():
     with pytest.raises(ValueError):
         check_sims(3, simdict)
     simdict['m'] = 1
-    with pytest.raises(AttributeError):
+    with pytest.raises(KeyError):
         check_sims(3, simdict)
     simdict['search'] = LatinHypercube(1, np.zeros(3), np.ones(3), {})
     with pytest.raises(TypeError):
@@ -67,7 +67,7 @@ def test_check_sims():
     with pytest.raises(TypeError):
         check_sims(3, simdict)
     simdict['search'] = LatinHypercube
-    with pytest.raises(AttributeError):
+    with pytest.raises(KeyError):
         check_sims(3, simdict)
     simdict['surrogate'] = GaussRBF(1, np.zeros(1), np.ones(1), {})
     with pytest.raises(TypeError):
@@ -76,7 +76,7 @@ def test_check_sims():
     with pytest.raises(TypeError):
         check_sims(3, simdict)
     simdict['surrogate'] = GaussRBF
-    with pytest.raises(AttributeError):
+    with pytest.raises(KeyError):
         check_sims(3, simdict)
     simdict['sim_func'] = {}
     with pytest.raises(TypeError):
@@ -93,7 +93,7 @@ def test_check_sims():
     with pytest.raises(TypeError):
         check_sims(3, simdict)
     simdict['sim_db'] = {'x_vals': []}
-    with pytest.raises(AttributeError):
+    with pytest.raises(KeyError):
         check_sims(3, simdict)
     simdict['sim_db'] = {'x_vals': "hel", 's_vals': "lo"}
     with pytest.raises(TypeError):
