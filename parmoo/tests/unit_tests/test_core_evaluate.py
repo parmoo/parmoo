@@ -1,219 +1,103 @@
-""" Unit tests for MOOP_base objective, constraint, and penalty evaluation.
-"""
+""" Unit tests for MOOP_base objective, constraint, and penalty evaluation. """
 
+import numpy as np
 import pytest
 
+from parmoo.tests.unit_tests.helpers import (
+    con_sim1_first,
+    con_sim2_pair_sum,
+    con_x1,
+    con_x1_offset,
+    obj_sim1_first,
+    obj_sim2_pair_sum,
+    obj_x1,
+    train_surrogates,
+    two_sim_moop,
+)
 
-def test_MOOP_base_evaluate_objectives():
-    """ Check that the MOOP_base class handles evaluating objectives properly.
+# Objectives (and, separately, constraints) built from the same three
+# expressions: the first design variable, the first simulation output, and the
+# sum of the second simulation's two outputs.
+OBJECTIVES = (obj_x1, obj_sim1_first, obj_sim2_pair_sum)
+CONSTRAINTS = (con_x1, con_sim1_first, con_sim2_pair_sum)
 
-    Initialize a MOOP_base object and check that the _evaluate_objectives()
-    function works correctly.
+# The exact value of those three expressions at each training point.  Used for
+# both the objective and the constraint checks, since the expressions match.
+EXPECTED_VALUES = [
+    (np.zeros(3), np.array([0.0, 0.0, np.sqrt(3) + np.sqrt(0.75)])),
+    (np.ones(3) * 0.5, np.array([0.5, np.sqrt(0.75), np.sqrt(0.75)])),
+    (np.eye(3)[0], np.array([1.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
+    (np.eye(3)[1], np.array([0.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
+    (np.eye(3)[2], np.array([0.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
+    (np.ones(3), np.array([1.0, np.sqrt(3), np.sqrt(0.75)])),
+]
+
+
+def test_evaluate_objectives():
+    """ Check that _evaluate_objectives() computes the objectives exactly.
+
+    Each objective reads either a design variable or a simulation output, so
+    with interpolating surrogates the results must be exact.
 
     """
 
-    from jax import config
-    config.update("jax_enable_x64", True)
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    import pytest
-
-    # Initialize a continuous MOOP with 2 sims, 3 objs
-    moop = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'n': 3,
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm([x[i] for i in x])],
-          'surrogate': GaussRBF}
-    g2 = {'n': 3,
-          'm': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm([x[i]-1 for i in x]),
-                                 np.linalg.norm([x[i]-0.5 for i in x])],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1, g2)
-    moop.addObjective({'obj_func': lambda x, s: x["x1"]},
-                      {'obj_func': lambda x, s: s["sim1"][0]},
-                      {'obj_func': lambda x, s: s["sim2"][0] + s["sim2"][1]})
-    moop.addAcquisition({'acquisition': UniformWeights})
-    moop.compile()
-    # Try some bad evaluations
-    with pytest.raises(ValueError):
-        moop.evaluateSimulation(np.zeros(3), -1)
-    # Evaluate some data points and fit the surrogates
-    for sn in ["sim1", "sim2"]:
-        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
-        moop.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
-        moop.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
-    moop._fit_surrogates()
-    moop._set_surrogate_tr(np.ones(3) * 0.5, np.ones(3) * 0.5)
-    # Now do some test evaluations and check the results
-    test_cases = [
-        (np.zeros(3), np.array([0.0, 0.0, np.sqrt(3) + np.sqrt(0.75)])),
-        (np.ones(3) * 0.5, np.array([0.5, np.sqrt(0.75), np.sqrt(0.75)])),
-        (np.eye(3)[0], np.array([1.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
-        (np.eye(3)[1], np.array([0.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
-        (np.eye(3)[2], np.array([0.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
-        (np.ones(3), np.array([1.0, np.sqrt(3), np.sqrt(0.75)]))
-    ]
-    for xi, fi in test_cases:
+    moop = two_sim_moop(objectives=OBJECTIVES)
+    train_surrogates(moop)
+    for xi, fi in EXPECTED_VALUES:
         sxi = moop._evaluate_surrogates(xi)
-        fxi = moop._evaluate_objectives(xi, sxi)
-        assert (np.linalg.norm(fi - fxi) < 1.0e-8)
+        assert (np.linalg.norm(moop._evaluate_objectives(xi, sxi) - fi)
+                < 1.0e-8)
 
 
-def test_MOOP_base_evaluate_constraints():
-    """ Check that the MOOP_base class handles evaluating constraints properly.
+def test_evaluate_constraints_with_no_constraints():
+    """ Check that an unconstrained MOOP evaluates to a single zero.
 
-    Initialize a MOOP_base object and check that the _evaluate_constraints()
-    function works correctly.
+    ParMOO always returns a constraint vector, so with nothing to enforce it
+    must be a length 1 array of zeros.
 
     """
 
-    from jax import config
-    config.update("jax_enable_x64", True)
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-
-    # Initialize a continuous MOOP with 2 sims, 3 cons
-    moop = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'n': 3,
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm([x[i] for i in x])],
-          'surrogate': GaussRBF}
-    g2 = {'n': 3,
-          'm': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm([x[i]-1 for i in x]),
-                                 np.linalg.norm([x[i]-0.5 for i in x])],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1, g2)
-    moop.addObjective({'obj_func': lambda x, s: x["x1"]})
-    moop.addAcquisition({'acquisition': UniformWeights})
-    moop.compile()
-    # Evaluate an empty constraint and check that a zero array is returned
+    moop = two_sim_moop(objectives=(obj_x1,))
     assert (np.all(moop._evaluate_constraints(np.zeros(3), np.zeros(3))
-            == np.zeros(1)))
-    # Now add 3 constraints
-    moop.addConstraint({'constraint': lambda x, s: x["x1"]})
-    moop.addConstraint({'constraint': lambda x, s: s["sim1"][0]})
-    moop.addConstraint({'constraint':
-                        lambda x, s: s["sim2"][0] + s["sim2"][1]})
-    moop.compile()
-    # Evaluate some data points and fit the surrogates
-    for sn in ["sim1", "sim2"]:
-        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
-        moop.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
-        moop.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
-    moop._fit_surrogates()
-    moop._set_surrogate_tr(np.zeros(3), np.inf)
-    # Now do some test evaluations and check the results
-    test_cases = [
-        (np.zeros(3), np.array([0.0, 0.0, np.sqrt(3) + np.sqrt(0.75)])),
-        (np.ones(3) * 0.5, np.array([0.5, np.sqrt(0.75), np.sqrt(0.75)])),
-        (np.eye(3)[0], np.array([1.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
-        (np.eye(3)[1], np.array([0.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
-        (np.eye(3)[2], np.array([0.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
-        (np.ones(3), np.array([1.0, np.sqrt(3), np.sqrt(0.75)]))
-    ]
-    for xi, ci in test_cases:
-        sxi = moop._evaluate_surrogates(xi)
-        cxi = moop._evaluate_constraints(xi, sxi)
-        assert (np.linalg.norm(ci - cxi) < 1.0e-8)
+                   == np.zeros(1)))
 
 
-def test_MOOP_base_evaluate_penalty():
-    """ Check that the MOOP_base class handles evaluating penalty function
-    properly.
+def test_evaluate_constraints():
+    """ Check that _evaluate_constraints() computes the constraints exactly.
 
-    Initialize a MOOP_base object and check that the _evaluate_penalty()
-    function works correctly.
+    The MOOP is compiled once without constraints and then re-compiled after
+    they are added, which is legal while the database is still empty.
 
     """
 
-    from jax import config
-    config.update("jax_enable_x64", True)
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    import pytest
-
-    # Initialize a continuous MOOP with 2 sims, 3 objs, 1 cons
-    moop = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'n': 3,
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm([x[i] for i in x])],
-          'surrogate': GaussRBF}
-    g2 = {'n': 3,
-          'm': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm([x[i]-1 for i in x]),
-                                 np.linalg.norm([x[i]-0.5 for i in x])],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1, g2)
-    moop.addObjective({'obj_func': lambda x, s: x["x1"]},
-                      {'obj_func': lambda x, s: s["sim1"][0]},
-                      {'obj_func': lambda x, s: s["sim2"][0] + s["sim2"][1]})
-    moop.addConstraint({'constraint': lambda x, s: x["x1"] - 0.5})
-    moop.addAcquisition({'acquisition': UniformWeights})
+    moop = two_sim_moop(objectives=(obj_x1,))
+    for con in CONSTRAINTS:
+        moop.addConstraint({'constraint': con})
     moop.compile()
-    # Try some bad evaluations
-    with pytest.raises(ValueError):
-        moop.evaluateSimulation(np.zeros(3), -1)
-    # Evaluate some data points and fit the surrogates
-    for sn in ["sim1", "sim2"]:
-        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0.5, 'x2': 0.5, 'x3': 0.5}, sn)
-        moop.evaluateSimulation({'x1': 1, 'x2': 0, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0, 'x2': 1, 'x3': 0}, sn)
-        moop.evaluateSimulation({'x1': 0, 'x2': 0, 'x3': 1}, sn)
-        moop.evaluateSimulation({'x1': 1, 'x2': 1, 'x3': 1}, sn)
-    moop._fit_surrogates()
-    moop._set_surrogate_tr(np.ones(3) * 0.5, np.ones(3) * 0.5)
-    # Now do some test evaluations and check the results
-    test_cases = [
-        (np.zeros(3), np.array([0.0, 0.0, np.sqrt(3) + np.sqrt(0.75)])),
-        (np.ones(3) * 0.5, np.array([0.5, np.sqrt(0.75), np.sqrt(0.75)])),
-        (np.eye(3)[0], np.array([1.0, 1.0, np.sqrt(2) + np.sqrt(0.75)]) + 0.5),
-        (np.eye(3)[1], np.array([0.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
-        (np.eye(3)[2], np.array([0.0, 1.0, np.sqrt(2) + np.sqrt(0.75)])),
-        (np.ones(3), np.array([1.0, np.sqrt(3), np.sqrt(0.75)]) + 0.5)
-    ]
-    for xi, pi in test_cases:
+    train_surrogates(moop, tr_center=np.zeros(3), tr_radius=np.inf)
+    for xi, ci in EXPECTED_VALUES:
         sxi = moop._evaluate_surrogates(xi)
-        pxi = moop._evaluate_penalty(xi, sxi)
-        assert (np.linalg.norm(pi - pxi) < 1.0e-8)
+        assert (np.linalg.norm(moop._evaluate_constraints(xi, sxi) - ci)
+                < 1.0e-8)
+
+
+def test_evaluate_penalty():
+    """ Check that _evaluate_penalty() adds the constraint violation.
+
+    The single constraint is x1 - 0.5, so it is violated by 0.5 exactly at the
+    two training points where x1 == 1, and satisfied everywhere else.  The
+    penalty must equal the objectives plus that violation.
+
+    """
+
+    moop = two_sim_moop(objectives=OBJECTIVES, constraints=(con_x1_offset,))
+    train_surrogates(moop)
+    violated = {tuple(np.eye(3)[0]), tuple(np.ones(3))}
+    for xi, fi in EXPECTED_VALUES:
+        expected = fi + (0.5 if tuple(xi) in violated else 0.0)
+        sxi = moop._evaluate_surrogates(xi)
+        assert (np.linalg.norm(moop._evaluate_penalty(xi, sxi) - expected)
+                < 1.0e-8)
 
 
 if __name__ == "__main__":
