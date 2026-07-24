@@ -1,327 +1,265 @@
-""" Unit tests for MOOP simulation/objective database operations.
-"""
+""" Unit tests for MOOP simulation/objective database operations. """
 
-
+import numpy as np
 import pytest
 
+from parmoo import MOOP
+from parmoo.acquisitions import UniformWeights
+from parmoo.optimizers import LocalSurrogate_PS
+from parmoo.tests.unit_tests.helpers import (
+    con_sim1,
+    con_sim2_sum,
+    con_x1,
+    obj_sim1,
+    obj_sim2_first,
+    sim_dict,
+    sim_sq_norm,
+    sim_sq_norms_shifted,
+    two_sim_moop,
+)
 
-def test_MOOP_evaluateSimulation():
-    """ Check that the MOOP class handles evaluating simulations properly.
-
-    Initialize a MOOP object and check that the evaluateSimulation() function
-    works correctly.
-
-    """
-
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    import pytest
-
-    # Initialize a continuous MOOP with 2 sims and 3 objs
-    moop = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop.addDesign({'name': "x" + str(i+1), 'lb': 0.0, 'ub': 1.0})
-    g1 = {'name': "g1",
-          'n': 3,
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([x[xi] ** 2 for xi in x]))],
-          'surrogate': GaussRBF}
-    g2 = {'name': "g2",
-          'n': 3,
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [sum([(x[xi]-1)**2 for xi in x])],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1, g2)
-    moop.addObjective({'obj_func': lambda x, s: s["g1"]})
-    moop.addAcquisition({'acquisition': UniformWeights})
-    moop.compile()
-    x = {"x1": 0, "x2": 0, "x3": 0}
-    y = {"x1": 1, "x2": 1, "x3": 1}
-    sx = np.zeros(1, dtype=moop.getSimulationType())[0]
-    # Check/update database with bad values
-    with pytest.raises(ValueError):
-        moop.checkSimDb(x, "hello world")
-    with pytest.raises(ValueError):
-        moop.updateSimDb(x, sx, -1)
-    with pytest.raises(ValueError):
-        moop.evaluateSimulation(x, "g6")
-    # Place 2 items in "g1" DB, 3 in "g2"
-    moop.evaluateSimulation(x, "g1")
-    moop.evaluateSimulation(y, "g1")
-    moop.evaluateSimulation(x, "g2")
-    assert (moop.checkSimDb(x, "g1") is not None)
-    assert (moop.checkSimDb(y, "g1") is not None)
-    assert (moop.checkSimDb(x, "g2") is not None)
-    assert (moop.checkSimDb(y, "g2") is None)
-    return
+# The five design points seeded into the objective database: the origin and the
+# four unit vectors.  The origin is dominated by all four, so the Pareto front
+# holds four of the five.
+CORNERS = [{"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
+           {"x1": 1.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
+           {"x1": 0.0, "x2": 1.0, "x3": 0.0, "x4": 0.0},
+           {"x1": 0.0, "x2": 0.0, "x3": 1.0, "x4": 0.0},
+           {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 1.0}]
 
 
-def test_MOOP_addObjData():
-    """ Check that the MOOP class is able to add data to its internal database.
+def _distance_to_corner(x, index):
+    """ The distance from x to the index-th unit vector, over 4 variables. """
 
-    Initialize a MOOP object and check that the addObjData(s, sx) function
-    works correctly.
-
-    """
-
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.surrogates import GaussRBF
-    from parmoo.searches import LatinHypercube
-    from parmoo.optimizers import LocalSurrogate_PS
-
-    # Initialize a continuous MOOP with 2 sims and 3 objs
-    moop1 = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'n': 3,
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([x[i] ** 2 for i in x]))],
-          'surrogate': GaussRBF}
-    g2 = {'n': 3,
-          'm': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([(x[i]-1)**2 for i in x])),
-                                 np.sqrt(sum([x[i-0.5]**2 for i in x]))],
-          'surrogate': GaussRBF}
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': lambda x, s: s["sim2"][0]})
-    moop1.addObjective({'obj_func': lambda x, s: s["sim1"]})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    # Test adding some data
-    x0 = moop1._extract(np.zeros(3))
-    s0 = moop1._unpack_sim(np.zeros(3))
-    x1 = moop1._extract(np.ones(3))
-    s1 = moop1._unpack_sim(np.ones(3))
-    xe2 = moop1._extract(np.eye(3)[2])
-    moop1.addObjData(x0, s0)
-    moop1.addObjData(x0, s0)
-    moop1.addObjData(x1, s1)
-    assert len(moop1.getObjectiveData()) == 2
-    # Initialize another continuous MOOP with some constraints
-    moop2 = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop2.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop2.addSimulation(g1, g2)
-    moop2.addObjective({'obj_func': lambda x, s: s["sim2"][0]})
-    moop2.addObjective({'obj_func': lambda x, s: s["sim1"]})
-    moop2.addConstraint({'constraint': lambda x, s: x["x1"]})
-    moop2.addConstraint({'constraint': lambda x, s: s["sim1"]})
-    moop2.addConstraint({'constraint': lambda x, s: sum(s["sim2"])})
-    moop2.addAcquisition({'acquisition': UniformWeights})
-    moop2.compile()
-    # Test adding some data
-    moop2.addObjData(x0, s0)
-    moop2.addObjData(x0, s0)
-    moop2.addObjData(xe2, s0)
-    moop2.addObjData(x1, s1)
-    assert len(moop2.getObjectiveData()) == 3
-    # Initialize another MOOP with mixed variables
-    moop3 = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop3.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop3.addDesign({'des_type': "categorical", 'levels': ["L1", "L2", "L3"]})
-    moop3.addSimulation(g1, g2)
-    moop3.addObjective({'obj_func': lambda x, s: s["sim2"][0]})
-    moop3.addObjective({'obj_func': lambda x, s: s["sim1"]})
-    moop3.addConstraint({'constraint': lambda x, s: x["x1"]})
-    moop3.addConstraint({'constraint': lambda x, s: s["sim1"]})
-    moop3.addConstraint({'constraint': lambda x, s: sum(s["sim2"])})
-    moop3.addAcquisition({'acquisition': UniformWeights})
-    moop3.compile()
-    # Test adding some data
-    x1 = moop3._extract(np.ones(5))
-    moop3.addObjData(x1, s1)
-    assert len(moop3.getObjectiveData()) == 1
+    others = [i for i in [1, 2, 3, 4] if i != index]
+    return np.sqrt(sum([x[f"x{i}"] ** 2 for i in others])
+                   + (x[f"x{index}"] - 1) ** 2)
 
 
-def test_MOOP_getPF():
-    """ Test the getPF function.
+def f1(x, s):
+    return _distance_to_corner(x, 1)
 
-    Create several MOOPs, evaluate simulations, and check the final Pareto
-    front for correctness.
 
-    """
+def f2(x, s):
+    return _distance_to_corner(x, 2)
 
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
 
-    # Create a toy problem with 4 variables, 3 objectives, 1 constraint
+def f3(x, s):
+    return _distance_to_corner(x, 3)
+
+
+def c1(x, s):
+    """ A constraint satisfied only at the origin. """
+
+    return -sum([x[f"x{i}"] for i in [1, 2, 3, 4]])
+
+
+def four_var_moop(with_constraint=False):
+    """ Build a compiled 4-variable, 3-objective, simulation-free MOOP. """
+
     moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-
-    def f1(x, s):
-        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]])
-                + (x["x1"] - 1)**2))
-
-    def f2(x, s):
-        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]])
-                + (x["x2"] - 1)**2))
-
-    def f3(x, s):
-        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]])
-                + (x["x3"] - 1)**2))
-
-    def c1(x, s): return -sum([x[i] for i in ["x1", "x2", "x3", "x4"]])
-    moop.addObjective({'obj_func': f1})
-    moop.addObjective({'obj_func': f2})
-    moop.addObjective({'obj_func': f3})
-    moop.addConstraint({'constraint': c1})
+        moop.addDesign({'name': f"x{i + 1}", 'lb': 0.0, 'ub': 1.0})
+    for func in [f1, f2, f3]:
+        moop.addObjective({'obj_func': func})
+    if with_constraint:
+        moop.addConstraint({'constraint': c1})
     for i in range(3):
         moop.addAcquisition({'acquisition': UniformWeights})
     moop.compile()
-    # Directly set the MOOP's database to produce a known Pareto front
-    sx = np.zeros(0)
-    for data in [
-        {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
-        {"x1": 1.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
-        {"x1": 0.0, "x2": 1.0, "x3": 0.0, "x4": 0.0},
-        {"x1": 0.0, "x2": 0.0, "x3": 1.0, "x4": 0.0},
-        {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 1.0},
-    ]:
-        data["f1"] = f1(data, sx)
-        data["f2"] = f2(data, sx)
-        data["f3"] = f3(data, sx)
-        data["c1"] = c1(data, sx)
-        moop.database.updateObjDb(data, data, data)
-    soln = moop.getPF()
-    assert (soln.shape[0] == 4)
-    assert (soln['f1'].size == 4)
-    assert (soln['f2'].size == 4)
-    assert (soln['f3'].size == 4)
+    return moop
 
 
-def test_MOOP_getSimulationData():
-    """ Test the getSimulationData function.
+def seed_corners(moop):
+    """ Write the five corner points straight into the objective database.
 
-    Create several MOOPs, evaluate simulations, and check the simulation
-    database.
+    Going through the database directly, rather than through the solve loop,
+    is what makes the resulting Pareto front exactly predictable.
 
     """
 
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
+    sx = np.zeros(0)
+    for point in CORNERS:
+        data = dict(point)
+        data["f1"], data["f2"], data["f3"] = (f1(data, sx), f2(data, sx),
+                                              f3(data, sx))
+        data["c1"] = c1(data, sx)
+        moop.database.updateObjDb(data, data, data)
 
-    # Create a toy problem with 4 variables, 2 sims
+
+# ---------------------------------------------------------------------------
+# Simulation database
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def named_sim_moop():
+    """ A compiled MOOP whose two simulations have explicit names. """
+
+    return two_sim_moop(objectives=(obj_sim1,), sim_names=("g1", "g2"))
+
+
+def test_checkSimDb_rejects_unknown_simulation(named_sim_moop):
+    """ Check that checkSimDb() rejects a simulation not in the schema. """
+
+    with pytest.raises(ValueError):
+        named_sim_moop.checkSimDb({"x1": 0, "x2": 0, "x3": 0}, "hello world")
+
+
+def test_updateSimDb_rejects_unknown_simulation(named_sim_moop):
+    """ Check that updateSimDb() rejects an out-of-range simulation index. """
+
+    sx = np.zeros(1, dtype=named_sim_moop.getSimulationType())[0]
+    with pytest.raises(ValueError):
+        named_sim_moop.updateSimDb({"x1": 0, "x2": 0, "x3": 0}, sx, -1)
+
+
+def test_evaluateSimulation_rejects_unknown_simulation(named_sim_moop):
+    """ Check that evaluateSimulation() rejects an unknown simulation name. """
+
+    with pytest.raises(ValueError):
+        named_sim_moop.evaluateSimulation({"x1": 0, "x2": 0, "x3": 0}, "g6")
+
+
+def test_checkSimDb_tracks_each_simulation_separately(named_sim_moop):
+    """ Check that a point evaluated for one simulation is absent from another.
+
+    The simulation databases are independent, so evaluating a point for "g1"
+    must not make it appear complete for "g2".
+
+    """
+
+    x = {"x1": 0, "x2": 0, "x3": 0}
+    y = {"x1": 1, "x2": 1, "x3": 1}
+    named_sim_moop.evaluateSimulation(x, "g1")
+    named_sim_moop.evaluateSimulation(y, "g1")
+    named_sim_moop.evaluateSimulation(x, "g2")
+    assert (named_sim_moop.checkSimDb(x, "g1") is not None)
+    assert (named_sim_moop.checkSimDb(y, "g1") is not None)
+    assert (named_sim_moop.checkSimDb(x, "g2") is not None)
+    # y was never evaluated for g2
+    assert (named_sim_moop.checkSimDb(y, "g2") is None)
+
+
+def test_getSimulationData_shapes():
+    """ Check that getSimulationData() reports one row per evaluation.
+
+    The two simulations have one and two outputs respectively, so their result
+    arrays must be shaped (n,) and (n, 2).
+
+    """
+
     moop = MOOP(LocalSurrogate_PS, hyperparams={})
     for i in range(4):
-        moop.addDesign({'name': ("x" + str(i + 1)), 'lb': 0.0, 'ub': 1.0})
-    g1 = {'name': "Bobo1",
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [sum([x[i]**2 for i in x])],
-          'surrogate': GaussRBF}
-    g2 = {'name': "Bobo2",
-          'm': 2,
-          'search': LatinHypercube,
-          'sim_func': lambda x: [sum([(x[i] - 1)**2 for i in x]),
-                                 sum([(x[i] - 0.5)**2 for i in x])],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1, g2)
-    moop.addObjective({'obj_func': lambda x, s: s["Bobo2"][0]})
+        moop.addDesign({'name': f"x{i + 1}", 'lb': 0.0, 'ub': 1.0})
+    moop.addSimulation(sim_dict(1, sim_sq_norm, "Bobo1"),
+                       sim_dict(2, sim_sq_norms_shifted, "Bobo2"))
+    moop.addObjective({'obj_func': obj_sim2_first})
     moop.addAcquisition({'acquisition': UniformWeights})
     moop.compile()
+    # Before any evaluation both databases are empty
     soln = moop.getSimulationData()
     assert (soln['Bobo1']['out'].size == 0)
     assert (soln['Bobo2']['out'].size == 0)
-    # Evaluate 5 simulations
-    sample_x = {"x1": 0, "x2": 0, "x3": 0, "x4": 0}
-    moop.evaluateSimulation(sample_x, "Bobo1")
-    moop.evaluateSimulation(sample_x, "Bobo2")
-    sample_x["x1"] = 1.0
-    moop.evaluateSimulation(sample_x, "Bobo1")
-    moop.evaluateSimulation(sample_x, "Bobo2")
-    sample_x["x1"] = 0.0
-    sample_x["x2"] = 1.0
-    moop.evaluateSimulation(sample_x, "Bobo1")
-    moop.evaluateSimulation(sample_x, "Bobo2")
-    sample_x["x2"] = 0.0
-    sample_x["x3"] = 1.0
-    moop.evaluateSimulation(sample_x, "Bobo1")
-    moop.evaluateSimulation(sample_x, "Bobo2")
-    sample_x["x3"] = 0.0
-    sample_x["x4"] = 1.0
-    moop.evaluateSimulation(sample_x, "Bobo1")
-    moop.evaluateSimulation(sample_x, "Bobo2")
+    # Evaluate the origin and the four unit vectors for both simulations
+    for point in CORNERS:
+        for name in ["Bobo1", "Bobo2"]:
+            moop.evaluateSimulation(point, name)
     soln = moop.getSimulationData()
     assert (soln['Bobo1']['out'].shape == (5,))
     assert (soln['Bobo2']['out'].shape == (5, 2))
 
 
-def test_MOOP_getObjectiveData():
-    """ Test the getObjectiveData function.
+# ---------------------------------------------------------------------------
+# Objective database
+# ---------------------------------------------------------------------------
 
-    Create several MOOPs, evaluate simulations, and check the objective
-    database.
+
+def test_getObjectiveData_returns_every_point():
+    """ Check that getObjectiveData() returns the whole database.
+
+    Unlike getPF(), it does not filter for nondominated points.
 
     """
 
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
+    moop = four_var_moop(with_constraint=True)
+    seed_corners(moop)
+    assert (moop.getObjectiveData().shape[0] == 5)
 
-    # Create a toy problem with 4 variables, 3 objectives
-    moop = MOOP(LocalSurrogate_PS, hyperparams={})
-    for i in range(4):
-        moop.addDesign({'name': ('x' + str(i+1)), 'lb': 0.0, 'ub': 1.0})
 
-    def f1(x, s):
-        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [2, 3, 4]])
-                + (x["x1"] - 1)**2))
+def test_getPF_returns_only_nondominated_points():
+    """ Check that getPF() filters the database down to the Pareto front.
 
-    def f2(x, s):
-        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 3, 4]])
-                + (x["x2"] - 1)**2))
+    Of the five seeded points the origin is dominated by all four unit
+    vectors, so exactly four survive.
 
-    def f3(x, s):
-        return (np.sqrt(sum([x[f"x{i}"]**2 for i in [1, 2, 4]])
-                + (x["x3"] - 1)**2))
+    """
 
-    def c1(x, s): return -sum([x[f"x{i}"] for i in [1, 2, 3, 4]])
-    moop.addObjective({'obj_func': f1})
-    moop.addObjective({'obj_func': f2})
-    moop.addObjective({'obj_func': f3})
-    moop.addConstraint({'constraint': c1})
-    for i in range(3):
-        moop.addAcquisition({'acquisition': UniformWeights})
+    moop = four_var_moop(with_constraint=True)
+    seed_corners(moop)
+    soln = moop.getPF()
+    assert (soln.shape[0] == 4)
+    for name in ["f1", "f2", "f3"]:
+        assert (soln[name].size == 4)
+
+
+DEDUP_OBJECTIVES = (obj_sim2_first, obj_sim1)
+
+
+def test_addObjData_deduplicates():
+    """ Check that addObjData() drops a point already in the database.
+
+    The origin is added twice but must be stored once, leaving two distinct
+    points alongside the all-ones corner.
+
+    """
+
+    moop = two_sim_moop(objectives=DEDUP_OBJECTIVES)
+    x0 = moop._extract(np.zeros(moop.n_latent))
+    s0 = moop._unpack_sim(np.zeros(3))
+    moop.addObjData(x0, s0)
+    moop.addObjData(x0, s0)
+    moop.addObjData(moop._extract(np.ones(moop.n_latent)),
+                    moop._unpack_sim(np.ones(3)))
+    assert (len(moop.getObjectiveData()) == 2)
+
+
+def test_addObjData_deduplicates_with_constraints():
+    """ Check that deduplication still holds once constraints are recorded.
+
+    Adding constraint values widens each database row, but duplicate detection
+    is on the design point, so the repeated origin is still stored once.
+
+    """
+
+    moop = two_sim_moop(objectives=DEDUP_OBJECTIVES,
+                        constraints=(con_x1, con_sim1, con_sim2_sum))
+    s0 = moop._unpack_sim(np.zeros(3))
+    x0 = moop._extract(np.zeros(moop.n_latent))
+    moop.addObjData(x0, s0)
+    moop.addObjData(x0, s0)
+    moop.addObjData(moop._extract(np.eye(moop.n_latent)[2]), s0)
+    moop.addObjData(moop._extract(np.ones(moop.n_latent)),
+                    moop._unpack_sim(np.ones(3)))
+    assert (len(moop.getObjectiveData()) == 3)
+
+
+def test_addObjData_with_categorical_variable():
+    """ Check that addObjData() handles a mixed continuous/categorical design.
+
+    The categorical variable expands to two latent coordinates, so the latent
+    point handed to _extract() is wider than the feature space.
+
+    """
+
+    moop = two_sim_moop(objectives=DEDUP_OBJECTIVES,
+                        constraints=(con_x1, con_sim1, con_sim2_sum),
+                        compile_moop=False)
+    moop.addDesign({'des_type': "categorical", 'levels': ["L1", "L2", "L3"]})
     moop.compile()
-    # Directly set the MOOP's database to produce a known output
-    sx = np.zeros(0)
-    for data in [
-        {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
-        {"x1": 1.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
-        {"x1": 0.0, "x2": 1.0, "x3": 0.0, "x4": 0.0},
-        {"x1": 0.0, "x2": 0.0, "x3": 1.0, "x4": 0.0},
-        {"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 1.0},
-    ]:
-        data["f1"] = f1(data, sx)
-        data["f2"] = f2(data, sx)
-        data["f3"] = f3(data, sx)
-        data["c1"] = c1(data, sx)
-        moop.database.updateObjDb(data, data, data)
-    soln = moop.getObjectiveData()
-    assert (soln.shape[0] == 5)
+    moop.addObjData(moop._extract(np.ones(moop.n_latent)),
+                    moop._unpack_sim(np.ones(3)))
+    assert (len(moop.getObjectiveData()) == 1)
 
 
 if __name__ == "__main__":

@@ -102,6 +102,19 @@ def sim_identity(x):
     return [x[key] for key in x]
 
 
+def sim_sq_norm(x):
+    """ A 1 output simulation returning the squared 2-norm. """
+
+    return [sum([x[key] ** 2 for key in x])]
+
+
+def sim_sq_norms_shifted(x):
+    """ A 2 output simulation of squared norms shifted by 1.0 and 0.5. """
+
+    return [sum([(x[key] - 1) ** 2 for key in x]),
+            sum([(x[key] - 0.5) ** 2 for key in x])]
+
+
 # ---------------------------------------------------------------------------
 # Objective and constraint functions
 # ---------------------------------------------------------------------------
@@ -129,6 +142,12 @@ def obj_sim2_sum(x, sx):
     """ The sum of the second simulation's outputs. """
 
     return sum(sx["sim2"])
+
+
+def obj_sim2_first(x, sx):
+    """ The first output of the second simulation. """
+
+    return sx["sim2"][0]
 
 
 def obj_sim2_pair_sum(x, sx):
@@ -190,7 +209,9 @@ def sim_dict(m, sim_func, name=None, hyperparams=None):
             makes ParMOO assign "sim1", "sim2", and so on.
 
         hyperparams (dict, optional): Hyperparameters for the search and
-            surrogate.
+            surrogate.  Omitted from the dict entirely when not given, so that
+            MOOP.addSimulation() exercises its own defaulting path -- which is
+            what a user writing a minimal sim dict would hit.
 
     Returns:
         dict: A simulation dict using LatinHypercube and GaussRBF.
@@ -200,8 +221,9 @@ def sim_dict(m, sim_func, name=None, hyperparams=None):
     sim = {'m': m,
            'search': LatinHypercube,
            'sim_func': sim_func,
-           'surrogate': GaussRBF,
-           'hyperparams': hyperparams if hyperparams is not None else {}}
+           'surrogate': GaussRBF}
+    if hyperparams is not None:
+        sim['hyperparams'] = hyperparams
     if name is not None:
         sim['name'] = name
     return sim
