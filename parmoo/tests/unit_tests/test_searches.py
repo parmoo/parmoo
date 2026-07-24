@@ -1,46 +1,47 @@
+""" Unit tests for the parmoo.searches plugins. """
 
+import numpy as np
 import pytest
 
+from parmoo.searches import LatinHypercube
 
-def test_LatinHypercube():
-    """ Test the LatinHypercube class in searches.py.
+LB = -1.0 * np.ones(5)
+UB = np.zeros(5)
 
-    Use the LatinHypercube class to generate a LatinHypercube in 5 dimensions,
-    check that the dimensions of the design agree with the input, then
-    generate and check another design.
+
+def test_LatinHypercube_bad_search_budget():
+    """ Check the 'search_budget' hyperparameter contract. """
+
+    with pytest.raises(TypeError):
+        LatinHypercube(2, LB, UB, {'search_budget': 2.0})
+    with pytest.raises(ValueError):
+        LatinHypercube(2, LB, UB, {'search_budget': -1})
+
+
+def test_LatinHypercube_empty_budget():
+    """ Check that a search budget of zero produces an empty design.
+
+    Both the initial search and a resumed search must return nothing.
 
     """
 
-    from parmoo.searches import LatinHypercube
-    import numpy as np
-    import pytest
+    search = LatinHypercube(2, LB, UB, {'search_budget': 0})
+    assert (np.size(search.startSearch(LB, UB)) == 0)
+    assert (np.size(search.resumeSearch()) == 0)
 
-    # Set the dimensions for the design
-    lb = -1.0 * np.ones(5)
-    ub = np.zeros(5)
-    # Try to initialize a bad search to test error handling
-    with pytest.raises(TypeError):
-        LatinHypercube(2, lb, ub, {'search_budget': 2.0})
-    with pytest.raises(ValueError):
-        LatinHypercube(2, lb, ub, {'search_budget': -1})
-    # Create a good LHS object
-    latin_search = LatinHypercube(2, lb, ub, {'search_budget': 0})
-    # Generate a design of size 0 and confirm that it is an empty array
-    des1 = latin_search.startSearch(lb, ub)
-    assert (np.size(des1) == 0)
-    # Resume the search with size 0 and check that it is an empty array
-    des2 = latin_search.resumeSearch()
-    assert (np.size(des2) == 0)
-    # Generate a new design and check that it conforms to the dimensions
-    latin_search = LatinHypercube(2, lb, ub, {})
-    des3 = latin_search.startSearch(lb, ub)
-    assert (np.shape(des3) == (100, 5))
-    assert (all([all(xi <= ub) and all(xi >= lb) for xi in des3]))
-    # Resume the search and check that it conforms to the dimensions
-    des4 = latin_search.resumeSearch()
-    assert (np.shape(des4) == (100, 5))
-    assert (all([all(xi <= ub) and all(xi >= lb) for xi in des4]))
-    return
+
+def test_LatinHypercube_design_shape_and_bounds():
+    """ Check that the design has the requested shape and respects the bounds.
+
+    A resumed search must produce a second design of the same shape, also
+    within the bounds.
+
+    """
+
+    search = LatinHypercube(2, LB, UB, {})
+    for design in [search.startSearch(LB, UB), search.resumeSearch()]:
+        assert (np.shape(design) == (100, 5))
+        assert (all([all(xi <= UB) and all(xi >= LB) for xi in design]))
 
 
 if __name__ == "__main__":
