@@ -86,8 +86,9 @@ def test_acquisition_setTarget_bad_data(cls):
     """
 
     acqu = cls(N_OBJ, np.zeros(N), np.ones(N), {})
-    # data must be a dict
-    with pytest.raises(TypeError):
+    # data must be a dict.  Matched on the message, because a non-dict
+    # would also trip a bare TypeError further into setTarget().
+    with pytest.raises(TypeError, match="data must be a dict"):
         acqu.setTarget(5, penalty)
     # x_vals and f_vals must appear together
     with pytest.raises(AttributeError):

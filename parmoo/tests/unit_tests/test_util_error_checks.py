@@ -63,7 +63,9 @@ def test_get_hp_required_key():
 
     """
 
-    with pytest.raises(KeyError):
+    # Matched on the message: a bare KeyError would also be raised by
+    # the hyperparams[key] lookup further down, so this pins the guard.
+    with pytest.raises(KeyError, match="required key"):
         get_hp("budget", {}, int, lambda x: True, None)
 
 
@@ -77,7 +79,7 @@ def test_get_hp_default_value():
 def test_get_hp_expected_type():
     """ Check that get_hp() enforces the expected type of the value. """
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="must be an instance of"):
         get_hp("budget", {'budget': 2.0}, int, lambda x: True, 1000)
     with pytest.raises(TypeError):
         get_hp("tols", {'tols': 0.1}, np.ndarray, lambda x: True, None)

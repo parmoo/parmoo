@@ -177,8 +177,10 @@ def test_surrogate_improve_bad_x(cls):
     # x must be a numpy array-like object
     with pytest.raises(TypeError):
         model.improve(5, False)
-    # x must have length n
-    with pytest.raises(ValueError):
+    # x must have length n.  Matched on the message, because a wrongly
+    # sized x would also raise a bare ValueError from the broadcast in
+    # the feasibility check just below the guard.
+    with pytest.raises(ValueError, match="x must have length n"):
         model.improve(np.zeros(2), False)
     # x must be feasible
     with pytest.raises(ValueError):

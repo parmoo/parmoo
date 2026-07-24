@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# ParMOO test and example artifacts
+libE_stats.txt
+ensemble.log
+*.moop
+*.optimizer
+*.search.[0-9]*
+*.surrogate*
+*.acquisition.[0-9]*
