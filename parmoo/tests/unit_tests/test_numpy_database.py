@@ -1,5 +1,5 @@
 from parmoo.databases import NumpyDatabase
-from parmoo.tests.unit_tests.setup import makeNumpyDatabase
+from parmoo.tests.unit_tests.helpers import makeNumpyDatabase
 
 
 def test_NumpyDatabase_construct_no_run():

@@ -1,3 +1,16 @@
+""" Shared builders and callables for the ParMOO unit tests.
+
+Every callable that a checkpointing test may need to save and reload lives at
+module global scope here, because ``MOOP.save()`` stores simulation,
+objective, and constraint functions by ``(class_name, module_name)`` reference.
+Lambdas and closures cannot be checkpointed.
+
+"""
+
+import numpy as np
+
+from parmoo.databases import NumpyDatabase
+
 
 def makeNumpyDatabase(with_constraints=True):
     """ Create a NumpyDatabase object for testing.
@@ -15,8 +28,6 @@ def makeNumpyDatabase(with_constraints=True):
 
     """
 
-    from parmoo.databases import NumpyDatabase
-
     db = NumpyDatabase({})
     db.addDesign("x1", "f8", 0.01)
     db.addDesign("x2", "i4", 0)
@@ -29,3 +40,16 @@ def makeNumpyDatabase(with_constraints=True):
         db.addConstraint("c1")
         db.addConstraint("c2")
     return db
+
+
+def sim_norm(x):
+    """ A 1 output simulation returning the 2-norm of the design point. """
+
+    return [np.linalg.norm([x[key] for key in x])]
+
+
+def sim_shifted_norms(x):
+    """ A 2 output simulation returning norms shifted by 1.0 and 0.5. """
+
+    return [np.linalg.norm([x[key] - 1.0 for key in x]),
+            np.linalg.norm([x[key] - 0.5 for key in x])]
