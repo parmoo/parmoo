@@ -1,506 +1,304 @@
 """ Unit tests for the MOOP objective/constraint/penalty backward passes.
+
+ParMOO does not differentiate user code with jax.  Users supply obj_grad and
+con_grad implementations, and MOOP._link() binds them as the backward passes
+of a jax.custom_vjp.  These tests assemble the full Jacobian from those
+backward passes and compare it against hand-computed values, then confirm that
+jax propagates the same result through the linked forward function.
+
+All three Jacobians are checked over the same progression of problems, so the
+progression is expressed once as a parametrized list of scenarios.
+
 """
 
-
+import numpy as np
 import pytest
-
-
-from jax import config
 from jax import jacrev
 from jax import numpy as jnp
-config.update("jax_enable_x64", True)
+
+from parmoo import MOOP
+from parmoo.acquisitions import UniformWeights
+from parmoo.optimizers import GlobalSurrogate_PS
+from parmoo.tests.unit_tests.helpers import (
+    sim_dict,
+    sim_norm,
+    sim_shifted_norms,
+)
+
+DESIGN_NAMES = ["x1", "x2", "x3"]
+TRAINING_POINT = {"x1": 1, "x2": 1, "x3": 1}
+# The design space of the rescaled MOOP, which is twice as wide in every
+# coordinate, so its latent Jacobian must be half as large.
+SCALED_BOUNDS = [(-1.0, 1.0), (0.0, 2.0), (-0.5, 1.5)]
 
 
-def eval_pen_jac(moop, x):
-    """ Helper for testing penalty fwd/bwd evaluations """
-
-    sx = moop._evaluate_surrogates(x)
-    dsdx = jacrev(moop._evaluate_surrogates)(x)
-    _, res = moop._pen_fwd(x, sx)
-    dfdx = jnp.zeros((moop.o, moop.n_latent))
-    for i, ei in enumerate(jnp.eye(moop.o)):
-        dfdxi, dfdsi = moop._pen_bwd(res, ei)
-        dfdx = dfdx.at[i].set(dfdxi + jnp.dot(dfdsi, dsdx))
-    return dfdx
+# ---------------------------------------------------------------------------
+# Differentiable objectives and constraints, with hand-written gradients
+# ---------------------------------------------------------------------------
 
 
-def eval_obj_jac(moop, x):
-    """ Helper for testing objective fwd/bwd evaluations """
+def f1(x, s):
+    """ The squared 2-norm of the design point. """
 
-    sx = moop._evaluate_surrogates(x)
-    dsdx = jacrev(moop._evaluate_surrogates)(x)
-    _, res = moop._obj_fwd(x, sx)
-    dfdx = jnp.zeros((moop.o, moop.n_latent))
-    for i, ei in enumerate(jnp.eye(moop.o)):
-        dfdxi, dfdsi = moop._obj_bwd(res, ei)
-        dfdx = dfdx.at[i].set(dfdxi + jnp.dot(dfdsi, dsdx))
-    return dfdx
+    return np.sum([x[i] * x[i] for i in DESIGN_NAMES])
 
 
-def eval_con_jac(moop, x):
-    """ Helper for testing constraint fwd/bwd evaluations """
+def df1(x, s):
+    """ The gradient of f1: 2x, with no simulation dependence. """
 
-    sx = moop._evaluate_surrogates(x)
-    dsdx = jacrev(moop._evaluate_surrogates)(x)
-    _, res = moop._con_fwd(x, sx)
-    dcdx = jnp.zeros((moop.p, moop.n_latent))
-    for i, ei in enumerate(jnp.eye(moop.p)):
-        dcdxi, dcdsi = moop._con_bwd(res, ei)
-        dcdx = dcdx.at[i].set(dcdxi + jnp.dot(dcdsi, dsdx))
-    return dcdx
+    return ({"x1": 2 * x["x1"], "x2": 2 * x["x2"], "x3": 2 * x["x3"]},
+            {"sim1": 0, "sim2": jnp.zeros(2)})
 
 
-def test_MOOP_evaluate_penalty_grads():
-    """ Check that the MOOP class handles evaluating gradients properly.
+def f2(x, s):
+    """ The squared distance of the simulation outputs from 0.5. """
 
-    Initialize a MOOP object and check that the evaluateGradients() function
-    works correctly.
-
-    """
-
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import GlobalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-
-    # Create several differentiable functions and constraints.
-    def f1(x, s):
-        names = ["x1", "x2", "x3"]
-        return np.sum([x[i] * x[i] for i in names])
-
-    def df1(x, s):
-        return ({"x1": 2*x["x1"], "x2": 2*x["x2"], "x3": 2*x["x3"]},
-                {"sim1": 0, "sim2": jnp.zeros(2)})
-
-    def f2(x, s):
-        names = ["sim1", "sim2"]
-        return np.sum([jnp.dot(s[i] - 0.5, s[i] - 0.5) for i in names])
-
-    def df2(x, s):
-        return ({"x1": 0, "x2": 0, "x3": 0},
-                {"sim1": 2*s["sim1"] - 1, "sim2": 2*s["sim2"] - jnp.ones(2)})
-
-    def c1(x, s):
-        return x["x1"] - 0.25
-
-    def dc1(x, s):
-        return {"x1": 1, "x2": 0, "x3": 0}, {"sim1": 0, "sim2": jnp.zeros(2)}
-
-    def c2(x, s):
-        return s["sim1"] - 0.25
-
-    def dc2(x, s):
-        return {"x1": 0, "x2": 0, "x3": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
-
-    # Initialize a continuous MOOP with 3 variables, no sims, 1 objective
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    # Check the shape and values of the penalty Jacobian
-    assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
-    fx1 = 2.0 * np.ones((1, 3))
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Add a constraint and make sure that the penalty appears in the Jacobian
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.compile()
-    assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
-    fx1[0, 0] = 3.0
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Create a new continuous MOOP as before but with 2 sims
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: np.sqrt(sum([x[i]**2 for i in x])),
-          'surrogate': GaussRBF}
-    g2 = {'m': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([(x[i] - 1.0)**2 for i in x])),
-                                 np.sqrt(sum([(x[i] - 0.5)**2 for i in x]))],
-          'surrogate': GaussRBF}
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    # Add some data and set the surrogates
-    for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    # Check the Jacobian outputs with the same test cases as above
-    assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
-    fx1 = 2.0 * np.ones((1, 3))
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Re-define the MOOP but add a constraint
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    assert (eval_pen_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.zeros(3))) < 1.0e-8))
-    fx1[0, 0] = 3.0
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Re-define the MOOP but add objectives and constraints that use the sim
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addObjective({'obj_func': f2, 'obj_grad': df2})
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.addConstraint({'con_func': c2, 'con_grad': dc2})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    fx0 = np.zeros((2, 3))
-    fx0[1, 0] = 1.0
-    fx0[0, :] = 2.0
-    fx0[0, 0] = 3.0
-    assert (np.all(np.abs(eval_pen_jac(moop1, np.ones(3)) - fx0) < 1.0e-8))
-    # Create a duplicate MOOP but adjust the design space scaling
-    moop2 = MOOP(GlobalSurrogate_PS)
-    moop2.addDesign({'lb': -1.0, 'ub': 1.0},
-                    {'lb': 0.0, 'ub': 2.0},
-                    {'lb': -0.5, 'ub': 1.5})
-    moop2.addSimulation(g1, g2)
-    moop2.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop2.addObjective({'obj_func': f2, 'obj_grad': df2})
-    moop2.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop2.addConstraint({'con_func': c2, 'con_grad': dc2})
-    moop2.addAcquisition({'acquisition': UniformWeights})
-    moop2.compile()
-    for sn in ["sim1", "sim2"]:
-        moop2.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop2._fit_surrogates()
-    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    # After embedding inputs, the outputs should be the same for evaluations
-    # at the interpolation nodes.
-    x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    assert (np.linalg.norm(eval_pen_jac(moop1, x) -
-                           eval_pen_jac(moop2, xx) * 2) < 1.e-8)
-    # Now check that after compiling, jax correctly propagates pen_jac
-    _, _, eval_pen1 = moop1._link()
-    def pen_jac(x): return eval_pen1(x, moop1._evaluate_surrogates(x))
-    moop1_pen_jac = jacrev(pen_jac)
-    for xi in np.random.sample((5, 3)):
-        dfdxi = moop1_pen_jac(xi)
-        assert (np.all(np.abs(eval_pen_jac(moop1, xi) - dfdxi) < 1.0e-8))
+    return np.sum([jnp.dot(s[i] - 0.5, s[i] - 0.5) for i in ["sim1", "sim2"]])
 
 
-def test_MOOP_evaluate_objective_grads():
-    """ Check that the MOOP class handles evaluating gradients properly.
+def df2(x, s):
+    """ The gradient of f2: 2s - 1, with no design dependence. """
 
-    Initialize a MOOP object and check that the evaluateGradients() function
-    works correctly.
+    return ({"x1": 0, "x2": 0, "x3": 0},
+            {"sim1": 2 * s["sim1"] - 1, "sim2": 2 * s["sim2"] - jnp.ones(2)})
+
+
+def c1(x, s):
+    """ A constraint on the first design variable. """
+
+    return x["x1"] - 0.25
+
+
+def dc1(x, s):
+    """ The gradient of c1: e_1. """
+
+    return {"x1": 1, "x2": 0, "x3": 0}, {"sim1": 0, "sim2": jnp.zeros(2)}
+
+
+def c2(x, s):
+    """ A constraint on the first simulation output. """
+
+    return s["sim1"] - 0.25
+
+
+def dc2(x, s):
+    """ The gradient of c2: the first simulation direction. """
+
+    return {"x1": 0, "x2": 0, "x3": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
+
+
+OBJ1 = [(f1, df1)]
+OBJ12 = [(f1, df1), (f2, df2)]
+CON1 = [(c1, dc1)]
+CON12 = [(c1, dc1), (c2, dc2)]
+
+
+# ---------------------------------------------------------------------------
+# Jacobian assembly from the fwd/bwd pair
+# ---------------------------------------------------------------------------
+
+
+def jacobian(moop, x, kind):
+    """ Assemble a full Jacobian from a fwd/bwd pass pair.
+
+    Args:
+        moop (MOOP): A compiled MOOP with fitted surrogates.
+
+        x (ndarray): The latent-space point to differentiate at.
+
+        kind (str): One of "obj", "con", or "pen".
+
+    Returns:
+        jax.numpy.ndarray: The Jacobian, with one row per output.
 
     """
 
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import GlobalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-
-    # Create several differentiable functions and constraints.
-    def f1(x, s):
-        names = ["x1", "x2", "x3"]
-        return np.sum([x[i] * x[i] for i in names])
-
-    def df1(x, s):
-        return ({"x1": 2*x["x1"], "x2": 2*x["x2"], "x3": 2*x["x3"]},
-                {"sim1": 0, "sim2": jnp.zeros(2)})
-
-    def f2(x, s):
-        names = ["sim1", "sim2"]
-        return np.sum([jnp.dot(s[i] - 0.5, s[i] - 0.5) for i in names])
-
-    def df2(x, s):
-        return ({"x1": 0, "x2": 0, "x3": 0},
-                {"sim1": 2*s["sim1"] - 1, "sim2": 2*s["sim2"] - jnp.ones(2)})
-
-    def c1(x, s):
-        return x["x1"] - 0.25
-
-    def dc1(x, s):
-        return {"x1": 1, "x2": 0, "x3": 0}, {"sim1": 0, "sim2": jnp.zeros(2)}
-
-    def c2(x, s):
-        return s["sim1"] - 0.25
-
-    def dc2(x, s):
-        return {"x1": 0, "x2": 0, "x3": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
-
-    # Initialize a continuous MOOP with 3 variables, no sims, 1 objective
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    # Check the shape and values of the objective Jacobian
-    assert (eval_obj_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.zeros(3))) < 1.0e-8))
-    fx1 = 2.0 * np.ones((1, 3))
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Add a constraint and make sure that the Jacobian is unchanged
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.compile()
-    assert (eval_obj_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.zeros(3))) < 1.0e-8))
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Create a new continuous MOOP as before but with 2 sims
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: np.sqrt(sum([x[i]**2 for i in x])),
-          'surrogate': GaussRBF}
-    g2 = {'m': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([(x[i] - 1.0)**2 for i in x])),
-                                 np.sqrt(sum([(x[i] - 0.5)**2 for i in x]))],
-          'surrogate': GaussRBF}
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    # Add some data and set the surrogates
-    for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    # Check the Jacobian outputs with the same test cases as above
-    assert (eval_obj_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.zeros(3))) < 1.0e-8))
-    fx1 = 2.0 * np.ones((1, 3))
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Re-define the MOOP but add a constraint
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    assert (eval_obj_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.zeros(3))) < 1.0e-8))
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.ones(3)) - fx1) < 1.0e-8))
-    # Re-define the MOOP but add objectives and constraints that use the sim
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addObjective({'obj_func': f2, 'obj_grad': df2})
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.addConstraint({'con_func': c2, 'con_grad': dc2})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    fx0 = np.zeros((2, 3))
-    fx0[0, :] = 2.0
-    assert (np.all(np.abs(eval_obj_jac(moop1, np.ones(3)) - fx0) < 1.0e-8))
-    # Create a duplicate MOOP but adjust the design space scaling
-    moop2 = MOOP(GlobalSurrogate_PS)
-    moop2.addDesign({'lb': -1.0, 'ub': 1.0},
-                    {'lb': 0.0, 'ub': 2.0},
-                    {'lb': -0.5, 'ub': 1.5})
-    moop2.addSimulation(g1, g2)
-    moop2.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop2.addObjective({'obj_func': f2, 'obj_grad': df2})
-    moop2.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop2.addConstraint({'con_func': c2, 'con_grad': dc2})
-    moop2.addAcquisition({'acquisition': UniformWeights})
-    moop2.compile()
-    for sn in ["sim1", "sim2"]:
-        moop2.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop2._fit_surrogates()
-    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    # After embedding inputs, the outputs should be the same for evaluations
-    # at the interpolation nodes.
-    x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    assert (np.linalg.norm(eval_obj_jac(moop1, x) -
-                           eval_obj_jac(moop2, xx) * 2) < 1.e-8)
-    eval_obj1, _, _ = moop1._link()
-    # Now check that after compiling, jax correctly propagates obj_jac
-    def obj_jac(x): return eval_obj1(x, moop1._evaluate_surrogates(x))
-    moop1_obj_jac = jacrev(obj_jac)
-    for xi in np.random.sample((5, 3)):
-        dfdxi = moop1_obj_jac(xi)
-        assert (np.all(np.abs(eval_obj_jac(moop1, xi) - dfdxi) < 1.0e-8))
+    fwd, bwd, rows = {
+        "obj": (moop._obj_fwd, moop._obj_bwd, moop.o),
+        "con": (moop._con_fwd, moop._con_bwd, moop.p),
+        "pen": (moop._pen_fwd, moop._pen_bwd, moop.o),
+    }[kind]
+    sx = moop._evaluate_surrogates(x)
+    dsdx = jacrev(moop._evaluate_surrogates)(x)
+    _, res = fwd(x, sx)
+    out = jnp.zeros((rows, moop.n_latent))
+    for i, ei in enumerate(jnp.eye(rows)):
+        ddx, dds = bwd(res, ei)
+        out = out.at[i].set(ddx + jnp.dot(dds, dsdx))
+    return out
 
 
-def test_MOOP_evaluate_constraint_grads():
-    """ Check that the MOOP class handles evaluating gradients properly.
+def grad_moop(objectives, constraints=(), with_sims=True, bounds=None):
+    """ Build and compile a differentiable MOOP with fitted surrogates.
 
-    Initialize a MOOP object and check that the evaluateGradients() function
-    works correctly.
+    Args:
+        objectives (list of tuple): (obj_func, obj_grad) pairs.
+
+        constraints (list of tuple): (con_func, con_grad) pairs.
+
+        with_sims (bool): Whether to attach the two test simulations and fit
+            their surrogates to a single training point.
+
+        bounds (list of tuple, optional): Per-variable (lb, ub) pairs.
+            Defaults to the unit cube.
+
+    Returns:
+        MOOP: The compiled MOOP.
 
     """
 
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import GlobalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
+    moop = MOOP(GlobalSurrogate_PS)
+    for lb, ub in (bounds if bounds is not None else [(0.0, 1.0)] * 3):
+        moop.addDesign({'lb': lb, 'ub': ub})
+    if with_sims:
+        moop.addSimulation(sim_dict(1, sim_norm),
+                           sim_dict(2, sim_shifted_norms))
+    for func, grad in objectives:
+        moop.addObjective({'obj_func': func, 'obj_grad': grad})
+    for func, grad in constraints:
+        moop.addConstraint({'con_func': func, 'con_grad': grad})
+    moop.addAcquisition({'acquisition': UniformWeights})
+    moop.compile()
+    if with_sims:
+        for name in ["sim1", "sim2"]:
+            moop.evaluateSimulation(TRAINING_POINT, name)
+        moop._fit_surrogates()
+        moop._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
+    return moop
 
-    # Create several differentiable functions and constraints.
-    def f1(x, s):
-        names = ["x1", "x2", "x3"]
-        return np.sum([x[i] * x[i] for i in names])
 
-    def df1(x, s):
-        return ({"x1": 2*x["x1"], "x2": 2*x["x2"], "x3": 2*x["x3"]},
-                {"sim1": 0, "sim2": jnp.zeros(2)})
+# ---------------------------------------------------------------------------
+# Penalty Jacobian
+# ---------------------------------------------------------------------------
 
-    def f2(x, s):
-        names = ["sim1", "sim2"]
-        return np.sum([jnp.dot(s[i] - 0.5, s[i] - 0.5) for i in names])
 
-    def df2(x, s):
-        return ({"x1": 0, "x2": 0, "x3": 0},
-                {"sim1": 2*s["sim1"] - 1, "sim2": 2*s["sim2"] - jnp.ones(2)})
+@pytest.mark.parametrize("objs, cons, with_sims, at_one", [
+    # Without a constraint the penalty is just the objective gradient, 2x
+    (OBJ1, (), False, [[2.0, 2.0, 2.0]]),
+    (OBJ1, (), True, [[2.0, 2.0, 2.0]]),
+    # c1 = x1 - 0.25 is violated at x = 1, adding e_1 to every row
+    (OBJ1, CON1, False, [[3.0, 2.0, 2.0]]),
+    (OBJ1, CON1, True, [[3.0, 2.0, 2.0]]),
+    # f2 has no design dependence, so its row is the constraint term alone
+    (OBJ12, CON12, True, [[3.0, 2.0, 2.0], [1.0, 0.0, 0.0]]),
+])
+def test_penalty_jacobian(objs, cons, with_sims, at_one):
+    """ Check the penalty Jacobian against hand-computed values.
 
-    def c1(x, s):
-        return x["x1"] - 0.25
+    The penalty is the objective plus the violation of each constraint, so a
+    violated constraint adds its gradient to every objective's row.
 
-    def dc1(x, s):
-        return {"x1": 1, "x2": 0, "x3": 0}, {"sim1": 0, "sim2": jnp.zeros(2)}
+    """
 
-    def c2(x, s):
-        return s["sim1"] - 0.25
+    moop = grad_moop(objs, cons, with_sims)
+    expected = np.asarray(at_one)
+    assert (jacobian(moop, np.zeros(3), "pen").shape == expected.shape)
+    # At the origin no constraint is violated and f1's gradient vanishes
+    assert (np.all(np.abs(jacobian(moop, np.zeros(3), "pen")) < 1.0e-8))
+    assert (np.all(np.abs(jacobian(moop, np.ones(3), "pen") - expected)
+                   < 1.0e-8))
 
-    def dc2(x, s):
-        return {"x1": 0, "x2": 0, "x3": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
 
-    # Initialize a continuous MOOP with 3 variables, no sims, 1 objective
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    # Check the shape and values of the constraint Jacobian
-    assert (eval_con_jac(moop1, np.zeros(3)).size == 0)
-    # Add a constraint and make sure it appears in the Jacobian
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.compile()
-    assert (eval_con_jac(moop1, np.zeros(3)).shape == (1, 3))
-    cx1 = np.zeros((1, 3))
-    cx1[0, 0] = 1.0
-    assert (np.all(np.abs(eval_con_jac(moop1, np.zeros(3)) - cx1) < 1.0e-8))
-    assert (np.all(np.abs(eval_con_jac(moop1, np.ones(3)) - cx1) < 1.0e-8))
-    # Create a new continuous MOOP as before but with 2 sims
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: np.sqrt(sum([x[i]**2 for i in x])),
-          'surrogate': GaussRBF}
-    g2 = {'m': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([(x[i] - 1.0)**2 for i in x])),
-                                 np.sqrt(sum([(x[i] - 0.5)**2 for i in x]))],
-          'surrogate': GaussRBF}
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    assert (eval_con_jac(moop1, np.zeros(3)).shape == (1, 3))
-    assert (np.all(np.abs(eval_con_jac(moop1, np.zeros(3)) - cx1) < 1.0e-8))
-    assert (np.all(np.abs(eval_con_jac(moop1, np.ones(3)) - cx1) < 1.0e-8))
-    # Re-define the MOOP but add objectives and constraints that use the sim
-    moop1 = MOOP(GlobalSurrogate_PS)
-    for i in range(3):
-        moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addObjective({'obj_func': f2, 'obj_grad': df2})
-    moop1.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop1.addConstraint({'con_func': c2, 'con_grad': dc2})
-    moop1.addAcquisition({'acquisition': UniformWeights})
-    moop1.compile()
-    for sn in ["sim1", "sim2"]:
-        moop1.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop1._fit_surrogates()
-    moop1._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    cx2 = np.zeros((2, 3))
-    cx2[0, 0] = 1.0
-    assert (np.all(np.abs(eval_con_jac(moop1, np.ones(3)) - cx2) < 1.0e-8))
-    # Create a duplicate MOOP but adjust the design space scaling
-    moop2 = MOOP(GlobalSurrogate_PS)
-    moop2.addDesign({'lb': -1.0, 'ub': 1.0},
-                    {'lb': 0.0, 'ub': 2.0},
-                    {'lb': -0.5, 'ub': 1.5})
-    moop2.addSimulation(g1, g2)
-    moop2.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop2.addObjective({'obj_func': f2, 'obj_grad': df2})
-    moop2.addConstraint({'con_func': c1, 'con_grad': dc1})
-    moop2.addConstraint({'con_func': c2, 'con_grad': dc2})
-    moop2.addAcquisition({'acquisition': UniformWeights})
-    moop2.compile()
-    for sn in ["sim1", "sim2"]:
-        moop2.evaluateSimulation({"x1": 1, "x2": 1, "x3": 1}, sn)
-    moop2._fit_surrogates()
-    moop2._set_surrogate_tr(np.zeros(3), np.ones(3) * np.inf)
-    # After embedding inputs, the outputs should be the same for evaluations
-    # at the interpolation nodes.
-    x = moop1._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    xx = moop2._embed({'x1': 1, 'x2': 1, 'x3': 1})
-    assert (np.linalg.norm(eval_con_jac(moop1, x) -
-                           eval_con_jac(moop2, xx) * 2) < 1.e-8)
-    _, eval_con1, _ = moop1._link()
-    # Now check that after compiling, jax correctly propagates con_jac
-    def con_jac(x): return eval_con1(x, moop1._evaluate_surrogates(x))
-    moop1_con_jac = jacrev(con_jac)
+# ---------------------------------------------------------------------------
+# Objective Jacobian
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("objs, cons, with_sims, at_one", [
+    (OBJ1, (), False, [[2.0, 2.0, 2.0]]),
+    # Adding a constraint must leave the objective Jacobian untouched
+    (OBJ1, CON1, False, [[2.0, 2.0, 2.0]]),
+    (OBJ1, (), True, [[2.0, 2.0, 2.0]]),
+    (OBJ1, CON1, True, [[2.0, 2.0, 2.0]]),
+    # f2 depends only on the simulations, whose surrogate is flat here
+    (OBJ12, CON12, True, [[2.0, 2.0, 2.0], [0.0, 0.0, 0.0]]),
+])
+def test_objective_jacobian(objs, cons, with_sims, at_one):
+    """ Check the objective Jacobian against hand-computed values. """
+
+    moop = grad_moop(objs, cons, with_sims)
+    expected = np.asarray(at_one)
+    assert (jacobian(moop, np.zeros(3), "obj").shape == expected.shape)
+    assert (np.all(np.abs(jacobian(moop, np.zeros(3), "obj")) < 1.0e-8))
+    assert (np.all(np.abs(jacobian(moop, np.ones(3), "obj") - expected)
+                   < 1.0e-8))
+
+
+# ---------------------------------------------------------------------------
+# Constraint Jacobian
+# ---------------------------------------------------------------------------
+
+
+def test_constraint_jacobian_is_empty_when_unconstrained():
+    """ Check that an unconstrained MOOP has an empty constraint Jacobian. """
+
+    moop = grad_moop(OBJ1, (), with_sims=False)
+    assert (jacobian(moop, np.zeros(3), "con").size == 0)
+
+
+@pytest.mark.parametrize("objs, cons, with_sims, expected", [
+    (OBJ1, CON1, False, [[1.0, 0.0, 0.0]]),
+    (OBJ1, CON1, True, [[1.0, 0.0, 0.0]]),
+    # c2 depends only on sim1, whose surrogate is flat at the training point
+    (OBJ12, CON12, True, [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0]]),
+])
+def test_constraint_jacobian(objs, cons, with_sims, expected):
+    """ Check the constraint Jacobian against hand-computed values.
+
+    Both constraints are affine, so the Jacobian is the same everywhere.
+
+    """
+
+    moop = grad_moop(objs, cons, with_sims)
+    expected = np.asarray(expected)
+    assert (jacobian(moop, np.zeros(3), "con").shape == expected.shape)
+    for xi in [np.zeros(3), np.ones(3)]:
+        assert (np.all(np.abs(jacobian(moop, xi, "con") - expected) < 1.0e-8))
+
+
+# ---------------------------------------------------------------------------
+# Design-space rescaling and jax propagation
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("kind", ["obj", "con", "pen"])
+def test_jacobian_scales_with_design_space(kind):
+    """ Check that the latent Jacobian rescales with the design bounds.
+
+    The latent space is always the unit cube, so doubling the width of every
+    design variable must halve every latent partial derivative.
+
+    """
+
+    unit = grad_moop(OBJ12, CON12)
+    scaled = grad_moop(OBJ12, CON12, bounds=SCALED_BOUNDS)
+    x = unit._embed(TRAINING_POINT)
+    xx = scaled._embed(TRAINING_POINT)
+    assert (np.linalg.norm(jacobian(unit, x, kind) -
+                           jacobian(scaled, xx, kind) * 2) < 1.0e-8)
+
+
+@pytest.mark.parametrize("kind, link_index", [("obj", 0), ("con", 1),
+                                              ("pen", 2)])
+def test_jax_propagates_the_backward_pass(kind, link_index):
+    """ Check that jax.jacrev through the linked function matches the bwd pass.
+
+    _link() returns the forward functions that MOOP registers with
+    jax.custom_vjp.  Differentiating those with jacrev must reproduce the
+    Jacobian assembled directly from the backward passes.
+
+    """
+
+    moop = grad_moop(OBJ12, CON12)
+    linked = moop._link()[link_index]
+
+    def evaluate(x):
+        return linked(x, moop._evaluate_surrogates(x))
+
+    linked_jac = jacrev(evaluate)
     for xi in np.random.sample((5, 3)):
-        dfdxi = moop1_con_jac(xi)
-        assert (np.all(np.abs(eval_con_jac(moop1, xi) - dfdxi) < 1.0e-8))
+        assert (np.all(np.abs(jacobian(moop, xi, kind) - linked_jac(xi))
+                       < 1.0e-8))
 
 
 if __name__ == "__main__":

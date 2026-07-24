@@ -1,379 +1,380 @@
+""" Unit tests for the MOOP problem-definition methods.
 
+These tests cover the per-key validation that MOOP.addDesign(),
+addSimulation(), addObjective(), addConstraint(), and addAcquisition()
+perform inline.  Those ~39 raises in moop.py are not delegated to a shared
+helper, so they are the one family of input checks that has to be tested here
+rather than through parmoo.utilities.error_checks.
+
+The exception is name uniqueness, which every add* method delegates to
+check_names().  That contract is tested directly in
+test_util_error_checks.py, so it is checked once here -- across all four
+methods -- rather than re-derived per method.
+
+"""
+
+import numpy as np
 import pytest
 
+from parmoo import MOOP
+from parmoo.acquisitions import UniformWeights
+from parmoo.embeddings import IdentityEmbedder
+from parmoo.optimizers import LocalSurrogate_PS
+from parmoo.surrogates import GaussRBF
+from parmoo.tests.unit_tests.helpers import (
+    obj_x1,
+    sim_dict,
+    sim_norm,
+    sim_shifted_norms,
+)
 
-def test_MOOP_init():
-    """ Check that the MOOP class handles initialization properly.
 
-    Initialize several MOOP objects, and check that their internal fields
-    appear correct.
+def obj_zero(x, sx):
+    """ A trivial objective. """
 
-    """
+    return 0.0
 
-    from parmoo import MOOP
-    from parmoo.optimizers import LocalSurrogate_PS
-    import pytest
 
-    # Try several invalid inputs
+def grad_zero(x, sx):
+    """ A trivial gradient, returning the two input structures unchanged. """
+
+    return x, sx
+
+
+@pytest.fixture
+def empty_moop():
+    """ A MOOP with no design variables yet. """
+
+    return MOOP(LocalSurrogate_PS)
+
+
+@pytest.fixture
+def three_var_moop():
+    """ A MOOP with 3 continuous design variables on the unit cube. """
+
+    moop = MOOP(LocalSurrogate_PS)
+    for i in range(3):
+        moop.addDesign({'lb': 0.0, 'ub': 1.0})
+    return moop
+
+
+@pytest.fixture
+def two_sim_uncompiled(three_var_moop):
+    """ A MOOP with 3 variables and 2 simulations, not yet compiled. """
+
+    three_var_moop.addSimulation(sim_dict(1, sim_norm),
+                                 sim_dict(2, sim_shifted_norms))
+    return three_var_moop
+
+
+# ---------------------------------------------------------------------------
+# MOOP.__init__
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("args, kwargs", [
+    ((5.0,), {}),                                   # not a class
+    ((lambda w, x, y, z: 0.0,), {}),                 # not an optimizer class
+    ((LocalSurrogate_PS,), {'hyperparams': []}),     # hyperparams not a dict
+])
+def test_MOOP_init_rejects_bad_input(args, kwargs):
+    """ Check that the MOOP constructor validates its optimizer and dict. """
+
     with pytest.raises(TypeError):
-        MOOP(5.0)
-    with pytest.raises(TypeError):
-        MOOP(lambda w, x, y, z: 0.0)
-    with pytest.raises(TypeError):
-        MOOP(LocalSurrogate_PS, hyperparams=[])
-    # Try a few valid inputs
+        MOOP(*args, **kwargs)
+
+
+def test_MOOP_init_starts_empty():
+    """ Check that a fresh MOOP reports zero of everything. """
+
     moop = MOOP(LocalSurrogate_PS)
     assert (moop.m == 0 and moop.n_feature == 0 and moop.n_latent == 0 and
             moop.s == 0 and moop.o == 0 and moop.p == 0)
+
+
+def test_MOOP_init_stores_hyperparams():
+    """ Check that constructor hyperparameters reach the optimizer. """
+
     moop = MOOP(LocalSurrogate_PS, hyperparams={'test': 0})
-    assert (moop.m == 0 and moop.n_feature == 0 and moop.n_latent == 0 and
-            moop.s == 0 and moop.o == 0 and moop.p == 0)
     assert (moop.opt_hp['test'] == 0)
 
 
-def test_MOOP_addDesign():
-    """ Check that the MOOP class handles adding design variables properly.
-
-    Initialize a MOOP objects, and add several design variables.
-
-    """
-
-    from parmoo import MOOP
-    from parmoo.embeddings import IdentityEmbedder
-    from parmoo.optimizers import LocalSurrogate_PS
-    import pytest
-
-    # Initialize a MOOP with no hyperparameters
-    moop = MOOP(LocalSurrogate_PS)
-    # Try to add some bad design variable types
-    with pytest.raises(TypeError):
-        moop.addDesign([])
-    with pytest.raises(TypeError):
-        moop.addDesign({'des_type': 1.0})
-    with pytest.raises(ValueError):
-        moop.addDesign({'des_type': "hello world"})
-    assert (moop.n_latent == 0)
-    # Now add some continuous and integer design variables
-    moop.addDesign({'lb': 0.0,
-                    'ub': 1.0})
-    # Try to use a repeated name to test error handling
-    with pytest.raises(ValueError):
-        moop.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
-    assert (moop.n_latent == 1)
-    moop.addDesign({'name': "x2",
-                    'des_type': "continuous",
-                    'lb': 0.0,
-                    'ub': 1.0,
-                    'des_tol': 0.01})
-    assert (moop.n_latent == 2)
-    moop.addDesign({'des_type': "integer",
-                    'lb': 0,
-                    'ub': 4})
-    assert (moop.n_latent == 3)
-    # Now add some categorical design variables
-    moop.addDesign({'des_type': "categorical",
-                    'levels': 2})
-    assert (moop.n_latent == 4)
-    moop.addDesign({'des_type': "categorical",
-                    'levels': 3})
-    assert (moop.n_latent == 6)
-    moop.addDesign({'name': "x6",
-                    'des_type': "categorical",
-                    'levels': ["boy", "girl", "doggo"]})
-    assert (moop.n_latent == 8)
-    # Now add a custom design variables
-    moop.addDesign({'des_type': "custom",
-                    'lb': -100.0,
-                    'ub': 100.0,
-                    'embedder': IdentityEmbedder})
-    assert (moop.n_latent == 9)
-    moop.addDesign({'des_type': "raw",
-                    'lb': -100.0,
-                    'ub': 100.0})
-    assert (moop.n_latent == 10)
+# ---------------------------------------------------------------------------
+# MOOP.addDesign
+# ---------------------------------------------------------------------------
 
 
-def test_MOOP_addSimulation():
-    """ Check that the MOOP class handles adding new simulations properly.
+@pytest.mark.parametrize("arg, error", [
+    ([], TypeError),                          # not a dict
+    ({'des_type': 1.0}, TypeError),           # des_type not a str
+    ({'des_type': "hello world"}, ValueError),  # unrecognized des_type
+])
+def test_addDesign_rejects_bad_input(empty_moop, arg, error):
+    """ Check that addDesign() validates its argument and des_type. """
 
-    Initialize several MOOPs, and add several simulations. Check that
-    the metadata is updated correctly.
+    with pytest.raises(error):
+        empty_moop.addDesign(arg)
+    assert (empty_moop.n_latent == 0)
+
+
+@pytest.mark.parametrize("settings, n_latent", [
+    ({'lb': 0.0, 'ub': 1.0}, 1),
+    ({'des_type': "continuous", 'lb': 0.0, 'ub': 1.0, 'des_tol': 0.01}, 1),
+    ({'des_type': "integer", 'lb': 0, 'ub': 4}, 1),
+    # A binary category needs a single latent coordinate
+    ({'des_type': "categorical", 'levels': 2}, 1),
+    # Three or more categories are one-hot encoded, minus one for the baseline
+    ({'des_type': "categorical", 'levels': 3}, 2),
+    ({'des_type': "categorical", 'levels': ["boy", "girl", "doggo"]}, 2),
+    ({'des_type': "custom", 'lb': -100.0, 'ub': 100.0,
+      'embedder': IdentityEmbedder}, 1),
+    ({'des_type': "raw", 'lb': -100.0, 'ub': 100.0}, 1),
+])
+def test_addDesign_latent_size(empty_moop, settings, n_latent):
+    """ Check how many latent coordinates each design variable type occupies.
 
     """
 
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    import pytest
-
-    # Initialize a MOOP and add 3 design variables
-    moop = MOOP(LocalSurrogate_PS)
-    moop.addDesign({'des_type': "continuous",
-                    'lb': 0.0,
-                    'ub': 1.0})
-    moop.addDesign({'des_type': "continuous",
-                    'lb': 0.0,
-                    'ub': 1.0})
-    moop.addDesign({'des_type': "continuous",
-                    'lb': 0.0,
-                    'ub': 1.0})
-    # Now add one simulation and check
-    g1 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1)
-    assert (moop.m == 1 and moop.n_latent == 3 and moop.s == 1 and
-            moop.o == 0 and moop.p == 0)
-    # Initialize another MOOP with 3 design variables
-    moop = MOOP(LocalSurrogate_PS)
-    moop.addDesign({'des_type': "continuous",
-                    'lb': 0.0,
-                    'ub': 1.0})
-    moop.addDesign({'des_type': "continuous",
-                    'lb': 0.0,
-                    'ub': 1.0})
-    moop.addDesign({'des_type': "continuous",
-                    'lb': 0.0,
-                    'ub': 1.0})
-    g2 = {'m': 2,
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1, g2)
-    assert (moop.m == 3 and moop.n_latent == 3 and moop.s == 2 and
-            moop.o == 0 and moop.p == 0)
-    g3 = {'name': "Bobo1",
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x)],
-          'surrogate': GaussRBF}
-    g4 = {'name': "Bobo2",
-          'm': 2,
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm(x-1.0), np.linalg.norm(x-0.5)],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g3, g4)
-    # Try to use a repeated name to test error handling
-    with pytest.raises(ValueError):
-        moop.addSimulation(g4)
-    # Check the names
-    assert (moop.sim_schema[0][0] == "sim1")
-    assert (moop.sim_schema[1][0] == "sim2")
-    assert (moop.sim_schema[2][0] == "Bobo1")
-    assert (moop.sim_schema[3][0] == "Bobo2")
+    empty_moop.addDesign(settings)
+    assert (empty_moop.n_latent == n_latent)
 
 
-def test_MOOP_addObjective():
-    """ Check that the MOOP class handles adding objectives properly.
+def test_addDesign_accumulates_mixed_types(empty_moop):
+    """ Check the running latent size as variables of every type are added.
 
-    Initialize a MOOP object and check that the addObjective() function works
-    correctly.
+    Also exercises the automatic naming of unnamed variables (x1, x2, ...),
+    since a named variable is mixed in partway through.
 
     """
 
-    from parmoo import MOOP
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    import pytest
+    expected = [1, 2, 3, 4, 6, 8, 9, 10]
+    settings = [
+        {'lb': 0.0, 'ub': 1.0},
+        {'name': "x2", 'des_type': "continuous", 'lb': 0.0, 'ub': 1.0,
+         'des_tol': 0.01},
+        {'des_type': "integer", 'lb': 0, 'ub': 4},
+        {'des_type': "categorical", 'levels': 2},
+        {'des_type': "categorical", 'levels': 3},
+        {'name': "x6", 'des_type': "categorical",
+         'levels': ["boy", "girl", "doggo"]},
+        {'des_type': "custom", 'lb': -100.0, 'ub': 100.0,
+         'embedder': IdentityEmbedder},
+        {'des_type': "raw", 'lb': -100.0, 'ub': 100.0},
+    ]
+    for si, ni in zip(settings, expected):
+        empty_moop.addDesign(si)
+        assert (empty_moop.n_latent == ni)
 
-    # Initialize a MOOP with 2 SimGroups, one of which has 2 outputs
-    moop = MOOP(LocalSurrogate_PS)
+
+# ---------------------------------------------------------------------------
+# MOOP.addSimulation
+# ---------------------------------------------------------------------------
+
+
+def test_addSimulation_updates_counts(three_var_moop):
+    """ Check that adding simulations accumulates the output count. """
+
+    three_var_moop.addSimulation(sim_dict(1, sim_norm))
+    assert (three_var_moop.m == 1 and three_var_moop.n_latent == 3 and
+            three_var_moop.s == 1 and three_var_moop.o == 0 and
+            three_var_moop.p == 0)
+    three_var_moop.addSimulation(sim_dict(2, sim_shifted_norms))
+    assert (three_var_moop.m == 3 and three_var_moop.s == 2)
+
+
+def test_addSimulation_names(three_var_moop):
+    """ Check that unnamed simulations are auto-named and names are kept. """
+
+    three_var_moop.addSimulation(sim_dict(1, sim_norm),
+                                 sim_dict(2, sim_shifted_norms))
+    three_var_moop.addSimulation(sim_dict(1, sim_norm, name="Bobo1"),
+                                 sim_dict(2, sim_shifted_norms, name="Bobo2"))
+    names = [si[0] for si in three_var_moop.sim_schema]
+    assert (names == ["sim1", "sim2", "Bobo1", "Bobo2"])
+
+
+# ---------------------------------------------------------------------------
+# MOOP.addObjective and MOOP.addConstraint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("arg, error", [
+    (0, TypeError),                                 # not a dict
+    ({}, AttributeError),                           # missing obj_func
+    ({'obj_func': 0}, TypeError),                   # obj_func not callable
+    ({'obj_func': lambda x: 0.0}, ValueError),      # wrong arity
+])
+def test_addObjective_rejects_bad_input(two_sim_uncompiled, arg, error):
+    """ Check that addObjective() validates its dict and the callable. """
+
+    with pytest.raises(error):
+        two_sim_uncompiled.addObjective(arg)
+    assert (two_sim_uncompiled.o == 0)
+
+
+def test_addObjective_counts_and_names(two_sim_uncompiled):
+    """ Check objective accumulation, auto-naming, and gradient acceptance. """
+
+    two_sim_uncompiled.addObjective({'obj_func': obj_zero})
+    assert (two_sim_uncompiled.o == 1)
+    # Several objectives may be added in one call, with or without gradients
+    two_sim_uncompiled.addObjective({'obj_func': obj_zero},
+                                    {'obj_func': obj_zero,
+                                     'obj_grad': grad_zero})
+    assert (two_sim_uncompiled.o == 3)
+    two_sim_uncompiled.addObjective({'name': "Bobo", 'obj_func': obj_zero})
+    assert (two_sim_uncompiled.o == 4)
+    assert (two_sim_uncompiled.obj_schema == [("f1", 'f8'), ("f2", 'f8'),
+                                              ("f3", 'f8'), ("Bobo", 'f8')])
+
+
+@pytest.mark.parametrize("key", ["con_func", "constraint"])
+@pytest.mark.parametrize("value, error", [
+    (0, TypeError),                     # not callable
+    (lambda x: 0.0, ValueError),        # wrong arity
+])
+def test_addConstraint_rejects_bad_callable(two_sim_uncompiled, key, value,
+                                            error):
+    """ Check the constraint callable contract under both accepted key names.
+
+    addConstraint() accepts the callable under either 'con_func' or the older
+    'constraint' key, and validates both the same way.
+
+    """
+
+    with pytest.raises(error):
+        two_sim_uncompiled.addConstraint({key: value})
+    assert (two_sim_uncompiled.p == 0)
+
+
+@pytest.mark.parametrize("arg, error", [
+    (0, TypeError),             # not a dict
+    ({}, AttributeError),       # missing the callable
+])
+def test_addConstraint_rejects_bad_input(two_sim_uncompiled, arg, error):
+    """ Check that addConstraint() validates its argument dict. """
+
+    with pytest.raises(error):
+        two_sim_uncompiled.addConstraint(arg)
+    assert (two_sim_uncompiled.p == 0)
+
+
+def test_addConstraint_counts_and_names(two_sim_uncompiled):
+    """ Check constraint accumulation, naming, and gradient acceptance.
+
+    """
+
+    two_sim_uncompiled.addConstraint({'constraint': obj_zero})
+    assert (two_sim_uncompiled.p == 1)
+    two_sim_uncompiled.addConstraint({'con_func': obj_zero},
+                                     {'con_func': obj_zero,
+                                      'con_grad': grad_zero})
+    assert (two_sim_uncompiled.p == 3)
+    two_sim_uncompiled.addConstraint({'name': "Bobo",
+                                      'constraint': obj_zero})
+    assert (two_sim_uncompiled.p == 4)
+    assert (two_sim_uncompiled.con_schema ==
+            [("c1", 'f8'), ("c2", 'f8'), ("c3", 'f8'), ("Bobo", 'f8')])
+
+
+# ---------------------------------------------------------------------------
+# Name uniqueness, which every add* method delegates to check_names()
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("method, arg", [
+    ("addDesign", {'name': "dup", 'lb': 0.0, 'ub': 1.0}),
+    ("addSimulation", None),        # filled in below, needs sim_dict
+    ("addObjective", {'name': "dup", 'obj_func': obj_zero}),
+    ("addConstraint", {'name': "dup", 'con_func': obj_zero}),
+])
+def test_add_rejects_duplicate_name(three_var_moop, method, arg):
+    """ Check that each add* method rejects a name already in use.
+
+    The uniqueness rule itself lives in check_names(), which is tested
+    directly in test_util_error_checks.py; this confirms each method is wired
+    up to it.
+
+    """
+
+    if arg is None:
+        arg = sim_dict(1, sim_norm, name="dup")
+    call = getattr(three_var_moop, method)
+    call(arg)
+    with pytest.raises(ValueError):
+        call(arg)
+
+
+# ---------------------------------------------------------------------------
+# MOOP.addAcquisition
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("arg, error", [
+    (0, TypeError),                                                # not a dict
+    ({}, AttributeError),                                          # no key
+    ({'acquisition': UniformWeights, 'hyperparams': 0}, TypeError),
+    ({'acquisition': 0, 'hyperparams': {}}, TypeError),        # not a class
+    ({'acquisition': GaussRBF, 'hyperparams': {}}, TypeError),  # wrong ABC
+])
+def test_addAcquisition_rejects_bad_input(three_var_moop, arg, error):
+    """ Check that addAcquisition() validates its dict and the class given.
+
+    The class is probed by instantiating it with dummy (dim, lb, ub,
+    hyperparams) arguments, which is how a non-acquisition class is caught.
+
+    """
+
+    three_var_moop.addObjective({'obj_func': obj_zero})
+    with pytest.raises(error):
+        three_var_moop.addAcquisition(arg)
+    assert (len(three_var_moop.acquisitions) == 0)
+
+
+def test_addAcquisition_counts(three_var_moop):
+    """ Check that acquisitions are only instantiated at compile time. """
+
     for i in range(3):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'n': 3,
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: 0.0,
-          'surrogate': GaussRBF}
-    g2 = {'n': 3,
-          'm': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [1.0, 0.5],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1, g2)
-    # Try to add bad objectives and check that appropriate errors are raised
-    with pytest.raises(TypeError):
-        moop.addObjective(0)
-    with pytest.raises(AttributeError):
-        moop.addObjective({})
-    with pytest.raises(TypeError):
-        moop.addObjective({'obj_func': 0})
-    with pytest.raises(ValueError):
-        moop.addObjective({'obj_func': lambda x: 0.0})
-    # Check that no objectives were added yet
-    assert (moop.o == 0)
-    # Now add 3 good objectives
-    moop.addObjective({'obj_func': lambda x, s: 0.0})
-    assert (moop.o == 1)
-    moop.addObjective({'obj_func': lambda x, s: 0.0},
-                      {'obj_func': lambda x, s: 0.0,
-                       'obj_grad': lambda x, s: (x, s)})
-    assert (moop.o == 3)
-    moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: 0.0})
-    assert (moop.o == 4)
-    # Try to use a repeated name to test error handling
-    with pytest.raises(ValueError):
-        moop.addObjective({'name': "Bobo", 'obj_func': lambda x, s: 0.0})
-    assert (moop.obj_schema[0] == ("f1", 'f8'))
-    assert (moop.obj_schema[1] == ("f2", 'f8'))
-    assert (moop.obj_schema[2] == ("f3", 'f8'))
-    assert (moop.obj_schema[3] == ("Bobo", 'f8'))
+        three_var_moop.addObjective({'obj_func': obj_zero})
+    three_var_moop.addAcquisition({'acquisition': UniformWeights})
+    three_var_moop.addAcquisition({'acquisition': UniformWeights},
+                                  {'acquisition': UniformWeights,
+                                   'hyperparams': {}})
+    # Nothing is built until compile()
+    assert (len(three_var_moop.acquisitions) == 0)
+    three_var_moop.compile()
+    assert (len(three_var_moop.acquisitions) == 3)
 
 
-def test_MOOP_addConstraint():
-    """ Check that the MOOP class handles adding constraints properly.
+# ---------------------------------------------------------------------------
+# dtype accessors
+# ---------------------------------------------------------------------------
 
-    Initialize a MOOP object and check that the addConstraint() function works
-    correctly.
+
+def test_getTypes_are_None_when_empty():
+    """ Check that the dtype accessors are None before anything is added.
 
     """
 
-    from parmoo import MOOP
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    import pytest
-
-    # Initialize a MOOP with 2 SimGroups, one of which has 2 outputs
     moop = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    g1 = {'n': 3,
-          'm': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: 0.0,
-          'surrogate': GaussRBF}
-    g2 = {'n': 3,
-          'm': 2,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [1.0, 0.5],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1, g2)
-    # Try to add bad constraints and check that appropriate errors are raised
-    with pytest.raises(TypeError):
-        moop.addConstraint(0)
-    with pytest.raises(AttributeError):
-        moop.addConstraint({})
-    with pytest.raises(TypeError):
-        moop.addConstraint({'con_func': 0})
-    with pytest.raises(ValueError):
-        moop.addConstraint({'con_func': lambda x: 0.0})
-    with pytest.raises(TypeError):
-        moop.addConstraint({'constraint': 0})
-    with pytest.raises(ValueError):
-        moop.addConstraint({'constraint': lambda x: 0.0})
-    # Check that no constraints were added yet
-    assert (moop.p == 0)
-    # Now add 3 good constraints
-    moop.addConstraint({'constraint': lambda x, s: 0.0})
-    assert (moop.p == 1)
-    moop.addConstraint({'con_func': lambda x, s: 0.0},
-                       {'con_func': lambda x, s: 0.0,
-                        'con_grad': lambda x, s: (x, s)})
-    assert (moop.p == 3)
-    moop.addConstraint({'name': "Bobo", 'constraint': lambda x, s: 0.0})
-    assert (moop.p == 4)
-    # Try to use a repeated name to test error handling
-    with pytest.raises(ValueError):
-        moop.addConstraint({'name': "Bobo", 'con_func': lambda x, s: 0.0})
-    assert (moop.con_schema[0] == ("c1", 'f8'))
-    assert (moop.con_schema[1] == ("c2", 'f8'))
-    assert (moop.con_schema[2] == ("c3", 'f8'))
-    assert (moop.con_schema[3] == ("Bobo", 'f8'))
-
-
-def test_MOOP_addAcquisition():
-    """ Check that the MOOP class handles adding acquisitions properly.
-
-    Initialize a MOOP object and check that the addAcquisition() function works
-    correctly.
-
-    """
-
-    from parmoo import MOOP
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.surrogates import GaussRBF
-    import pytest
-
-    # Initialize a MOOP with 3 variables and 3 objectives
-    moop = MOOP(LocalSurrogate_PS)
-    for i in range(3):
-        moop.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop.addObjective({'obj_func': lambda x, s: 0.0},
-                      {'obj_func': lambda x, s: 0.0},
-                      {'obj_func': lambda x, s: 0.0})
-    # Try to add bad acquisition functions and check for an appropriate error
-    with pytest.raises(TypeError):
-        moop.addAcquisition(0)
-    with pytest.raises(AttributeError):
-        moop.addAcquisition({})
-    with pytest.raises(TypeError):
-        moop.addAcquisition({'acquisition': UniformWeights,
-                             'hyperparams': 0})
-    with pytest.raises(TypeError):
-        moop.addAcquisition({'acquisition': 0,
-                             'hyperparams': {}})
-    with pytest.raises(TypeError):
-        moop.addAcquisition({'acquisition': GaussRBF,
-                             'hyperparams': {}})
-    # Check that no acquisitions were added then add 3 good acquisitions
-    assert (len(moop.acquisitions) == 0)
-    moop.addAcquisition({'acquisition': UniformWeights})
-    moop.addAcquisition({'acquisition': UniformWeights},
-                        {'acquisition': UniformWeights, 'hyperparams': {}})
-    moop.compile()
-    assert (len(moop.acquisitions) == 3)
-
-
-def test_MOOP_getTypes():
-    """ Check that the MOOP class handles getting dtypes properly.
-
-    Initialize a MOOP object, add design variables, simulations, objectives,
-    and constraints, and get the corresponding types.
-
-    """
-
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.optimizers import LocalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-
-    # Create a new MOOP
-    moop = MOOP(LocalSurrogate_PS)
-    # Check that all types are None
     assert (moop.getDesignType() is None)
     assert (moop.getSimulationType() is None)
     assert (moop.getObjectiveType() is None)
     assert (moop.getConstraintType() is None)
-    # Add some variables, simulations, objectives, and constraints
+
+
+def test_getTypes_describe_the_schemas():
+    """ Check that each dtype accessor returns a usable numpy dtype. """
+
     moop = MOOP(LocalSurrogate_PS)
     moop.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
     moop.addDesign({'name': "x2", 'des_type': "categorical", 'levels': 3})
-    g1 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [0.0],
-          'surrogate': GaussRBF}
-    moop.addSimulation(g1)
-    moop.addObjective({'obj_func': lambda x, s: 0.0})
-    moop.addConstraint({'constraint': lambda x, s: 0.0})
-    # Check the dtypes
-    assert (np.zeros(1, dtype=moop.getDesignType()).size == 1)
-    assert (np.zeros(1, dtype=moop.getSimulationType()).size == 1)
-    assert (np.zeros(1, dtype=moop.getObjectiveType()).size == 1)
-    assert (np.zeros(1, dtype=moop.getConstraintType()).size == 1)
+    moop.addSimulation(sim_dict(1, sim_norm))
+    moop.addObjective({'obj_func': obj_x1})
+    moop.addConstraint({'constraint': obj_x1})
+    for dtype in [moop.getDesignType(), moop.getSimulationType(),
+                  moop.getObjectiveType(), moop.getConstraintType()]:
+        assert (np.zeros(1, dtype=dtype).size == 1)
 
 
 if __name__ == "__main__":
