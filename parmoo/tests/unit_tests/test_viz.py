@@ -6,7 +6,7 @@ import pytest
 pytestmark = pytest.mark.requires_chrome
 
 
-def test_static_export():
+def test_static_export(quickstart_moop):
     """ Create a MOOP object and export various plot types.
 
     Tests all export formats except eps
@@ -22,7 +22,7 @@ def test_static_export():
     import os
 
     # Pre-calculate a moop object
-    moop1 = run_quickstart()
+    moop1 = quickstart_moop
 
     # * html output
     scatter(moop1, output='html')
@@ -55,7 +55,7 @@ def test_static_export():
     os.remove("Pareto Front.webp")
 
 
-def test_quantity_constraints_objectives():
+def test_quantity_constraints_objectives(quickstart_moop, dtlz2_moop):
     """ Create a MOOP object and plot PF with and w/o constraint data. """
 
     from parmoo.viz.plot import (
@@ -66,8 +66,8 @@ def test_quantity_constraints_objectives():
     import os
 
     # Pre-calculate two moop objects
-    moop1 = run_quickstart()
-    moop2 = run_dtlz2()
+    moop1 = quickstart_moop
+    moop2 = dtlz2_moop
 
     # * 2 objective scatter with constraint
     scatter(moop1, output='html')
@@ -100,7 +100,7 @@ def test_quantity_constraints_objectives():
     os.remove("Pareto Front.html")
 
 
-def test_database_options():
+def test_database_options(quickstart_moop, dtlz2_moop):
     """ Create a MOOP object and plot the full database.
 
     Generates plots with and without constraint violations.
@@ -115,8 +115,8 @@ def test_database_options():
     import os
 
     # Pre-calculate two moop objects
-    moop1 = run_quickstart()
-    moop2 = run_dtlz2()
+    moop1 = quickstart_moop
+    moop2 = dtlz2_moop
 
     # * pf x constraint_satisfying x constraints in MOOP
     scatter(
@@ -519,14 +519,14 @@ def test_database_options():
     os.remove("Objective Data.html")
 
 
-def test_inputs_to_dash():
+def test_inputs_to_dash(quickstart_moop):
     """ Stress-test the dash app's error handling. """
 
     from parmoo.viz.plot import scatter
     import os
 
     # Pre-calculate a moop object
-    moop1 = run_quickstart()
+    moop1 = quickstart_moop
 
     # * db
     # valid db values tested in test_database_options()
@@ -790,8 +790,14 @@ def test_inputs_to_dash():
         scatter(moop1, output='html', port=1234)
 
 
-def run_quickstart():
-    """ Auxiliary function that creates a MOOP by running the quickstart. """
+@pytest.fixture(scope="module")
+def quickstart_moop():
+    """ A solved 2-objective MOOP with a constraint, from the quickstart.
+
+    Module scoped because solve() is expensive and the plotting functions
+    only read from the MOOP.
+
+    """
 
     import numpy as np
     from parmoo import MOOP
@@ -853,8 +859,13 @@ def run_quickstart():
     return my_moop
 
 
-def run_dtlz2():
-    """ Auxiliary function that creates a MOOP by running DTLZ2. """
+@pytest.fixture(scope="module")
+def dtlz2_moop():
+    """ A solved 5-objective DTLZ2 MOOP with no constraints.
+
+    Module scoped for the same reason as quickstart_moop.
+
+    """
 
     from parmoo import MOOP
     from parmoo.acquisitions import RandomConstraint
