@@ -29,6 +29,25 @@ TRAINING_POINTS = [
 ]
 
 
+def seeded(**extra):
+    """ Return a fresh hyperparams dict with a fixed random seed.
+
+    This must build a new dict on every call.  MOOP.__init__ stores the
+    hyperparams argument by reference and then writes into it (it replaces the
+    'np_random_gen' seed with the Generator it built), so a shared dict would
+    leak state from one MOOP into the next.
+
+    Args:
+        **extra: Additional hyperparameters to merge in.
+
+    Returns:
+        dict: A hyperparams dict seeded for reproducibility.
+
+    """
+
+    return {'np_random_gen': 0, **extra}
+
+
 def makeNumpyDatabase(with_constraints=True):
     """ Create a NumpyDatabase object for testing.
 

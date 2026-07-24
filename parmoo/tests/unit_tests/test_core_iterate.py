@@ -1,325 +1,404 @@
 """ Unit tests for the MOOP iterate/filterBatch/updateAll solve loop steps.
+
+Each test drives the loop by hand -- iterate(k), filterBatch, evaluate each
+candidate, updateAll(k) -- rather than calling solve(), so that the individual
+steps can be checked.  The four problems exercised here differ in ways that
+matter to the loop: whether user gradients are available, whether the design
+space contains categorical variables, and whether those categories are
+integers or strings.
+
+Note: these sim dicts carry 'search_budget' as a top-level key rather than
+inside 'hyperparams', which is where LatinHypercube reads it from.  That is
+preserved from the original tests, so the searches actually run at the default
+budget of 100 points.
+
 """
 
-
+import numpy as np
 import pytest
 
+from parmoo import MOOP
+from parmoo.acquisitions import UniformWeights
+from parmoo.optimizers import LocalSurrogate_BFGS, LocalSurrogate_PS
+from parmoo.searches import LatinHypercube
+from parmoo.surrogates import GaussRBF
+from parmoo.tests.unit_tests.helpers import seeded
 
-def test_MOOP_iterate():
-    """ Test the MOOP class's iterator in objectives.py.
 
-    Initialize several MOOP objects and perform iterations to produce
-    a batch of candidate solutions.
+def sim_dict(m, sim_func, search_budget):
+    """ Build a simulation dict, preserving the original key placement. """
+
+    return {'m': m,
+            'hyperparams': {},
+            'search': LatinHypercube,
+            'sim_func': sim_func,
+            'surrogate': GaussRBF,
+            'search_budget': search_budget}
+
+
+def run_loop(moop, iterations=2, seed_batch=None):
+    """ Drive the solve loop by hand for the given number of iterations.
+
+    Args:
+        moop (MOOP): The MOOP to advance.
+
+        iterations (int): How many iterations to run.
+
+        seed_batch (list, optional): When given, iteration 0 discards the
+            search batch and uses this hand-picked batch instead, so that the
+            surrogates are fit to a known set of points.
 
     """
 
-    from jax import config
-    config.update("jax_enable_x64", True)
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-    from parmoo.acquisitions import UniformWeights
-    from parmoo.optimizers import LocalSurrogate_PS, LocalSurrogate_BFGS
-    import pytest
+    for k in range(iterations):
+        if k == 0 and seed_batch is not None:
+            moop.iterate(0)
+            batch = seed_batch
+        else:
+            batch = moop.filterBatch(moop.iterate(k))
+        for (x, name) in batch:
+            moop.evaluateSimulation(x, name)
+        moop.updateAll(k, batch)
 
-    # Initialize two simulation groups with 1 output each
-    s1 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm([x[f"x{key}"]
-                                 for key in [1, 2, 3]])],
-          'surrogate': GaussRBF,
-          'search_budget': 20}
-    s2 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.linalg.norm([x[f"x{key}"] - 1
-                                 for key in [1, 2, 3]])],
-          'surrogate': GaussRBF,
-          'search_budget': 20}
-    # Create a MOOP with 3 design variables and 2 simulations
-    moop1 = MOOP(LocalSurrogate_PS,
-                 hyperparams={'opt_budget': 100, 'np_random_gen': 0})
+
+# ---------------------------------------------------------------------------
+# Input validation
+# ---------------------------------------------------------------------------
+
+
+def test_iterate_requires_a_complete_problem():
+    """ Check that iterate() refuses to run an incompletely defined MOOP.
+
+    A MOOP needs design variables and at least one objective before it can be
+    iterated, and neither omission is caught until iterate() is called.
+
+    """
+
+    moop = MOOP(LocalSurrogate_PS, hyperparams=seeded(opt_budget=100))
+    # No design variables yet
     with pytest.raises(AttributeError):
-        moop1.iterate(1)
+        moop.iterate(1)
     for i in range(3):
-        moop1.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
-    moop1.addSimulation(s1, s2)
+        moop.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
+    moop.addSimulation(sim_dict(1, sim_norm_123, 20))
+    # Still no objectives
     with pytest.raises(AttributeError):
-        moop1.iterate(1)
-    # Now add the two objectives
-    def f1(x, sim): return sim["sim1"]
-    def f2(x, sim): return sim["sim2"]
-    moop1.addObjective({'obj_func': f1},
-                       {'obj_func': f2})
-    # Add 3 acquisition functions
+        moop.iterate(1)
+
+
+@pytest.mark.parametrize("k, error", [(-1, ValueError), (2.0, TypeError)])
+def test_iterate_rejects_bad_iteration_index(k, error):
+    """ Check that iterate() validates the iteration counter. """
+
+    moop = MOOP(LocalSurrogate_PS, hyperparams=seeded(opt_budget=100))
     for i in range(3):
-        moop1.addAcquisition({'acquisition': UniformWeights})
-    # Try some invalid iterations
-    with pytest.raises(ValueError):
-        moop1.iterate(-1)
-    with pytest.raises(TypeError):
-        moop1.iterate(2.0)
-    # Solve the MOOP with 1 iteration
-    batch = moop1.iterate(0)
-    batch = moop1.filterBatch(batch)
-    for (x, i) in batch:
-        moop1.evaluateSimulation(x, i)
-    moop1.updateAll(0, batch)
-    batch = moop1.iterate(1)
-    batch = moop1.filterBatch(batch)
-    for (x, i) in batch:
-        moop1.evaluateSimulation(x, i)
-    moop1.updateAll(1, batch)
-    soln = moop1.getPF()
-    # Assert that solutions were found
+        moop.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
+    moop.addSimulation(sim_dict(1, sim_norm_123, 20))
+    moop.addObjective({'obj_func': obj_sim1})
+    moop.addAcquisition({'acquisition': UniformWeights})
+    with pytest.raises(error):
+        moop.iterate(k)
+
+
+# ---------------------------------------------------------------------------
+# Problem 1: two simulations, no user gradients
+# ---------------------------------------------------------------------------
+
+
+def sim_norm_123(x):
+    """ The norm of (x1, x2, x3). """
+
+    return [np.linalg.norm([x[f"x{k}"] for k in [1, 2, 3]])]
+
+
+def sim_norm_123_shifted(x):
+    """ The norm of (x1, x2, x3) shifted by one. """
+
+    return [np.linalg.norm([x[f"x{k}"] - 1 for k in [1, 2, 3]])]
+
+
+def obj_sim1(x, sim):
+    """ The first simulation output. """
+
+    return sim["sim1"]
+
+
+def obj_sim2(x, sim):
+    """ The second simulation output. """
+
+    return sim["sim2"]
+
+
+def test_iterate_two_simulation_problem():
+    """ Check the loop on a two-simulation, two-objective problem.
+
+    Each objective is exactly one simulation output, so every point on the
+    returned Pareto front must reproduce its simulation value exactly.
+
+    """
+
+    moop = MOOP(LocalSurrogate_PS, hyperparams=seeded(opt_budget=100))
+    for i in range(3):
+        moop.addDesign({'name': f"x{i+1}", 'lb': 0.0, 'ub': 1.0})
+    moop.addSimulation(sim_dict(1, sim_norm_123, 20),
+                       sim_dict(1, sim_norm_123_shifted, 20))
+    moop.addObjective({'obj_func': obj_sim1}, {'obj_func': obj_sim2})
+    for i in range(3):
+        moop.addAcquisition({'acquisition': UniformWeights})
+    run_loop(moop)
+
+    soln = moop.getPF()
     assert (soln.size > 0)
-    # Assert that the x_vals and f_vals match
     for si in soln:
-        assert (np.abs(s1['sim_func'](si) - si['f1']) < 1.0e-8)
-        assert (np.linalg.norm(s2['sim_func'](si) - si['f2']) < 1.0e-8)
+        assert (np.abs(sim_norm_123(si) - si['f1']) < 1.0e-8)
+        assert (np.linalg.norm(sim_norm_123_shifted(si) - si['f2']) < 1.0e-8)
 
-    s3 = {'m': 4,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [x[i] for i in x],
-          'surrogate': GaussRBF,
-          'search_budget': 500}
-    # Create a three objective toy problem, with one simulation
-    moop2 = MOOP(LocalSurrogate_BFGS,
-                 hyperparams={'opt_budget': 100, 'np_random_gen': 0})
+
+# ---------------------------------------------------------------------------
+# Problem 2: user-supplied gradients, four continuous variables
+# ---------------------------------------------------------------------------
+
+
+def sim_identity_4(x):
+    """ Return the design variables unchanged. """
+
+    return [x[i] for i in x]
+
+
+def _target_obj(sim, index):
+    """ The squared distance from sim1 to 0.1 * e_index. """
+
+    return np.linalg.norm(sim["sim1"] - 0.1 * np.eye(4)[index, :]) ** 2.0
+
+
+def _target_grad(x, sim, index):
+    """ The gradient of _target_obj, written in ParMOO's dict form. """
+
+    x_out = {key: 0.0 for key in x}
+    s_out = sim.copy()
+    s_out["sim1"] = s_out["sim1"] * 2.0
+    s_out["sim1"] = s_out["sim1"].at[index].set(s_out["sim1"][index] - 0.2)
+    return x_out, s_out
+
+
+def f_target0(x, sim):
+    return _target_obj(sim, 0)
+
+
+def g_target0(x, sim):
+    return _target_grad(x, sim, 0)
+
+
+def f_target1(x, sim):
+    return _target_obj(sim, 1)
+
+
+def g_target1(x, sim):
+    return _target_grad(x, sim, 1)
+
+
+def f_target2(x, sim):
+    return _target_obj(sim, 2)
+
+
+def g_target2(x, sim):
+    return _target_grad(x, sim, 2)
+
+
+def test_iterate_with_user_gradients():
+    """ Check the loop on a gradient-based problem with a known optimum.
+
+    The three objectives pull the simulation output toward 0.1 * e_1, e_2, and
+    e_3, so every nondominated design must lie near the origin.
+
+    """
+
+    moop = MOOP(LocalSurrogate_BFGS, hyperparams=seeded(opt_budget=100))
     for i in range(4):
-        moop2.addDesign({'lb': 0.0, 'ub': 1.0, 'des_tol': 0.1})
-    moop2.addSimulation(s3)
-
-    # Now add the three objectives
-    def f3(x, sim):
-        return np.linalg.norm(sim["sim1"] - 0.1 * np.eye(4)[0, :]) ** 2.0
-
-    def g3(x, sim):
-        x_out = x.copy()
-        for key in x:
-            x_out[key] = 0.0
-        s_out = sim.copy()
-        s_out["sim1"] *= 2.0
-        s_out["sim1"] = s_out["sim1"].at[0].set(s_out["sim1"][0] - 0.2)
-        return x_out, s_out
-
-    def f4(x, sim):
-        return np.linalg.norm(sim["sim1"] - 0.1 * np.eye(4)[1, :]) ** 2.0
-
-    def g4(x, sim):
-        x_out = x.copy()
-        for key in x:
-            x_out[key] = 0.0
-        s_out = sim.copy()
-        s_out["sim1"] *= 2.0
-        s_out["sim1"] = s_out["sim1"].at[1].set(s_out["sim1"][1] - 0.2)
-        return x_out, s_out
-
-    def f5(x, sim):
-        return np.linalg.norm(sim["sim1"] - 0.1 * np.eye(4)[2, :]) ** 2.0
-
-    def g5(x, sim):
-        x_out = x.copy()
-        for key in x:
-            x_out[key] = 0.0
-        s_out = sim.copy()
-        s_out["sim1"] *= 2.0
-        s_out["sim1"] = s_out["sim1"].at[2].set(s_out["sim1"][2] - 0.2)
-        return x_out, s_out
-
-    moop2.addObjective({'obj_func': f3, 'obj_grad': g3},
-                       {'obj_func': f4, 'obj_grad': g4},
-                       {'obj_func': f5, 'obj_grad': g5})
-    # Add 3 acquisition functions
+        moop.addDesign({'lb': 0.0, 'ub': 1.0, 'des_tol': 0.1})
+    moop.addSimulation(sim_dict(4, sim_identity_4, 500))
+    moop.addObjective({'obj_func': f_target0, 'obj_grad': g_target0},
+                      {'obj_func': f_target1, 'obj_grad': g_target1},
+                      {'obj_func': f_target2, 'obj_grad': g_target2})
     for i in range(3):
-        moop2.addAcquisition({'acquisition': UniformWeights})
-    # Do 2 iterates of the MOOP and extract the final database
-    moop2.iterate(0)
-    batch = []
-    xi = {"x1": 0, "x2": 0, "x3": 0, "x4": 0}
+        moop.addAcquisition({'acquisition': UniformWeights})
+
+    # Seed the surrogates with the origin-adjacent points and the diagonal
+    seed = []
     for i in range(1, 5):
+        xi = {f"x{j}": 0.0 for j in range(1, 5)}
         xi[f"x{i}"] = 0.1
-        batch.append((xi.copy(), "sim1"))
-        xi[f"x{i}"] = 0
-    batch.append(({"x1": 0.1, "x2": 0.1, "x3": 0.1, "x4": 0.1}, "sim1"))
-    for (x, i) in batch:
-        moop2.evaluateSimulation(x, i)
-    moop2.updateAll(0, batch)
-    batch = moop2.iterate(1)
-    batch = moop2.filterBatch(batch)
-    for (x, i) in batch:
-        moop2.evaluateSimulation(x, i)
-    moop2.updateAll(1, batch)
-    soln = moop2.getPF()
-    # Assert that solutions were found
+        seed.append((xi, "sim1"))
+    seed.append(({f"x{j}": 0.1 for j in range(1, 5)}, "sim1"))
+    run_loop(moop, seed_batch=seed)
+
+    soln = moop.getPF()
     assert (soln.size > 0)
-    # Assert that the x_vals and f_vals match
-    si = {}
     for xsi in soln:
-        xi = {"x1": xsi["x1"],
-              "x2": xsi["x2"],
-              "x3": xsi["x3"],
-              "x4": xsi["x4"]}
-        si["sim1"] = s3["sim_func"](xi)
-        fi = [xsi["f1"], xsi["f2"], xsi["f3"]]
-        assert (np.linalg.norm(np.array([f3(xi, si), f4(xi, si), f5(xi, si)]
-                                        ).flatten() - fi) < 1.0e-8)
+        xi = {f"x{j}": xsi[f"x{j}"] for j in range(1, 5)}
+        si = {"sim1": np.asarray(sim_identity_4(xi))}
+        expected = np.array([f_target0(xi, si), f_target1(xi, si),
+                             f_target2(xi, si)]).flatten()
+        got = [xsi["f1"], xsi["f2"], xsi["f3"]]
+        assert (np.linalg.norm(expected - got) < 1.0e-8)
+        # Every nondominated point stays near the origin
         for j in xi:
             assert (xi[j] <= 0.2)
 
-    s4 = {'m': 4,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func':
-          lambda x: abs(x["x5"] - 1) + np.array([x[f"x{i+1}"]
-                                                 for i in range(4)]),
-          'surrogate': GaussRBF,
-          'search_budget': 500}
-    # Create a three objective toy problem, with one simulation
-    moop3 = MOOP(LocalSurrogate_BFGS, hyperparams={'np_random_gen': 0})
+
+# ---------------------------------------------------------------------------
+# Problem 3: an integer-valued categorical variable
+# ---------------------------------------------------------------------------
+
+
+def sim_offset_by_x5(x):
+    """ Shift the first four variables by the distance of x5 from one. """
+
+    return abs(x["x5"] - 1) + np.array([x[f"x{i+1}"] for i in range(4)])
+
+
+def _unit_obj(sim, index):
+    """ The squared distance from sim1 to e_index. """
+
+    return np.linalg.norm(sim["sim1"] - np.eye(4)[index, :]) ** 2
+
+
+def _unit_grad(sim, index):
+    """ The gradient of _unit_obj, written in ParMOO's dict form. """
+
+    ds = 2.0 * np.asarray(sim["sim1"])
+    ds[index] = ds[index] - 2.0
+    return {f"x{i+1}": 0 for i in range(5)}, {"sim1": ds}
+
+
+def f_unit0(x, sim):
+    return _unit_obj(sim, 0)
+
+
+def g_unit0(x, sim):
+    return _unit_grad(sim, 0)
+
+
+def f_unit1(x, sim):
+    return _unit_obj(sim, 1)
+
+
+def g_unit1(x, sim):
+    return _unit_grad(sim, 1)
+
+
+def f_unit2(x, sim):
+    return _unit_obj(sim, 2)
+
+
+def g_unit2(x, sim):
+    return _unit_grad(sim, 2)
+
+
+def test_iterate_with_integer_categorical():
+    """ Check the loop when the design space mixes continuous and categorical.
+
+    The simulation is minimized when x5 == 1, which is the middle of three
+    integer categories, so the loop must discover that level.
+
+    """
+
+    moop = MOOP(LocalSurrogate_BFGS, hyperparams=seeded())
     for i in range(4):
-        moop3.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop3.addDesign({'des_type': "categorical", 'levels': 3})
-    moop3.addSimulation(s4)
-
-    # Now add the three objectives
-    def f6(x, sim):
-        return np.linalg.norm(sim["sim1"] - np.eye(4)[0, :]) ** 2
-
-    def g6(x, sim):
-        dx = {"x1": 0, "x2": 0, "x3": 0, "x4": 0, "x5": 0}
-        ds = {"sim1": np.array([2.0 * sim["sim1"][0] - 2.0,
-                                2.0 * sim["sim1"][1],
-                                2.0 * sim["sim1"][2],
-                                2.0 * sim["sim1"][3]])}
-        return dx, ds
-
-    def f7(x, sim):
-        return np.linalg.norm(sim["sim1"] - np.eye(4)[1, :]) ** 2
-
-    def g7(x, sim):
-        dx = {"x1": 0, "x2": 0, "x3": 0, "x4": 0, "x5": 0}
-        ds = {"sim1": np.array([2.0 * sim["sim1"][0],
-                                2.0 * sim["sim1"][1] - 2.0,
-                                2.0 * sim["sim1"][2],
-                                2.0 * sim["sim1"][3]])}
-        return dx, ds
-
-    def f8(x, sim):
-        return np.linalg.norm(sim["sim1"] - np.eye(4)[2, :]) ** 2
-
-    def g8(x, sim):
-        dx = {"x1": 0, "x2": 0, "x3": 0, "x4": 0, "x5": 0}
-        ds = {"sim1": np.array([2.0 * sim["sim1"][0],
-                                2.0 * sim["sim1"][1],
-                                2.0 * sim["sim1"][2] - 2.0,
-                                2.0 * sim["sim1"][3]])}
-        return dx, ds
-
-    moop3.addObjective({'obj_func': f6, 'obj_grad': g6},
-                       {'obj_func': f7, 'obj_grad': g7},
-                       {'obj_func': f8, 'obj_grad': g8})
-    # Add 3 acquisition functions
+        moop.addDesign({'lb': 0.0, 'ub': 1.0})
+    moop.addDesign({'des_type': "categorical", 'levels': 3})
+    moop.addSimulation(sim_dict(4, sim_offset_by_x5, 500))
+    moop.addObjective({'obj_func': f_unit0, 'obj_grad': g_unit0},
+                      {'obj_func': f_unit1, 'obj_grad': g_unit1},
+                      {'obj_func': f_unit2, 'obj_grad': g_unit2})
     for i in range(3):
-        moop3.addAcquisition({'acquisition': UniformWeights})
-    # Do 2 iterates of the MOOP and extract the final database
-    moop3.iterate(0)
-    batch = []
+        moop.addAcquisition({'acquisition': UniformWeights})
+
+    # Seed with each unit vector, the all-ones point, and one at level 2
+    seed = []
     for i in range(1, 6):
-        xi = {"x1": 0, "x2": 0, "x3": 0, "x4": 0, "x5": 0}
+        xi = {f"x{j}": 0 for j in range(1, 6)}
         xi[f"x{i}"] = 1
-        batch.append((xi.copy(), "sim1"))
-    batch.append(({"x1": 1, "x2": 1, "x3": 1, "x4": 1, "x5": 1}, "sim1"))
-    batch.append(({"x1": 1, "x2": 1, "x3": 1, "x4": 1, "x5": 2}, "sim1"))
-    for (x, i) in batch:
-        moop3.evaluateSimulation(x, i)
-    moop3.updateAll(0, batch)
-    batch = moop3.iterate(1)
-    batch = moop3.filterBatch(batch)
-    for (x, i) in batch:
-        moop3.evaluateSimulation(x, i)
-    moop3.updateAll(1, batch)
-    soln = moop3.getPF()
-    # Assert that solutions were found
+        seed.append((xi, "sim1"))
+    seed.append(({f"x{j}": 1 for j in range(1, 6)}, "sim1"))
+    seed.append(({"x1": 1, "x2": 1, "x3": 1, "x4": 1, "x5": 2}, "sim1"))
+    run_loop(moop, seed_batch=seed)
+
+    soln = moop.getPF()
     assert (np.size(soln) > 0)
-    # Assert that the x_vals and f_vals match
-    si = {}
     for xsi in soln:
-        xi = {"x1": xsi["x1"],
-              "x2": xsi["x2"],
-              "x3": xsi["x3"],
-              "x4": xsi["x4"],
-              "x5": xsi["x5"]}
-        si["sim1"] = s4["sim_func"](xi)
-        fi = [xsi["f1"], xsi["f2"], xsi["f3"]]
-        assert (np.linalg.norm(np.array([f6(xi, si), f7(xi, si), f8(xi, si)]
-                                        ).flatten() - fi) < 1.0e-8)
+        xi = {f"x{j}": xsi[f"x{j}"] for j in range(1, 6)}
+        si = {"sim1": sim_offset_by_x5(xi)}
+        expected = np.array([f_unit0(xi, si), f_unit1(xi, si),
+                             f_unit2(xi, si)]).flatten()
+        got = [xsi["f1"], xsi["f2"], xsi["f3"]]
+        assert (np.linalg.norm(expected - got) < 1.0e-8)
+        # The loop found the minimizing category
         assert (abs(xi["x4"]) <= 0.1 and abs(xi["x5"] - 1) <= 0.1)
 
-    s5 = {'m': 1,
-          'hyperparams': {},
-          'search': LatinHypercube,
-          'sim_func': lambda x: [(x["x0"] - 1.0) * (x["x0"] - 1.0) +
-                                 (x["x1"]) * (x["x1"]) + float(x["x2"])],
-          'surrogate': GaussRBF,
-          'search_budget': 100}
-    # Solve a MOOP with categorical variables
-    moop4 = MOOP(LocalSurrogate_BFGS, hyperparams={'np_random_gen': 0})
-    moop4.addDesign({'name': "x0", 'lb': 0.0, 'ub': 1.0})
-    moop4.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
-    moop4.addDesign({'name': "x2", 'des_type': "categorical",
-                     'levels': ["0", "1"]})
-    moop4.addSimulation(s5)
 
-    # Now add the two objectives
-    def f9(x, sim):
-        return sim["sim1"]
+# ---------------------------------------------------------------------------
+# Problem 4: a string-valued categorical variable
+# ---------------------------------------------------------------------------
 
-    def g9(x, sim):
-        dx = {"x0": 0, "x1": 0}
-        ds = {"sim1": 1}
-        return dx, ds
 
-    def f10(x, sim):
-        return ((x["x0"]) * (x["x0"]) +
-                (x["x1"] - 1.0) * (x["x1"] - 1.0) + float(x["x2"]))
+def sim_quadratic_with_level(x):
+    """ A quadratic in x0 and x1, offset by the numeric value of the level. """
 
-    def g10(x, sim):
-        dx = {}
-        dx['x0'] = 2.0 * x["x0"]
-        dx['x1'] = 2.0 * x["x1"] - 2.0
-        ds = {"sim1": 0}
-        return dx, ds
+    return [(x["x0"] - 1.0) ** 2 + x["x1"] ** 2 + float(x["x2"])]
 
-    moop4.addObjective({'obj_func': f9, 'obj_grad': g9},
-                       {'obj_func': f10, 'obj_grad': g10})
-    # Add 3 acquisition functions
+
+def f_from_sim(x, sim):
+    """ The simulation output. """
+
+    return sim["sim1"]
+
+
+def g_from_sim(x, sim):
+    """ The gradient of f_from_sim. """
+
+    return {"x0": 0, "x1": 0}, {"sim1": 1}
+
+
+def f_mirrored(x, sim):
+    """ The mirrored quadratic, computed algebraically from the design. """
+
+    return x["x0"] ** 2 + (x["x1"] - 1.0) ** 2 + float(x["x2"])
+
+
+def g_mirrored(x, sim):
+    """ The gradient of f_mirrored. """
+
+    return ({"x0": 2.0 * x["x0"], "x1": 2.0 * x["x1"] - 2.0}, {"sim1": 0})
+
+
+def test_iterate_with_string_categorical():
+    """ Check the loop when a categorical variable's levels are strings.
+
+    Both objectives increase with float(x2), so the loop must settle on the
+    "0" level.  This also covers a level list of strings rather than a count.
+
+    """
+
+    moop = MOOP(LocalSurrogate_BFGS, hyperparams=seeded())
+    moop.addDesign({'name': "x0", 'lb': 0.0, 'ub': 1.0})
+    moop.addDesign({'name': "x1", 'lb': 0.0, 'ub': 1.0})
+    moop.addDesign({'name': "x2", 'des_type': "categorical",
+                    'levels': ["0", "1"]})
+    moop.addSimulation(sim_dict(1, sim_quadratic_with_level, 100))
+    moop.addObjective({'obj_func': f_from_sim, 'obj_grad': g_from_sim},
+                      {'obj_func': f_mirrored, 'obj_grad': g_mirrored})
     for i in range(3):
-        moop4.addAcquisition({'acquisition': UniformWeights})
-    # Do 2 iterates of the MOOP and extract the final database
-    batch = moop4.iterate(0)
-    batch = moop4.filterBatch(batch)
-    for (x, i) in batch:
-        moop4.evaluateSimulation(x, i)
-    moop4.updateAll(0, batch)
-    batch = moop4.iterate(1)
-    batch = moop4.filterBatch(batch)
-    for (x, i) in batch:
-        moop4.evaluateSimulation(x, i)
-    moop4.updateAll(1, batch)
-    soln = moop4.getPF()
-    # Assert that solutions were found
+        moop.addAcquisition({'acquisition': UniformWeights})
+    run_loop(moop)
+
+    soln = moop.getPF()
     assert (soln.size > 0)
-    # Assert that the x_vals and f_vals match
-    sim = {}
     for i, xi in enumerate(soln):
-        sim["sim1"] = ((xi["x0"] - 1.0) * (xi["x0"] - 1.0) +
-                       (xi["x1"]) * (xi["x1"]) + float(xi["x2"]))
-        assert (f9(soln[i], sim) - soln['f1'][i] < 1.0e-8 and
-                f10(soln[i], sim) - soln['f2'][i] < 1.0e-8)
+        sim = {"sim1": sim_quadratic_with_level(xi)[0]}
+        assert (f_from_sim(soln[i], sim) - soln['f1'][i] < 1.0e-8)
+        assert (f_mirrored(soln[i], sim) - soln['f2'][i] < 1.0e-8)
+        # The cheaper level wins
         assert (xi["x2"] == "0")
 
 
