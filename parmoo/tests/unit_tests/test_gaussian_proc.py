@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_GaussRBF():
     """ Test the GaussRBF class in surrogates.py.
 
@@ -411,5 +414,4 @@ def test_LocalGaussRBF():
 
 
 if __name__ == "__main__":
-    test_GaussRBF()
-    test_LocalGaussRBF()
+    raise SystemExit(pytest.main([__file__]))

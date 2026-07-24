@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_LocalSurrogate_PS():
     """ Test the LocalSurrogate_PS class in optimizers.py.
 
@@ -216,5 +219,4 @@ def test_GlobalSurrogate_PS():
 
 
 if __name__ == "__main__":
-    test_LocalSurrogate_PS()
-    test_GlobalSurrogate_PS()
+    raise SystemExit(pytest.main([__file__]))

@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_MOOP_init():
     """ Check that the MOOP class handles initialization properly.
 
@@ -374,10 +377,4 @@ def test_MOOP_getTypes():
 
 
 if __name__ == "__main__":
-    test_MOOP_init()
-    test_MOOP_addDesign()
-    test_MOOP_addSimulation()
-    test_MOOP_addObjective()
-    test_MOOP_addConstraint()
-    test_MOOP_addAcquisition()
-    test_MOOP_getTypes()
+    raise SystemExit(pytest.main([__file__]))

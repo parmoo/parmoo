@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_RandomConstraint():
     """ Test the RandomConstraint class in acquisitions.py.
 
@@ -164,5 +167,4 @@ def test_EI_RandomConstraint():
 
 
 if __name__ == "__main__":
-    test_RandomConstraint()
-    test_EI_RandomConstraint()
+    raise SystemExit(pytest.main([__file__]))

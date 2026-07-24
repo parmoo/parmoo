@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_UniformAugChebyshev():
     """ Test the UniformAugChebyshev class in acquisitions.py.
 
@@ -149,5 +152,4 @@ def test_FixedAugChebyshev():
 
 
 if __name__ == "__main__":
-    test_UniformAugChebyshev()
-    test_FixedAugChebyshev()
+    raise SystemExit(pytest.main([__file__]))

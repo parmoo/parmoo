@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_GlobalSurrogate_BFGS():
     """ Test the LBFGS class in optimizers.py.
 
@@ -232,5 +235,4 @@ def test_LocalSurrogate_BFGS():
 
 
 if __name__ == "__main__":
-    test_GlobalSurrogate_BFGS()
-    test_LocalSurrogate_BFGS()
+    raise SystemExit(pytest.main([__file__]))

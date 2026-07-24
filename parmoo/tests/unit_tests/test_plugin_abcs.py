@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_AcquisitionFunction():
     """ Test that the AcquisitionFunction ABC raises a TypeError"""
 
@@ -40,7 +43,4 @@ def test_SurrogateOptimizer():
 
 
 if __name__ == "__main__":
-    test_AcquisitionFunction()
-    test_GlobalSearch()
-    test_SurrogateFunction()
-    test_SurrogateOptimizer()
+    raise SystemExit(pytest.main([__file__]))

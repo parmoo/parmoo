@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_dtlz1_obj():
     """ Test the dtlz1_obj() objective function.
 
@@ -107,7 +110,4 @@ def test_dtlz4_obj():
 
 
 if __name__ == "__main__":
-    test_dtlz1_obj()
-    test_dtlz2_obj()
-    test_dtlz3_obj()
-    test_dtlz4_obj()
+    raise SystemExit(pytest.main([__file__]))

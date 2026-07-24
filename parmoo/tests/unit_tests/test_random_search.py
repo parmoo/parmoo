@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_GlobalSurrogate_RS():
     """ Test the GlobalSurrogate_RS class in optimizers.py.
 
@@ -98,4 +101,4 @@ def test_GlobalSurrogate_RS():
 
 
 if __name__ == "__main__":
-    test_GlobalSurrogate_RS()
+    raise SystemExit(pytest.main([__file__]))

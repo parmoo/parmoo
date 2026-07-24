@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_LatinHypercube():
     """ Test the LatinHypercube class in searches.py.
 
@@ -41,4 +44,4 @@ def test_LatinHypercube():
 
 
 if __name__ == "__main__":
-    test_LatinHypercube()
+    raise SystemExit(pytest.main([__file__]))

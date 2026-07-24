@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_Linear():
     """ Test the Linear model class in surrogates.py.
 
@@ -165,4 +168,4 @@ def test_Linear():
 
 
 if __name__ == "__main__":
-    test_Linear()
+    raise SystemExit(pytest.main([__file__]))

@@ -1,5 +1,6 @@
 import pytest
 
+
 # Mark these tests as requiring the additional chrome dependency.
 # Get it using the ``plotly_get_chrome`` command
 pytestmark = pytest.mark.requires_chrome
@@ -912,7 +913,4 @@ def run_dtlz2():
 
 
 if __name__ == "__main__":
-    test_static_export()
-    test_quantity_constraints_objectives()
-    test_database_options()
-    test_inputs_to_dash()
+    raise SystemExit(pytest.main([__file__]))

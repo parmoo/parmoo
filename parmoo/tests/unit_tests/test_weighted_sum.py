@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_UniformWeights():
     """ Test the UniformWeights class in acquisitions.py.
 
@@ -151,5 +154,4 @@ def test_FixedWeights():
 
 
 if __name__ == "__main__":
-    test_UniformWeights()
-    test_FixedWeights()
+    raise SystemExit(pytest.main([__file__]))

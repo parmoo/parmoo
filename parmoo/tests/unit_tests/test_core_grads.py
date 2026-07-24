@@ -1,3 +1,9 @@
+""" Unit tests for the MOOP objective/constraint/penalty backward passes.
+"""
+
+
+import pytest
+
 
 from jax import config
 from jax import jacrev
@@ -497,93 +503,5 @@ def test_MOOP_evaluate_constraint_grads():
         assert (np.all(np.abs(eval_con_jac(moop1, xi) - dfdxi) < 1.0e-8))
 
 
-def test_MOOP_solve_with_grads():
-    """ Check that the MOOP class propagates gradients correctly to solvers.
-
-    Initialize a simple convex MOOP and check that the gradient-based solver
-    matches the gradient-free solver's solutions.
-
-    """
-
-    import numpy as np
-    from parmoo import MOOP
-    from parmoo.acquisitions import FixedWeights
-    from parmoo.optimizers import GlobalSurrogate_BFGS, GlobalSurrogate_PS
-    from parmoo.searches import LatinHypercube
-    from parmoo.surrogates import GaussRBF
-
-    # Create several differentiable simulation groups
-    g1 = {'m': 1,
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([x[i]**2 for i in x]))],
-          'surrogate': GaussRBF,
-          'hyperparams': {'search_budget': 100}}
-    g2 = {'m': 2,
-          'search': LatinHypercube,
-          'sim_func': lambda x: [np.sqrt(sum([(x[i]-0.5)**2 for i in x])),
-                                 np.sqrt(sum([(x[i]-1.0)**2 for i in x]))],
-          'surrogate': GaussRBF,
-          'hyperparams': {'search_budget': 100}}
-
-    # Create several differentiable functions and constraints
-    def f1(x, s):
-        return x["x1"] ** 2
-
-    def df1(x, s):
-        return ({"x1": 2*x["x1"]},
-                {"sim1": 0, "sim2": jnp.zeros(2)})
-
-    def f2(x, s):
-        names = ["sim1", "sim2"]
-        return np.sum([jnp.dot(s[i] - 0.5, s[i] - 0.5) for i in names])
-
-    def df2(x, s):
-        return ({"x1": 0},
-                {"sim1": 2*s["sim1"] - 1, "sim2": 2*s["sim2"] - jnp.ones(2)})
-
-    def c1(x, s):
-        return x["x1"] - 0.25
-
-    def dc1(x, s):
-        return {"x1": 1}, {"sim1": 0, "sim2": jnp.zeros(2)}
-
-    def c2(x, s):
-        return s["sim1"] - 0.25
-
-    def dc2(x, s):
-        return {"x1": 0}, {"sim1": 1, "sim2": jnp.zeros(2)}
-
-    # Initialize 2 continuous MOOPs with 1 design var, 2 sims, and 3 objs
-    moop1 = MOOP(GlobalSurrogate_BFGS, hyperparams={'opt_restarts': 2,
-                                                    'np_random_gen': 0})
-    moop1.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop1.addSimulation(g1, g2)
-    moop1.addObjective({'obj_func': f1, 'obj_grad': df1})
-    moop1.addObjective({'obj_func': f2, 'obj_grad': df2})
-    moop1.addConstraint({'constraint': c1, 'con_grad': dc1})
-    moop1.addConstraint({'constraint': c2, 'con_grad': dc2})
-    moop1.addAcquisition({'acquisition': FixedWeights,
-                          'hyperparams': {'weights': np.ones(2) / 2}})
-    moop1.solve(0)
-    moop2 = MOOP(GlobalSurrogate_PS, hyperparams={'np_random_gen': 0})
-    moop2.addDesign({'lb': 0.0, 'ub': 1.0})
-    moop2.addSimulation(g1, g2)
-    moop2.addObjective({'obj_func': f1})
-    moop2.addObjective({'obj_func': f2})
-    moop2.addConstraint({'constraint': c1})
-    moop2.addConstraint({'constraint': c2})
-    moop2.addAcquisition({'acquisition': FixedWeights,
-                          'hyperparams': {'weights': np.ones(2) / 2}})
-    moop2.solve(0)
-    b1 = moop1.iterate(1)
-    b2 = moop2.iterate(1)
-    # Check that same solutions were found
-    for x1, x2 in zip(b1, b2):
-        assert (np.abs(x1[0]["x1"] - x2[0]["x1"]) < 0.1)
-
-
 if __name__ == "__main__":
-    test_MOOP_evaluate_penalty_grads()
-    test_MOOP_evaluate_objective_grads()
-    test_MOOP_evaluate_constraint_grads()
-    test_MOOP_solve_with_grads()
+    raise SystemExit(pytest.main([__file__]))

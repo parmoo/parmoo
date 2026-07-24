@@ -1,4 +1,7 @@
 
+import pytest
+
+
 DTYPE = [("x1", "f8"), ("x2", "f8"), ("x3", "f8"), ("x4", "f8"), ("x5", "f8")]
 ONES = {"x1": 0.6, "x2": 0.6, "x3": 0.6, "x4": 0.6, "x5": 0.6}
 
@@ -188,16 +191,4 @@ def test_sims_dtlz_dtlz9():
 
 
 if __name__ == "__main__":
-    test_sims_dtlz_g1()
-    test_sims_dtlz_g2()
-    test_sims_dtlz_g3()
-    test_sims_dtlz_g4()
-    test_sims_dtlz_dtlz1()
-    test_sims_dtlz_dtlz2()
-    test_sims_dtlz_dtlz3()
-    test_sims_dtlz_dtlz4()
-    test_sims_dtlz_dtlz5()
-    test_sims_dtlz_dtlz6()
-    test_sims_dtlz_dtlz7()
-    test_sims_dtlz_dtlz8()
-    test_sims_dtlz_dtlz9()
+    raise SystemExit(pytest.main([__file__]))

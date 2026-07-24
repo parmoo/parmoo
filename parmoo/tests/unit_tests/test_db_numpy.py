@@ -1,3 +1,6 @@
+import pytest
+
+
 from parmoo.databases import NumpyDatabase
 from parmoo.tests.unit_tests.helpers import makeNumpyDatabase
 
@@ -566,8 +569,4 @@ def test_NumpyDatabase_checkpoint():
 
 
 if __name__ == "__main__":
-    test_NumpyDatabase_construct_no_run()
-    test_NumpyDatabase_add_get_types()
-    test_NumpyDatabase_simulation_database()
-    test_NumpyDatabase_objective_database()
-    test_NumpyDatabase_checkpoint()
+    raise SystemExit(pytest.main([__file__]))
