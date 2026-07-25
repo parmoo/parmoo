@@ -36,6 +36,7 @@ LatinHypercube
 Laumanns
 Lexicographically
 LinearSim
+LLM
 LocalGPS
 LocalGaussRBF
 LocalSurrogate
@@ -114,6 +115,7 @@ addObjData
 addObjective
 addSimulation
 adjoint
+aillm
 al
 arg
 args
@@ -306,6 +308,7 @@ resumeSearch
 returnResults
 rng
 roundoff
+rst
 runtime
 scalable
 scalarization
