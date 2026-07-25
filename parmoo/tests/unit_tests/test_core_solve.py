@@ -125,7 +125,8 @@ def test_solve_two_simulation_biobjective():
 
 
 # ---------------------------------------------------------------------------
-# Problem 2: one objective summing two simulations, epsilon-constraint acqs
+# Problem 2: one objective summing two simulations, epsilon-constraint
+# acquisitions
 # ---------------------------------------------------------------------------
 
 
@@ -173,7 +174,7 @@ def test_solve_single_objective_two_simulations():
 
 
 def _distance_to_vertex(x, index):
-    """ The squared distance from x to the index-th unit vector. """
+    """ The squared distance from x to the unit vector at position index. """
 
     point = np.array([x[f"x{i + 1}"] for i in range(4)])
     return np.linalg.norm(point - np.eye(4)[index]) ** 2.0

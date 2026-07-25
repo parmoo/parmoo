@@ -29,7 +29,10 @@ CORNERS = [{"x1": 0.0, "x2": 0.0, "x3": 0.0, "x4": 0.0},
 
 
 def _distance_to_corner(x, index):
-    """ The distance from x to the index-th unit vector, over 4 variables. """
+    """ The distance from x to the unit vector at position index, over 4
+    variables.
+
+    """
 
     others = [i for i in [1, 2, 3, 4] if i != index]
     return np.sqrt(sum([x[f"x{i}"] ** 2 for i in others])
