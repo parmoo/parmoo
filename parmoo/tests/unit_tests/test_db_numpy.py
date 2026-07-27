@@ -1,5 +1,41 @@
+""" Unit tests for the NumpyDatabase simulation/objective database.
+
+The simulation and objective database tests are deliberately sequential: each
+update advances the database state and every lookup is re-checked against it,
+so the value of the test is the progression, not any single assertion.  What is
+factored out here is the field-by-field record checking, and the name
+uniqueness contract, which NumpyDatabase delegates to check_names().
+
+"""
+
+import numpy as np
+import pytest
+
 from parmoo.databases import NumpyDatabase
-from parmoo.tests.unit_tests.setup import makeNumpyDatabase
+from parmoo.tests.unit_tests.helpers import makeNumpyDatabase
+
+# The two design points used throughout, and a near-duplicate of the first
+# that must still be recognized as the same point to within des_tol.
+P0 = {"x1": 0.0, "x2": 0, "x3": "0"}
+P0_NEARBY = {"x1": 1.0e-16, "x2": 0, "x3": "0"}
+P1 = {"x1": 1.0, "x2": 1, "x3": "1"}
+
+
+def assert_record(record, point, out):
+    """ Check that a simulation database record matches a point and output.
+
+    Args:
+        record: One row of a getSimulationData()/getNewSimulationData() result.
+
+        point (dict): The expected design point.
+
+        out: The expected simulation output.
+
+    """
+
+    for key, value in point.items():
+        assert record[key] == value
+    assert np.all(record["out"] == out)
 
 
 def test_NumpyDatabase_construct_no_run():
@@ -9,8 +45,6 @@ def test_NumpyDatabase_construct_no_run():
     database.
 
     """
-
-    import pytest
 
     # Create a truly empty database and check it is empty
     db = NumpyDatabase({})
@@ -58,9 +92,6 @@ def test_NumpyDatabase_add_get_types():
     using the get*Type() methods and ensure the dtype is as expected.
 
     """
-
-    import numpy as np
-    import pytest
 
     db = NumpyDatabase({})
 
@@ -112,51 +143,6 @@ def test_NumpyDatabase_add_get_types():
     expected_con_type.append(("c2", "f8"))
     assert db.getConstraintType() == np.dtype(expected_con_type)
 
-    with pytest.raises(TypeError):
-        db.addDesign(1, "i4", 0)
-    with pytest.raises(ValueError):
-        db.addDesign("x1", "i4", 0)
-    with pytest.raises(ValueError):
-        db.addDesign("s1", "i4", 0)
-    with pytest.raises(ValueError):
-        db.addDesign("f1", "i4", 0)
-    with pytest.raises(ValueError):
-        db.addDesign("c1", "i4", 0)
-    assert db.getDesignType() == np.dtype(expected_des_type)
-    with pytest.raises(TypeError):
-        db.addSimulation(1, 4)
-    with pytest.raises(ValueError):
-        db.addSimulation("x1", 4)
-    with pytest.raises(ValueError):
-        db.addSimulation("s1", 4)
-    with pytest.raises(ValueError):
-        db.addSimulation("f1", 4)
-    with pytest.raises(ValueError):
-        db.addSimulation("c1", 4)
-    assert db.getSimulationType() == np.dtype(expected_sim_type)
-    with pytest.raises(TypeError):
-        db.addObjective(1)
-    with pytest.raises(ValueError):
-        db.addObjective("x1")
-    with pytest.raises(ValueError):
-        db.addObjective("s1")
-    with pytest.raises(ValueError):
-        db.addObjective("f1")
-    with pytest.raises(ValueError):
-        db.addObjective("c1")
-    assert db.getObjectiveType() == np.dtype(expected_obj_type)
-    with pytest.raises(TypeError):
-        db.addConstraint(1)
-    with pytest.raises(ValueError):
-        db.addConstraint("x1")
-    with pytest.raises(ValueError):
-        db.addConstraint("s1")
-    with pytest.raises(ValueError):
-        db.addConstraint("f1")
-    with pytest.raises(ValueError):
-        db.addConstraint("c1")
-    assert db.getConstraintType() == np.dtype(expected_con_type)
-
 
 def test_NumpyDatabase_simulation_database():
     """ Test the simulation database operations.
@@ -165,9 +151,6 @@ def test_NumpyDatabase_simulation_database():
     the simulation database contents.
 
     """
-
-    import numpy as np
-    import pytest
 
     # Create an empty database (with schema) and check it is empty
     db = makeNumpyDatabase()
@@ -201,17 +184,11 @@ def test_NumpyDatabase_simulation_database():
     # Check "s1" has 1 new sim data point, "s2" has none
     new_sim_data = db.getNewSimulationData()
     assert len(new_sim_data["s1"]) == 1
-    assert new_sim_data["s1"][0]["x1"] == 0.0
-    assert new_sim_data["s1"][0]["x2"] == 0
-    assert new_sim_data["s1"][0]["x3"] == "0"
-    assert new_sim_data["s1"][0]["out"] == 1
+    assert_record(new_sim_data["s1"][0], P0, 1)
     assert len(new_sim_data["s2"]) == 0
     # Check "s1" has 1 total sim data points, "s2" has none
     assert len(db.getSimulationData()["s1"]) == 1
-    assert db.getSimulationData()["s1"][0]["x1"] == 0.0
-    assert db.getSimulationData()["s1"][0]["x2"] == 0
-    assert db.getSimulationData()["s1"][0]["x3"] == "0"
-    assert db.getSimulationData()["s1"][0]["out"] == 1
+    assert_record(db.getSimulationData()["s1"][0], P0, 1)
     assert len(db.getSimulationData()["s2"]) == 0
 
     # Add an output for the other simulation at the same data point
@@ -239,16 +216,10 @@ def test_NumpyDatabase_simulation_database():
     new_sim_data = db.getNewSimulationData()
     assert len(new_sim_data["s1"]) == 0
     assert len(new_sim_data["s2"]) == 1
-    assert new_sim_data["s2"][0]["x1"] == 0.0
-    assert new_sim_data["s2"][0]["x2"] == 0
-    assert new_sim_data["s2"][0]["x3"] == "0"
-    assert np.all(new_sim_data["s2"][0]["out"] == np.ones(4))
+    assert_record(new_sim_data["s2"][0], P0, np.ones(4))
     # Check both "s1" and "s2" have 1 total sim data points (pandas format)
     assert len(db.getSimulationData(format="pandas")["s1"]) == 1
-    assert db.getSimulationData(format="pandas")["s1"].iloc[0]["x1"] == 0.0
-    assert db.getSimulationData(format="pandas")["s1"].iloc[0]["x2"] == 0
-    assert db.getSimulationData(format="pandas")["s1"].iloc[0]["x3"] == "0"
-    assert db.getSimulationData(format="pandas")["s1"].iloc[0]["out"] == 1
+    assert_record(db.getSimulationData(format="pandas")["s1"].iloc[0], P0, 1)
     assert len(db.getSimulationData(format="pandas")["s2"]) == 1
     assert db.getSimulationData(format="pandas")["s2"].iloc[0]["x1"] == 0.0
     assert db.getSimulationData(format="pandas")["s2"].iloc[0]["x2"] == 0
@@ -282,40 +253,14 @@ def test_NumpyDatabase_simulation_database():
     # Check "s1" has 1 new sim data point, "s2" has none
     new_sim_data = db.getNewSimulationData()
     assert len(new_sim_data["s1"]) == 1
-    assert new_sim_data["s1"][0]["x1"] == 1.0
-    assert new_sim_data["s1"][0]["x2"] == 1
-    assert new_sim_data["s1"][0]["x3"] == "1"
-    assert new_sim_data["s1"][0]["out"] == 2
+    assert_record(new_sim_data["s1"][0], P1, 2)
     assert len(new_sim_data["s2"]) == 0
     # Check "s1" has 2 and "s2" has 1 total sim data points
     assert len(db.getSimulationData()["s1"]) == 2
-    assert db.getSimulationData()["s1"][0]["x1"] == 0.0
-    assert db.getSimulationData()["s1"][0]["x2"] == 0
-    assert db.getSimulationData()["s1"][0]["x3"] == "0"
-    assert db.getSimulationData()["s1"][0]["out"] == 1
-    assert db.getSimulationData()["s1"][1]["x1"] == 1.0
-    assert db.getSimulationData()["s1"][1]["x2"] == 1
-    assert db.getSimulationData()["s1"][1]["x3"] == "1"
-    assert db.getSimulationData()["s1"][1]["out"] == 2
+    assert_record(db.getSimulationData()["s1"][0], P0, 1)
+    assert_record(db.getSimulationData()["s1"][1], P1, 2)
     assert len(db.getSimulationData()["s2"]) == 1
-    assert db.getSimulationData()["s2"][0]["x1"] == 0.0
-    assert db.getSimulationData()["s2"][0]["x2"] == 0
-    assert db.getSimulationData()["s2"][0]["x3"] == "0"
-    assert np.all(db.getSimulationData()["s2"][0]["out"] == np.ones(4))
-
-    # Try to add a non-existent simulation to the database
-    with pytest.raises(ValueError):
-        db.updateSimDb(
-            {"x1": 0.0, "x2": 0, "x3": "0"},
-            [1, 1, 1, 1],
-            "simulation2"
-        )
-    # Try to retrieve an invalid format
-    with pytest.raises(ValueError):
-        db.getSimulationData(format="BadFormatString")
-    # Try to re-start a running database
-    with pytest.raises(RuntimeError):
-        db.startDatabase()
+    assert_record(db.getSimulationData()["s2"][0], P0, np.ones(4))
 
 
 def test_NumpyDatabase_objective_database():
@@ -325,8 +270,6 @@ def test_NumpyDatabase_objective_database():
     the objective database contents.
 
     """
-
-    import pytest
 
     # Create an empty database (with schema) and check it is empty
     db = makeNumpyDatabase()
@@ -482,10 +425,7 @@ def test_NumpyDatabase_checkpoint():
 
     """
 
-    import numpy as np
     import os
-    import pytest
-
     # Create a new database, start it, and add 1 data point
     db1 = makeNumpyDatabase()
     db1.startDatabase()
@@ -565,9 +505,82 @@ def test_NumpyDatabase_checkpoint():
         db2.setCheckpoint(True, 5)
 
 
+# The extra positional arguments each add* method needs beyond the name
+ADD_ARGS = {
+    "addDesign": ("i4", 0),
+    "addSimulation": (4,),
+    "addObjective": (),
+    "addConstraint": (),
+}
+
+
+@pytest.mark.parametrize("method", sorted(ADD_ARGS))
+def test_NumpyDatabase_rejects_non_string_name(method):
+    """ Check that every add* method requires a string name. """
+
+    db = makeNumpyDatabase()
+    with pytest.raises(TypeError):
+        getattr(db, method)(1, *ADD_ARGS[method])
+
+
+@pytest.mark.parametrize("method", sorted(ADD_ARGS))
+@pytest.mark.parametrize("taken", ["x1", "s1", "f1", "c1"])
+def test_NumpyDatabase_rejects_duplicate_name(method, taken):
+    """ Check that a name already used in any schema is rejected.
+
+    A new name may not collide with a design variable, simulation, objective,
+    or constraint.  The rule itself lives in check_names(), which is tested
+    directly in test_util_error_checks.py; this confirms each of the four
+    NumpyDatabase methods is wired up to it, and that the schema is left
+    unchanged when the name is refused.
+
+    """
+
+    db = makeNumpyDatabase()
+    before = db.getDesignType(), db.getSimulationType(), \
+        db.getObjectiveType(), db.getConstraintType()
+    with pytest.raises(ValueError):
+        getattr(db, method)(taken, *ADD_ARGS[method])
+    after = db.getDesignType(), db.getSimulationType(), \
+        db.getObjectiveType(), db.getConstraintType()
+    assert before == after
+
+
+def test_NumpyDatabase_rejects_unknown_simulation():
+    """ Check that updateSimDb() rejects a simulation not in the schema. """
+
+    db = makeNumpyDatabase()
+    db.startDatabase()
+    with pytest.raises(ValueError):
+        db.updateSimDb(P0, [1, 1, 1, 1], "simulation2")
+
+
+def test_NumpyDatabase_rejects_unknown_format():
+    """ Check that getSimulationData() rejects an unrecognized format. """
+
+    db = makeNumpyDatabase()
+    db.startDatabase()
+    with pytest.raises(ValueError):
+        db.getSimulationData(format="BadFormatString")
+
+
+def test_NumpyDatabase_cannot_restart_once_populated():
+    """ Check that a database holding data refuses to be re-initialized.
+
+    The guard is on the data, not on the started state: re-starting an empty
+    database is allowed, but doing so once it holds results would silently
+    discard them.
+
+    """
+
+    db = makeNumpyDatabase()
+    db.startDatabase()
+    # An empty database may be re-initialized
+    db.startDatabase()
+    db.updateSimDb(P0, [1], "s1")
+    with pytest.raises(RuntimeError):
+        db.startDatabase()
+
+
 if __name__ == "__main__":
-    test_NumpyDatabase_construct_no_run()
-    test_NumpyDatabase_add_get_types()
-    test_NumpyDatabase_simulation_database()
-    test_NumpyDatabase_objective_database()
-    test_NumpyDatabase_checkpoint()
+    raise SystemExit(pytest.main([__file__]))

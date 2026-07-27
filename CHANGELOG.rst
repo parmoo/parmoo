@@ -11,17 +11,85 @@ Next Release
 
 :Date: TBD
 
-Summary TBD
+Continued internal cleanup for maintainability, with no change to the public
+user interface. Finishes the error-handling consolidation and restructures the
+unit tests on top of it, which closes the last remaining bullet of #109.
 
 Major changes:
 
- - TBD
+ - Restructure the unit tests so that each module is tested by its own file,
+   following a ``test_<layer>_<unit>.py`` naming convention. Redundant setup
+   code moves into a new ``parmoo/tests/unit_tests/helpers.py`` utility file,
+   and shared fixtures into ``parmoo/tests/unit_tests/conftest.py``. Note the
+   plan in the v0.5.0 notes called this file ``setup.py``; it is named
+   ``helpers.py`` instead, because ``setup.py`` collides with the packaging
+   convention we just moved away from and is matched by ``.coveragerc``'s
+   ``omit`` patterns
+ - Stop re-testing the same input corner case through every caller. Which
+   duplicated checks could be removed was decided by where the ``raise``
+   actually lives:
+
+    - Checks inherited from a plugin ABC are tested once. The
+      ``SurrogateOptimizer`` base owns the ``setObjective``,
+      ``setConstraints``, ``setPenalty``, ``setTrFunc``, and
+      ``addAcquisition`` validation, so five separate test files had been
+      exercising the same handful of lines
+    - Checks that are still copy-pasted in the library are parametrized over
+      the classes that copy them, not deleted, since each copy is a distinct
+      set of coverage lines. This applies to the acquisitions' ``setTarget``
+      validation (duplicated six times) and to the surrogates' ``fit``,
+      ``update``, and ``setTrustRegion`` validation (duplicated twice)
+    - Checks delegated to ``get_hp``, ``xerror``, ``check_names``, and
+      ``check_sims`` are tested directly against those utilities
+
+ - Break apart the unit tests that had grown to hold several independent tests,
+   so that a failure names the behavior that broke. The largest were a
+   318-line ``test_MOOP_iterate`` (six tests), a 195-line ``test_GaussRBF``,
+   and a 183-line ``test_MOOP_solve`` (four problems built in sequence)
+ - Net effect: 89 to 304 tests, and a 27% reduction in executable lines of
+   test code with 52% fewer ``pytest.raises`` blocks. Every line the test
+   suite covered before is still covered
 
 Minor changes:
 
  - Replace complex error handling with external utilities to improve
    readability and testability of code
  - Flatten nested error handling logic wherever possible to reduce branch count
+ - Add direct tests for ``get_hp`` and ``gradient_error``, taking
+   ``utilities/error_checks.py`` from 93% to 100% coverage. ``get_hp``'s
+   non-dict-``hyperparams`` and required-key branches were previously
+   unreached despite roughly 40 call sites, so the premise that the shared
+   utilities were covering those cases was not actually true
+ - Set ``jax_enable_x64`` once in ``conftest.py`` rather than in 15 scattered
+   in-function calls. It had been set at module scope in
+   ``test_moop_grads.py``, which leaked 64-bit precision into every other test
+   file at collection time, so running the suite in full and running a single
+   file used different precision. Every test file now also passes standalone,
+   which was not previously true
+ - Fix a test that silently checked nothing: ``test_MOOP_base_embed_extract``
+   built a set of design points whose first two rows were the lower and upper
+   bounds, then shadowed the loop variable with a fresh random draw, so no
+   bound was ever round-tripped. Both bounds are now tested
+ - Match four guard assertions on their error message rather than only the
+   exception type. Removing any of those four library guards let a downstream
+   operation raise the same exception class, so a bare ``pytest.raises`` could
+   not tell whether the guard was doing anything
+ - Add the test and example artifacts (``libE_stats.txt``, ``ensemble.log``,
+   and the checkpoint sidecar files) to ``.gitignore``
+
+Known issues found while restructuring the tests, left unchanged because
+fixing them would alter behavior rather than test structure:
+
+ - ``MOOP.__init__`` stores its ``hyperparams`` argument by reference and then
+   writes into it, replacing the ``np_random_gen`` seed with the constructed
+   generator. Reusing one dict across two ``MOOP`` objects therefore fails
+ - Several test simulation dicts carry ``search_budget`` as a top-level key,
+   but ``LatinHypercube`` reads it from ``hyperparams``, so those searches have
+   always run at the default budget
+ - The ``setTarget`` validation block is copy-pasted six times across the
+   acquisition modules, and the surrogate ``fit``/``update``/``setTrustRegion``
+   validation twice. Moving these into ``utilities/error_checks.py`` would let
+   the parametrized tests above collapse to single cases
 
 Release 0.5.1
 -------------
