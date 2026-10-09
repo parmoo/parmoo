@@ -26,8 +26,8 @@ Major changes:
    convention we just moved away from and is matched by ``.coveragerc``'s
    ``omit`` patterns
  - Stop re-testing the same input corner case through every caller. Which
-   duplicated checks could be removed was decided by where the ``raise``
-   actually lives:
+   duplicated checks to remove was determined by where the ``raise`` actually
+   lives:
 
     - Checks inherited from a plugin ABC are tested once. The
       ``SurrogateOptimizer`` base owns the ``setObjective``,
@@ -46,7 +46,7 @@ Major changes:
    so that a failure names the behavior that broke. The largest were a
    318-line ``test_MOOP_iterate`` (six tests), a 195-line ``test_GaussRBF``,
    and a 183-line ``test_MOOP_solve`` (four problems built in sequence)
- - Net effect: 89 to 304 tests, and a 27% reduction in executable lines of
+ - Net effect: from 89 to 304 tests, and a 27% reduction in executable lines of
    test code with 52% fewer ``pytest.raises`` blocks. Every line the test
    suite covered before is still covered
 
@@ -96,8 +96,8 @@ Release 0.5.1
 
 :Date: Jan 22, 2026
 
-Patch an issue in conda forge release caused by plotly dropping chrome from its
-distribution.
+Patch an issue in the conda-forge release caused by Plotly dropping Chrome
+from its distribution.
 
 Minor changes:
 
