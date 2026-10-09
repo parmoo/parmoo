@@ -390,7 +390,7 @@ class libE_MOOP(MOOP):
                    ``sx = sim_func(x)`` at runtime.
                    Note that any
                    ``constraint(x, sim_func(x), der=0) <= 0``
-                   indicates that x is feaseible, while
+                   indicates that x is feasible, while
                    ``constraint(x, sim_func(x), der=0) > 0``
                    indicates that x is infeasible, violating the constraint by
                    an amount proportional to the output.

@@ -13,7 +13,6 @@ coef
 conftest
 CPUs
 Chebyshev
-CompositeFunction
 ConstraintFunction
 cov
 deduplication
@@ -30,7 +29,6 @@ gaussian
 GaussRBF
 Gaussian
 getManifold
-GitFlow
 GlobalGPS
 GlobalPS
 GlobalSearch
@@ -107,7 +105,6 @@ SVD
 Scalable
 ScalarOpt
 Schemas
-SimGroups
 SimulationDatabase
 SingleSimBound
 SingleSimBoundGradient
@@ -162,7 +159,6 @@ basicConfig
 biobjective
 blackbox
 bool
-bools
 browseCompleteSimulations
 bwd
 centroid
@@ -181,7 +177,6 @@ cubically
 cx
 dataframe
 dataframes
-datapoints
 dataset
 datefmt
 de
@@ -212,16 +207,13 @@ env
 eps
 et
 eval
-evaluateGradients
 evaluateSimulation
 fbatch
-feaseible
 fi
 filepath
 filetypes
 filterBatch
 fontsize
-forall
 func
 funcs
 funcx
@@ -243,7 +235,6 @@ getUpperBounds
 getter
 getters
 github
-globalGPS
 gradFunc
 grey
 hacky
@@ -304,7 +295,6 @@ ndarrays
 ndpts
 nondom
 nondominated
-nondominating
 nonnegligible
 np
 num
@@ -412,7 +402,6 @@ vobj
 vpen
 webp
 whitespace
-wildsm
 workdir
 wrt
 xaxes
