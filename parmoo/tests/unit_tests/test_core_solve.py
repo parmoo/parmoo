@@ -348,6 +348,7 @@ def test_gradient_and_gradient_free_solvers_agree():
 
     with_grads = build_agreement_moop(GlobalSurrogate_BFGS, True)
     without_grads = build_agreement_moop(GlobalSurrogate_PS, False)
+    assert len(with_grads.iterate(1)) == len(without_grads.iterate(1))
     for x1, x2 in zip(with_grads.iterate(1), without_grads.iterate(1)):
         assert (np.abs(x1[0]["x1"] - x2[0]["x1"]) < 0.1)
 

@@ -217,6 +217,7 @@ def test_surrogate_interpolates_in_trust_region(cls):
     """
 
     incremental, batch, x_full, y_full = fitted_pair(cls)
+    assert len(x_full) == len(y_full)
     for xi, yi in zip(x_full, y_full):
         radius = np.ones(3) * 0.1
         incremental.setTrustRegion(xi, radius)
@@ -370,6 +371,7 @@ def test_GaussRBF_tail_order(tail_order):
 
     incremental, batch, x_full, y_full = fitted_pair(
         GaussRBF, {'tail_order': tail_order})
+    assert len(x_full) == len(y_full)
     for xi, yi in zip(x_full, y_full):
         radius = np.ones(3) * 0.1
         incremental.setTrustRegion(xi, radius)
@@ -413,6 +415,7 @@ def test_GaussRBF_interpolates_with_global_trust_region():
     batch.setTrustRegion(np.zeros(3), unbounded)
     x = np.random.random_sample(3)
     assert (all(incremental.stdDev(x) == batch.stdDev(x)))
+    assert len(x_full) == len(y_full)
     for xi, yi in zip(x_full, y_full):
         assert (np.linalg.norm(incremental.evaluate(xi) - yi) < 1.0e-8)
         assert (np.linalg.norm(batch.evaluate(xi) - yi) < 1.0e-8)

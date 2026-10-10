@@ -161,6 +161,7 @@ def test_addDesign_accumulates_mixed_types(empty_moop):
          'embedder': IdentityEmbedder},
         {'des_type': "raw", 'lb': -100.0, 'ub': 100.0},
     ]
+    assert len(settings) == len(expected)
     for si, ni in zip(settings, expected):
         empty_moop.addDesign(si)
         assert (empty_moop.n_latent == ni)

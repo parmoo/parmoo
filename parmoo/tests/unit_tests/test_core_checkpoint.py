@@ -258,40 +258,53 @@ def check_moops(moop1, moop2):
             moop2.penalty_param == moop1.penalty_param and
             moop2.iteration == moop1.iteration)
     # Check lists
+    assert len(moop2.latent_des_tols) == len(moop1.latent_des_tols)
     assert (all([dt2i == dt1i for dt2i, dt1i in zip(moop2.latent_des_tols,
                                                     moop1.latent_des_tols)]))
+    assert len(moop2.latent_lb) == len(moop1.latent_lb)
     assert (all([lb2i == lb1i for lb2i, lb1i in zip(moop2.latent_lb,
                                                     moop1.latent_lb)]))
+    assert len(moop2.latent_ub) == len(moop1.latent_ub)
     assert (all([ub2i == ub1i for ub2i, ub1i in zip(moop2.latent_ub,
                                                     moop1.latent_ub)]))
+    assert len(moop2.m_list) == len(moop1.m_list)
     assert (all([m2i == m1i for m2i, m1i in zip(moop2.m_list, moop1.m_list)]))
+    assert len(moop2.sim_schema) == len(moop1.sim_schema)
     assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.sim_schema,
                                                       moop1.sim_schema)]))
+    assert len(moop2.des_schema) == len(moop1.des_schema)
     assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.des_schema,
                                                       moop1.des_schema)]))
+    assert len(moop2.obj_schema) == len(moop1.obj_schema)
     assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.obj_schema,
                                                       moop1.obj_schema)]))
+    assert len(moop2.con_schema) == len(moop1.con_schema)
     assert (all([n2i[0] == n1i[0] for n2i, n1i in zip(moop2.con_schema,
                                                       moop1.con_schema)]))
     # Check dictionaries
+    assert len(moop2.getObjectiveData()) == len(moop1.getObjectiveData())
     assert all([
         x1 == x2
         for x1, x2 in zip(moop2.getObjectiveData(), moop1.getObjectiveData())
     ])
+    assert len(moop2.getSimulationData()) == len(moop1.getSimulationData())
     assert all([
         x1 == x2
         for x1, x2 in zip(moop2.getSimulationData(), moop1.getSimulationData())
     ])
+    assert len(moop1.obj_funcs) == len(moop2.obj_funcs)
     for obj1, obj2 in zip(moop1.obj_funcs, moop2.obj_funcs):
         if hasattr(obj1, "__name__"):
             assert (obj1.__name__ == obj2.__name__)
         else:
             assert (obj1.__class__.__name__ == obj2.__class__.__name__)
+    assert len(moop1.sim_funcs) == len(moop2.sim_funcs)
     for sim1, sim2 in zip(moop1.sim_funcs, moop2.sim_funcs):
         if hasattr(sim1, "__name__"):
             assert (sim1.__name__ == sim2.__name__)
         else:
             assert (sim1.__class__.__name__ == sim2.__class__.__name__)
+    assert len(moop1.con_funcs) == len(moop2.con_funcs)
     for const1, const2 in zip(moop1.con_funcs, moop2.con_funcs):
         if hasattr(const1, "__name__"):
             assert (const1.__name__ == const2.__name__)
@@ -300,10 +313,13 @@ def check_moops(moop1, moop2):
     # Check functions
     assert (moop2.optimizer.__class__.__name__ ==
             moop1.optimizer.__class__.__name__)
+    assert len(moop1.searches) == len(moop2.searches)
     assert (all([s1.__class__.__name__ == s2.__class__.__name__
                  for s1, s2 in zip(moop1.searches, moop2.searches)]))
+    assert len(moop1.surrogates) == len(moop2.surrogates)
     assert (all([s1.__class__.__name__ == s2.__class__.__name__
                  for s1, s2 in zip(moop1.surrogates, moop2.surrogates)]))
+    assert len(moop1.acquisitions) == len(moop2.acquisitions)
     assert (all([s1.__class__.__name__ == s2.__class__.__name__
                  for s1, s2 in zip(moop1.acquisitions, moop2.acquisitions)]))
 
