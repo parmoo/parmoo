@@ -254,7 +254,7 @@ def check_moops(moop1, moop2):
             moop2.n_latent == moop1.n_latent and
             moop2.o == moop1.o and moop2.p == moop1.p and
             moop2.s == moop1.s and
-            len(moop2.getObjectiveData()) == len(moop2.getObjectiveData()) and
+            len(moop2.getObjectiveData()) == len(moop1.getObjectiveData()) and
             moop2.penalty_param == moop1.penalty_param and
             moop2.iteration == moop1.iteration)
     # Check lists
