@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_SingleSimObjective():
     """ Test the SingleSimObjective() function.
 
@@ -111,6 +114,4 @@ def test_SumOfSimsObjective():
 
 
 if __name__ == "__main__":
-    test_SingleSimObjective()
-    test_SumOfSimSquaresObjective()
-    test_SumOfSimsObjective()
+    raise SystemExit(pytest.main([__file__]))

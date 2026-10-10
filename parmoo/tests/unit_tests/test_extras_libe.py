@@ -1,4 +1,7 @@
 
+import pytest
+
+
 # @pytest.mark.extra
 def test_libE_parmoo_persis_gen():
     """ Test the parmoo_persis_gen function in extras/libe.py.
@@ -224,6 +227,4 @@ def test_libE_MOOP_bad_solve():
 
 
 if __name__ == "__main__":
-    test_libE_parmoo_persis_gen()
-    test_libE_MOOP()
-    test_libE_MOOP_bad_solve()
+    raise SystemExit(pytest.main([__file__]))

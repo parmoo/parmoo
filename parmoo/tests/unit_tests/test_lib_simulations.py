@@ -1,4 +1,7 @@
 
+import pytest
+
+
 def test_sims_LinearSim():
     """ Test the linear sim function.
 
@@ -57,5 +60,4 @@ def test_sims_QuadraticSim():
 
 
 if __name__ == "__main__":
-    test_sims_LinearSim()
-    test_sims_QuadraticSim()
+    raise SystemExit(pytest.main([__file__]))

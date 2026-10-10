@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_SingleSimBound():
     """ Test the SingleSimBound() function.
 
@@ -115,6 +118,4 @@ def test_SumOfSimsBound():
 
 
 if __name__ == "__main__":
-    test_SingleSimBound()
-    test_SumOfSimSquaresBound()
-    test_SumOfSimsBound()
+    raise SystemExit(pytest.main([__file__]))

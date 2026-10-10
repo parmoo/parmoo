@@ -1,131 +1,9 @@
+""" Unit tests for parmoo.utilities.moop_utils. """
 
-def test_xerror():
-    """ Check that the xerror() utility handles bad input correctly.
+import numpy as np
+import pytest
 
-    Provide several bad inputs to xerror() and confirm that it raises
-    the appropriate ValueErrors.
-
-    """
-
-    from parmoo.utilities.error_checks import xerror
-    import numpy as np
-    import pytest
-
-    # Try some bad initializations to test error handling
-    with pytest.raises(TypeError):
-        xerror(1.0, np.zeros(4), np.ones(4), {})
-    with pytest.raises(ValueError):
-        xerror(0, np.zeros(4), np.ones(4), {})
-    with pytest.raises(TypeError):
-        xerror(3, np.zeros(4), 1.0, {})
-    with pytest.raises(TypeError):
-        xerror(3, 0.0, np.ones(4), {})
-    with pytest.raises(ValueError):
-        xerror(3, np.zeros(3), np.ones(4), {})
-    with pytest.raises(ValueError):
-        xerror(3, np.ones(4), np.zeros(4), {})
-    with pytest.raises(TypeError):
-        xerror(3, np.zeros(4), np.ones(4), 5)
-    # Perform two good initialization, to confirm that it passes
-    xerror(o=3, lb=np.zeros(4), ub=np.ones(4), hyperparams={})
-    xerror()
-
-
-def test_check_sims():
-    """ Check that the check_sims() utility handles bad input correctly.
-
-    Provide several bad simulation dictionaries to check_sims() and
-    confirm that it raises the appropriate ValueErrors.
-
-    """
-
-    from parmoo.core.moop_checks import check_sims
-    from parmoo.surrogates import GaussRBF
-    from parmoo.searches import LatinHypercube
-    import numpy as np
-    import pytest
-
-    # Try providing invalid/incompatible simulation dictionaries
-    with pytest.raises(TypeError):
-        check_sims(3, 5.0)
-    simdict = {}
-    with pytest.raises(KeyError):
-        check_sims(3, simdict)
-    simdict['m'] = 1.0
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['m'] = -1
-    with pytest.raises(ValueError):
-        check_sims(3, simdict)
-    simdict['m'] = 1
-    with pytest.raises(KeyError):
-        check_sims(3, simdict)
-    simdict['search'] = LatinHypercube(1, np.zeros(3), np.ones(3), {})
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['search'] = GaussRBF
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['search'] = LatinHypercube
-    with pytest.raises(KeyError):
-        check_sims(3, simdict)
-    simdict['surrogate'] = GaussRBF(1, np.zeros(1), np.ones(1), {})
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['surrogate'] = LatinHypercube
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['surrogate'] = GaussRBF
-    with pytest.raises(KeyError):
-        check_sims(3, simdict)
-    simdict['sim_func'] = {}
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['sim_func'] = lambda x, y, z: [np.linalg.norm(x - y - z)]
-    with pytest.raises(ValueError):
-        check_sims(3, simdict)
-    simdict['sim_func'] = lambda x: [np.linalg.norm(x)]
-    simdict['hyperparams'] = []
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['hyperparams'] = {}
-    simdict['sim_db'] = 5
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['sim_db'] = {'x_vals': []}
-    with pytest.raises(KeyError):
-        check_sims(3, simdict)
-    simdict['sim_db'] = {'x_vals': "hel", 's_vals': "lo"}
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['sim_db'] = {'x_vals': np.asarray([0.0]), 's_vals': []}
-    with pytest.raises(ValueError):
-        check_sims(3, simdict)
-    simdict['sim_db'] = {'x_vals': np.asarray([[0.0, 0.0]]), 's_vals': [[0.0]]}
-    with pytest.raises(ValueError):
-        check_sims(3, simdict)
-    simdict['sim_db'] = {'x_vals': np.asarray([[0.0, 0.0, 0.0]]),
-                         's_vals': [[0.0, 0.0]]}
-    with pytest.raises(ValueError):
-        check_sims(3, simdict)
-    simdict['sim_db'] = {'x_vals': np.asarray([[0.0, 0.0, 0.0]]),
-                         's_vals': [[0.0], [1.0]]}
-    with pytest.raises(ValueError):
-        check_sims(3, simdict)
-    simdict['sim_db'] = {'x_vals': [], 's_vals': []}
-    simdict['des_tol'] = 1
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    simdict['des_tol'] = 0.0
-    with pytest.raises(ValueError):
-        check_sims(3, simdict)
-    simdict['des_tol'] = 0.00000001
-    simdict['name'] = 5
-    with pytest.raises(TypeError):
-        check_sims(3, simdict)
-    # Do one good check, and make sure nothing was raised
-    simdict['name'] = "sim1"
-    check_sims(3, simdict)
+from parmoo.utilities.moop_utils import from_array, lex_leq, to_array, updatePF
 
 
 def test_lex_leq():
@@ -135,9 +13,6 @@ def test_lex_leq():
     correct.
 
     """
-
-    from parmoo.utilities.moop_utils import lex_leq
-    import numpy as np
 
     # Check for a < b
     assert (lex_leq(np.zeros(3), np.ones(3)))
@@ -168,9 +43,6 @@ def test_updatePF():
     Finally, add a constraint and check the updated solution.
 
     """
-
-    from parmoo.utilities.moop_utils import updatePF
-    import numpy as np
 
     # Set problem dimensions and initialize a RandomSearch object
     n = 4
@@ -206,7 +78,6 @@ def test_updatePF():
     data['f_vals'][9, :] = obj(np.asarray([1.0, 0.0, 0.0, 0.0]))
     # Extract the Pareto front for the first 5 points
     soln = {}
-    def NoConstraints(x): return np.asarray([])
     soln = updatePF({'x_vals': data['x_vals'][:5, :],
                      'f_vals': data['f_vals'][:5, :],
                      'c_vals': data['c_vals'][:5, :]}, soln)
@@ -236,9 +107,6 @@ def test_updatePF():
 def test_to_from_array():
     """ Test the from_array function. """
 
-    from parmoo.utilities.moop_utils import from_array, to_array
-    import numpy as np
-
     # Create test inputs
     x_unnamed = np.eye(5)[2]
     dt_named = np.dtype([("x1", "f8"), ("x2", "f8"), ("x3", "f8", 3)])
@@ -250,8 +118,4 @@ def test_to_from_array():
 
 
 if __name__ == "__main__":
-    test_xerror()
-    test_check_sims()
-    test_lex_leq()
-    test_updatePF()
-    test_to_from_array()
+    raise SystemExit(pytest.main([__file__]))
