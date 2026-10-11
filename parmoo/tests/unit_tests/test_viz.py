@@ -1,793 +1,267 @@
+""" Unit tests for the viz layer.
+
+The viz tests stay in one file, but the repeated call patterns are factored
+into helpers and parametrized tables so the intent is easier to scan.
+"""
+
+from parmoo.viz.plot import parallel_coordinates, radar, scatter
+
 import pytest
 
 
 # Mark these tests as requiring the additional chrome dependency.
-# Get it using the ``plotly_get_chrome`` command
+# Get it using the ``plotly_get_chrome`` command.
 pytestmark = pytest.mark.requires_chrome
 
+PLOTTERS = [scatter, parallel_coordinates, radar]
+PLOT_NAMES = {
+    scatter: "scatter",
+    parallel_coordinates: "parallel_coordinates",
+    radar: "radar",
+}
+PLOT_TYPES = {
+    scatter: "scatter",
+    parallel_coordinates: "parallel",
+    radar: "radar",
+}
+EXPECTED_FILENAMES = {
+    "pf": "Pareto Front.html",
+    "obj": "Objective Data.html",
+}
 
-def test_static_export(quickstart_moop):
-    """ Create a MOOP object and export various plot types.
+STATIC_EXPORT_CASES = [
+    pytest.param(scatter, "html", "Pareto Front.html", id="scatter-html"),
+    pytest.param(parallel_coordinates, "svg", "Pareto Front.svg",
+                 id="parallel-svg"),
+    pytest.param(radar, "pdf", "Pareto Front.pdf", id="radar-pdf"),
+    pytest.param(scatter, "jpeg", "Pareto Front.jpeg", id="scatter-jpeg"),
+    pytest.param(parallel_coordinates, "png", "Pareto Front.png",
+                 id="parallel-png"),
+    pytest.param(radar, "webp", "Pareto Front.webp", id="radar-webp"),
+]
 
-    Tests all export formats except eps
-    (because eps may not be supported on all machines).
+DATABASE_CASES = [
+    pytest.param(
+        plotter,
+        moop_name,
+        db,
+        points,
+        id=f"{PLOT_NAMES[plotter]}-{moop_name}-{db}-{points}",
+    )
+    for plotter in PLOTTERS
+    for moop_name in ("quickstart_moop", "dtlz2_moop")
+    for db in ("pf", "obj")
+    for points in (
+        "constraint_satisfying",
+        "constraint_violating",
+        "all",
+        "none",
+    )
+]
 
-    """
+INVALID_DB_CASES = [
+    pytest.param("asdf", id="db-string"),
+    pytest.param(1234, id="db-int"),
+]
 
-    from parmoo.viz.plot import (
+INVALID_OUTPUT_CASES = [
+    pytest.param("asdf", id="output-string"),
+    pytest.param(1234, id="output-int"),
+]
+
+INVALID_POINTS_CASES = [
+    pytest.param("asdf", id="points-string"),
+    pytest.param(1234, id="points-int"),
+]
+
+INVALID_NUMERIC_CASES = [
+    pytest.param("height", "asdf", id="height-string"),
+    pytest.param("width", "asdf", id="width-string"),
+    pytest.param("fontsize", -1, id="fontsize-low"),
+    pytest.param("fontsize", 101, id="fontsize-high"),
+]
+
+NUMERIC_CASES = [
+    pytest.param("height", 1, id="height-1"),
+    pytest.param("height", 50, id="height-50"),
+    pytest.param("height", 92.2678, id="height-float"),
+    pytest.param("height", 7789, id="height-large"),
+    pytest.param("width", 1, id="width-1"),
+    pytest.param("width", 50, id="width-50"),
+    pytest.param("width", 92.2678, id="width-float"),
+    pytest.param("width", 7789, id="width-large"),
+    pytest.param("fontsize", 1, id="fontsize-1"),
+    pytest.param("fontsize", 50, id="fontsize-50"),
+    pytest.param("fontsize", 55.71, id="fontsize-float"),
+    pytest.param("fontsize", 100, id="fontsize-100"),
+]
+
+STYLE_CASES = [
+    pytest.param("font", "Verdana", id="font-verdana"),
+    pytest.param("font", "Times New Roman", id="font-times"),
+    pytest.param("background_color", "white", id="background-white"),
+    pytest.param("background_color", "black", id="background-black"),
+    pytest.param("background_color", "transparent", id="background-clear"),
+    pytest.param("background_color", "grey", id="background-grey"),
+    pytest.param("screenshot", "png", id="screenshot-png"),
+    pytest.param("screenshot", "jpeg", id="screenshot-jpeg"),
+    pytest.param("screenshot", "svg", id="screenshot-svg"),
+    pytest.param("screenshot", "webp", id="screenshot-webp"),
+    pytest.param("image_export_format", "html", id="image-html"),
+    pytest.param("image_export_format", "svg", id="image-svg"),
+    pytest.param("image_export_format", "pdf", id="image-pdf"),
+    pytest.param("image_export_format", "png", id="image-png"),
+    pytest.param("image_export_format", "jpeg", id="image-jpeg"),
+    pytest.param("image_export_format", "webp", id="image-webp"),
+    pytest.param("data_export_format", "csv", id="data-csv"),
+    pytest.param("data_export_format", "json", id="data-json"),
+    pytest.param("dev_mode", True, id="dev-mode-on"),
+    pytest.param("dev_mode", False, id="dev-mode-off"),
+    pytest.param("pop_up", True, id="pop-up-on"),
+    pytest.param("pop_up", False, id="pop-up-off"),
+    pytest.param("port", "http://127.0.0.1:8050/", id="port-default"),
+]
+
+INVALID_EXPORT_CASES = [
+    pytest.param("screenshot", "asdf", id="screenshot-string"),
+    pytest.param("screenshot", 1234, id="screenshot-int"),
+    pytest.param("image_export_format", "asdf", id="image-string"),
+    pytest.param("image_export_format", 1234, id="image-int"),
+    pytest.param("data_export_format", "asdf", id="data-string"),
+    pytest.param("data_export_format", 1234, id="data-int"),
+    pytest.param("port", "asdf", id="port-string"),
+    pytest.param("port", 1234, id="port-int"),
+]
+
+
+def _assert_output(plotter, moop, expected_name, monkeypatch, tmp_path, **kwargs):
+    """Call a plotter and assert it writes the expected output file."""
+
+    monkeypatch.chdir(tmp_path)
+    plotter(moop, **kwargs)
+    assert (tmp_path / expected_name).is_file()
+
+
+@pytest.mark.parametrize("plotter, output, expected_name", STATIC_EXPORT_CASES)
+def test_static_export(plotter, output, expected_name, quickstart_moop,
+                       monkeypatch, tmp_path):
+    """Create a MOOP object and export various plot types."""
+
+    _assert_output(
+        plotter,
+        quickstart_moop,
+        expected_name,
+        monkeypatch,
+        tmp_path,
+        output=output,
+    )
+
+
+@pytest.mark.parametrize("plotter, moop_name, db, points", DATABASE_CASES)
+def test_database_options(request, plotter, moop_name, db, points, monkeypatch,
+                          tmp_path):
+    """Plot both databases with the supported constraint filters."""
+
+    moop = request.getfixturevalue(moop_name)
+    _assert_output(
+        plotter,
+        moop,
+        EXPECTED_FILENAMES[db],
+        monkeypatch,
+        tmp_path,
+        db=db,
+        points=points,
+        output="html",
+    )
+
+
+@pytest.mark.parametrize("plotter", PLOTTERS, ids=lambda plotter: PLOT_NAMES[plotter])
+def test_dash_dispatch(plotter, quickstart_moop, monkeypatch):
+    """Check that the wrapper dispatches to the Dash app for interactive use."""
+
+    captured = {}
+
+    def fake_dash_app(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr("parmoo.viz.plot.Dash_App", fake_dash_app)
+    plotter(quickstart_moop, output="dash")
+
+    kwargs = captured["kwargs"]
+    assert kwargs["plot_type"] == PLOT_TYPES[plotter]
+    assert kwargs["moop"] is quickstart_moop
+    assert kwargs["db"] == "pf"
+    assert kwargs["points"] == "constraint_satisfying"
+    assert kwargs["height"] == "auto"
+    assert kwargs["width"] == "auto"
+    assert kwargs["font"] == "auto"
+    assert kwargs["fontsize"] == "auto"
+    assert kwargs["background_color"] == "auto"
+    assert kwargs["screenshot"] == "svg"
+    assert kwargs["image_export_format"] == "svg"
+    assert kwargs["data_export_format"] == "csv"
+    assert kwargs["dev_mode"] is False
+    assert kwargs["pop_up"] is True
+    assert kwargs["port"] == "http://127.0.0.1:8050/"
+
+
+@pytest.mark.parametrize("bad_db", INVALID_DB_CASES)
+def test_invalid_db_values(quickstart_moop, bad_db):
+    with pytest.raises(ValueError):
+        scatter(quickstart_moop, db=bad_db)
+
+
+@pytest.mark.parametrize("bad_output", INVALID_OUTPUT_CASES)
+def test_invalid_output_values(quickstart_moop, bad_output):
+    with pytest.raises(ValueError):
+        scatter(quickstart_moop, output=bad_output)
+
+
+@pytest.mark.parametrize("bad_points", INVALID_POINTS_CASES)
+def test_invalid_points_values(quickstart_moop, bad_points):
+    with pytest.raises(ValueError):
+        scatter(quickstart_moop, output="html", points=bad_points)
+
+
+@pytest.mark.parametrize("keyword, value", INVALID_NUMERIC_CASES)
+def test_invalid_numeric_values(quickstart_moop, keyword, value):
+    with pytest.raises(ValueError):
+        scatter(quickstart_moop, output="html", **{keyword: value})
+
+
+@pytest.mark.parametrize("keyword, value", NUMERIC_CASES)
+def test_numeric_values_render(quickstart_moop, keyword, value, monkeypatch,
+                               tmp_path):
+    _assert_output(
         scatter,
-        parallel_coordinates,
-        radar,
+        quickstart_moop,
+        "Pareto Front.html",
+        monkeypatch,
+        tmp_path,
+        output="html",
+        **{keyword: value},
     )
-    import os
-
-    # Pre-calculate a moop object
-    moop1 = quickstart_moop
-
-    # * html output
-    scatter(moop1, output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * svg output
-    parallel_coordinates(moop1, output='svg')
-    assert (os.path.exists("Pareto Front.svg"))
-    os.remove("Pareto Front.svg")
-
-    # * pdf output
-    radar(moop1, output='pdf')
-    assert (os.path.exists("Pareto Front.pdf"))
-    os.remove("Pareto Front.pdf")
-
-    # * jpeg output
-    scatter(moop1, output='jpeg')
-    assert (os.path.exists("Pareto Front.jpeg"))
-    os.remove("Pareto Front.jpeg")
-
-    # * png output
-    parallel_coordinates(moop1, output='png')
-    assert (os.path.exists("Pareto Front.png"))
-    os.remove("Pareto Front.png")
-
-    # * webp output
-    radar(moop1, output='webp')
-    assert (os.path.exists("Pareto Front.webp"))
-    os.remove("Pareto Front.webp")
 
 
-def test_quantity_constraints_objectives(quickstart_moop, dtlz2_moop):
-    """ Create a MOOP object and plot PF with and w/o constraint data. """
-
-    from parmoo.viz.plot import (
+@pytest.mark.parametrize("keyword, value", STYLE_CASES)
+def test_style_values_render(quickstart_moop, keyword, value, monkeypatch,
+                             tmp_path):
+    _assert_output(
         scatter,
-        parallel_coordinates,
-        radar,
+        quickstart_moop,
+        "Pareto Front.html",
+        monkeypatch,
+        tmp_path,
+        output="html",
+        **{keyword: value},
     )
-    import os
 
-    # Pre-calculate two moop objects
-    moop1 = quickstart_moop
-    moop2 = dtlz2_moop
 
-    # * 2 objective scatter with constraint
-    scatter(moop1, output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * 2 objective parallel with constraint
-    parallel_coordinates(moop1, output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * 2 objective radar with constraint
-    radar(moop1, output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * 5 objective scatter without constraint
-    scatter(moop2, output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * 5 objective parallel without constraint
-    parallel_coordinates(moop2, output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * 5 objective radar without constraint
-    radar(moop2, output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-
-def test_database_options(quickstart_moop, dtlz2_moop):
-    """ Create a MOOP object and plot the full database.
-
-    Generates plots with and without constraint violations.
-
-    """
-
-    from parmoo.viz.plot import (
-        scatter,
-        parallel_coordinates,
-        radar,
-    )
-    import os
-
-    # Pre-calculate two moop objects
-    moop1 = quickstart_moop
-    moop2 = dtlz2_moop
-
-    # * pf x constraint_satisfying x constraints in MOOP
-    scatter(
-        moop1,
-        db='pf',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    parallel_coordinates(
-        moop1,
-        db='pf',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    radar(
-        moop1,
-        db='pf',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * obj x constraint_satisfying x constraints in MOOP
-    scatter(
-        moop1,
-        db='obj',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    parallel_coordinates(
-        moop1,
-        db='obj',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    radar(
-        moop1,
-        db='obj',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    # * pf x constraint_violating x constraints in MOOP
-    scatter(
-        moop1,
-        db='pf',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    parallel_coordinates(
-        moop1,
-        db='pf',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    radar(
-        moop1,
-        db='pf',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * obj x constraint_violating x constraints in MOOP
-    scatter(
-        moop1,
-        db='obj',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    parallel_coordinates(
-        moop1,
-        db='obj',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    radar(
-        moop1,
-        db='obj',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    # * pf x all x constraints in MOOP
-    scatter(
-        moop1,
-        db='pf',
-        points='all',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    parallel_coordinates(
-        moop1,
-        db='pf',
-        points='all',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    radar(
-        moop1,
-        db='pf',
-        points='all',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * obj x all x constraints in MOOP
-    scatter(
-        moop1,
-        db='obj',
-        points='all',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    parallel_coordinates(
-        moop1,
-        db='obj',
-        points='all',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    radar(
-        moop1,
-        db='obj',
-        points='all',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    # * pf x none x constraints in MOOP
-    scatter(
-        moop1,
-        db='pf',
-        points='none',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    parallel_coordinates(
-        moop1,
-        db='pf',
-        points='none',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    radar(
-        moop1,
-        db='pf',
-        points='none',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * obj x none x constraints in MOOP
-    scatter(
-        moop1,
-        db='obj',
-        points='none',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    parallel_coordinates(
-        moop1,
-        db='obj',
-        points='none',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    radar(
-        moop1,
-        db='obj',
-        points='none',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    # * pf x constraint_satisfying x no constraints in MOOP
-    scatter(
-        moop2,
-        db='pf',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    parallel_coordinates(
-        moop2,
-        db='pf',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    radar(
-        moop2,
-        db='pf',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * obj x constraint_satisfying x no constraints in MOOP
-    scatter(
-        moop2,
-        db='obj',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    parallel_coordinates(
-        moop2,
-        db='obj',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    radar(
-        moop2,
-        db='obj',
-        points='constraint_satisfying',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    # * pf x constraint_violating x no constraints in MOOP
-    scatter(
-        moop2,
-        db='pf',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    parallel_coordinates(
-        moop2,
-        db='pf',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    radar(
-        moop2,
-        db='pf',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * obj x constraint_violating x no constraints in MOOP
-    scatter(
-        moop2,
-        db='obj',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    parallel_coordinates(
-        moop2,
-        db='obj',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    radar(
-        moop2,
-        db='obj',
-        points='constraint_violating',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    # * pf x all x no constraints in MOOP
-    scatter(
-        moop2,
-        db='pf',
-        points='all',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    parallel_coordinates(
-        moop2,
-        db='pf',
-        points='all',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    radar(
-        moop2,
-        db='pf',
-        points='all',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * obj x all x no constraints in MOOP
-    scatter(
-        moop2,
-        db='obj',
-        points='all',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    parallel_coordinates(
-        moop2,
-        db='obj',
-        points='all',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    radar(
-        moop2,
-        db='obj',
-        points='all',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    # * pf x none x no constraints in MOOP
-    scatter(
-        moop2,
-        db='pf',
-        points='none',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    parallel_coordinates(
-        moop2,
-        db='pf',
-        points='none',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    radar(
-        moop2,
-        db='pf',
-        points='none',
-        output='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # * obj x none x no constraints in MOOP
-    scatter(
-        moop2,
-        db='obj',
-        points='none',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    parallel_coordinates(
-        moop2,
-        db='obj',
-        points='none',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-    radar(
-        moop2,
-        db='obj',
-        points='none',
-        output='html')
-    assert (os.path.exists("Objective Data.html"))
-    os.remove("Objective Data.html")
-
-
-def test_inputs_to_dash(quickstart_moop):
-    """ Stress-test the dash app's error handling. """
-
-    from parmoo.viz.plot import scatter
-    import os
-
-    # Pre-calculate a moop object
-    moop1 = quickstart_moop
-
-    # * db
-    # valid db values tested in test_database_options()
-    # test invalid db values
+@pytest.mark.parametrize("keyword, value", INVALID_EXPORT_CASES)
+def test_invalid_export_values(quickstart_moop, keyword, value):
     with pytest.raises(ValueError):
-        scatter(moop1, output='html', db='asdf')
-
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', db=1234)
-
-    # * output
-    # valid output values tested in test_static_export()
-    # test invalid output values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='asdf')
-
-    with pytest.raises(ValueError):
-        scatter(moop1, output=1234)
-
-    # * points
-    # valid points values tested in test_database_options()
-    # test invalid points values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', points='asdf')
-
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', points=1234)
-
-    # * height
-    # test valid height values
-    scatter(moop1, output='html', height=1)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', height=50)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', height=92.2678)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', height=7789)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid height values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', height='asdf')
-
-    # * width
-    # test valid width values
-    scatter(moop1, output='html', width=1)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', width=50)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', width=92.2678)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', width=7789)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid width values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', width='asdf')
-
-    # * font
-    # test valid font values
-    scatter(moop1, output='html', font='Verdana')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', font='Times New Roman')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid font values
-    # currently all inputs that can be cast to a string are valid
-    # if str(font) != a font in the computer, font=Times New Roman
-
-    # * fontsize
-    # test valid fontsize values
-    scatter(moop1, output='html', fontsize=1)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', fontsize=50)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', fontsize=55.71)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', fontsize=100)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid fontsize values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', fontsize=-1)
-
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', fontsize=101)
-
-    # * background_color
-    # test valid background_color values
-    scatter(moop1, output='html', background_color='white')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', background_color='black')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(
-        moop1,
-        output='html',
-        background_color='transparent'
-    )
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', background_color='white')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', background_color='grey')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid background_color values
-    # currently all inputs that can be cast to a string are valid
-    # if str(background_color) != a supported background_color
-    # background_color=white
-
-    # * screenshot
-    # test valid screenshot values
-    scatter(moop1, output='html', screenshot='png')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', screenshot='jpeg')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', screenshot='svg')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', screenshot='webp')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid screenshot values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', screenshot='asdf')
-
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', screenshot=1234)
-
-    # * image_export_format
-    # test valid image_export_format values (except eps)
-    scatter(moop1, output='html', image_export_format='html')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', image_export_format='svg')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', image_export_format='pdf')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', image_export_format='png')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', image_export_format='jpeg')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', image_export_format='webp')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid image_export_format values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', image_export_format='asdf')
-
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', image_export_format=1234)
-
-    # * data_export_format
-    # test valid data_export_format values
-    scatter(moop1, output='html', data_export_format='csv')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', data_export_format='json')
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid data_export_format values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', data_export_format='asdf')
-
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', data_export_format=1234)
-
-    # * dev_mode
-    # test valid dev_mode values
-    scatter(moop1, output='html', dev_mode=True)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', dev_mode=False)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid dev_mode values
-    # currently all inputs that can be cast to a Boolean are valid
-    # in Python, everything can be cast to a Boolean
-
-    # * pop_up
-    # test valid pop_up values
-    scatter(moop1, output='html', pop_up=True)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    scatter(moop1, output='html', pop_up=False)
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid pop_up values
-    # currently all inputs that can be cast to a Boolean are valid
-    # in Python, everything can be cast to a Boolean
-
-    # * port
-    # test valid port values
-    scatter(
-        moop1,
-        output='html',
-        port='http://127.0.0.1:8050/'
-    )
-    assert (os.path.exists("Pareto Front.html"))
-    os.remove("Pareto Front.html")
-
-    # test invalid port values
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', port='asdf')
-
-    with pytest.raises(ValueError):
-        scatter(moop1, output='html', port=1234)
+        scatter(quickstart_moop, output="html", **{keyword: value})
 
 
 @pytest.fixture(scope="module")
